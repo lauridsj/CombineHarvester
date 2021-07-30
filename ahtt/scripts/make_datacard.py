@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # makes a datacard off the requested signal point
 # assumes that both background and signal root files are produced by plot_diagnostic.cc
 # the files contain the search templates for all considered processes in the analysis, and all shape nuisances
@@ -12,8 +12,8 @@ from argparse import ArgumentParser
 import os
 import sys
 import math
-import tarfile
 
+import glob
 from collections import OrderedDict
 
 from ROOT import TFile, gDirectory, TH1
@@ -23,8 +23,9 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-def syscall(cmd):
-    print ("Executing: %s" % cmd)
+def syscall(cmd, verbose = True):
+    if verbose:
+        print ("Executing: %s" % cmd)
     retval = os.system(cmd)
     if retval != 0:
         raise RuntimeError("Command failed!")
@@ -111,7 +112,7 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 if ss == "_res":
                     scale(hn, kfactors[0][0])
                 else:
-                    scale(hn, kfactors[0][0])
+                    scale(hn, kfactors[0][1])
 
             if ss == "_int_neg":
                 scale(hn, -1.)
@@ -191,13 +192,14 @@ def make_pseudodata(ofile, cpn, sigpnt = ""):
                     dd.Add(ofile.Get(category + '/' + pp))
 
         for ii in range(1, dd.GetNbinsX() + 1):
-            dd.SetBinContent(ii, rng.poisson(dd.GetBinContent(ii)))
-            dd.SetBinError(ii, math.sqrt(dd.GetBinContent(ii)))
+            content = rng.poisson(dd.GetBinContent(ii))
+            dd.SetBinContent(ii, content)
+            dd.SetBinError(ii, math.sqrt(content))
 
         ofile.cd(category)
         dd.Write()
 
-def write_datacard(oname, cpn, years, sigpnt, tag):
+def write_datacard(oname, cpn, years, sigpnt, mcstat, tag):
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(write_datacard, "lnNs"):
@@ -211,6 +213,11 @@ def write_datacard(oname, cpn, years, sigpnt, tag):
             )),
             # FIXME 2016, year pairs, all years
             ("ll" , (
+                ("dyNorm", ("2016", "2016apv", "2017", "2018"), "dy", 1.3),
+                ("txNorm", ("2016", "2016apv", "2017", "2018"), "tx", 1.15)
+            )),
+            # FIXME dummy ll for code test
+            ("lj" , (
                 ("dyNorm", ("2016", "2016apv", "2017", "2018"), "dy", 1.3),
                 ("txNorm", ("2016", "2016apv", "2017", "2018"), "tx", 1.15)
             )),
@@ -228,59 +235,73 @@ def write_datacard(oname, cpn, years, sigpnt, tag):
             ))
         ])
 
-        cb = ch.CombineHarvester()
-        categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
-        years = tuple(sorted(years))
+    cb = ch.CombineHarvester()
+    categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
+    years = tuple(sorted(years))
+    point = get_point(sigpnt)
+    mstr = str(point[1]).replace(".0", "")
 
-        cb.AddObservations(['*'], ['ahtt'], ['13TeV'], [''], categories.items())
-        for iicc in categories.items():
-            ii = iicc[0]
-            cc = iicc[1]
+    cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
+    for iicc in categories.items():
+        ii = iicc[0]
+        cc = iicc[1]
 
-            sigs = [pp for pp in cpn[cc].keys() if sigpnt in pp]
-            bkgs = [pp for pp in cpn[cc].keys() if sigpnt not in pp]
-            cb.AddProcesses([''], ['ahtt'], ['13TeV'], [''], sigs, [iicc], True)
-            cb.AddProcesses(['*'], ['ahtt'], ['13TeV'], [''], bkgs, [iicc], False)
+        sigs = [pp for pp in cpn[cc].keys() if sigpnt in pp]
+        bkgs = [pp for pp in cpn[cc].keys() if sigpnt not in pp]
+        cb.AddProcesses([mstr], ["ahtt"], ["13TeV"], [""], sigs, [iicc], True)
+        cb.AddProcesses(['*'], ["ahtt"], ["13TeV"], [""], bkgs, [iicc], False)
 
-            channel, year = cc.rsplit('_', 1)
+        channel, year = cc.rsplit('_', 1)
 
-            for process, nuisances in cpn[cc].items():
-                for nuisance in nuisances:
-                    cb.cp().process([process]).AddSyst(cb, nuisance[0], "shape", ch.SystMap("bin_id")([ii], nuisance[1]))
+        for process, nuisances in cpn[cc].items():
+            for nuisance in nuisances:
+                cb.cp().process([process]).AddSyst(cb, nuisance[0], "shape", ch.SystMap("bin_id")([ii], nuisance[1]))
 
-                for ll in [write_datacard.lnNs[years], write_datacard.lnNs[channel], write_datacard.lnNs["common"]]:
-                    for lnN in ll:
-                        if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
-                            cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
+            for ll in [write_datacard.lnNs[years], write_datacard.lnNs[channel], write_datacard.lnNs["common"]]:
+                for lnN in ll:
+                    if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
+                        cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
 
-        cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
-        cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
-        os.remove(oname)
+    cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
+    cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
+    os.remove(oname)
 
-        writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
-        writer.WriteCards(sigpnt + tag, cb)
+    writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
+    writer.WriteCards(sigpnt + tag, cb)
 
-        #syscall("tar -czf {card}.tgz {card}".format(card = sigpnt + tag))
-        #syscall("rm -r {card}".format(card = sigpnt + tag))
+    if mcstat:
+	txts = glob.glob(sigpnt + tag + "/ahtt_*.txt")
+	for tt in txts:
+	    with open(tt, 'a') as txt:
+		txt.write("\n* autoMCStats 0.\n")
+
+    if len(categories) > 1:
+        syscall("combineCards.py {cards} > {comb}".format(
+            cards = " ".join([cats + "=" + sigpnt + tag + "/ahtt_" + cats + ".txt" for cats in cpn.keys()]),
+            comb = sigpnt + tag + "/ahtt_combined.txt"
+        ))
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--signal", help = "signal filename produced by plot_diagnostic.cc. comma separated", default = "", required = True)
-    parser.add_argument("--background", help = "data/background filename produced by plot_diagnostic.cc. comma separated", default = "", required = True)
-    parser.add_argument("--point", help = "desired signal point to make datacard of", default = "", required = True)
+    parser.add_argument("--signal", help = "signal filename. comma separated", default = "", required = True)
+    parser.add_argument("--background", help = "data/background filename. comma separated", default = "", required = True)
+    parser.add_argument("--point", help = "signal point to make datacard of", default = "", required = True)
+
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tags to be put on datacard names", default = "", required = False)
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False)
+                        default = 0.005, required = False, type = float)
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
     parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
                         dest = "lnNsmall", action = "store_true", required = False)
-    parser.add_argument("--use-shapes-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
+    parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
     parser.add_argument("--use-sm-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
+    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+                        dest = "mcstat", action = "store_false", required = False)
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
@@ -290,10 +311,14 @@ if __name__ == '__main__':
     years = args.year.strip().split(',')
     channels = args.channel.strip().split(',')
 
-    if (not all([yy == "2016" or yy == "2016apv" or yy == "2017" or yy == "2018" for yy in years])):
+    allyears = ["2016", "2016apv", "2017", "2018"]
+    if (not all([yy in allyears  for yy in years])):
+        print "supported years:", allyears
         raise RuntimeError("unxpected year is given. aborting.")
 
-    if (not all([cc == "ll" or cc == "ej" or cc == "mj" for cc in channels])):
+    allchannels = ["ee", "em", "mm", "ll", "ej", "mj", "lj"]
+    if (not all([cc in allchannels for cc in channels])):
+        print "supported channels:", allchannels
         raise RuntimeError("unxpected channel is given. aborting.")
 
     if (len(years) != len(sfiles) or len(sfiles) != len(bfiles)):
@@ -312,4 +337,4 @@ if __name__ == '__main__':
         make_pseudodata(output, cpn, args.point)
     output.Close()
 
-    write_datacard(oname, cpn, years, args.point, args.tag)
+    write_datacard(oname, cpn, years, args.point, args.mcstat, args.tag)
