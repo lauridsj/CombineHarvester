@@ -146,13 +146,28 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 hd = ifile.Get(channel + '/' + "Down".join(kname.rsplit("Up", 1)))
                 hc = ifile.Get(channel + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
+                drop_nuisance = False
                 if not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
+
+                    scaleu = 1.
+                    scaled = 1.
+
                     if chi2s[2] < chi2s[0]:
-                        flat_reldev_wrt_nominal(hu, ifile.Get(channel + '/' + pp), chi2s[4] if chi2s[4] > threshold or lnNsmall else 0.)
+                        scaleu = chi2s[4] if abs(chi2s[4]) > threshold or lnNsmall else 0.
+                        flat_reldev_wrt_nominal(hu, ifile.Get(channel + '/' + pp), scaleu)
                     if chi2s[3] < chi2s[1]:
-                        flat_reldev_wrt_nominal(hd, ifile.Get(channel + '/' + pp), chi2s[5] if chi2s[5] > threshold or lnNsmall else 0.)
+                        scaled = chi2s[5] if abs(chi2s[5]) > threshold or lnNsmall else 0.
+                        flat_reldev_wrt_nominal(hd, ifile.Get(channel + '/' + pp), scaled)
+
+                    #print pp, nn2, scaleu, scaled
+                    if scaleu == 0. and scaled == 0.:
+                        drop_nuisance = True
+
+                if drop_nuisance:
+                    nuisance.pop()
+                    continue
 
                 if kfactor and kfactors is not None:
                     idxp = 0 if pp == sigpnt + "_res" else 1

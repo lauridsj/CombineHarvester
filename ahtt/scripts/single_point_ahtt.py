@@ -6,7 +6,35 @@ import os
 import sys
 import numpy as np
 
+from collections import OrderedDict
+import json
+
+from ROOT import TFile, TTree
+
 from make_datacard import syscall, get_point
+
+def get_limit(lfile):
+    lfile =  TFile.Open(lfile)
+    ltree = lfile.Get("limit")
+    limit = OrderedDict()
+
+    for i in ltree:
+        qstr = "obs"
+        if abs(ltree.quantileExpected - 0.025) < 0.01:
+            qstr = "exp-2"
+        elif abs(ltree.quantileExpected - 0.16) < 0.01:
+            qstr = "exp-1"
+        elif abs(ltree.quantileExpected - 0.5) < 0.01:
+            qstr = "exp0"
+        elif abs(ltree.quantileExpected - 0.84) < 0.01:
+            qstr = "exp+1"
+        elif abs(ltree.quantileExpected - 0.975) < 0.01:
+            qstr = "exp+2"
+
+        limit[qstr] = ltree.limit
+
+    lfile.Close()
+    return limit
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -114,7 +142,10 @@ if __name__ == '__main__':
                         pnt = args.point
             ))
         else:
-            for gval in np.linspace(0, 3, 101):
+            limits = OrderedDict()
+            gval = 0.
+
+            while gval < 3.:
                 syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} --there -n _limit_g-scan_{gstr} --rMin=0 --rMax=2.5 "
                         "--setParameters g={gval} --freezeParameters g --rRelAcc 0.001 --picky --singlePoint 1 --cminPreScan {asm} {mcs}".format(
                             dcd = dcdir,
@@ -125,12 +156,27 @@ if __name__ == '__main__':
                             mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else ""
                         ))
 
+                limit = get_limit("{dcd}higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
+                    dcd = dcdir,
+                    mmm = mstr,
+                    gstr = str(round(gval, 2)).replace('.', 'p'),
+                ))
+
+                limits[gval] = limit
+
+                if (any([ll > 0.025 and ll < 0.125 for qq, ll in limit.items()])):
+                    gval += 0.01
+                else:
+                    gval += 0.05
+
             print "\nsingle_point_ahtt :: collecting limit"
             syscall("hadd {dcd}{pnt}_limits_g-scan.root {dcd}higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm {dcd}higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                     dcd = dcdir,
                     pnt = args.point
             ))
+            with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj: 
+                json.dump(limits, jj, indent = 1)
 
     if runpull or runimpact:
         os.chdir(dcdir)
@@ -188,7 +234,7 @@ if __name__ == '__main__':
                     mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else "",
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     #frz = "--setParameters rgx{prop_bin.*}=0 --freezeParameters rgx{prop_bin.*}"
-                    # just an example, to be developed more into freezing at postfit if needed (needs impact to be run)
+                    # FIXME just an example, to be developed more into freezing at postfit if needed (needs impact to be run)
                     # btw option '--setParameters' cannot be specified more than once
         ))
 
