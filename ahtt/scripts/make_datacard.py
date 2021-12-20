@@ -45,7 +45,7 @@ def get_point(sigpnt):
     return (pnt[0][0], float(pnt[0][1:]), float(pnt[1].replace("relw", "").replace('p', '.')))
 
 def get_kfactor(sigpnt):
-    kfile = TFile.Open("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_210409.root")
+    kfile = TFile.Open("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_21xxxx.root")
     khist = [
         (kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst),
          kfile.Get(sigpnt[0] + "_int_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst))
@@ -63,30 +63,40 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(read_category_process_nuisance, "specials"):
         read_category_process_nuisance.specials = OrderedDict([
-            ("tt_uR"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("tt_uF"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("hdamp"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("colorrec" , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("yukawa"   , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("psisr"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("psfsr"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("uetune"   , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("pileup"   , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("mtop3GeV" , (("2016", "2016apv", "2017", "2018"), 1. / 6.)),
-            ("ah_uR"    , (("2016", "2016apv", "2017", "2018"), 1.)),
-            ("ah_uF"    , (("2016", "2016apv", "2017", "2018"), 1.))
+            ("TT_uR"     , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("TT_uF"     , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("hdamp"     , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("colorrec"  , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("yukawa"    , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("PS_ISR"    , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("PS_FSR"    , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("UE_tune"   , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("pileup"    , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("mtop_3GeV" , (("2016", "2016apv", "2017", "2018"), 1. / 6.)),
+            ("AH_uR"     , (("2016", "2016apv", "2017", "2018"), 1.)),
+            ("AH_uF"     , (("2016", "2016apv", "2017", "2018"), 1.))
+        ])
+
+    # because afiq hates seeing jets spelled outside of text
+    if not hasattr(read_category_process_nuisance, "aliases"):
+        read_category_process_nuisance.aliases = OrderedDict([
+            ("e3j" , "e3jets"),
+            ("e4pj", "e4pjets"),
+            ("m3j" , "mu3jets"),
+            ("m4pj", "mu4pjets"),
         ])
 
     processes = []
     nuisances = []
 
     odir = channel + '_' + year
+    chan = read_category_process_nuisance.aliases[channel] if channel in read_category_process_nuisance.aliases else channel
     if not bool(ofile.GetDirectory(odir)):
         ofile.mkdir(odir)
 
     kfactors = None
     if sigpnt == "":
-        ifile.cd(channel)
+        ifile.cd(chan)
         keys = gDirectory.GetListOfKeys()
 
         for key in keys:
@@ -105,8 +115,7 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
             pnt = sigpnt + ss
             processes.append(pnt)
 
-            ofile.cd(odir)
-            hn = ifile.Get(channel + '/' + pnt)
+            hn = ifile.Get(chan + '/' + pnt)
 
             if kfactor and kfactors is not None:
                 if ss == "_res":
@@ -116,11 +125,13 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
 
             if ss == "_int_neg":
                 scale(hn, -1.)
+
+            ofile.cd(odir)
             hn.Write()
 
     for pp in processes:
         nuisance = []
-        ifile.cd(channel)
+        ifile.cd(chan)
         keys = gDirectory.GetListOfKeys()
 
         for key in keys:
@@ -134,7 +145,7 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                     else:
                         nn2 = nn1 + '_' + year
 
-                    if "ah_u" in nn2:
+                    if "AH_u" in nn2:
                         nn2 = nn2 + "_res" if pp == sigpnt + "_res" else nn2 + "_int"
 
                     nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]))
@@ -154,14 +165,15 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                     scaleu = 1.
                     scaled = 1.
 
-                    if chi2s[2] < chi2s[0]:
-                        scaleu = chi2s[4] if abs(chi2s[4]) > threshold or lnNsmall else 0.
-                        flat_reldev_wrt_nominal(hu, ifile.Get(channel + '/' + pp), scaleu)
-                    if chi2s[3] < chi2s[1]:
-                        scaled = chi2s[5] if abs(chi2s[5]) > threshold or lnNsmall else 0.
-                        flat_reldev_wrt_nominal(hd, ifile.Get(channel + '/' + pp), scaled)
+                    if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
+                        keepvalue = abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall
 
-                    #print pp, nn2, scaleu, scaled
+                        scaleu = chi2s[4] if keepvalue else 0.
+                        scaled = chi2s[5] if keepvalue else 0.
+
+                        flat_reldev_wrt_nominal(hd, ifile.Get(channel + '/' + pp), scaled)
+                        flat_reldev_wrt_nominal(hu, ifile.Get(channel + '/' + pp), scaleu)
+
                     if scaleu == 0. and scaled == 0.:
                         drop_nuisance = True
 
@@ -196,25 +208,33 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
     for pp, nn in zip(processes, nuisances):
         cpn[odir][pp] = nn
 
-def make_pseudodata(ofile, cpn, sigpnt = ""):
+def make_pseudodata(ofile, cpn, sigpnt = "", seed = None):
+    if seed is None or seed >= 0:
+        rng.seed(seed)
+
     for category, processes in cpn.items():
         dd = None
         for pp in processes.keys():
-            if sigpnt == "" or sigpnt not in pp:
+            issig = any([ss in pp for ss in ["_res", "_int_pos", "_int_neg"]])
+            hh = ofile.Get(category + '/' + pp).Clone("hhtmphh")
+            if "_int_neg" in pp:
+                scale(hh, -1.)
+
+            if not issig or (issig and sigpnt != "" and sigpnt in pp):
                 if dd is None:
-                    dd = ofile.Get(category + '/' + pp).Clone("data_obs")
+                    dd = hh.Clone("data_obs")
                 else:
-                    dd.Add(ofile.Get(category + '/' + pp))
+                    dd.Add(hh)
 
         for ii in range(1, dd.GetNbinsX() + 1):
-            content = rng.poisson(dd.GetBinContent(ii))
+            content = rng.poisson(dd.GetBinContent(ii)) if seed is not None and seed >= 0 else round(dd.GetBinContent(ii))
             dd.SetBinContent(ii, content)
             dd.SetBinError(ii, math.sqrt(content))
 
         ofile.cd(category)
         dd.Write()
 
-def write_datacard(oname, cpn, years, sigpnt, mcstat, tag):
+def write_datacard(oname, cpn, years, sigpnt, injsig, mcstat, tag):
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(write_datacard, "lnNs"):
@@ -228,27 +248,28 @@ def write_datacard(oname, cpn, years, sigpnt, mcstat, tag):
             )),
             # FIXME 2016, year pairs, all years
             ("ll" , (
-                ("dyNorm", ("2016", "2016apv", "2017", "2018"), "dy", 1.3),
-                ("txNorm", ("2016", "2016apv", "2017", "2018"), "tx", 1.15)
-            )),
-            # FIXME dummy ll for code test
-            ("lj" , (
-                ("dyNorm", ("2016", "2016apv", "2017", "2018"), "dy", 1.3),
-                ("txNorm", ("2016", "2016apv", "2017", "2018"), "tx", 1.15)
+                ("DY_norm",  ("2016", "2016apv", "2017", "2018"), "DY", 1.3),
+                ("TTV_norm", ("2016", "2016apv", "2017", "2018"), "TTV", 1.15),
             )),
             # FIXME lj is just a candidate impl for later dev
-            ("ej" , (
-                ("qcdNorm", ("2016", "2016apv", "2017", "2018"), "qcd", 2.0),
-                ("wjNorm",  ("2016", "2016apv", "2017", "2018"), "wj",  1.5),
-                ("dyNorm",  ("2016", "2016apv", "2017", "2018"), "dy",  1.5),
-                ("tqNorm",  ("2016", "2016apv", "2017", "2018"), "tq",  1.2),
-                ("tbNorm",  ("2016", "2016apv", "2017", "2018"), "tb",  1.2),
+            ("lj" , (
+                ("EWQCD_norm", ("2016", "2016apv", "2017", "2018"), "EWQCD", (2.0, 1.5)), # down/up, where down = scale by 1/x and up = scale by x
             )),
             ("common" , (
-                ("ttvNorm", ("2016", "2016apv", "2017", "2018"), "ttv", 1.15),
-                ("ttNorm",  ("2016", "2016apv", "2017", "2018"), "tt",  (0.939, 1.058))
+                ("TT_norm", ("2016", "2016apv", "2017", "2018"), "TT", (1.065, 1.056)), # as above, with down 0.939 * nominal
+                ("TQ_norm", ("2016", "2016apv", "2017", "2018"), "TQ", 1.15),
+                ("TW_norm", ("2016", "2016apv", "2017", "2018"), "TW", 1.15),
+                ("TB_norm", ("2016", "2016apv", "2017", "2018"), "TB", 1.15),
             ))
         ])
+        write_datacard.lnNs["ee"]   = write_datacard.lnNs["ll"]
+        write_datacard.lnNs["em"]  = write_datacard.lnNs["ll"]
+        write_datacard.lnNs["mm"] = write_datacard.lnNs["ll"]
+
+        write_datacard.lnNs["m3j"]  = write_datacard.lnNs["lj"]
+        write_datacard.lnNs["m4pj"] = write_datacard.lnNs["lj"]
+        write_datacard.lnNs["e3j"]   = write_datacard.lnNs["lj"]
+        write_datacard.lnNs["e4pj"]  = write_datacard.lnNs["lj"]
 
     cb = ch.CombineHarvester()
     categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
@@ -262,7 +283,7 @@ def write_datacard(oname, cpn, years, sigpnt, mcstat, tag):
         cc = iicc[1]
 
         sigs = [pp for pp in cpn[cc].keys() if sigpnt in pp]
-        bkgs = [pp for pp in cpn[cc].keys() if sigpnt not in pp]
+        bkgs = [pp for pp in cpn[cc].keys() if sigpnt not in pp and (injsig == "" or injsig not in pp)]
         cb.AddProcesses([mstr], ["ahtt"], ["13TeV"], [""], sigs, [iicc], True)
         cb.AddProcesses(['*'], ["ahtt"], ["13TeV"], [""], bkgs, [iicc], False)
 
@@ -285,10 +306,10 @@ def write_datacard(oname, cpn, years, sigpnt, mcstat, tag):
     writer.WriteCards(sigpnt + tag, cb)
 
     if mcstat:
-	txts = glob.glob(sigpnt + tag + "/ahtt_*.txt")
-	for tt in txts:
-	    with open(tt, 'a') as txt:
-		txt.write("\n* autoMCStats 0.\n")
+        txts = glob.glob(sigpnt + tag + "/ahtt_*.txt")
+        for tt in txts:
+            with open(tt, 'a') as txt:
+                txt.write("\n* autoMCStats 0.\n")
 
     if len(categories) > 1:
         syscall("combineCards.py {cards} > {comb}".format(
@@ -304,7 +325,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
-    parser.add_argument("--tag", help = "extra tags to be put on datacard names", default = "", required = False)
+    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
                         default = 0.005, required = False, type = float)
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
@@ -313,10 +334,14 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--use-sm-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
+    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
+    parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--seed",
+                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
+                        default = 423029859, required = False, type = int)
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
@@ -327,17 +352,20 @@ if __name__ == '__main__':
     channels = args.channel.strip().split(',')
 
     allyears = ["2016", "2016apv", "2017", "2018"]
-    if (not all([yy in allyears  for yy in years])):
+    if not all([yy in allyears  for yy in years]):
         print "supported years:", allyears
         raise RuntimeError("unxpected year is given. aborting.")
 
-    allchannels = ["ee", "em", "mm", "ll", "ej", "mj", "lj"]
-    if (not all([cc in allchannels for cc in channels])):
+    allchannels = ["ee", "em", "mm", "ll", "ej", "e3j", "e4pj", "mj", "m3j", "m4pj", "lj"]
+    if not all([cc in allchannels for cc in channels]):
         print "supported channels:", allchannels
         raise RuntimeError("unxpected channel is given. aborting.")
 
-    if (len(years) != len(sfiles) or len(sfiles) != len(bfiles)):
+    if len(years) != len(sfiles) or len(sfiles) != len(bfiles):
         raise RuntimeError("number of signal/background files don't match the number of years. aborting.")
+
+    if args.injectsignal != "":
+        args.pseudodata = True
 
     oname = "tmp.root"
     output = TFile(oname, "recreate")
@@ -346,10 +374,14 @@ if __name__ == '__main__':
         for cc in channels:
             read_category_process_nuisance(output, ss, cc, yy, cpn, args.pseudodata, args.alwaysshape, args.threshold, args.lnNsmall,
                                            args.point, args.kfactor)
+            if args.injectsignal != "" and args.point != args.injectsignal:
+                read_category_process_nuisance(output, ss, cc, yy, cpn, args.pseudodata, args.alwaysshape, args.threshold, args.lnNsmall,
+                                               args.injectsignal, args.kfactor)
             read_category_process_nuisance(output, bb, cc, yy, cpn, args.pseudodata, args.alwaysshape, args.threshold, args.lnNsmall)
 
     if args.pseudodata:
-        make_pseudodata(output, cpn, args.point)
+        print "using", args.seed, "as seed for pseudodata generation"
+        make_pseudodata(output, cpn, args.injectsignal, args.seed if args.seed != 0 else None)
     output.Close()
 
-    write_datacard(oname, cpn, years, args.point, args.mcstat, args.tag)
+    write_datacard(oname, cpn, years, args.point, args.injectsignal, args.mcstat, args.tag)

@@ -13,8 +13,10 @@ from ROOT import TFile, TTree
 
 from make_datacard import syscall, get_point
 
+max_g = 3.
+
 def get_limit(lfile):
-    lfile =  TFile.Open(lfile)
+    lfile = TFile.Open(lfile)
     ltree = lfile.Get("limit")
     limit = OrderedDict()
 
@@ -38,15 +40,15 @@ def get_limit(lfile):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = "desired signal point to make datacard of", default = "", required = True)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "limit", required = True)
+    parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
+    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "limit", required = False)
 
     parser.add_argument("--no-remake", help = "do not remake datacard/workspace", dest = "remake", action = "store_false", required = False)
-    parser.add_argument("--signal", help = "signal filename. comma separated", default = "../input/sig_templates.root", required = False)
-    parser.add_argument("--background", help = "data/background. comma separated", default = "../input/bkg_templates.root", required = False)
+    parser.add_argument("--signal", help = "signal filename. comma separated", default = "../input/ll_sig.root", required = False)
+    parser.add_argument("--background", help = "data/background. comma separated", default = "../input/ll_bkg.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
-    parser.add_argument("--tag", help = "extra tags to be put on datacard names", default = "", required = False)
+    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
 
@@ -56,10 +58,15 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--use-sm-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
+
+    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
+    parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "nomcstats", action = "store_false", required = False)
+                        dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--seed",
+                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
+                        default = "", required = False)
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
@@ -68,9 +75,14 @@ if __name__ == '__main__':
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used",
                         dest = "fixg", default = 1, required = False, type = float)
 
+    parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
+
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
+
+    if args.injectsignal != "":
+        args.pseudodata = True
 
     modes = args.mode.strip().split(',')
     scriptdir = os.path.dirname(os.path.abspath(__file__))
@@ -88,20 +100,22 @@ if __name__ == '__main__':
     if args.remake:
         print "\nsingle_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {tag} {kfc} {thr} {lns} {shp} {mcs}".format(
+                "{psd} {inj} {tag} {kfc} {thr} {lns} {shp} {mcs} {rsd}".format(
                     scr = scriptdir,
                     sig = args.signal,
                     bkg = args.background,
                     pnt = args.point,
                     ch = args.channel,
                     yr = args.year,
-                    psd = "--use-sm-pseudodata" if args.pseudodata else "",
-                    tag = args.tag,
-                    kfc = "--sushi-kfactor" if args.pseudodata else "",
+                    psd = "--use-pseudodata" if args.pseudodata else "",
+                    inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
+                    tag = "--tag " + args.tag if args.tag != "" else "",
+                    kfc = "--sushi-kfactor" if args.kfactor else "",
                     thr = "--threshold " + str(args.threshold) if args.threshold != 0.005 else "",
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
                     shp = "--use-shape-always" if args.alwaysshape else "",
-                    mcs = "--no-mc-stats" if not args.nomcstats else ""
+                    mcs = "--no-mc-stats" if not args.mcstat else "",
+                    rsd = "--seed " + args.seed if args.seed != "" else ""
                 ))
 
         print "\nsingle_point_ahtt :: making workspace"
@@ -127,11 +141,11 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: computing limit"
         if args.onepoi:
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} --there -n _limit --rMin=0 --rMax=3 "
-                    "--rRelAcc 0.001 --cminPreScan {asm} {mcs}".format(
+                    "--rRelAcc 0.001 --rAbsAcc 0.001 --cminPreScan {asm} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         asm = "--run blind -t -1" if args.asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else ""
+                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
@@ -145,15 +159,16 @@ if __name__ == '__main__':
             limits = OrderedDict()
             gval = 0.
 
-            while gval < 3.:
+            while gval < max_g:
                 syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} --there -n _limit_g-scan_{gstr} --rMin=0 --rMax=2.5 "
-                        "--setParameters g={gval} --freezeParameters g --rRelAcc 0.001 --picky --singlePoint 1 --cminPreScan {asm} {mcs}".format(
+                        "--setParameters g={gval} --freezeParameters g --rRelAcc 0.001 --rAbsAcc 0.001 --picky "
+                        "--singlePoint 1 --cminPreScan {asm} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
                             gstr = str(round(gval, 2)).replace('.', 'p'),
                             gval = gval,
                             asm = "-t -1" if args.asimov else "",
-                            mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else ""
+                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                         ))
 
                 limit = get_limit("{dcd}higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
@@ -165,9 +180,11 @@ if __name__ == '__main__':
                 limits[gval] = limit
 
                 if (any([ll > 0.025 and ll < 0.125 for qq, ll in limit.items()])):
+                    gval += 0.005
+                elif (any([ll < 0. or ll > 1. for qq, ll in limit.items()])):
                     gval += 0.01
                 else:
-                    gval += 0.05
+                    gval += 0.04
 
             print "\nsingle_point_ahtt :: collecting limit"
             syscall("hadd {dcd}{pnt}_limits_g-scan.root {dcd}higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
@@ -182,24 +199,24 @@ if __name__ == '__main__':
         os.chdir(dcdir)
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 "
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 --rMin=-3 --rMax=3 "
                 "{com} {asm} {mcs} {sig}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else "",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
                 ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 8 --robustFit 1 "
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 4 --robustFit 1 --rMin=-3 --rMax=3 "
                 "{com} {asm} {mcs} {sig}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else "",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
                 ))
 
@@ -219,8 +236,6 @@ if __name__ == '__main__':
             pnt = args.point
         ))
 
-        # better plotting for both
-
         os.chdir("..")
 
     if runprepost or runcorr:
@@ -231,7 +246,7 @@ if __name__ == '__main__':
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if not args.nomcstats else "",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     #frz = "--setParameters rgx{prop_bin.*}=0 --freezeParameters rgx{prop_bin.*}"
                     # FIXME just an example, to be developed more into freezing at postfit if needed (needs impact to be run)
@@ -247,6 +262,9 @@ if __name__ == '__main__':
             pnt = args.point
         ), False)
 
-        # plotting again
-
         os.chdir("..")
+
+    if args.compress:
+        syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
+            dcd = dcdir[:-1]
+        ))
