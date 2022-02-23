@@ -49,6 +49,9 @@ if __name__ == '__main__':
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
+    parser.add_argument("--drop",
+                        help = "comma separated list of systematic sources to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
+                        default = "", required = False)
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
 
@@ -100,7 +103,7 @@ if __name__ == '__main__':
     if args.remake:
         print "\nsingle_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {inj} {tag} {kfc} {thr} {lns} {shp} {mcs} {rsd}".format(
+                "{psd} {inj} {tag} {drp} {kfc} {thr} {lns} {shp} {mcs} {rsd}".format(
                     scr = scriptdir,
                     sig = args.signal,
                     bkg = args.background,
@@ -110,6 +113,7 @@ if __name__ == '__main__':
                     psd = "--use-pseudodata" if args.pseudodata else "",
                     inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
+                    drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                     kfc = "--sushi-kfactor" if args.kfactor else "",
                     thr = "--threshold " + str(args.threshold) if args.threshold != 0.005 else "",
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
@@ -140,10 +144,11 @@ if __name__ == '__main__':
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
         if args.onepoi:
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} --there -n _limit --rMin=0 --rMax=3 "
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} --there -n _limit --rMin=0 --rMax={maxg} "
                     "--rRelAcc 0.001 --rAbsAcc 0.001 --cminPreScan {asm} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
+                        maxg = max_g,
                         asm = "--run blind -t -1" if args.asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
             ))
@@ -160,12 +165,15 @@ if __name__ == '__main__':
             gval = 0.
 
             while gval < max_g:
-                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} --there -n _limit_g-scan_{gstr} --rMin=0 --rMax=2.5 "
+                gstr = str(round(gval, 3)).replace('.', 'p')
+
+                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} --there -n _limit_g-scan_{gstr} --rMin=0 --rMax=3 "
                         "--setParameters g={gval} --freezeParameters g --rRelAcc 0.001 --rAbsAcc 0.001 --picky "
                         "--singlePoint 1 --cminPreScan {asm} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
-                            gstr = str(round(gval, 2)).replace('.', 'p'),
+                            gstr = gstr,
+                            maxg = max_g,
                             gval = gval,
                             asm = "-t -1" if args.asimov else "",
                             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
@@ -174,7 +182,7 @@ if __name__ == '__main__':
                 limit = get_limit("{dcd}higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    gstr = str(round(gval, 2)).replace('.', 'p'),
+                    gstr = gstr,
                 ))
 
                 limits[gval] = limit
