@@ -227,18 +227,18 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                         flat_reldev_wrt_nominal(hu, ifile.Get(idir + '/' + pp), scaleu)
                         flat_reldev_wrt_nominal(hd, ifile.Get(idir + '/' + pp), scaled)
 
-                    if scaleu == 0. and scaled == 0.:
-                        drop_nuisance = True
-                    else:
-                        print("make_datacard :: nuisance", nn2, "flattened with (up, down) scales of (", scaleu, scaled, ")")
+                        if scaleu == 0. and scaled == 0.:
+                            drop_nuisance = True
+                        else:
+                            print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
                 if drop_nuisance:
                     nuisance.pop()
-                    print("make_datacard :: nuisance", nn2, "has been dropped")
+                    print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
                     continue
 
                 if kfactor and kfactors is not None:
-                    idxp = 0 if pp == "_res" in pp else 1
+                    idxp = 0 if "_res" in pp else 1
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
                     idxd = 2 if "_MEFac_" in nn2 else 4 if "_MERen_" in nn2 else 0
 
@@ -394,11 +394,11 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
                 for lnN in ll:
                     if keeps is not None:
                         if not any([dn in lnN[0] for dn in keeps]):
-                            print("make_datacard :: nuisance", lnN[0], "has been dropped")
+                            print("make_datacard :: nuisance " + lnN[0] + " has been dropped")
                             continue
                     elif drops is not None:
                         if drops == ['*'] or any([dn in lnN[0] for dn in drops]):
-                            print("make_datacard :: nuisance", lnN[0], "has been dropped")
+                            print("make_datacard :: nuisance " + lnN[0] + " has been dropped")
                             continue
 
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
@@ -436,10 +436,10 @@ if __name__ == '__main__':
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
-                        help = "comma separated list of systematic sources to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
+                        help = "comma separated list of nuisances to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
                         default = "", required = False)
     parser.add_argument("--keep",
-                        help = "comma separated list of systematic sources to be kept. same syntax as --drop. implies everything else is dropped",
+                        help = "comma separated list of nuisances to be kept. same syntax as --drop. implies everything else is dropped",
                         default = "", required = False)
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
                         default = 0.005, required = False, type = float)
@@ -456,7 +456,7 @@ if __name__ == '__main__':
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
-                        default = 423029859, required = False, type = int)
+                        default = -1, required = False, type = int)
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
@@ -492,7 +492,7 @@ if __name__ == '__main__':
     if injects is not None:
         args.pseudodata = True
 
-    oname = "tmp.root"
+    oname = "./tmp.root"
     output = TFile(oname, "recreate")
     cpn = OrderedDict()
     for yy in years:
@@ -507,7 +507,7 @@ if __name__ == '__main__':
             read_category_process_nuisance(output, bfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall)
 
     if args.pseudodata:
-        print "using", args.seed, "as seed for pseudodata generation"
+        print "using ", args.seed, "as seed for pseudodata generation"
         make_pseudodata(output, cpn, injects, args.seed if args.seed != 0 else None)
     output.Close()
 

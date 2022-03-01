@@ -41,16 +41,18 @@ def get_limit(lfile):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "limit", required = False)
+    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False)
 
-    parser.add_argument("--no-remake", help = "do not remake datacard/workspace", dest = "remake", action = "store_false", required = False)
     parser.add_argument("--signal", help = "signal filename. comma separated", default = "../input/ll_sig.root", required = False)
     parser.add_argument("--background", help = "data/background. comma separated", default = "../input/ll_bkg.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
-                        help = "comma separated list of systematic sources to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
+                        help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
+                        default = "", required = False)
+    parser.add_argument("--keep",
+                        help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
                         default = "", required = False)
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
@@ -67,6 +69,8 @@ if __name__ == '__main__':
     parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+                        dest = "frzbb0", action = "store_true", required = False)
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
@@ -93,14 +97,20 @@ if __name__ == '__main__':
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
 
-    allmodes = ["limit", "pull", "impact", "prepost", "corrmat"]
+    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
 
-    # FIXME some kind of check of signal point presence, and plug in interpolator, make new root files if needed etc
+    # determine what to do with workspace, and do it
+    rundc = "datacard" in modes or "workspace" in modes
+    runvalid = "validate" in modes
+    runlimit = "limit" in modes
+    runpull = "pull" in modes or "impact" in modes
+    runprepost = "prepost" in modes or "corrmat" in modes
+    # combine --rMin=0 --rMax=2.5 --cminPreScan -t -1 --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 -M MultiDimFit --algo grid -d A400_relw2p964/workspace_one-poi.root -n lolk # to check absolute NLL curve (seems to work with one-poi only)
 
-    if args.remake:
+    if rundc:
         print "\nsingle_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
                 "{psd} {inj} {tag} {drp} {kfc} {thr} {lns} {shp} {mcs} {rsd}".format(
@@ -114,6 +124,7 @@ if __name__ == '__main__':
                     inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
                     drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
+                    kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
                     kfc = "--sushi-kfactor" if args.kfactor else "",
                     thr = "--threshold " + str(args.threshold) if args.threshold != 0.005 else "",
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
@@ -122,24 +133,23 @@ if __name__ == '__main__':
                     rsd = "--seed " + args.seed if args.seed != "" else ""
                 ))
 
-        print "\nsingle_point_ahtt :: making workspace"
-        syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy}".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            mod = "one-poi" if args.onepoi else "g-scan",
-            mmm = mstr,
-            phy = "InterferenceModel:interferenceModel" if args.onepoi else "InterferencePlusFixed:interferencePlusFixed"
-        ))
-    else:
-        if not os.path.isfile(dcdir + "workspace_{mod}".format(mod = "one-poi" if args.onepoi else "g-scan")):
-            raise RuntimeError("workspace not found while --no-remake is used. aborting.")
+        print "\nsingle_point_ahtt :: making workspaces"
+        for onepoi in [True, False]:
+            syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy}".format(
+                dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                mod = "one-poi" if onepoi else "g-scan",
+                mmm = mstr,
+                phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed"
+            ))
 
-    # determine what to do with workspace, and do it
-    runlimit = True if "limit" in modes else False
-    runpull = True if "pull" in modes else False
-    runimpact = True if "impact" in modes else False
-    runprepost = True if "prepost" in modes else False
-    runcorr = True if "corrmat" in modes else False
-    # combine --rMin=0 --rMax=2.5 --cminPreScan -t -1 --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 -M MultiDimFit --algo grid -d A400_relw2p964/workspace_one-poi.root -n lolk # to check absolute NLL curve (seems to work with one-poi only)
+    if runvalid:
+        os.chdir(dcdir)
+        print "\nsingle_point_ahtt :: validating datacard"
+        syscall("ValidateDatacards.py --jsonFile {pnt}_validate.json --printLevel 3 {dcd}".format(
+            pnt = args.point,
+            dcd = "ahtt_combined.txt" if os.path.isfile("ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
+        ))
+        os.chdir("..")
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
@@ -203,14 +213,16 @@ if __name__ == '__main__':
             with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj: 
                 json.dump(limits, jj, indent = 1)
 
-    if runpull or runimpact:
+    if runpull:
         os.chdir(dcdir)
+        r_range = "--rMin=-3 --rMax=3"
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 --rMin=-3 --rMax=3 "
-                "{com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 --robustHesse 1 -n _pull "
+                "--cminDefaultMinimizerStrategy 0 {rrg} {com} {asm} {mcs} {sig}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
+                    rrg = r_range,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -218,10 +230,11 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 4 --robustFit 1 --rMin=-3 --rMax=3 "
-                "{com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 4 --robustFit 1 --robustHesse 1 -n _pull "
+                "--cminDefaultMinimizerStrategy 0 {rrg} {com} {asm} {mcs} {sig}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
+                    rrg = r_range,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -229,14 +242,15 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} {com} -o {pnt}_impacts_{mod}.json".format(
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} {com} -n _pull -o {pnt}_impacts_{mod}.json".format(
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             com = "" if args.onepoi else "--redefineSignalPOIs r",
             pnt = args.point
         ))
 
-        syscall("rm higgsCombine*.root", False)
+        syscall("rm higgsCombine*Fit__pull*.root", False)
+        syscall("rm robustHesse*Fit__pull*.root", False)
         syscall("rm combine_logger.out", False)
 
         syscall("plotImpacts.py -i {pnt}_impacts_{mod}.json -o {pnt}_impacts_{mod}".format(
@@ -246,26 +260,38 @@ if __name__ == '__main__':
 
         os.chdir("..")
 
-    if runprepost or runcorr:
+    if runprepost:
         os.chdir(dcdir)
 
-        syscall("combine -M FitDiagnostics workspace_{mod}.root --saveShapes --saveWithUncertainties --plots -m {mmm} "
-                "--robustFit 1 {asm} {mcs} {com}".format(
+        setpar = []
+        frzpar = []
+        if args.onepoi:
+            setpar.append("g=" + str(args.fixg))
+            frzpar.append("g")
+
+        if args.frzbb0:
+            args.mcstat = True
+            setpar.append("rgx{prop_bin.*}=0")
+            frzpar.append("rgx{prop_bin.*}")
+
+        print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
+        syscall("combine -M FitDiagnostics workspace_{mod}.root --saveShapes --saveWithUncertainties --saveNormalizations --plots -m {mmm} -n _prepost "
+                "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 0 {asm} {mcs} {frz} {com}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
-                    #frz = "--setParameters rgx{prop_bin.*}=0 --freezeParameters rgx{prop_bin.*}"
-                    # FIXME just an example, to be developed more into freezing at postfit if needed (needs impact to be run)
+                    frz = "--setParameters '" + ",".join(setpar) + "' --freezeParameters '" + ",".join(frzpar) + "'" if len(setpar) > 0 else "",
+                    com = "" if args.onepoi else "--redefineSignalPOIs r",
+                    # FIXME an example, to be developed more into freezing at postfit if needed (needs impact to be run)
                     # btw option '--setParameters' cannot be specified more than once
         ))
 
         syscall("rm *_th1x_*.png", False)
         syscall("rm covariance_fit_?.png", False)
-        syscall("rm higgsCombine*.root", False)
+        syscall("rm higgsCombine_prepost*.root", False)
         syscall("rm combine_logger.out", False)
-        syscall("mv fitDiagnosticsTest.root {pnt}_fitdiagnostics_{mod}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {pnt}_fitdiagnostics_{mod}.root".format(
             mod = "one-poi" if args.onepoi else "g-scan",
             pnt = args.point
         ), False)
