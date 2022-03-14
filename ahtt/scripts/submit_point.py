@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# itype=source; idir=/nfs/dust/cms/user/afiqaize/cms/bpark_nano_200218/cmssw_1103_analysis/src/fwk/smooth/template_ULFR2/; for tag in 2D 3D-33; do ./../scripts/submit_point.py --signal "${idir}/sig_${itype}_${tag}.root" --background "${idir}/bkg_${itype}_${tag}.root" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'll' --tag ${tag}_UL_ll --drop ColorRec,UEtune; done
+# for ipoint in w2p5; do for imode in 'datacard,validate'; do itype=source; idir=/nfs/dust/cms/user/afiqaize/cms/bpark_nano_200218/cmssw_1103_analysis/src/fwk/smooth/template_ULFR2/; for tag in 2D 3D-33; do ./../scripts/submit_point.py --signal "${idir}/sig_${itype}_${tag}.root" --background "${idir}/bkg_${itype}_${tag}.root" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ${tag}_ul_split_${itype} --drop ColorRec,UEtune --mode ${imode} --point ${ipoint}; done; done; done
 
 from argparse import ArgumentParser
 import os
 import sys
 import glob
+import subprocess
 
 from make_datacard import syscall
 
@@ -93,8 +94,44 @@ if __name__ == '__main__':
         args.jobtime = "-t " + args.jobtime
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
+    resub = "resubmit" in args.mode
 
     for pnt in points:
+        if resub:
+            failures = [ff.split(' ')[0] for ff in subprocess.check_output("condor_check {ddd}".format(ddd = pnt + args.tag), shell = True).split("\n")]
+            for failure in failures:
+                if not os.path.isfile(failure):
+                    continue
+
+                options = subprocess.check_output("grep arguments -A 1 {fff} | tail -1".format(fff = failure), shell = True)
+                options = options.replace('[', '').replace(']', '').replace("',", "'").replace("'", "").split(' ')
+
+                job_name = "single_point_" + pnt + args.tag + "_" + "_".join(options[options.index("--mode") + 1].split(","))
+                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {asm} {one} {ims} {gvl} {com}"'.format(
+                    pnt = pnt,
+                    mmm = "--mode " + options[options.index("--mode") + 1] if "--mode" in options else "",
+                    tag = "--tag " + args.tag if args.tag != "" else "",
+                    mcs = "--no-mc-stats" if not args.mcstat else "",
+                    asm = "--unblind" if not args.asimov else "",
+                    one = "--one-poi" if args.onepoi else "",
+                    ims = "--impact-sb" if args.impactsb else "",
+                    gvl = "--g-value " + str(args.fixg),
+                    com = "--compress" if rundc else ""
+                )
+
+                syscall("rm {fff}".format(fff = failure))
+                syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {job}".format(
+                    csub = condordir + "condorSubmit.sh",
+                    cpar = condordir + "condorParam.txt",
+                    crun = condordir + "condorRun.sh",
+                    name = job_name,
+                    executable = scriptdir + "/single_point_ahtt.py",
+                    job_arg = job_arg,
+                    job_time = args.jobtime,
+                    job = "-l $(readlink -f " + pnt + args.tag + ")"
+                ))
+            continue
+
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pnt + args.tag + ".tar.gz"))
 
@@ -119,6 +156,7 @@ if __name__ == '__main__':
 
         job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.strip().split(","))
         logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
+
         if len(logs) > 0:
             continue
 

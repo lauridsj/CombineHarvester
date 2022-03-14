@@ -19,11 +19,11 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-def syscall(cmd, verbose = True):
+def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
         print ("Executing: %s" % cmd)
     retval = os.system(cmd)
-    if retval != 0:
+    if not nothrow and retval != 0:
         raise RuntimeError("Command failed!")
 
 def flat_reldev_wrt_nominal(varied, nominal, offset):

@@ -85,6 +85,11 @@ if __name__ == '__main__':
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
 
     args = parser.parse_args()
+    print "single_point_ahtt :: called with the following arguments"
+    print sys.argv[1:]
+    print "\n"
+    sys.stdout.flush()
+
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
 
@@ -154,6 +159,7 @@ if __name__ == '__main__':
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
         if args.onepoi:
+            syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} --there -n _limit --rMin=0 --rMax={maxg} "
                     "--rRelAcc 0.001 --rAbsAcc 0.001 --cminPreScan {asm} {mcs}".format(
                         dcd = dcdir,
@@ -161,7 +167,7 @@ if __name__ == '__main__':
                         maxg = max_g,
                         asm = "--run blind -t -1" if args.asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-            ))
+                    ))
 
             print "\nsingle_point_ahtt :: collecting limit"
             syscall("combineTool.py -M CollectLimits {dcd}higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{pnt}_limits_one-poi.json && "
@@ -169,8 +175,9 @@ if __name__ == '__main__':
                         dcd = dcdir,
                         mmm = mstr,
                         pnt = args.point
-            ))
+                    ))
         else:
+            syscall("rm {dcd}{pnt}_limits_g-scan.root {dcd}{pnt}_limits_g-scan.json {dcd}higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(dcd = dcdir, pnt = args.point), False, True)
             limits = OrderedDict()
             gval = 0.
 
@@ -207,15 +214,20 @@ if __name__ == '__main__':
             print "\nsingle_point_ahtt :: collecting limit"
             syscall("hadd {dcd}{pnt}_limits_g-scan.root {dcd}higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm {dcd}higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
-                    dcd = dcdir,
-                    pnt = args.point
-            ))
+                        dcd = dcdir,
+                        pnt = args.point
+                    ))
             with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj: 
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
         os.chdir(dcdir)
+        syscall("rm {pnt}_impacts_{mod}*".format(mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
+
         r_range = "--rMin=-3 --rMax=3"
+        syscall("rm higgsCombine*Fit__pull*.root", False, True)
+        syscall("rm robustHesse*Fit__pull*.root", False, True)
+        syscall("rm combine_logger.out", False, True)
 
         print "\nsingle_point_ahtt :: impact initial fit"
         syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 --robustHesse 1 -n _pull "
@@ -230,7 +242,7 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 4 --robustFit 1 --robustHesse 1 -n _pull "
+        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 8 --robustFit 1 --robustHesse 1 -n _pull "
                 "--cminDefaultMinimizerStrategy 0 {rrg} {com} {asm} {mcs} {sig}".format(
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
@@ -249,9 +261,9 @@ if __name__ == '__main__':
             pnt = args.point
         ))
 
-        syscall("rm higgsCombine*Fit__pull*.root", False)
-        syscall("rm robustHesse*Fit__pull*.root", False)
-        syscall("rm combine_logger.out", False)
+        syscall("rm higgsCombine*Fit__pull*.root", False, True)
+        syscall("rm robustHesse*Fit__pull*.root", False, True)
+        syscall("rm combine_logger.out", False, True)
 
         syscall("plotImpacts.py -i {pnt}_impacts_{mod}.json -o {pnt}_impacts_{mod}".format(
             mod = "one-poi" if args.onepoi else "g-scan",
@@ -287,10 +299,10 @@ if __name__ == '__main__':
                     # btw option '--setParameters' cannot be specified more than once
         ))
 
-        syscall("rm *_th1x_*.png", False)
-        syscall("rm covariance_fit_?.png", False)
-        syscall("rm higgsCombine_prepost*.root", False)
-        syscall("rm combine_logger.out", False)
+        syscall("rm *_th1x_*.png", False, True)
+        syscall("rm covariance_fit_?.png", False, True)
+        syscall("rm higgsCombine_prepost*.root", False, True)
+        syscall("rm combine_logger.out", False, True)
         syscall("mv fitDiagnostics_prepost.root {pnt}_fitdiagnostics_{mod}.root".format(
             mod = "one-poi" if args.onepoi else "g-scan",
             pnt = args.point
