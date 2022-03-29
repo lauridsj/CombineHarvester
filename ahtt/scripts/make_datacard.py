@@ -10,37 +10,17 @@ import sys
 import math
 
 import glob
+from datetime import datetime
 from collections import OrderedDict
 
-from ROOT import TFile, gDirectory, TH1
+from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-def syscall(cmd, verbose = True, nothrow = False):
-    if verbose:
-        print ("Executing: %s" % cmd)
-    retval = os.system(cmd)
-    if not nothrow and retval != 0:
-        raise RuntimeError("Command failed!")
-
-def flat_reldev_wrt_nominal(varied, nominal, offset):
-    for ii in range(1, nominal.GetNbinsX() + 1):
-        nn = nominal.GetBinContent(ii)
-        varied.SetBinContent(ii, nn * (1. + offset))
-
-def scale(histogram, factor):
-    for ii in range(1, histogram.GetNbinsX() + 1):
-        histogram.SetBinContent(ii, histogram.GetBinContent(ii) * factor)
-        histogram.SetBinError(ii, histogram.GetBinError(ii) * abs(factor))
-
-def zero_out(histogram):
-    for ii in range(1, histogram.GetNbinsX() + 1):
-        if histogram.GetBinContent(ii) < 0.:
-            histogram.SetBinContent(ii, 0.)
-            histogram.SetBinError(ii, 0.)
+from utilities import syscall, flat_reldev_wrt_nominal, scale, zero_out, project
 
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
@@ -77,7 +57,8 @@ def get_lo_ratio(sigpnt, channel):
 
 # FIXME partial shape correlations not yet implemented, meaning not clear yet
 # current assumption is some specific list is fully correlated, others fully uncorrelated
-def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall, sigpnt = None, kfactor = False):
+def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall,
+                                   projection_rule = "", sigpnt = None, kfactor = False):
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(read_category_process_nuisance, "specials"):
@@ -151,7 +132,11 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 if kname != "data_obs" or not pseudodata:
                     processes.append(kname)
                     ofile.cd(odir)
+
                     hn = key.ReadObj()
+                    if projection_rule != "":
+                        hn = project(hn, projection_rule)
+
                     zero_out(hn)
                     hn.Write()
     else:
@@ -165,6 +150,8 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 processes.append(pnt)
 
                 hn = ifile.Get(idir + '/' + pnt)
+                if projection_rule != "":
+                    hn = project(hn, projection_rule)
 
                 if kfactor and kfactors is not None:
                     if ss == "_res":
@@ -203,6 +190,11 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
 
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
+
+                if projection_rule != "":
+                    hu = project(hu, projection_rule)
+                    hd = project(hd, projection_rule)
+
                 hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
                 drop_nuisance = False
@@ -454,6 +446,16 @@ if __name__ == '__main__':
     parser.add_argument("--inject-signal", help = "signal points to inject into the pseudodata. comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--projection",
+                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
+                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
+                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
+                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
+                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
+                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
+                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "indices are zero-based, and spaces are ignored.",
+                        default = "", required = False)
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = -1, required = False, type = int)
@@ -463,31 +465,37 @@ if __name__ == '__main__':
 
     sfile = TFile.Open(args.signal)
     bfile = TFile.Open(args.background)
-    points = sorted(args.point.strip().split(','))
-    channels = args.channel.strip().split(',')
-    years = args.year.strip().split(',')
-    drops = sorted(args.drop.strip().split(','))
+    points = sorted(args.point.replace(" ", "").split(','))
+    channels = args.channel.replace(" ", "").split(',')
+    years = args.year.replace(" ", "").split(',')
+    drops = sorted(args.drop.replace(" ", "").split(','))
     if drops == [""]:
         drops = None
-    keeps = sorted(args.keep.strip().split(','))
+    keeps = sorted(args.keep.replace(" ", "").split(','))
     if keeps == [""]:
         keeps = None
     if keeps is not None:
         drops = ['*']
 
-    injects = sorted(args.injectsignal.strip().split(','))
+    injects = sorted(args.injectsignal.replace(" ", "").split(','))
     if injects == [""]:
         injects = None
 
     allyears = ["2016pre", "2016post", "2017", "2018"]
     if not all([yy in allyears for yy in years]):
         print "supported years:", allyears
-        raise RuntimeError("unxpected year is given. aborting.")
+        raise RuntimeError("unexpected year is given. aborting.")
 
     allchannels = ["ee", "em", "mm", "ll", "ej", "e3j", "e4pj", "mj", "m3j", "m4pj", "lj"]
     if not all([cc in allchannels for cc in channels]):
         print "supported channels:", allchannels
-        raise RuntimeError("unxpected channel is given. aborting.")
+        raise RuntimeError("unexpected channel is given. aborting.")
+
+    projection = args.projection.replace(" ", "").split(':') if args.projection != "" else []
+    if not all([len(pp.split(';')) == 3 for pp in projection]):
+        raise RuntimeError("unexpected projection instruction syntax. aborting")
+    prjchan = [pp.split(';')[0].split(',') for pp in projection]
+    prjrule = [pp.split(';')[1:] for pp in projection]
 
     if injects is not None:
         args.pseudodata = True
@@ -497,14 +505,19 @@ if __name__ == '__main__':
     cpn = OrderedDict()
     for yy in years:
         for cc in channels:
-            read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall,
+            prule = ""
+            for pchan in prjchan:
+                if cc in pchan:
+                    prule = prjrule[prjchan.index(pchan)]
+
+            read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            points, args.kfactor)
             if injects is not None and points != injects:
                 remaining = list(set(injects).difference(points))
                 if len(remaining) > 0:
-                    read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall,
+                    read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
-            read_category_process_nuisance(output, bfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall)
+            read_category_process_nuisance(output, bfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"

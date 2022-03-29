@@ -327,7 +327,7 @@ if __name__ == '__main__':
     if (args.fmt != "" and not args.fmt.startswith(".")):
         args.fmt = "." + args.fmt
 
-    tags = args.itag.strip().split(';')
+    tags = args.itag.replace(" ", "").split(';')
     labels = args.label.split(';')
 
     if len(tags) != len(labels):

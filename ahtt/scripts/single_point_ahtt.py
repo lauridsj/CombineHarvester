@@ -11,7 +11,8 @@ import json
 
 from ROOT import TFile, TTree
 
-from make_datacard import syscall, get_point
+from utilities import syscall
+from make_datacard import get_point
 
 max_g = 3.
 
@@ -69,6 +70,16 @@ if __name__ == '__main__':
     parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--projection",
+                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
+                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
+                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
+                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
+                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
+                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
+                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
+                        default = "", required = False)
     parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
                         dest = "frzbb0", action = "store_true", required = False)
     parser.add_argument("--seed",
@@ -96,7 +107,7 @@ if __name__ == '__main__':
     if args.injectsignal != "":
         args.pseudodata = True
 
-    modes = args.mode.strip().split(',')
+    modes = args.mode.replace(" ", "").split(',')
     scriptdir = os.path.dirname(os.path.abspath(__file__))
     dcdir =  args.point + args.tag + "/"
     point = get_point(args.point)
@@ -118,7 +129,7 @@ if __name__ == '__main__':
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {inj} {tag} {drp} {kfc} {thr} {lns} {shp} {mcs} {rsd}".format(
+                "{psd} {inj} {tag} {drp} {kfc} {thr} {lns} {shp} {mcs} {prj} {rsd}".format(
                     scr = scriptdir,
                     sig = args.signal,
                     bkg = args.background,
@@ -135,6 +146,7 @@ if __name__ == '__main__':
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
                     shp = "--use-shape-always" if args.alwaysshape else "",
                     mcs = "--no-mc-stats" if not args.mcstat else "",
+                    prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
                     rsd = "--seed " + args.seed if args.seed != "" else ""
                 ))
 

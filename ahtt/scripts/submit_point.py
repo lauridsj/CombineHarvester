@@ -8,7 +8,7 @@ import sys
 import glob
 import subprocess
 
-from make_datacard import syscall
+from utilities import syscall
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 
@@ -42,6 +42,16 @@ if __name__ == '__main__':
     parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--projection",
+                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
+                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
+                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
+                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
+                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
+                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
+                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
+                        default = "", required = False)
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
@@ -85,7 +95,7 @@ if __name__ == '__main__':
 
                 points.append(parity + "_" + mass + "_" + args.point)
     else:
-        points = args.point.strip().split(',')
+        points = args.point.replace(" ", "").split(',')
 
     if args.injectsignal != "":
         args.pseudodata = True
@@ -107,11 +117,12 @@ if __name__ == '__main__':
                 options = options.replace('[', '').replace(']', '').replace("',", "'").replace("'", "").split(' ')
 
                 job_name = "single_point_" + pnt + args.tag + "_" + "_".join(options[options.index("--mode") + 1].split(","))
-                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {asm} {one} {ims} {gvl} {com}"'.format(
+                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {prj} {asm} {one} {ims} {gvl} {com}"'.format(
                     pnt = pnt,
                     mmm = "--mode " + options[options.index("--mode") + 1] if "--mode" in options else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
                     mcs = "--no-mc-stats" if not args.mcstat else "",
+                    prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
                     asm = "--unblind" if not args.asimov else "",
                     one = "--one-poi" if args.onepoi else "",
                     ims = "--impact-sb" if args.impactsb else "",
@@ -154,13 +165,13 @@ if __name__ == '__main__':
             else:
                 continue
 
-        job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.strip().split(","))
+        job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
         if len(logs) > 0:
             continue
 
-        job_arg = '"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {asm} {one} {ims} {gvl} {com}"'.format(
+        job_arg = '"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {prj} {asm} {one} {ims} {gvl} {com}"'.format(
             pnt = pnt,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -177,6 +188,7 @@ if __name__ == '__main__':
             lns = "--lnN-under-threshold" if args.lnNsmall else "",
             shp = "--use-shape-always" if args.alwaysshape else "",
             mcs = "--no-mc-stats" if not args.mcstat else "",
+            prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             asm = "--unblind" if not args.asimov else "",
             one = "--one-poi" if args.onepoi else "",
             ims = "--impact-sb" if args.impactsb else "",

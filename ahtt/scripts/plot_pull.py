@@ -76,7 +76,7 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
                                          marker = markers[jj], ms = 5, capsize = 5, color = colors[jj], label = labels[jj]))
 
             ax.set_yticks([kk for kk in range(ymax)])
-            ax.set_yticklabels(nuisances[ii - ymax + 1 : ii + 1])
+            ax.set_yticklabels(nuisances[ii - ymax + 1 : ii + 1] + r"$\,$")
             plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
             ax.margins(x = 0, y = 0)
             plt.xlim((-1.5, 1.5))
@@ -145,13 +145,13 @@ if __name__ == '__main__':
     if (args.fmt != "" and not args.fmt.startswith(".")):
         args.fmt = "." + args.fmt
 
-    tags = args.itag.strip().split(';')
+    tags = args.itag.replace(" ", "").split(';')
     labels = args.label.split(';')
 
     if len(tags) != len(labels):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     dirs = [args.point + '_' + tag for tag in tags]
-    draw_pull(odir + "/" + args.point + "_pulls" + args.otag, dirs, labels, args.onepoi, args.mcstat, args.transparent, args.fmt)
+    draw_pull(args.odir + "/" + args.point + "_pulls" + args.otag, dirs, labels, args.onepoi, args.mcstat, args.transparent, args.fmt)
 
     pass
