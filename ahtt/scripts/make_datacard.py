@@ -26,38 +26,41 @@ def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
-kname = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
+kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
+scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
 def get_kfactor(sigpnt):
-    kfile = TFile.Open(kname)
+    kfile = TFile.Open(kfactor_file_name)
     khist = [
         (kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst),
          kfile.Get(sigpnt[0] + "_int_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst))
-        for syst in ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
+        for syst in scale_choices
     ]
     kvals = tuple([(syst[0].Interpolate(sigpnt[1], sigpnt[2]), syst[1].Interpolate(sigpnt[1], sigpnt[2])) for syst in khist])
     kfile.Close()
     return kvals
 
 def get_lo_ratio(sigpnt, channel):
-    kfile = TFile.Open(kname)
+    kfile = TFile.Open(kfactor_file_name)
     xhist = [
         (kfile.Get(sigpnt[0] + "_res_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xsec_" + channel),
          kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xabs_" + channel),
          kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_positive_event_fraction_" + channel))
-        for syst in ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
+        for syst in scale_choices
     ]
 
     rvals = [[syst[0].Interpolate(sigpnt[1], sigpnt[2]),
               syst[1].Interpolate(sigpnt[1], sigpnt[2]) * syst[2].Interpolate(sigpnt[1], sigpnt[2]),
               syst[1].Interpolate(sigpnt[1], sigpnt[2]) * (1. - syst[2].Interpolate(sigpnt[1], sigpnt[2]))] for syst in xhist]
+
     rvals = tuple([[r[0] / rvals[0][0], r[1] / rvals[0][1], r[2] / rvals[0][2]] for r in rvals])
     kfile.Close()
 
+    # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
 
 # FIXME partial shape correlations not yet implemented, meaning not clear yet
 # current assumption is some specific list is fully correlated, others fully uncorrelated
-def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall,
+def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
@@ -118,10 +121,22 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
     if not bool(ofile.GetDirectory(odir)):
         ofile.mkdir(odir)
 
+    ifile = None
     kfactors = None
     loratios = None
 
     if sigpnt == None:
+        fname = ""
+        for iname in inames:
+            ifile = TFile.Open(iname)
+            dirs = [key.GetName() for key in ifile.GetListOfKeys()]
+            if idir in dirs:
+                fname = iname
+                break
+
+            ifile.Close()
+            ifile = None
+
         ifile.cd(idir)
         keys = gDirectory.GetListOfKeys()
 
@@ -130,7 +145,7 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
 
             if not kname.endswith("Up") and not kname.endswith("Down") and not kname.endswith("_chi2"):
                 if kname != "data_obs" or not pseudodata:
-                    processes.append(kname)
+                    processes.append((kname, fname))
                     ofile.cd(odir)
 
                     hn = key.ReadObj()
@@ -139,15 +154,32 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
 
                     zero_out(hn)
                     hn.Write()
+
+        ifile.Close()
+        ifile = None
+
     else:
         for sig in sigpnt:
             if kfactor:
                 kfactors = get_kfactor(get_point(sig))
-                loratios = get_lo_ratio(get_point(sig), "ll") if channel in ["ee", "em", "mm", "ll"] else get_lo_ratios(get_point(sig), "lj")
+
+            fname = ""
+            for iname in inames:
+                ifile = TFile.Open(iname)
+                dirs = [key.GetName() for key in ifile.GetListOfKeys()]
+
+                if idir in dirs:
+                    ifile.cd(idir)
+                    if any([key.GetName() == sig + "_res" for key in gDirectory.GetListOfKeys()]):
+                        fname = iname
+                        break
+
+                ifile.Close()
+                ifile = None
 
             for ss in ["_res", "_pos", "_neg"]:
                 pnt = sig + ss
-                processes.append(pnt)
+                processes.append((pnt, fname))
 
                 hn = ifile.Get(idir + '/' + pnt)
                 if projection_rule != "":
@@ -167,11 +199,23 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 ofile.cd(odir)
                 hn.Write()
 
-    for pp in processes:
-        nuisance = []
-        ifile.cd(idir)
-        keys = gDirectory.GetListOfKeys()
+            ifile.Close()
+            ifile = None
+            kfactors = None
 
+    for pp, ff in processes:
+        if not sigpnt == None:
+            sig = "_".join(pp.split("_")[:-1])
+            loratios = get_lo_ratio(get_point(sig), "ll") if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj")
+            if kfactor:
+                kfactors = get_kfactor(get_point(sig))
+
+        ifile = TFile.Open(ff)
+        ifile.cd(idir)
+
+        nuisance = []
+
+        keys = gDirectory.GetListOfKeys()
         for key in keys:
             kname = key.GetName()
 
@@ -211,7 +255,9 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                     scaled = 1.
 
                     if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
-                        keepvalue = abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall
+                        # the last condition is to remove wildly asymmetric variations in signal
+                        # where the stats is so bad both smoother and flat cant model anything reliably
+                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (abs(chi2s[4]) > 1e-6 and abs(chi2s[5]) > 1e-6)
 
                         scaleu = chi2s[4] if keepvalue else 0.
                         scaled = chi2s[5] if keepvalue else 0.
@@ -229,22 +275,22 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                     print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
                     continue
 
-                if kfactor and kfactors is not None:
-                    idxp = 0 if "_res" in pp else 1
+                if not sigpnt == None:
+                    # rescale varied LO to nominal
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
                     idxd = 2 if "_MEFac_" in nn2 else 4 if "_MERen_" in nn2 else 0
+                    idxp = 0 if "_res" in pp else 1 if "_pos" in pp else 2
+                    scale(hu, 1. / loratios[idxu][idxp])
+                    scale(hd, 1. / loratios[idxd][idxp])
 
-                    # NNLO ME variation
-                    scale(hu, kfactors[idxu][idxp])
-                    scale(hd, kfactors[idxd][idxp])
+                    if kfactor and kfactors is not None:
+                        # and then to varied NNLO
+                        idxp = 0 if "_res" in pp else 1
+                        scale(hu, kfactors[idxu][idxp])
+                        scale(hd, kfactors[idxd][idxp])
 
-                    # FIXME test LO ME variation - rescale to nominal sushi and then scale to LO
-                    #scale(hu, kfactors[0][idxp] / kfactors[idxu][idxp])
-                    #scale(hd, kfactors[0][idxp] / kfactors[idxd][idxp])
-
-                    #idxp = 0 if "_res" in pp else 1 if "_pos" in pp else 2
-                    #scale(hu, loratios[idxu][idxp])
-                    #scale(hd, loratios[idxd][idxp])
+                        # FIXME if instead the varied LO is desired, comment the loratios scaling above
+                        # FIXME and use 0 instead of idxu/idxp for kfactors
 
                 ofile.cd(odir)
                 hu.SetName(hu.GetName().replace(nn1, nn2))
@@ -261,12 +307,16 @@ def read_category_process_nuisance(ofile, ifile, channel, year, cpn, pseudodata,
                 hd.Write()
 
         nuisances.append(nuisance)
+        ifile.Close()
+        ifile = None
+        kfactors = None
+        loratios = None
 
     if odir not in cpn:
         cpn[odir] = OrderedDict()
 
     for pp, nn in zip(processes, nuisances):
-        cpn[odir][pp] = nn
+        cpn[odir][pp[0]] = nn
 
 def make_pseudodata(ofile, cpn, sigpnt = None, seed = None):
     if seed is None or seed >= 0:
@@ -401,7 +451,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
     os.remove(oname)
 
     writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
-    sstr = "_".join(sorted(sigpnt))
+    sstr = "__".join(sorted(sigpnt))
     writer.WriteCards(sstr + tag, cb)
 
     if mcstat:
@@ -420,8 +470,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--signal", help = "signal filename", default = "", required = True)
-    parser.add_argument("--background", help = "data/background filename", default = "", required = True)
+    parser.add_argument("--signal", help = "signal filenames, comma separated", default = "", required = True)
+    parser.add_argument("--background", help = "data/background filenames, comma separated", default = "", required = True)
     parser.add_argument("--point", help = "signal points to make datacard of. comma separated", default = "", required = True)
 
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
@@ -463,8 +513,9 @@ if __name__ == '__main__':
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
 
-    sfile = TFile.Open(args.signal)
-    bfile = TFile.Open(args.background)
+    signals = args.signal.replace(" ", "").split(',')
+    backgrounds = args.background.replace(" ", "").split(',')
+
     points = sorted(args.point.replace(" ", "").split(','))
     channels = args.channel.replace(" ", "").split(',')
     years = args.year.replace(" ", "").split(',')
@@ -510,14 +561,15 @@ if __name__ == '__main__':
                 if cc in pchan:
                     prule = prjrule[prjchan.index(pchan)]
 
-            read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+            read_category_process_nuisance(output, signals, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            points, args.kfactor)
             if injects is not None and points != injects:
                 remaining = list(set(injects).difference(points))
                 if len(remaining) > 0:
-                    read_category_process_nuisance(output, sfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                    read_category_process_nuisance(output, signals, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
-            read_category_process_nuisance(output, bfile, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+
+            read_category_process_nuisance(output, backgrounds, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"

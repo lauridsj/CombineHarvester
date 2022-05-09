@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# for ipoint in w2p5; do for imode in 'datacard,validate'; do itype=source; idir=/nfs/dust/cms/user/afiqaize/cms/bpark_nano_200218/cmssw_1103_analysis/src/fwk/smooth/template_ULFR2/; for tag in 2D 3D-33; do ./../scripts/submit_point.py --signal "${idir}/sig_${itype}_${tag}.root" --background "${idir}/bkg_${itype}_${tag}.root" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ${tag}_ul_split_${itype} --drop ColorRec,UEtune --mode ${imode} --point ${ipoint}; done; done; done
+# for ipoint in w2p5; do for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ll_ULFR2 --drop ColorRec,UEtune --mode ${imode} --point ${ipoint}; done; done
 
 from argparse import ArgumentParser
 import os
@@ -17,8 +17,9 @@ if __name__ == '__main__':
     parser.add_argument("--point", help = "desired signal point to run, comma separated", default = "", required = False)
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
 
-    parser.add_argument("--signal", help = "signal filename. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background. comma separated", default = "", required = False)
+    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
+    parser.add_argument("--background", help = "data/background filenames. comma separated",
+                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--drop",
@@ -52,6 +53,8 @@ if __name__ == '__main__':
                         "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
+    parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+                        dest = "frzbb0", action = "store_true", required = False)
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
@@ -67,35 +70,19 @@ if __name__ == '__main__':
         args.tag = "_" + args.tag
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    parities = ["A", "H"]
-    masses = ("m365", "m400", "m500", "m600", "m800", "m1000")
-    widths = ("w2p5", "w5p0", "w10p0", "w25p0")
+    parities = ("A", "H")
+    masses = tuple(["m365", "m380"] + ["m" + str(mm) for mm in range(400, 1001, 25)])
+    widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     points = []
+    keep_point = args.point.replace(" ", "").split(',')
 
-    if args.point == "":
-        for parity in parities:
-            for mass in masses:
-                for width in widths:
-                    if width == "w5p0" and mass != "m400":
-                        continue
-
-                    points.append(parity + "_" + mass + "_" + width)
-    elif args.point.startswith('m'):
-        for parity in parities:
+    for parity in parities:
+        for mass in masses:
             for width in widths:
-                if width == "w5p0" and args.point != "m400":
-                    continue
+                pnt = "_".join([parity, mass, width])
 
-                points.append(parity + "_" + args.point + "_" + width)
-    elif args.point.startswith('w'):
-        for parity in parities:
-            for mass in masses:
-                if args.point == "w5p0" and mass != "m400":
-                    continue
-
-                points.append(parity + "_" + mass + "_" + args.point)
-    else:
-        points = args.point.replace(" ", "").split(',')
+                if args.point == "" or any([kk in pnt for kk in keep_point]):
+                    points.append(pnt)
 
     if args.injectsignal != "":
         args.pseudodata = True
@@ -107,6 +94,18 @@ if __name__ == '__main__':
     resub = "resubmit" in args.mode
 
     for pnt in points:
+        signal = ""
+        if args.signal == "":
+            if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
+                if any(cc in args.channel for cc in ["ee", "em", "mm"]):
+                    signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root"
+            for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
+                if im in pnt or im in args.injectsignal:
+                    if any(cc in args.channel for cc in ["ee", "em", "mm"]):
+                        signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root"
+        else:
+            signal = args.signal
+
         if resub:
             failures = [ff.split(' ')[0] for ff in subprocess.check_output("condor_check {ddd}".format(ddd = pnt + args.tag), shell = True).split("\n")]
             for failure in failures:
@@ -117,17 +116,19 @@ if __name__ == '__main__':
                 options = options.replace('[', '').replace(']', '').replace("',", "'").replace("'", "").split(' ')
 
                 job_name = "single_point_" + pnt + args.tag + "_" + "_".join(options[options.index("--mode") + 1].split(","))
-                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {prj} {asm} {one} {ims} {gvl} {com}"'.format(
+                # only combine-specific settings are needed; this wont tag make_datacard failures as that's the first point of entry
+                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {asm} {one} {ims} {gvl} {frz} {com} {bsd}"'.format(
                     pnt = pnt,
                     mmm = "--mode " + options[options.index("--mode") + 1] if "--mode" in options else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
-                    mcs = "--no-mc-stats" if not args.mcstat else "",
-                    prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
-                    asm = "--unblind" if not args.asimov else "",
-                    one = "--one-poi" if args.onepoi else "",
-                    ims = "--impact-sb" if args.impactsb else "",
-                    gvl = "--g-value " + str(args.fixg),
-                    com = "--compress" if rundc else ""
+                    mcs = "--no-mc-stats" if "--no-mc-stats" in options else "",
+                    asm = "--unblind" if "--unblind" in options else "",
+                    one = "--one-poi" if "--one-poi" in options else "",
+                    ims = "--impact-sb" if "--impact-sb" in options else "",
+                    gvl = "--g-value " + options[options.index("--g-value") + 1] if "--g-value" in options else "",
+                    frz = "--freeze-mc-stats-zero" if "--freeze-mc-stats-zero" in options else "",
+                    com = "--compress" if "--compress" in options else "",
+                    bsd = "--base-directory " + options[options.index("--base-directory") + 1] if "--base-directory" in options else ""
                 )
 
                 syscall("rm {fff}".format(fff = failure))
@@ -171,7 +172,8 @@ if __name__ == '__main__':
         if len(logs) > 0:
             continue
 
-        job_arg = '"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {prj} {asm} {one} {ims} {gvl} {com}"'.format(
+        job_arg = ('"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}'
+                   '{shp} {mcs} {prj} {frz} {asm} {one} {ims} {gvl} {com} {bsd}"').format(
             pnt = pnt,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -180,7 +182,7 @@ if __name__ == '__main__':
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-            sig = "--signal " + args.signal,
+            sig = "--signal " + signal,
             bkg = "--background " + args.background,
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
@@ -189,11 +191,13 @@ if __name__ == '__main__':
             shp = "--use-shape-always" if args.alwaysshape else "",
             mcs = "--no-mc-stats" if not args.mcstat else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
+            frz = "--freeze-mc-stats-zero" if args.frzbb0 else "",
             asm = "--unblind" if not args.asimov else "",
             one = "--one-poi" if args.onepoi else "",
             ims = "--impact-sb" if args.impactsb else "",
             gvl = "--g-value " + str(args.fixg),
-            com = "--compress" if rundc else ""
+            com = "--compress" if rundc else "",
+            bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
         syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {tmp} {job}".format(
@@ -204,6 +208,6 @@ if __name__ == '__main__':
             executable = scriptdir + "/single_point_ahtt.py",
             job_arg = job_arg,
             job_time = args.jobtime,
-            tmp = "--run-in-tmp" if rundc else "",
+            tmp = "--run-in-tmp",
             job = "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")"
         ))

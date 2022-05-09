@@ -15,6 +15,8 @@ from utilities import syscall
 from make_datacard import get_point
 
 max_g = 3.
+epsilon = 1e-5
+nstep = 5
 
 def get_limit(lfile):
     lfile = TFile.Open(lfile)
@@ -39,13 +41,50 @@ def get_limit(lfile):
     lfile.Close()
     return limit
 
+# compares the estimated second derivative using the last 3 points in xys
+# and the second derivative using the last 2 points and the current point
+# true if these two quantities are similar enough based on an arbitrarily defined criteria
+def seemingly_continuous(x, y, xys, tolerance = 0.1):
+    if len(xys) < 3:
+        return True
+
+    if len(y) != 6:
+        return False
+
+    if tolerance <= 0. or tolerance >= 1.:
+        tolerance = 0.1
+
+    xs = []
+    ys = []
+    for ii in range(1, 4):
+        xs.append(xys.keys()[-ii])
+        ys.append(xys[xs[-1]])
+
+    dx_previous = 0.5 * (xs[0] - xs[2])
+    dx_current = 0.5 * (x - xs[1])
+    d2ydx2_previous = ys[0]
+    d2ydx2_current = ys[0]
+
+    for quantile in d2ydx2_previous.keys():
+        if quantile == "obs":
+            continue
+
+        d2ydx2_previous[quantile] = (ys[0][quantile] - (2. * ys[1][quantile]) + ys[2][quantile]) / dx_previous**2.
+        d2ydx2_current[quantile] = (y[quantile] - (2. * ys[0][quantile]) + ys[1][quantile]) / dx_current**2.
+
+        fom = abs(d2ydx2_current[quantile] / d2ydx2_previous[quantile])
+        if fom < (1. / (1. + tolerance)) or fom > (1. / (1. - tolerance)):
+            return False
+
+    return True
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False)
 
-    parser.add_argument("--signal", help = "signal filename. comma separated", default = "../input/ll_sig.root", required = False)
-    parser.add_argument("--background", help = "data/background. comma separated", default = "../input/ll_bkg.root", required = False)
+    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "../input/ll_sig.root", required = False)
+    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "../input/ll_bkg.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
@@ -94,6 +133,9 @@ if __name__ == '__main__':
                         dest = "fixg", default = 1, required = False, type = float)
 
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
+    parser.add_argument("--base-directory",
+                        help = "in non-datacard modes, this is the location where datacard is searched for, and output written to",
+                        dest = "basedir", default = "", required = False)
 
     args = parser.parse_args()
     print "single_point_ahtt :: called with the following arguments"
@@ -109,7 +151,9 @@ if __name__ == '__main__':
 
     modes = args.mode.replace(" ", "").split(',')
     scriptdir = os.path.dirname(os.path.abspath(__file__))
-    dcdir =  args.point + args.tag + "/"
+    args.basedir += "" if args.basedir == "" or args.basedir.endswith("/") else "/"
+    dcdir = args.basedir + args.point + args.tag + "/"
+
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
 
@@ -125,6 +169,7 @@ if __name__ == '__main__':
     runpull = "pull" in modes or "impact" in modes
     runprepost = "prepost" in modes or "corrmat" in modes
     # combine --rMin=0 --rMax=2.5 --cminPreScan -t -1 --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 -M MultiDimFit --algo grid -d A400_relw2p964/workspace_one-poi.root -n lolk # to check absolute NLL curve (seems to work with one-poi only)
+    # combine -M MultiDimFit A_m400_w2p5_3D-33_ul_split_smooth_mtt/workspace_g-scan.root --setParameters g=1 --freezeParameters g --redefineSignalPOIs r --setParameterRanges r=0,1.5 --algo grid --points 50 -P r --robustFit 1 --cminPreScan --X-rtd MINIMIZER_analytic --cminDefaultMinimizerStrategy 0
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
@@ -160,72 +205,121 @@ if __name__ == '__main__':
             ))
 
     if runvalid:
-        os.chdir(dcdir)
         print "\nsingle_point_ahtt :: validating datacard"
-        syscall("ValidateDatacards.py --jsonFile {pnt}_validate.json --printLevel 3 {dcd}".format(
+        syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}_validate.json --printLevel 3 {dcd}{crd}".format(
+            dcd = dcdir,
             pnt = args.point,
-            dcd = "ahtt_combined.txt" if os.path.isfile("ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
+            crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
-        os.chdir("..")
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
+        accuracies = '--rRelAcc 0.005 --rAbsAcc 0.001'
+        strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,1"
+
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} --there -n _limit --rMin=0 --rMax={maxg} "
-                    "--rRelAcc 0.001 --rAbsAcc 0.001 --cminPreScan {asm} {mcs}".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         maxg = max_g,
+                        acc = accuracies,
+                        stg = strategy,
                         asm = "--run blind -t -1" if args.asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
             print "\nsingle_point_ahtt :: collecting limit"
-            syscall("combineTool.py -M CollectLimits {dcd}higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{pnt}_limits_one-poi.json && "
-                    "rm {dcd}higgsCombine_limit.AsymptoticLimits.mH*.root".format(
+            syscall("combineTool.py -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{pnt}_limits_one-poi.json && "
+                    "rm higgsCombine_limit.AsymptoticLimits.mH*.root".format(
                         dcd = dcdir,
                         mmm = mstr,
                         pnt = args.point
                     ))
         else:
-            syscall("rm {dcd}{pnt}_limits_g-scan.root {dcd}{pnt}_limits_g-scan.json {dcd}higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(dcd = dcdir, pnt = args.point), False, True)
+            syscall("rm {dcd}{pnt}_limits_g-scan.root {dcd}{pnt}_limits_g-scan.json ".format(dcd = dcdir, pnt = args.point), False, True)
+            syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
             limits = OrderedDict()
             gval = 0.
+            r_range = "--rMin=0 --rMax=2"
+            consecutive_failure = 0
 
             while gval < max_g:
                 gstr = str(round(gval, 3)).replace('.', 'p')
 
-                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} --there -n _limit_g-scan_{gstr} --rMin=0 --rMax=3 "
-                        "--setParameters g={gval} --freezeParameters g --rRelAcc 0.001 --rAbsAcc 0.001 --picky "
-                        "--singlePoint 1 --cminPreScan {asm} {mcs}".format(
+                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gstr} "
+                        "--setParameters g={gval} --freezeParameters g {acc} --picky {rrg} "
+                        "--singlePoint 1 {stg} {asm} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
                             gstr = gstr,
-                            maxg = max_g,
                             gval = gval,
+                            acc = accuracies,
+                            rrg = r_range,
+                            stg = strategy,
                             asm = "-t -1" if args.asimov else "",
                             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                         ))
 
-                limit = get_limit("{dcd}higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
-                    dcd = dcdir,
+                limit = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
                     mmm = mstr,
                     gstr = gstr,
                 ))
 
-                limits[gval] = limit
+                good_cls = all([ll >= 0. and ll <= 1. for qq, ll in limit.items()])
+                geps = 0.
+                if not good_cls:
+                    syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
 
-                if (any([ll > 0.025 and ll < 0.125 for qq, ll in limit.items()])):
-                    gval += 0.005
-                elif (any([ll < 0. or ll > 1. for qq, ll in limit.items()])):
-                    gval += 0.01
+                    for factor in [1., -1.]:
+                        fgood = False
+                        for ii in range(1, nstep + 1):
+                            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gstr} "
+                                    "--setParameters g={gval} --freezeParameters g {acc} --picky {rrg} "
+                                    "--singlePoint 1 {stg} {asm} {mcs}".format(
+                                        dcd = dcdir,
+                                        mmm = mstr,
+                                        gstr = gstr + "eps",
+                                        gval = gval + (ii * factor * epsilon),
+                                        acc = accuracies,
+                                        rrg = r_range,
+                                        stg = strategy,
+                                        asm = "-t -1" if args.asimov else "",
+                                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                                    ))
+
+                            leps = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
+                                mmm = mstr,
+                                gstr = gstr + "eps",
+                            ))
+                            fgood = all([ll >= 0. and ll <= 1. for qq, ll in leps.items()])
+
+                            if fgood:
+                                geps = (ii * factor * epsilon)
+                                for quantile in leps.keys():
+                                    limit[quantile] = leps[quantile]
+                                break
+                        if fgood:
+                            break
+
+                good_cls = all([ll >= 0. and ll <= 1. for qq, ll in limit.items()])
+                if good_cls:
+                    limits[gval + geps] = limit
+                    consecutive_failure = 0
+                    if any([ll > 0.025 and ll < 0.1 for qq, ll in limit.items()]):
+                        gval += 0.02
+                    else:
+                        gval += 0.05
                 else:
-                    gval += 0.04
+                    gval += 0.01
+                    consecutive_failure += 1
+                    print "\nsingle_point_ahtt :: consecutive failure ", consecutive_failure
+                    if consecutive_failure > 10:
+                        break
 
             print "\nsingle_point_ahtt :: collecting limit"
-            syscall("hadd {dcd}{pnt}_limits_g-scan.root {dcd}higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
-                    "rm {dcd}higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
+            syscall("hadd {dcd}{pnt}_limits_g-scan.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
+                    "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                         dcd = dcdir,
                         pnt = args.point
                     ))
@@ -233,20 +327,22 @@ if __name__ == '__main__':
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
-        os.chdir(dcdir)
-        syscall("rm {pnt}_impacts_{mod}*".format(mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
+        syscall("rm {dcd}{pnt}_impacts_{mod}*".format(dcd = dcdir, mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
 
-        r_range = "--rMin=-3 --rMax=3"
+        r_range = "--rMin=0 --rMax=2"
+        strategy = "--robustFit 1 --cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
+
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doInitialFit --robustFit 1 --robustHesse 1 -n _pull "
-                "--cminDefaultMinimizerStrategy 0 {rrg} {com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {com} {asm} {mcs} {sig}".format(
+                    dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     rrg = r_range,
+                    stg = strategy,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -254,11 +350,12 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} --cminPreScan --doFits --parallel 8 --robustFit 1 --robustHesse 1 -n _pull "
-                "--cminDefaultMinimizerStrategy 0 {rrg} {com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {com} {asm} {mcs} {sig}".format(
+                    dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     rrg = r_range,
+                    stg = strategy,
                     com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -266,7 +363,8 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d workspace_{mod}.root -m {mmm} {com} -n _pull -o {pnt}_impacts_{mod}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {com} -n _pull -o {dcd}{pnt}_impacts_{mod}.json".format(
+            dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             com = "" if args.onepoi else "--redefineSignalPOIs r",
@@ -277,16 +375,14 @@ if __name__ == '__main__':
         syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        syscall("plotImpacts.py -i {pnt}_impacts_{mod}.json -o {pnt}_impacts_{mod}".format(
+        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}.json -o {dcd}{pnt}_impacts_{mod}".format(
+            dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             pnt = args.point
         ))
 
-        os.chdir("..")
-
     if runprepost:
-        os.chdir(dcdir)
-
+        strategy = "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         setpar = []
         frzpar = []
         if args.onepoi:
@@ -299,10 +395,12 @@ if __name__ == '__main__':
             frzpar.append("rgx{prop_bin.*}")
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -M FitDiagnostics workspace_{mod}.root --saveShapes --saveWithUncertainties --saveNormalizations --plots -m {mmm} -n _prepost "
-                "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 0 {asm} {mcs} {frz} {com}".format(
+        syscall("combine -M FitDiagnostics {dcd}workspace_{mod}.root --saveShapes --saveWithUncertainties --saveNormalizations --plots -m {mmm} -n _prepost "
+                "{stg} {asm} {mcs} {frz} {com}".format(
+                    dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
+                    stg = strategy,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     frz = "--setParameters '" + ",".join(setpar) + "' --freezeParameters '" + ",".join(frzpar) + "'" if len(setpar) > 0 else "",
@@ -315,12 +413,11 @@ if __name__ == '__main__':
         syscall("rm covariance_fit_?.png", False, True)
         syscall("rm higgsCombine_prepost*.root", False, True)
         syscall("rm combine_logger.out", False, True)
-        syscall("mv fitDiagnostics_prepost.root {pnt}_fitdiagnostics_{mod}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{mod}.root".format(
+            dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             pnt = args.point
         ), False)
-
-        os.chdir("..")
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

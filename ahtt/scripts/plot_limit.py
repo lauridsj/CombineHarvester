@@ -36,6 +36,7 @@ def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
 
     for ii, tag in enumerate(directories):
         for jj, dd in enumerate(tag):
+            #print(dd)
             limit = OrderedDict([
                 ("exp-2", []),
                 ("exp-1", []),
@@ -88,12 +89,13 @@ def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
                     for quantile in limit.keys():
                         if quantile != "obs":
                             ll = 0
+                            #print(quantile, limit[quantile])
                             while ll < len(limit[quantile]) - 1:
                                 if limit[quantile][ll + 1][0] - limit[quantile][ll][-1] < maxgap:
                                     if len(limit[quantile][ll]) == 1:
                                         # this is the weird case when a point is excluded but very close to 0.05, and next is > 0.05 again
                                         # interpret the next > 0.05 point as numerical error, and start exclusion interval from this point
-                                        limit[quantile][ll].append(limit[quantile][ll + 1][1])
+                                        limit[quantile][ll].append(limit[quantile][ll + 1][-1])
                                     else:
                                         limit[quantile][ll][1] = limit[quantile][ll + 1][-1]
                                     del limit[quantile][ll + 1]
@@ -120,18 +122,22 @@ def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
     return limits
 
 def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
-    if len(limits) > 2:
-        raise RuntimeError("current plotting code is not meant for more than 2 tags. aborting")
+    if len(limits) > 3:
+        raise RuntimeError("current plotting code is not meant for more than 3 tags. aborting")
 
-    if len(limits) == 2 and list(limits[1]) != list(limits[0]):
-        raise RuntimeError("limits in the two tags are not over the same x points for plot " + oname + ". aborting")
+    if len(limits) > 1 and not all([list(ll) == list(limits[0]) for ll in limits]):
+        raise RuntimeError("limits in the tags are not over the same x points for plot " + oname + ". aborting")
 
     if not hasattr(draw_1D, "colors"):
         draw_1D.colors = OrderedDict([
             (1    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25}]),
 
             (2    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.4, "alpo": 0.},
-                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.4, "alpo": 0.}])
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.4, "alpo": 0.}]),
+
+            (3    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},]),
         ])
 
     yvalues = []
@@ -258,8 +264,9 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
     lmargin = 0.06 if len(limits) == 1 else 0.02
     lwidth = 1. - (2. * lmargin) 
     legend = ax.legend(first(handles), second(handles),
-	               loc = "upper right", ncol = 2, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025), mode = "expand", borderaxespad = 0.,
-                       handletextpad = 0.5, fontsize = 21 - (2 * len(limits)), frameon = False, title = "95% CL exclusion" + ltitle, title_fontsize = 21)
+	               loc = "upper right", ncol = 2 if len(limits) < 3 else len(limits), bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
+                       mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 - (2 * len(limits)), frameon = False,
+                       title = "95% CL exclusion" + ltitle, title_fontsize = 21)
     #fontprop = matplotlib.font_manager.FontProperties()
     #fontprop.set_size(21)
     #legend.set_title(title = "95% CL exclusion", prop = fontprop)
@@ -310,6 +317,9 @@ if __name__ == '__main__':
     parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False)
+    parser.add_argument("--drop",
+                        help = "comma separated list of points to be dropped. 'XX, YY' means all points containing XX or YY are dropped.",
+                        default = "", required = False)
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
     parser.add_argument("--patch-narrow-gaps", help = "patch narrow gaps in observed exclusion intervals",
@@ -333,8 +343,9 @@ if __name__ == '__main__':
     if len(tags) != len(labels):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag))] for tag in tags]
-    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag))] for tag in tags]
+    drops = args.drop.replace(" ", "").split(',') if args.drop != "" else []
+    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
+    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
 
     apnt = [[get_point(pnt) for pnt in tag] for tag in adir]
     hpnt = [[get_point(pnt) for pnt in tag] for tag in hdir]
@@ -357,15 +368,19 @@ if __name__ == '__main__':
     hpnt.sort(key = lambda tup: (tup[1], tup[2]))
 
     if args.function == "natural":
-        draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                     apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
-        draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                     hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+        if len(apnt) > 0:
+            draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+        if len(hpnt) > 0:
+            draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
     elif args.function == "mass":
-        draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                  apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
-        draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                  hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+        if len(apnt) > 0:
+            draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+        if len(hpnt) > 0:
+            draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
     elif args.function == "width":
         pass
 

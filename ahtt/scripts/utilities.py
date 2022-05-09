@@ -17,6 +17,7 @@ TH1.SetDefaultSumw2(True)
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
         print ("Executing: %s" % cmd)
+        sys.stdout.flush()
     retval = os.system(cmd)
     if not nothrow and retval != 0:
         raise RuntimeError("Command failed!")
