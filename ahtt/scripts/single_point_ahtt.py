@@ -121,6 +121,9 @@ if __name__ == '__main__':
                         default = "", required = False)
     parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
                         dest = "frzbb0", action = "store_true", required = False)
+    parser.add_argument("--freeze-mc-stats-post", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
+                        "requires pull/impact to have been run",
+                        dest = "frzbbp", action = "store_true", required = False)
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
@@ -128,7 +131,9 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
 
-    parser.add_argument("--impact-sb", help = "do sb impact fit instead of b", dest = "impactsb", action = "store_true", required = False)
+    parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
+                        "also used in prepost/corrmat o steer which pull to be read with --freeze-mc-stats-post",
+                        dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used",
                         dest = "fixg", default = 1, required = False, type = float)
 
@@ -214,7 +219,7 @@ if __name__ == '__main__':
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
-        accuracies = '--rRelAcc 0.005 --rAbsAcc 0.001'
+        accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
         strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,1"
 
         if args.onepoi:
@@ -337,76 +342,93 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
+                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
                     mmm = mstr,
                     rrg = r_range,
                     stg = strategy,
-                    com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
+                    poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
                 ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {com} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
+                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
                     mmm = mstr,
                     rrg = r_range,
                     stg = strategy,
-                    com = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
+                    poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
                 ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {com} -n _pull -o {dcd}{pnt}_impacts_{mod}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {poi} -n _pull -o {dcd}{pnt}_impacts_{mod}_{exp}.json".format(
             dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "g-scan",
+            mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             mmm = mstr,
-            com = "" if args.onepoi else "--redefineSignalPOIs r",
-            pnt = args.point
+            poi = "" if args.onepoi else "--redefineSignalPOIs r",
+            pnt = args.point,
+            exp = "sig" if args.impactsb else "bkg"
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}.json -o {dcd}{pnt}_impacts_{mod}".format(
+        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}_{exp}.json -o {dcd}{pnt}_impacts_{mod}_{exp}".format(
             dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "g-scan",
-            pnt = args.point
+            mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+            pnt = args.point,
+            exp = "sig" if args.impactsb else "bkg"
         ))
 
     if runprepost:
         strategy = "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         setpar = []
         frzpar = []
-        if args.onepoi:
+        if not args.onepoi:
             setpar.append("g=" + str(args.fixg))
             frzpar.append("g")
 
+        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         if args.frzbb0:
-            args.mcstat = True
             setpar.append("rgx{prop_bin.*}=0")
             frzpar.append("rgx{prop_bin.*}")
 
+        if args.frzbbp:
+            frzpar.append("rgx{prop_bin.*}")
+            iname = "{dcd}/{pnt}_impacts_{mod}_{exp}.json".format(
+                dcd = dcdir,
+                pnt = args.point,
+                mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                exp = "sig" if args.impactsb else "bkg"
+            )
+
+            with open(iname) as ff:
+                impacts = json.load(ff)
+
+            for pp in impacts["params"]:
+                if "prop_bin" in pp["name"]:
+                    setpar.append("{par}={val}".format(par = pp["name"], val = str(round(pp["fit"][1], 3) if abs(pp["fit"][1]) > 1e-3 else 0)))
+
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -M FitDiagnostics {dcd}workspace_{mod}.root --saveShapes --saveWithUncertainties --saveNormalizations --plots -m {mmm} -n _prepost "
-                "{stg} {asm} {mcs} {frz} {com}".format(
+                "{stg} {asm} {mcs} {frz} {poi}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
+                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
                     mmm = mstr,
                     stg = strategy,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     frz = "--setParameters '" + ",".join(setpar) + "' --freezeParameters '" + ",".join(frzpar) + "'" if len(setpar) > 0 else "",
-                    com = "" if args.onepoi else "--redefineSignalPOIs r",
-                    # FIXME an example, to be developed more into freezing at postfit if needed (needs impact to be run)
-                    # btw option '--setParameters' cannot be specified more than once
+                    poi = "" if args.onepoi else "--redefineSignalPOIs r",
+                    # option '--set/freezeParameters' cannot be specified more than once
         ))
 
         syscall("rm *_th1x_*.png", False, True)
