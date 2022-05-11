@@ -344,7 +344,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact initial fit"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                    mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     rrg = r_range,
                     stg = strategy,
@@ -357,7 +357,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact remaining fits"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                    mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     rrg = r_range,
                     stg = strategy,
@@ -368,12 +368,13 @@ if __name__ == '__main__':
                 ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {poi} -n _pull -o {dcd}{pnt}_impacts_{mod}_{exp}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {poi} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}.json".format(
             dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+            mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             poi = "" if args.onepoi else "--redefineSignalPOIs r",
             pnt = args.point,
+            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             exp = "sig" if args.impactsb else "bkg"
         ))
 
@@ -383,7 +384,7 @@ if __name__ == '__main__':
 
         syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}_{exp}.json -o {dcd}{pnt}_impacts_{mod}_{exp}".format(
             dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             pnt = args.point,
             exp = "sig" if args.impactsb else "bkg"
         ))
@@ -403,10 +404,10 @@ if __name__ == '__main__':
 
         if args.frzbbp:
             frzpar.append("rgx{prop_bin.*}")
-            iname = "{dcd}/{pnt}_impacts_{mod}_{exp}.json".format(
+            iname = "{dcd}/{pnt}_impacts_{gvl}_{exp}.json".format(
                 dcd = dcdir,
                 pnt = args.point,
-                mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
                 exp = "sig" if args.impactsb else "bkg"
             )
 
@@ -418,10 +419,10 @@ if __name__ == '__main__':
                     setpar.append("{par}={val}".format(par = pp["name"], val = str(round(pp["fit"][1], 3) if abs(pp["fit"][1]) > 1e-3 else 0)))
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -M FitDiagnostics {dcd}workspace_{mod}.root --saveShapes --saveWithUncertainties --saveNormalizations --plots -m {mmm} -n _prepost "
-                "{stg} {asm} {mcs} {frz} {poi}".format(
+        syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {frz} {poi}".format(
                     dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                    mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     stg = strategy,
                     asm = "-t -1" if args.asimov else "",
@@ -435,9 +436,9 @@ if __name__ == '__main__':
         syscall("rm covariance_fit_?.png", False, True)
         syscall("rm higgsCombine_prepost*.root", False, True)
         syscall("rm combine_logger.out", False, True)
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{mod}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}.root".format(
             dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "g-scan",
+            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             pnt = args.point
         ), False)
 
