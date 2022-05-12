@@ -134,7 +134,7 @@ if __name__ == '__main__':
     parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
                         "also used in prepost/corrmat o steer which pull to be read with --freeze-mc-stats-post",
                         dest = "impactsb", action = "store_true", required = False)
-    parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used",
+    parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used. defaults to 1",
                         dest = "fixg", default = 1, required = False, type = float)
 
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     if runpull:
         syscall("rm {dcd}{pnt}_impacts_{mod}*".format(dcd = dcdir, mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
 
-        r_range = "--rMin=0 --rMax=2"
+        r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
         strategy = "--robustFit 1 --cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
@@ -390,6 +390,7 @@ if __name__ == '__main__':
         ))
 
     if runprepost:
+        # option '--set/freezeParameters' cannot be specified more than once
         strategy = "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         setpar = []
         frzpar = []
@@ -428,8 +429,7 @@ if __name__ == '__main__':
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     frz = "--setParameters '" + ",".join(setpar) + "' --freezeParameters '" + ",".join(frzpar) + "'" if len(setpar) > 0 else "",
-                    poi = "" if args.onepoi else "--redefineSignalPOIs r",
-                    # option '--set/freezeParameters' cannot be specified more than once
+                    poi = "" if args.onepoi else "--redefineSignalPOIs r"
         ))
 
         syscall("rm *_th1x_*.png", False, True)
