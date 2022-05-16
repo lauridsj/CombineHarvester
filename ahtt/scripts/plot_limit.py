@@ -18,6 +18,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 max_g = 3.
+epsilon = 1e-5
 axes = {
     "mass" :    r"m$_{\mathrm{\mathsf{%s}}}$ [GeV]",
     "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [\%% m$_{\mathrm{\mathsf{%s}}}$]",
@@ -106,16 +107,19 @@ def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
                             # FIXME patchgap algorithm for observed
                             pass
 
-                for quantile, intervals in limit.items():
+                for quantile in limit.keys():
                     if quantile == "obs":
                         continue
 
-                    for kk in range(len(intervals)):
-                        if len(intervals[kk]) < 2:
-                            print(quantile, intervals)
-                            raise RuntimeError("in " + dd + ", something is wrong with exclusion interval logic. obtain limits with finer scan. aborting")
+                    for interval in limit[quantile]:
+                        if len(interval) < 2:
+                            print(quantile, limit[quantile])
+                            print("in " + dd + ", found a single point exclusion interval. assuming this is due to sudden jump in cls. skipping.")
 
-                        intervals[kk] = [intervals[kk][0], max_g if max_g - intervals[kk][-1] < maxgap else intervals[kk][-1]]
+                    limit[quantile] = [interval for interval in limit[quantile] if len(interval) >= 2]
+
+                    for kk in range(len(limit[quantile])):
+                       limit[quantile][kk] = [limit[quantile][kk][0], max_g if max_g - limit[quantile][kk][-1] < maxgap else limit[quantile][kk][-1]]
 
             limits[ii][xvalues[jj]] = limit
 
@@ -217,7 +221,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
             ymax = max(ymax, max([g for oo in yy["obs"] for g, cls in oo if g < ymax or cls > 0.05]))
             ymax1 = math.ceil(ymax * 2.) / 2.
 
-            ydots = np.arange(0., max_g, 0.005)
+            ydots = np.arange(0., ymax1 + epsilon, 0.005)
             xv, yv = np.meshgrid(xvalues, ydots)
             zv = np.zeros_like(xv)
             gs = [first(gc) for gc in yy["obs"]]
