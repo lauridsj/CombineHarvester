@@ -311,8 +311,8 @@ if __name__ == '__main__':
                 if good_cls:
                     limits[gval + geps] = limit
                     consecutive_failure = 0
-                    if any([ll > 0.025 and ll < 0.1 for qq, ll in limit.items()]):
-                        gval += 0.02
+                    if any([abs(ll - 0.05) < 0.02 for qq, ll in limit.items()]):
+                        gval += 0.01
                     else:
                         gval += 0.05
                 else:
