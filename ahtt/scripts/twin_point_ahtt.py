@@ -153,16 +153,17 @@ if __name__ == '__main__':
         strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,0"
         fcgvl = args.fcgvl.replace(" ", "").split(',')
 
-        syscall("combine -M HybridNew -d workspace_multi-g.root -m {mmm} -n {fnm} --LHCmode LHC-feldman-cousins --nCPU 2 --maxProbability 0.99 "
+        syscall("combine -M HybridNew -d {dcd}workspace_multi-g.root -m {mmm} -n {fnm} --LHCmode LHC-feldman-cousins --nCPU 2 --maxProbability 0.99 "
                 "--singlePoint '{ppp}' --setParameters '{ppp}' -T {toy} {asm} {mcs} {stg} --saveHybridResult".format(
-            mmm = mstr,
-            fnm = "_g1_" + fcgvl[0] + "_g2_" + fcgvl[1],
-            ppp = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-            toy = str(args.fctoy),
-            asm = "-t -1" if args.asimov else "",
-            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            stg = strategy
-        ))
+                    dcd = dcdir,
+                    mmm = mstr,
+                    fnm = "_g1_" + fcgvl[0] + "_g2_" + fcgvl[1],
+                    ppp = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                    toy = str(args.fctoy),
+                    asm = "-t -1" if args.asimov else "",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                    stg = strategy
+                ))
 
         # FIXME result collection and whatnot...
 
