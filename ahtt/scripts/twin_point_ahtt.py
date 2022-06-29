@@ -153,7 +153,7 @@ if __name__ == '__main__':
         strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,0"
         fcgvl = args.fcgvl.replace(" ", "").split(',')
 
-        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n {fnm} --LHCmode LHC-feldman-cousins --nCPU 2 --maxProbability 0.99 "
+        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n {fnm} --LHCmode LHC-feldman-cousins --maxProbability 0.99 "
                 "--singlePoint '{ppp}' --setParameters '{ppp}' -T {toy} {asm} {mcs} {stg} --saveHybridResult".format(
                     dcd = dcdir,
                     mmm = mstr,
