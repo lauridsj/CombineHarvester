@@ -247,6 +247,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 elif drops is not None:
                     drop_nuisance = drops == ['*'] or any([dn in nn2 for dn in drops])
 
+                # FIXME quick hack while the PDF business is being finalized
+                if "PDF_" in nn2 and "CMS_" not in nn2:
+                    drop_nuisance = True
+
                 if not drop_nuisance and not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
@@ -257,7 +261,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
                         # the last condition is to remove wildly asymmetric variations in signal
                         # where the stats is so bad both smoother and flat cant model anything reliably
-                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (abs(chi2s[4]) > 1e-6 and abs(chi2s[5]) > 1e-6)
+                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (abs(chi2s[4]) > 1e-4 and abs(chi2s[5]) > 1e-4)
 
                         scaleu = chi2s[4] if keepvalue else 0.
                         scaled = chi2s[5] if keepvalue else 0.
@@ -503,7 +507,7 @@ if __name__ == '__main__':
                         "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
                         "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
                         "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored.",
                         default = "", required = False)
     parser.add_argument("--seed",

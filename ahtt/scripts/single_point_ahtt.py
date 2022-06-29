@@ -41,6 +41,47 @@ def get_limit(lfile):
     lfile.Close()
     return limit
 
+def get_nll_one_poi(lfile):
+    # relevant branches are r, nllo0 (for the minimum NLL value), deltaNLL (wrt nll0), quantileExpected (-1 for data, rest irrelevant)
+    lfile = TFile.Open(lfile)
+    ltree = lfile.Get("limit")
+    nll = OrderedDict()
+    nll["obs"] = OrderedDict()
+    nll["dnll"] = OrderedDict()
+
+    for i in ltree:
+        if ltree.quantileExpected < 0.:
+            nll["obs"]["r"] = 1.
+            nll["obs"]["g"] = ltree.r
+            nll["obs"]["nll0"] = ltree.nll0
+        else:
+            nll["dnll"][ ltree.r ] = ltree.deltaNLL
+
+    lfile.Close()
+    return nll
+
+def get_nll_g_scan(lfile):
+    lfile = TFile.Open(lfile)
+    ltree = lfile.Get("limit")
+    nll = OrderedDict()
+    nll["obs"] = OrderedDict()
+    nll["dnll"] = OrderedDict()
+
+    nll0 = sys.float_info.max
+
+    for i in ltree:
+        if ltree.quantileExpected < 0. and ltree.nll0 < nll0:
+            nll["obs"]["r"] = ltree.r
+            nll["obs"]["g"] = ltree.g
+            nll["obs"]["nll0"] = ltree.nll0
+
+    for i in ltree:
+        if ltree.quantileExpected >= 0.:
+            nll["dnll"][ ltree.g ] = ltree.nll0 + ltree.deltaNLL - nll["obs"]["nll0"]
+
+    lfile.Close()
+    return nll
+
 # compares the estimated second derivative using the last 3 points in xys
 # and the second derivative using the last 2 points and the current point
 # true if these two quantities are similar enough based on an arbitrarily defined criteria
@@ -116,7 +157,7 @@ if __name__ == '__main__':
                         "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
                         "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
                         "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
     parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
@@ -162,7 +203,7 @@ if __name__ == '__main__':
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
 
-    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat"]
+    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -173,8 +214,7 @@ if __name__ == '__main__':
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
     runprepost = "prepost" in modes or "corrmat" in modes
-    # combine --rMin=0 --rMax=2.5 --cminPreScan -t -1 --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 -M MultiDimFit --algo grid -d A400_relw2p964/workspace_one-poi.root -n lolk # to check absolute NLL curve (seems to work with one-poi only)
-    # combine -M MultiDimFit A_m400_w2p5_3D-33_ul_split_smooth_mtt/workspace_g-scan.root --setParameters g=1 --freezeParameters g --redefineSignalPOIs r --setParameterRanges r=0,1.5 --algo grid --points 50 -P r --robustFit 1 --cminPreScan --X-rtd MINIMIZER_analytic --cminDefaultMinimizerStrategy 0
+    runnll = "nll" in modes or "likelihood" in modes
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
@@ -225,14 +265,14 @@ if __name__ == '__main__':
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs}".format(
-                        dcd = dcdir,
-                        mmm = mstr,
-                        maxg = max_g,
-                        acc = accuracies,
-                        stg = strategy,
-                        asm = "--run blind -t -1" if args.asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                    ))
+                dcd = dcdir,
+                mmm = mstr,
+                maxg = max_g,
+                acc = accuracies,
+                stg = strategy,
+                asm = "--run blind -t -1" if args.asimov else "",
+                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+            ))
 
             print "\nsingle_point_ahtt :: collecting limit"
             syscall("combineTool.py -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{pnt}_limits_one-poi.json && "
@@ -252,13 +292,13 @@ if __name__ == '__main__':
             while gval < max_g:
                 gstr = str(round(gval, 3)).replace('.', 'p')
 
-                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gstr} "
-                        "--setParameters g={gval} --freezeParameters g {acc} --picky {rrg} "
+                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+                        "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
                         "--singlePoint 1 {stg} {asm} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
-                            gstr = gstr,
-                            gval = gval,
+                            gst = gstr,
+                            gvl = gval,
                             acc = accuracies,
                             rrg = r_range,
                             stg = strategy,
@@ -279,13 +319,13 @@ if __name__ == '__main__':
                     for factor in [1., -1.]:
                         fgood = False
                         for ii in range(1, nstep + 1):
-                            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gstr} "
-                                    "--setParameters g={gval} --freezeParameters g {acc} --picky {rrg} "
+                            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+                                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
                                     "--singlePoint 1 {stg} {asm} {mcs}".format(
                                         dcd = dcdir,
                                         mmm = mstr,
-                                        gstr = gstr + "eps",
-                                        gval = gval + (ii * factor * epsilon),
+                                        gst = gstr + "eps",
+                                        gvl = gval + (ii * factor * epsilon),
                                         acc = accuracies,
                                         rrg = r_range,
                                         stg = strategy,
@@ -311,8 +351,8 @@ if __name__ == '__main__':
                 if good_cls:
                     limits[gval + geps] = limit
                     consecutive_failure = 0
-                    if any([abs(ll - 0.05) < 0.02 for qq, ll in limit.items()]):
-                        gval += 0.01
+                    if any([ll > 0.01 and ll < 0.1 for qq, ll in limit.items()]):
+                        gval += 0.02
                     else:
                         gval += 0.05
                 else:
@@ -328,14 +368,14 @@ if __name__ == '__main__':
                         dcd = dcdir,
                         pnt = args.point
                     ))
-            with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj: 
+            with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj:
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
         syscall("rm {dcd}{pnt}_impacts_{mod}*".format(dcd = dcdir, mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
 
         r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
-        strategy = "--robustFit 1 --cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
+        strategy = "--robustFit 1 --setRobustFitStrategy 0 --cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm robustHesse*Fit__pull*.root", False, True)
@@ -343,36 +383,35 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: impact initial fit"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
-                    dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
-                    mmm = mstr,
-                    rrg = r_range,
-                    stg = strategy,
-                    poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
-                    asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
-                ))
-
-        print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
-                    dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
-                    mmm = mstr,
-                    rrg = r_range,
-                    stg = strategy,
-                    poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g --redefineSignalPOIs r",
-                    asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
-                ))
-
-        print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} {poi} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}.json".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            poi = "" if args.onepoi else "--redefineSignalPOIs r",
+            rrg = r_range,
+            stg = strategy,
+            poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g",
+            asm = "-t -1" if args.asimov else "",
+            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
+        ))
+
+        print "\nsingle_point_ahtt :: impact remaining fits"
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
+            dcd = dcdir,
+            mod = "one-poi" if args.onepoi else "g-scan",
+            mmm = mstr,
+            rrg = r_range,
+            stg = strategy,
+            poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g",
+            asm = "-t -1" if args.asimov else "",
+            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
+        ))
+
+        print "\nsingle_point_ahtt :: collecting impact results"
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}.json".format(
+            dcd = dcdir,
+            mod = "one-poi" if args.onepoi else "g-scan",
+            mmm = mstr,
             pnt = args.point,
             gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             exp = "sig" if args.impactsb else "bkg"
@@ -382,7 +421,7 @@ if __name__ == '__main__':
         syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}_{exp}.json -o {dcd}{pnt}_impacts_{mod}_{exp}".format(
+        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{gvl}_{exp}.json -o {dcd}{pnt}_impacts_{gvl}_{exp}".format(
             dcd = dcdir,
             gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             pnt = args.point,
@@ -391,7 +430,7 @@ if __name__ == '__main__':
 
     if runprepost:
         # option '--set/freezeParameters' cannot be specified more than once
-        strategy = "--robustFit 1 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
+        strategy = "--robustFit 1 --setRobustFitStrategy 2 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         setpar = []
         frzpar = []
         if not args.onepoi:
@@ -421,26 +460,138 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {frz} {poi}".format(
+                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {stp} {frz} {poi}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     stg = strategy,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    frz = "--setParameters '" + ",".join(setpar) + "' --freezeParameters '" + ",".join(frzpar) + "'" if len(setpar) > 0 else "",
-                    poi = "" if args.onepoi else "--redefineSignalPOIs r"
+                    stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+                    frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
         ))
 
         syscall("rm *_th1x_*.png", False, True)
         syscall("rm covariance_fit_?.png", False, True)
         syscall("rm higgsCombine_prepost*.root", False, True)
         syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
+
         syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}.root".format(
             dcd = dcdir,
-            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
-            pnt = args.point
+            pnt = args.point,
+            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p")
         ), False)
+
+    if runnll:
+        print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
+        strategy = "--robustFit 1 --setRobustFitStrategy 2 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
+
+        gvalues = [1e-5, 2e-5, 3e-5, 4e-5, 5e-5] + list(np.linspace(0., max_g, num = 151))
+        gvalues.sort()
+        scenarii = ['exp-bkg', 'exp-sig', 'obs']
+        setpar = []
+        frzpar = []
+        nlls = OrderedDict()
+        if not args.onepoi:
+            frzpar.append("g")
+
+        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+        if args.frzbb0:
+            setpar.append("rgx{prop_bin.*}=0")
+            frzpar.append("rgx{prop_bin.*}")
+
+        if args.frzbbp:
+            frzpar.append("rgx{prop_bin.*}")
+            iname = "{dcd}/{pnt}_impacts_{gvl}_{exp}.json".format(
+                dcd = dcdir,
+                pnt = args.point,
+                gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+                exp = "sig" if args.impactsb else "bkg"
+            )
+
+            with open(iname) as ff:
+                impacts = json.load(ff)
+
+            for pp in impacts["params"]:
+                if "prop_bin" in pp["name"]:
+                    setpar.append("{par}={val}".format(par = pp["name"], val = str(round(pp["fit"][1], 3) if abs(pp["fit"][1]) > 1e-3 else 0)))
+
+        if args.onepoi:
+            syscall("rm {dcd}{pnt}_nll_one-poi.root {dcd}{pnt}_nll_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
+
+            for sce in scenarii:
+                asimov = "-t -1" if sce != "obs" else ""
+                pois = ["r=0"] if sce == "exp-bkg" else ["r=1"] if sce == "exp-sig" else []
+
+                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll --rMin=0 --rMax={maxg} {gvl} "
+                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {mcs}".format(
+                            dcd = dcdir,
+                            mmm = mstr,
+                            maxg = max_g,
+                            gvl = "--points 151 --alignEdges 1",
+                            stg = strategy,
+                            asm = asimov,
+                            stp = "--setParameters '" + ",".join(setpar + pois) + "'" if len(setpar) + len(pois) > 0 else "",
+                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                        ))
+
+                syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}_nll_{sce}_one-poi.root".format(
+                    dcd = dcdir,
+                    sce = sce,
+                    pnt = args.point
+                ), False)
+
+                nlls[sce] = get_nll_one_poi("{dcd}{pnt}_nll_{sce}_one-poi.root".format(
+                    dcd = dcdir,
+                    sce = sce,
+                    pnt = args.point
+                ))
+
+        else:
+            syscall("rm {dcd}{pnt}_nll_g-scan.root {dcd}{pnt}_nll_g-scan.json".format(dcd = dcdir, pnt = args.point), False, True)
+            nlls = OrderedDict()
+            r_range = "--rMin=0 --rMax=2"
+
+            for sce in scenarii:
+                asimov = "-t -1" if sce != "obs" else ""
+                pois = ["r=0", "g=0"] if sce == "exp-bkg" else ["r=1", "g=1"] if sce == "exp-sig" else []
+
+                for gval in gvalues:
+                    gstr = str(round(gval, 3)).replace('.', 'p')
+                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {rrg} "
+                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {mcs}".format(
+                                dcd = dcdir,
+                                mmm = mstr,
+                                gst = "fix-g_" + str(gstr).replace(".", "p"),
+                                rrg = r_range,
+                                gvl = str(gval),
+                                stg = strategy,
+                                asm = asimov,
+                                stp = "--setParameters '" + ",".join(setpar + pois) + "'" if len(setpar) + len(pois) > 0 else "",
+                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                            ))
+
+                syscall("hadd {dcd}{pnt}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
+                        "rm higgsCombine_nll_fix-g*.root".format(
+                            dcd = dcdir,
+                            sce = sce,
+                            pnt = args.point
+                        ))
+
+                nlls[sce] = get_nll_g_scan("{dcd}{pnt}_nll_{sce}_g-scan.root".format(
+                    dcd = dcdir,
+                    sce = sce,
+                    pnt = args.point
+                ))
+
+        syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
+
+        with open("{dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
+            json.dump(nlls, jj, indent = 1)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

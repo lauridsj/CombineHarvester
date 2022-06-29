@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 import os
 import sys
 import numpy as np
+from scipy.interpolate import UnivariateSpline
 import math
 
 import glob
@@ -32,7 +33,7 @@ def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
-def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
+def read_limit(directories, xvalues, onepoi):
     limits = [OrderedDict() for tag in directories]
 
     for ii, tag in enumerate(directories):
@@ -72,54 +73,41 @@ def read_limit(directories, xvalues, onepoi, patchgap, maxgap):
                         continue
 
                     for quantile, cls in lmt.items():
-                        if quantile != "obs":
-                            if round(cls, 3) < 0.05:
-                                if not exclusion[quantile]:
-                                    limit[quantile].append([round(float(g), 4)])
-                                    exclusion[quantile] = True
-                                else:
-                                    limit[quantile][-1].append(round(float(g), 4))
-
-                            elif exclusion[quantile]:
-                                exclusion[quantile] = False
-
-                        else:
-                            limit[quantile].append((round(float(g), 4), round(cls, 3)))
-
-                if patchgap:
-                    for quantile in limit.keys():
-                        if quantile != "obs":
-                            ll = 0
-                            #print(quantile, limit[quantile])
-                            while ll < len(limit[quantile]) - 1:
-                                if limit[quantile][ll + 1][0] - limit[quantile][ll][-1] < maxgap:
-                                    if len(limit[quantile][ll]) == 1:
-                                        # this is the weird case when a point is excluded but very close to 0.05, and next is > 0.05 again
-                                        # interpret the next > 0.05 point as numerical error, and start exclusion interval from this point
-                                        limit[quantile][ll].append(limit[quantile][ll + 1][-1])
-                                    else:
-                                        limit[quantile][ll][1] = limit[quantile][ll + 1][-1]
-                                    del limit[quantile][ll + 1]
-                                    continue
-
-                                ll = ll + 1
-                        else:
-                            # FIXME patchgap algorithm for observed
-                            pass
+                        limit[quantile].append((round(float(g), 4), round(cls, 3)))
 
                 for quantile in limit.keys():
                     if quantile == "obs":
                         continue
 
-                    for interval in limit[quantile]:
-                        if len(interval) < 2:
-                            print(quantile, limit[quantile])
-                            print("in " + dd + ", found a single point exclusion interval. assuming this is due to sudden jump in cls. skipping.")
+                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.5] )
+                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.5] )
 
-                    limit[quantile] = [interval for interval in limit[quantile] if len(interval) >= 2]
+                    if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
+                        spline = UnivariateSpline(g, cls)
+                        #plt.plot(g, spline(g), 'g', lw = 3)
+                        #plt.show(block = True) # FIXME the splines gotta be dumped too, to ensure it's sensible
 
-                    for kk in range(len(limit[quantile])):
-                       limit[quantile][kk] = [limit[quantile][kk][0], max_g if max_g - limit[quantile][kk][-1] < maxgap else limit[quantile][kk][-1]]
+                        crossing = list(g)[ [ii for ii, cc in enumerate(list(cls)) if cc > 0.05][-1] ]
+                        residual = abs(spline(crossing) - 0.05)
+                        while residual > epsilon and crossing < max_g:
+                            crossing += epsilon
+                            if abs(spline(crossing) - 0.05) > residual:
+                                crossing -= epsilon
+                                if residual > 250. * epsilon:
+                                    print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
+                                break
+                            else:
+                                residual = abs(spline(crossing) - 0.05)
+
+                        limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
+
+                    else:
+                        print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.5 are insufficient to form a spline:")
+                        print(g)
+                        print(cls)
+                        print("\n")
+
+                        limit[quantile] = []
 
             limits[ii][xvalues[jj]] = limit
 
@@ -285,7 +273,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
-def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, observed, patchgap, maxgap, transparent):
+def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, observed, transparent):
     masses = [pnt[1] for pnt in points]
     if len(set(masses)) != len(masses):
         raise RuntimeError("producing " + oname + ", --function natural expects unique mass points only. aborting")
@@ -293,9 +281,9 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, obser
     if len(masses) < 2:
         print("There are less than 2 masses points. skipping")
 
-    draw_1D(oname, read_limit(directories, masses, onepoi, patchgap, maxgap), labels, xaxis, yaxis, "", observed, transparent)
+    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", observed, transparent)
 
-def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, patchgap, maxgap, transparent):
+def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, transparent):
     widths = set([pnt[2] for pnt in points])
 
     for ww in widths:
@@ -308,7 +296,7 @@ def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, patch
             continue
 
         draw_1D(oname.format(www = 'w' + str(ww).replace('.', 'p')),
-                read_limit(dirs, masses, onepoi, patchgap, maxgap),
+                read_limit(dirs, masses, onepoi),
                 labels, axes["mass"] % points[0][0], yaxis,
                 ", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$" % (points[0][0], ww, points[0][0]),
                 observed, transparent)
@@ -326,10 +314,6 @@ if __name__ == '__main__':
                         default = "", required = False)
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
-    parser.add_argument("--patch-narrow-gaps", help = "patch narrow gaps in observed exclusion intervals",
-                        dest = "patchgap", action = "store_true", required = False)
-    parser.add_argument("--max-gap-size", help = "maximum gap size to be considered narrow, when --patch-narrow-gaps is true",
-                        dest = "maxgap", default = 0.1, required = False, type = float)
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
                         dest = "transparent", action = "store_true", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "pdf", dest = "fmt", required = False)
@@ -374,17 +358,17 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent)
     elif args.function == "mass":
         if len(apnt) > 0:
             draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent)
         if len(hpnt) > 0:
             draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.patchgap, args.maxgap, args.transparent)
+                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent)
     elif args.function == "width":
         pass
 

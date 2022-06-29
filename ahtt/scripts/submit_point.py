@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated",
-                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
+                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--drop",
@@ -50,7 +50,7 @@ if __name__ == '__main__':
                         "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
                         "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
                         "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates alone 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
     parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
@@ -98,11 +98,11 @@ if __name__ == '__main__':
         if args.signal == "":
             if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                 if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                    signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root"
+                    signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root"
             for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                 if im in pnt or im in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root"
+                        signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root"
         else:
             signal = args.signal
 
@@ -167,6 +167,7 @@ if __name__ == '__main__':
                 continue
 
         job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
+        job_name += "{mod}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan")
         logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
         if len(logs) > 0:
