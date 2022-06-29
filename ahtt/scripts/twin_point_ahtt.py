@@ -68,6 +68,9 @@ if __name__ == '__main__':
     parser.add_argument("--fc-ntoy", help = "number of toys to throw during the FC scan",
                         default = 100, dest = "fctoy", required = False, type = int)
 
+    parser.add_argument("--seed",
+                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
+                        default = "", required = False)
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
     parser.add_argument("--base-directory",
                         help = "in non-datacard modes, this is the location where datacard is searched for, and output written to",
