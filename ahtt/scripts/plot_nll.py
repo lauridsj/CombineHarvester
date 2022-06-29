@@ -31,7 +31,7 @@ def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
-def read_nll(directories, onepoi):
+def read_nll(directories, onepoi, max_g):
     nlls = [OrderedDict() for dd in directories]
     for ii, dd in enumerate(directories):
         with open("{dd}/{pnt}_nll_{mod}.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]), mod = "one-poi" if onepoi else "g-scan")) as ff:
@@ -56,7 +56,18 @@ def read_nll(directories, onepoi):
                 obs_g = nll["obs"]["g"]
 
             for g, dnll in nll["dnll"].items():
-                dnlls.append( (float(g), dnll + nll0 - nll1) )
+                gval = float(g)
+                if gval <= max_g:
+                    ispline = -1
+                    for ii, kk in enumerate(kinks):
+                        ispline = ii if kk[0] < gval < kk[1] else ispline
+
+                    if ispline > -1:
+                        spline = UnivariateSpline(np.array(kinks[ispline]),
+                                                  np.array([dd + nll0 - nll1 for gg, dd in nll["dnll"].items() if kinks[ispline][0] <= float(gg) <= kinks[ispline][1]]))
+                        dnlls.append( (gval, spline(gval)) )
+                    else:
+                        dnlls.append( (gval, dnll + nll0 - nll1) )
 
             nlls[ii][sce] = dnlls
 
@@ -65,13 +76,13 @@ def read_nll(directories, onepoi):
 
     return nlls
 
-def draw_nll(oname, directories, labels, onepoi, bestfit, transparent, plotformat):
+def draw_nll(oname, directories, labels, onepoi, smooth, kinks, max_g, max_dnll, bestfit, transparent, plotformat):
     if len(directories) > 3:
         raise RuntimeError("current plotting code is not meant for more than 3 tags. aborting")
 
     # FIXME bestfit
 
-    nlls = read_nll(directories, onepoi)
+    nlls = read_nll(directories, onepoi, kinks, max_g)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
     if not hasattr(draw_nll, "colors"):
@@ -83,10 +94,9 @@ def draw_nll(oname, directories, labels, onepoi, bestfit, transparent, plotforma
         draw_nll.lines = ["dotted", "dashed", "solid"]
 
     min_dnll = sys.float_info.max
-    max_g = 3.
     fig, ax = plt.subplots()
     handles = []
-    ymax = 200.
+    ymax = max_dnll
 
     for ii, nll in enumerate(nlls):
         if ii == 0:
@@ -156,6 +166,11 @@ if __name__ == '__main__':
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "XXX", required = False)
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
+    parser.add_argument("--smooth", help = "use spline to smooth kinks up. kinks are given in --kinks", action = "store_true", required = False)
+    parser.add_argument("--kinks", help = "comma separated list of g values to be used by --smooth. every 2 values are treated as min and max of kink range",
+                        default = "", required = False)
+    parser.add_argument("--max-g", help = "max value of g to incude in plot", dest = "max_g", type = float, default = 3., required = False)
+    parser.add_argument("--max-dnll", help = "max value of dnll to incude in plot", dest = "max_dnll", type = float, default = 36., required = False)
     parser.add_argument("--best-fit", help = "write the observed best fit points on the plot",
                         dest = "bestfit", action = "store_true", required = False)
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
@@ -175,8 +190,17 @@ if __name__ == '__main__':
     if len(tags) != len(labels):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
+    kinks = None
+    if args.kinks != "":
+        kinks = args.kinks.split(',')
+
+        if len(kinks) % 2 == 1:
+            raise RuntimeError("kinks given don't correspond to list of minmaxes. aborting!")
+
+        kinks = [[kinks[ii], kinks[ii + 1]] for ii in range(len(kinks) - 1)]
+
     dirs = [args.point + '_' + tag for tag in tags]
     draw_nll("{ooo}/{pnt}_nll_{mod}{tag}{fmt}".format(ooo = args.odir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-             dirs, labels, args.onepoi, args.bestfit, args.transparent, args.fmt)
+             dirs, labels, args.onepoi, args.smooth, kinks, args.max_g, args.max_dnll, args.bestfit, args.transparent, args.fmt)
 
     pass

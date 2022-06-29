@@ -152,6 +152,6 @@ if __name__ == '__main__':
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     dirs = [args.point + '_' + tag for tag in tags]
-    draw_pull(args.odir + "/" + args.point + "_pulls" + args.otag, dirs, labels, args.onepoi, args.mcstat, args.transparent, args.fmt)
+    draw_pull(args.odir + "/" + args.point + "_pull" + args.otag, dirs, labels, args.onepoi, args.mcstat, args.transparent, args.fmt)
 
     pass

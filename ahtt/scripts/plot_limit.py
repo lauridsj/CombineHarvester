@@ -33,7 +33,7 @@ def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
-def read_limit(directories, xvalues, onepoi):
+def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     limits = [OrderedDict() for tag in directories]
 
     for ii, tag in enumerate(directories):
@@ -79,15 +79,26 @@ def read_limit(directories, xvalues, onepoi):
                     if quantile == "obs":
                         continue
 
-                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.5] )
-                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.5] )
+                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.25] )
+                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.25] )
 
                     if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
                         spline = UnivariateSpline(g, cls)
-                        #plt.plot(g, spline(g), 'g', lw = 3)
-                        #plt.show(block = True) # FIXME the splines gotta be dumped too, to ensure it's sensible
 
-                        crossing = list(g)[ [ii for ii, cc in enumerate(list(cls)) if cc > 0.05][-1] ]
+                        if dump_spline:
+                            qstr = quantile.replace('+', 'pp').replace('-', 'm')
+                            fig, ax = plt.subplots()
+
+                            ax.plot(g, spline(g), 'g', lw = 3)
+                            fig.tight_layout()
+                            fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
+                            fig.clf()
+
+                        crossing = max_g
+                        for ii in range(1, len(cls) - 1):
+                            if cls[ii] > 0.05 and (cls[ii - 1] <= cls[ii] <= cls[ii + 1] or cls[ii + 1] <= cls[ii] <= cls[ii - 1]):
+                                crossing = cls[ii]
+
                         residual = abs(spline(crossing) - 0.05)
                         while residual > epsilon and crossing < max_g:
                             crossing += epsilon
@@ -102,7 +113,7 @@ def read_limit(directories, xvalues, onepoi):
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
                     else:
-                        print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.5 are insufficient to form a spline:")
+                        print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.25 are insufficient to form a spline:")
                         print(g)
                         print(cls)
                         print("\n")
@@ -283,7 +294,7 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, obser
 
     draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", observed, transparent)
 
-def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, transparent):
+def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, transparent, dump_spline):
     widths = set([pnt[2] for pnt in points])
 
     for ww in widths:
@@ -296,7 +307,7 @@ def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, trans
             continue
 
         draw_1D(oname.format(www = 'w' + str(ww).replace('.', 'p')),
-                read_limit(dirs, masses, onepoi),
+                read_limit(dirs, masses, onepoi, dump_spline, oname.xxxx()),
                 labels, axes["mass"] % points[0][0], yaxis,
                 ", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$" % (points[0][0], ww, points[0][0]),
                 observed, transparent)
@@ -316,6 +327,8 @@ if __name__ == '__main__':
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
                         dest = "transparent", action = "store_true", required = False)
+    parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",
+                        dest = "dump_spline", action = "store_true", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "pdf", dest = "fmt", required = False)
 
     args = parser.parse_args()
@@ -365,10 +378,10 @@ if __name__ == '__main__':
     elif args.function == "mass":
         if len(apnt) > 0:
             draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent)
+                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent)
+                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent, args.dump_spline)
     elif args.function == "width":
         pass
 
