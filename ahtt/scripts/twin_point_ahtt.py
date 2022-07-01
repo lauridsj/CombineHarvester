@@ -63,10 +63,18 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
-    parser.add_argument("--fc-g-values", help = "the two values of g to do the FC scan for, comma separated",
+    parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
                         default = "0., 0.", dest = "fcgvl", required = False)
-    parser.add_argument("--fc-ntoy", help = "number of toys to throw during the FC scan",
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
+                        "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
+                        default = "exp-b", dest = "fcexp", required = False)
+    parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
+                        default = 2, dest = "fcsigma", required = False, type = int)
+    parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 100, dest = "fctoy", required = False, type = int)
+    parser.add_argument("--fc-save-toy", help = "save toys thrown in the FC grid scan", dest = "fcsave", action = "store_true", required = False)
+    parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
+                        default = -1, dest = "fcidx", required = False, type = int)
 
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
@@ -149,23 +157,48 @@ if __name__ == '__main__':
         ))
 
     if runfc:
-        print "\ntwin_point_ahtt :: performing the FC scan"
-        strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,0"
-        fcgvl = args.fcgvl.replace(" ", "").split(',')
+        allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
+        if args.fcexp not in allexp:
+            print "supported expected scenario:", allexp
+            raise RuntimeError("unxpected expected scenario is given. aborting.")
 
-        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n {fnm} --LHCmode LHC-feldman-cousins --maxProbability 0.99 "
-                "--singlePoint '{ppp}' --setParameters '{ppp}' -T {toy} {asm} {mcs} {stg} --saveHybridResult".format(
+        exp_scenario = OrderedDict()
+        exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
+        exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
+        exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
+        exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
+
+        print "\ntwin_point_ahtt :: performing the FC scan"
+        strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,2 --robustFit --robustHesse"
+        fcgvl = args.fcgvl.replace(" ", "").split(',')
+        scan_name = "_pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
+        scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
+
+        contour_pval = [
+            "0.6827,0.9545,0.9973",
+            "0.6827,0.9545,0.9973,0.999937",
+        ]
+
+        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n {snm} --LHCmode LHC-feldman-cousins "
+                "--singlePoint '{par}' --setParameters '{exp}' -T {toy} {sav} {asm} {mcs} {stg} {imp} --saveHybridResult".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    fnm = "_g1_" + fcgvl[0] + "_g2_" + fcgvl[1],
-                    ppp = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                    snm = scan_name,
+                    par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                    exp = exp_scenario[args.fcexp],
                     toy = str(args.fctoy),
+                    sav = "--saveToys" if args.fcsave else "",
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stg = strategy
+                    stg = strategy,
+                    imp = "--importantContours " + contour_pval[args.fcsigma - 3] if args.fcsigma > 2 and args.fcsigma < 5 else ""
                 ))
 
-        # FIXME result collection and whatnot...
+        syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}.root {dcd}fc_grid_{snm}.root".format(
+            dcd = dcdir,
+            snm = scan_name,
+            mmm = mstr,
+        ), False)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
