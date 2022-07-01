@@ -14,7 +14,7 @@ from utilities import syscall
 max_g = 3.
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
-def submit_twin_job(job_arg, job_time, job_dir, script_dir):
+def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
     syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir}'.format(
         csub = condordir + "condorSubmit.sh",
         cpar = condordir + "condorParam.txt",
@@ -182,6 +182,8 @@ if __name__ == '__main__':
                     for ig2 in gvalues:
                         rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp))
                         if len(jfile) == 0:
+                            jname = job_name + "_pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp
+
                             jarg = job_arg
                             jarg += " {gvl} {exp} {sig} {toy} {sav}".format(
                                 gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
@@ -191,7 +193,7 @@ if __name__ == '__main__':
                                 sav = "--fc-save-toy" if args.fcsave else ""
                             )
 
-                            submit_twin_job(jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+                            submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
