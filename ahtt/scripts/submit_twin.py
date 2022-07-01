@@ -15,7 +15,7 @@ max_g = 3.
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 def submit_twin_job(job_arg, job_time, job_dir, script_dir):
-    syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {tmp} {job_dir}".format(
+    syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir}'.format(
         csub = condordir + "condorSubmit.sh",
         cpar = condordir + "condorParam.txt",
         crun = condordir + "condorRun.sh",
@@ -149,8 +149,8 @@ if __name__ == '__main__':
         #if len(logs) > 0:
         #    continue
 
-        job_arg = ('"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}'
-                   '{shp} {mcs} {prj} {asm} {com} {bsd}"').format(
+        job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}"
+                   "{shp} {mcs} {prj} {asm} {com} {bsd}").format(
             pnt = pair,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
