@@ -94,15 +94,16 @@ if __name__ == '__main__':
     resub = "resubmit" in args.mode
 
     for pnt in points:
-        signal = ""
+        signals = []
         if args.signal == "":
             if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                 if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                    signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root"
+                    signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
             for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                 if im in pnt or im in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signal += " /nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root"
+                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
+            signal = ','.join(signals)
         else:
             signal = args.signal
 

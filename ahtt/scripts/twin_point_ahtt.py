@@ -169,9 +169,9 @@ if __name__ == '__main__':
         exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
         print "\ntwin_point_ahtt :: performing the FC scan"
-        strategy = "--cminPreScan --cminFallbackAlgo Minuit2,Simplex,2 --robustFit --robustHesse"
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
         fcgvl = args.fcgvl.replace(" ", "").split(',')
-        scan_name = "_pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
+        scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
         scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
 
         contour_pval = [
@@ -179,7 +179,7 @@ if __name__ == '__main__':
             "0.6827,0.9545,0.9973,0.999937",
         ]
 
-        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n {snm} --LHCmode LHC-feldman-cousins "
+        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} --LHCmode LHC-feldman-cousins "
                 "--singlePoint '{par}' --setParameters '{exp}' -T {toy} {sav} {asm} {mcs} {stg} {imp} --saveHybridResult".format(
                     dcd = dcdir,
                     mmm = mstr,
