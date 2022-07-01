@@ -186,10 +186,10 @@ if __name__ == '__main__':
                         if len(jfile) == 0:
                             jarg = job_arg
                             jarg += "{gvl} {exp} {sig} {toy} {sav}".format(
-                                gvl = str(ig1) + "," + str(ig2),
-                                exp = args.fcexp,
-                                sig = args.fcsigma,
-                                toy = args.fctoy,
+                                gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
+                                exp = "--fc-expect " + args.fcexp if args.fcexp != "" else "",
+                                sig = "--fc-n-sigma " + args.fcsigma if args.fcsigma != 2 else "",
+                                toy = "--fc-n-toy " + args.fctoy if args.fctoy != 100 else "",
                                 sav = "--fc-save-toy" if args.fcsave else ""
                             )
 
