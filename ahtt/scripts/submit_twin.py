@@ -185,7 +185,7 @@ if __name__ == '__main__':
                         rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp))
                         if len(jfile) == 0:
                             jarg = job_arg
-                            jarg += "{gvl} {exp} {sig} {toy} {sav}".format(
+                            jarg += " {gvl} {exp} {sig} {toy} {sav}".format(
                                 gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
                                 exp = "--fc-expect " + args.fcexp if args.fcexp != "" else "",
                                 sig = "--fc-n-sigma " + args.fcsigma if args.fcsigma != 2 else "",
