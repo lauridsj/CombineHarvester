@@ -15,7 +15,7 @@ max_g = 3.
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 def submit_twin_job(job_arg, job_time, job_dir, script_dir):
-    syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {tmp} {job}".format(
+    syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {tmp} {job_dir}".format(
         csub = condordir + "condorSubmit.sh",
         cpar = condordir + "condorParam.txt",
         crun = condordir + "condorRun.sh",
@@ -24,7 +24,7 @@ def submit_twin_job(job_arg, job_time, job_dir, script_dir):
         job_arg = job_arg,
         job_time = job_time,
         tmp = "--run-in-tmp",
-        job = job_dir
+        job_dir = job_dir
     ))
 
 if __name__ == '__main__':
@@ -73,8 +73,6 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
-    parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
-                        default = "0., 0.", dest = "fcgvl", required = False)
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
