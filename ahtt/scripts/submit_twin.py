@@ -18,6 +18,9 @@ condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 aggregate_submit = "conSub_aggregate.txt"
 
 def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
+    if not hasattr(submit_twin_job, "firstprint"):
+        submit_twin_job.firstprint = True
+
     syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
         csub = condordir + "condorSubmit.sh",
         cpar = condordir + "condorParam.txt",
@@ -28,7 +31,8 @@ def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
         job_time = job_time,
         tmp = "--run-in-tmp",
         job_dir = job_dir
-    ))
+    ), submit_twin_job.firstprint)
+    submit_twin_job.firstprint = False
 
     if not os.path.isfile(aggregate_submit):
         syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)

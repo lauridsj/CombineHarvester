@@ -158,54 +158,7 @@ if __name__ == '__main__':
             pnt = args.point,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
-'''
-    if False and runfc:
-        allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
-        if args.fcexp not in allexp:
-            print "supported expected scenario:", allexp
-            raise RuntimeError("unxpected expected scenario is given. aborting.")
 
-        exp_scenario = OrderedDict()
-        exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
-        exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
-
-        print "\ntwin_point_ahtt :: performing the FC scan"
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {fit} --cminFallbackAlgo Minuit2,Simplex,{fit}".format(
-            fit = str(args.fcfit) if args.fcfit >= 0 and args.fcfit <= 2 else '2'
-        )
-        fcgvl = args.fcgvl.replace(" ", "").split(',')
-
-        scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
-        scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
-
-        contour_pval = [
-            "0.6827,0.9545,0.9973",
-            "0.6827,0.9545,0.9973,0.999937",
-        ]
-
-        syscall("combine -M HybridNew -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} --LHCmode LHC-feldman-cousins "
-                "--singlePoint '{par}' --clsAcc 0 --setParameters '{exp}' -T {toy} {sav} {asm} {mcs} {stg} {imp} --saveHybridResult".format(
-                    dcd = dcdir,
-                    mmm = mstr,
-                    snm = scan_name,
-                    par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                    exp = exp_scenario[args.fcexp],
-                    toy = str(args.fctoy),
-                    sav = "--saveToys" if args.fcsave else "",
-                    asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stg = strategy,
-                    imp = "--importantContours " + contour_pval[args.fcsigma - 3] if args.fcsigma > 2 and args.fcsigma < 5 else ""
-                ))
-
-        syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
-            dcd = dcdir,
-            snm = scan_name,
-            mmm = mstr,
-        ), False)
-'''
     if runfc:
         allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
         if args.fcexp not in allexp:
