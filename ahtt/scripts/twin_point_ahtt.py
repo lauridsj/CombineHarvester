@@ -196,7 +196,7 @@ if __name__ == '__main__':
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
-            syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
                 dcd = dcdir,
                 snm = scan_name + "_data",
                 mmm = mstr,
@@ -217,7 +217,7 @@ if __name__ == '__main__':
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
-            syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
                 dcd = dcdir,
                 snm = scan_name,
                 mmm = mstr,
