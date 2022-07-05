@@ -194,8 +194,8 @@ if __name__ == '__main__':
                             jarg += " {gvl} {exp} {sig} {toy} {sav} {fit} {idx}".format(
                                 gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
                                 exp = "--fc-expect " + args.fcexp if args.fcexp != "" else "",
-                                sig = "--fc-n-sigma " + args.fcsigma if args.fcsigma != 2 else "",
-                                toy = "--fc-n-toy " + args.fctoy if args.fctoy != 100 else "",
+                                sig = "--fc-n-sigma " + str(args.fcsigma) if args.fcsigma != 2 else "",
+                                toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy != 100 else "",
                                 sav = "--fc-save-toy" if args.fcsave else "",
                                 fit = "--fc-fit-strategy " + str(args.fcfit) if args.fcfit >= 0 and args.fcfit <= 2 else "",
                                 idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
