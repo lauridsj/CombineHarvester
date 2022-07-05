@@ -213,7 +213,7 @@ if __name__ == '__main__':
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
                         exp = exp_scenario[args.fcexp],
                         stg = strategy,
-                        toy = "-s -1 --toysFrequentist -t " + str(args.fctoy) if args.fctoy > 0,
+                        toy = "-s -1 --toysFrequentist -t " + str(args.fctoy) if args.fctoy > 0 else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
