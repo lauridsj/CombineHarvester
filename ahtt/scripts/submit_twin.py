@@ -15,8 +15,42 @@ min_g = 0.
 max_g = 3.
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
+aggregate_submit = "conSub_aggregate.txt"
+
+def submit_smoother(files, variables, weights, systematic_name_type, ncv, npart, oneside, output,
+                    process, tag, directory, snapshot_allow_name, resubnolog, job_time,
+                    verbose, execute):
+    job_arg = smoother_argument(files, variables, weights, systematic_name_type, "smooth", "", oneside, output)
+    job_arg += " --nrepeatcv " + str(ncv) + " --npartition " + str(npart) + snapshot_allow_name[1]
+    job_arg.replace("*", "\*")
+
+    if snapshot_allow_name[1] == "" or (snapshot_allow_name[0] and snapshot_allow_name[1] != ""):
+        name = "_".join(["smooth", process, systematic_name_type[0] + tag])
+        logs = glob.glob(directory + name + ".o*.*")
+
+        if not execute or not resubnolog or (resubnolog and len(logs) == 0):
+            syscall('{csub} -s {cpar} -w {crun} -n {name} -l {outdir} -e {executable} {jobtime} -p 2 -a "{jobarg}" {dbg}'.format(
+                csub = htcdir + 'condorSubmit.sh',
+                cpar = htcdir + 'condorParam.txt',
+                crun = htcdir + 'condorRun.sh',
+                name = name,
+                outdir = os.path.abspath(directory),
+                executable = os.path.abspath(smoother),
+                jobtime = job_time,
+                jobarg = job_arg,
+                dbg = "--debug" if execute else ""
+            ), verbose, execute)
+
+            if execute:
+                if not os.path.isfile(aggregate_submit):
+                    syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + name + '.txt', agg = aggregate_submit), False, True)
+                else:
+                    syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
+                        name = 'conSub_' + name + '.txt',
+                        agg = aggregate_submit), False, True)
+
 def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
-    syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir}'.format(
+    syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
         csub = condordir + "condorSubmit.sh",
         cpar = condordir + "condorParam.txt",
         crun = condordir + "condorRun.sh",
@@ -27,6 +61,13 @@ def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
         tmp = "--run-in-tmp",
         job_dir = job_dir
     ))
+
+    if not os.path.isfile(aggregate_submit):
+        syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + name + '.txt', agg = aggregate_submit), False)
+    else:
+        syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
+            name = 'conSub_' + job_name + '.txt',
+            agg = aggregate_submit), False)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -74,16 +115,19 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
+    parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
+                        default = "0., 0.", dest = "fcgvl", required = False)
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
-    parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
-                        default = 2, dest = "fcsigma", required = False, type = int)
-    parser.add_argument("--fc-fit-strategy", help = "fit strategy to use. 0, 1, or 2",
-                        default = 2, dest = "fcfit", required = False, type = int)
+    #parser.add_argument("--fc-fit-strategy", help = "fit strategy to use. 0, 1, or 2",
+    #                    default = 2, dest = "fcfit", required = False, type = int)
+    #parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
+    #                    default = 2, dest = "fcsigma", required = False, type = int)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 100, dest = "fctoy", required = False, type = int)
-    parser.add_argument("--fc-save-toy", help = "save toys thrown in the FC grid scan", dest = "fcsave", action = "store_true", required = False)
+    #parser.add_argument("--fc-save-toy", help = "save toys thrown in the FC grid scan", dest = "fcsave", action = "store_true", required = False)
+    parser.add_argument("--fc-skip-data", help = "skip data fit during FC scan, only do toys", dest = "fcskip", action = "store_true", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
@@ -104,6 +148,10 @@ if __name__ == '__main__':
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
+
+    # clean up before doing anything else, in case someone aborts previous run
+    if os.path.isfile(aggregate_submit):
+        syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
 
     for pair in pairs:
         points = pair.split(',')
@@ -206,3 +254,7 @@ if __name__ == '__main__':
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
             submit_twin_job(job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+
+        if os.path.isfile(aggregate_submit):
+            syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
+            syscall('rm {agg}'.format(agg = aggregate_submit), False)
