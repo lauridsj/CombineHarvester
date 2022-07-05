@@ -17,38 +17,6 @@ max_g = 3.
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 aggregate_submit = "conSub_aggregate.txt"
 
-def submit_smoother(files, variables, weights, systematic_name_type, ncv, npart, oneside, output,
-                    process, tag, directory, snapshot_allow_name, resubnolog, job_time,
-                    verbose, execute):
-    job_arg = smoother_argument(files, variables, weights, systematic_name_type, "smooth", "", oneside, output)
-    job_arg += " --nrepeatcv " + str(ncv) + " --npartition " + str(npart) + snapshot_allow_name[1]
-    job_arg.replace("*", "\*")
-
-    if snapshot_allow_name[1] == "" or (snapshot_allow_name[0] and snapshot_allow_name[1] != ""):
-        name = "_".join(["smooth", process, systematic_name_type[0] + tag])
-        logs = glob.glob(directory + name + ".o*.*")
-
-        if not execute or not resubnolog or (resubnolog and len(logs) == 0):
-            syscall('{csub} -s {cpar} -w {crun} -n {name} -l {outdir} -e {executable} {jobtime} -p 2 -a "{jobarg}" {dbg}'.format(
-                csub = htcdir + 'condorSubmit.sh',
-                cpar = htcdir + 'condorParam.txt',
-                crun = htcdir + 'condorRun.sh',
-                name = name,
-                outdir = os.path.abspath(directory),
-                executable = os.path.abspath(smoother),
-                jobtime = job_time,
-                jobarg = job_arg,
-                dbg = "--debug" if execute else ""
-            ), verbose, execute)
-
-            if execute:
-                if not os.path.isfile(aggregate_submit):
-                    syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + name + '.txt', agg = aggregate_submit), False, True)
-                else:
-                    syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
-                        name = 'conSub_' + name + '.txt',
-                        agg = aggregate_submit), False, True)
-
 def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
     syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
         csub = condordir + "condorSubmit.sh",
@@ -63,7 +31,7 @@ def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
     ))
 
     if not os.path.isfile(aggregate_submit):
-        syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + name + '.txt', agg = aggregate_submit), False)
+        syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
     else:
         syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
             name = 'conSub_' + job_name + '.txt',
