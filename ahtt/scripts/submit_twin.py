@@ -188,11 +188,11 @@ if __name__ == '__main__':
 
                         rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = scan_name))
                         if len(rfile) == 0:
-                            jname = job_name + scan_name
+                            jname = job_name + scan_name.replace("pnt", "")
 
                             jarg = job_arg
                             jarg += " {gvl} {exp} {sig} {toy} {sav} {fit} {idx}".format(
-                                gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
+                                gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
                                 exp = "--fc-expect " + args.fcexp if args.fcexp != "" else "",
                                 sig = "--fc-n-sigma " + str(args.fcsigma) if args.fcsigma != 2 else "",
                                 toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy != 100 else "",
@@ -201,10 +201,7 @@ if __name__ == '__main__':
                                 idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
                             )
 
-                            print jname
-                            print
-                            print jarg
-                            #submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+                            submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
