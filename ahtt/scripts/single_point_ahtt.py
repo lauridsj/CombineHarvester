@@ -375,10 +375,9 @@ if __name__ == '__main__':
         syscall("rm {dcd}{pnt}_impacts_{mod}*".format(dcd = dcdir, mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
 
         r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
-        strategy = "--robustFit 1 --setRobustFitStrategy 0 --cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
+        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
-        syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
         print "\nsingle_point_ahtt :: impact initial fit"
@@ -418,7 +417,6 @@ if __name__ == '__main__':
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
-        syscall("rm robustHesse*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
         syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{gvl}_{exp}.json -o {dcd}{pnt}_impacts_{gvl}_{exp}".format(
@@ -485,7 +483,7 @@ if __name__ == '__main__':
 
     if runnll:
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
-        strategy = "--robustFit 1 --setRobustFitStrategy 2 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
+        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
 
         gvalues = [1e-5, 2e-5, 3e-5, 4e-5, 5e-5] + list(np.linspace(0., max_g, num = 151))
         gvalues.sort()
@@ -588,7 +586,6 @@ if __name__ == '__main__':
                 ))
 
         syscall("rm combine_logger.out", False, True)
-        syscall("rm robustHesse_*.root", False, True)
 
         with open("{dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)
