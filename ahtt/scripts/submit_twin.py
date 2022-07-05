@@ -11,6 +11,7 @@ import numpy as np
 
 from utilities import syscall
 
+min_g = 0.
 max_g = 3.
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
@@ -78,6 +79,8 @@ if __name__ == '__main__':
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
                         default = 2, dest = "fcsigma", required = False, type = int)
+    parser.add_argument("--fc-fit-strategy", help = "fit strategy to use. 0, 1, or 2",
+                        default = 2, dest = "fcfit", required = False, type = int)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-save-toy", help = "save toys thrown in the FC grid scan", dest = "fcsave", action = "store_true", required = False)
@@ -174,26 +177,34 @@ if __name__ == '__main__':
         )
 
         if runfc:
-            gvalues = list(np.linspace(0., max_g, num = 13))
+            gvalues = list(np.linspace(min_g, max_g, num = 13))
             jfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{exp}.json".format(exp = args.fcexp))
 
             if len(jfile) == 0:
                 for ig1 in gvalues:
                     for ig2 in gvalues:
-                        rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp))
-                        if len(jfile) == 0:
-                            jname = job_name + "_pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp
+                        scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp + 
+                        scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
+
+                        rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = scan_name))
+                        if len(rfile) == 0:
+                            jname = job_name + scan_name
 
                             jarg = job_arg
-                            jarg += " {gvl} {exp} {sig} {toy} {sav}".format(
+                            jarg += " {gvl} {exp} {sig} {toy} {sav} {fit} {idx}".format(
                                 gvl = "--fc-g-values " + str(ig1) + "," + str(ig2),
                                 exp = "--fc-expect " + args.fcexp if args.fcexp != "" else "",
                                 sig = "--fc-n-sigma " + args.fcsigma if args.fcsigma != 2 else "",
                                 toy = "--fc-n-toy " + args.fctoy if args.fctoy != 100 else "",
-                                sav = "--fc-save-toy" if args.fcsave else ""
+                                sav = "--fc-save-toy" if args.fcsave else "",
+                                fit = "--fc-fit-strategy " + str(args.fcfit) if args.fcfit >= 0 and args.fcfit <= 2 else "",
+                                idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
                             )
 
-                            submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+                            print jname
+                            print
+                            print jarg
+                            #submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:

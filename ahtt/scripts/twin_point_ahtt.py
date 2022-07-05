@@ -68,6 +68,8 @@ if __name__ == '__main__':
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
+    parser.add_argument("--fc-fit-strategy", help = "fit strategy to use. 0, 1, or 2",
+                        default = 2, dest = "fcfit", required = False, type = int)
     parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
                         default = 2, dest = "fcsigma", required = False, type = int)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
@@ -169,7 +171,9 @@ if __name__ == '__main__':
         exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
         print "\ntwin_point_ahtt :: performing the FC scan"
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {fit} --cminFallbackAlgo Minuit2,Simplex,{fit}".format(
+            fit = str(args.fcfit) if args.fcfit >= 0 and args.fcfit <= 2 else '2'
+        )
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
         scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
@@ -194,7 +198,7 @@ if __name__ == '__main__':
                     imp = "--importantContours " + contour_pval[args.fcsigma - 3] if args.fcsigma > 2 and args.fcsigma < 5 else ""
                 ))
 
-        syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}.root {dcd}fc_grid_{snm}.root".format(
+        syscall("mv higgsCombine_{snm}.HybridNew.mH{mmm}*.root {dcd}fc_grid_{snm}.root".format(
             dcd = dcdir,
             snm = scan_name,
             mmm = mstr,
