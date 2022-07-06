@@ -227,6 +227,7 @@ if __name__ == '__main__':
             ), False)
 
     if runhadd:
+        print "\ntwin_point_ahtt :: merginging toy files"
         toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
 
         if len(toys) == 0:
