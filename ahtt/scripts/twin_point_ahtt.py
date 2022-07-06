@@ -4,6 +4,7 @@
 from argparse import ArgumentParser
 import os
 import sys
+import glob
 import numpy as np
 
 from collections import OrderedDict
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
 
-    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour"]
+    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -119,6 +120,7 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runfc = "fc-scan" in modes or "contour" in modes
+    runhadd = "hadd" in modes or "merge" in modes
 
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
@@ -222,6 +224,13 @@ if __name__ == '__main__':
                 snm = scan_name,
                 mmm = mstr,
             ), False)
+
+    if runhadd:
+        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
+
+        for toy in toys:
+            syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")))
+            syscall("hadd {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

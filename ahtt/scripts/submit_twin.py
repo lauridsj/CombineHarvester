@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # submit the two-point jobs and compiles its results
 
-
 from argparse import ArgumentParser
 import os
 import sys
@@ -198,7 +197,7 @@ if __name__ == '__main__':
 
         if runfc:
             gvalues = list(np.linspace(min_g, max_g, num = 13))
-            jfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{exp}.json".format(exp = args.fcexp))
+            jfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{exp}.json".format(exp = args.fcexp))
 
             if len(jfile) == 0:
                 for ig1 in gvalues:
@@ -206,7 +205,7 @@ if __name__ == '__main__':
                         scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2) + "_" + args.fcexp
                         scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
 
-                        rfile = glob.glob(pstr + args.tag + "/" + "fc_grid_{snm}.root".format(snm = scan_name))
+                        rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}.root".format(snm = scan_name))
                         if len(rfile) == 0:
                             jname = job_name + scan_name.replace("pnt", "")
 
