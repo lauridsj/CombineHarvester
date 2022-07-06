@@ -233,7 +233,7 @@ if __name__ == '__main__':
         if len(toys) == 0:
             print "\n0 main toys, fine"
             toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
-            toys = set([re.sub('toys_*.root', 'toys.root', toy) for toy in toys])
+            toys = set([re.sub('toys_.*\.root', 'toys\.root', toy) for toy in toys])
             print toys
 
         for toy in toys:
