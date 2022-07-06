@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 import os
 import sys
 import glob
+import re
 import numpy as np
 
 from collections import OrderedDict
@@ -228,9 +229,13 @@ if __name__ == '__main__':
     if runhadd:
         toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
 
+        if len(toys) == 0:
+            toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+            toys = set([re.sub('toys_*.root', 'toys.root', toy) for toy in toys])
+
         for toy in toys:
-            syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")))
-            syscall("hadd {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
+            syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")), False, True)
+            syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
