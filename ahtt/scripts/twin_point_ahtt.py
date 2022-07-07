@@ -236,7 +236,7 @@ if __name__ == '__main__':
                         mmm = mstr,
                         snm = scan_name,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        exp = "g_" + points[0] + "=" + bfgvl[0] + ",g_" + points[1] + "=" + bfgvl[1],
+                        exp = "g_" + points[0] + "=" + str(bfgvl[0]) + ",g_" + points[1] + "=" + str(bfgvl[1]),
                         stg = strategy,
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
