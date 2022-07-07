@@ -16,6 +16,32 @@ from ROOT import TFile, TTree
 from utilities import syscall
 from make_datacard import get_point
 
+def get_p_value(tname, asimov):
+    tfile = TFile.Open(tname)
+    ttree = tfile.Get("limit")
+
+
+
+    pval = OrderedDict()
+
+    for i in ltree:
+        qstr = "obs"
+        if abs(ltree.quantileExpected - 0.025) < 0.01:
+            qstr = "exp-2"
+        elif abs(ltree.quantileExpected - 0.16) < 0.01:
+            qstr = "exp-1"
+        elif abs(ltree.quantileExpected - 0.5) < 0.01:
+            qstr = "exp0"
+        elif abs(ltree.quantileExpected - 0.84) < 0.01:
+            qstr = "exp+1"
+        elif abs(ltree.quantileExpected - 0.975) < 0.01:
+            qstr = "exp+2"
+
+        limit[qstr] = ltree.limit
+
+    lfile.Close()
+    return limit
+
 max_g = 3.
 epsilon = 1e-5
 nstep = 5
@@ -70,13 +96,8 @@ if __name__ == '__main__':
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
-    #parser.add_argument("--fc-fit-strategy", help = "fit strategy to use. 0, 1, or 2",
-    #                    default = 2, dest = "fcfit", required = False, type = int)
-    #parser.add_argument("--fc-max-sigma", help = "max sigma contour that is considered important",
-    #                    default = 2, dest = "fcsigma", required = False, type = int)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 100, dest = "fctoy", required = False, type = int)
-    #parser.add_argument("--fc-save-toy", help = "save toys thrown in the FC grid scan", dest = "fcsave", action = "store_true", required = False)
+                        default = 200, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip data fit during FC scan, only do toys", dest = "fcskip", action = "store_true", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
@@ -163,39 +184,26 @@ if __name__ == '__main__':
         ))
 
     if runfc:
-        allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
-        if args.fcexp not in allexp:
-            print "supported expected scenario:", allexp
-            raise RuntimeError("unexpected expected scenario is given. aborting.")
-
-        exp_scenario = OrderedDict()
-        exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
-        exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
-
         print "\ntwin_point_ahtt :: performing the FC scan"
-
         if args.asimov:
-            print "\ntwin_point_ahtt :: MultiDimFit implementation of FC scan allows no Asimov dataset, due to its use of toys. proceeding with --unblind on..."
-            args.asimov = False
+            print "\ntwin_point_ahtt :: WARNING note that --unblind is automatically enforced in the current implementation; no use of asimov toy is possible!"
 
         strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         #strategy += " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1" # slow!
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
-        scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1] + "_" + args.fcexp
+        scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
 
         if not args.fcskip:
             print "\ntwin_point_ahtt :: performing the FC scan for data"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + "_data",
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        exp = exp_scenario[args.fcexp],
                         stg = strategy,
+                        toy = "-s -1",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
@@ -209,14 +217,13 @@ if __name__ == '__main__':
             scan_name += "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        exp = exp_scenario[args.fcexp],
                         stg = strategy,
-                        toy = "-s -1 --toysFrequentist -t " + str(args.fctoy) if args.fctoy > 0 else "",
+                        toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
 
@@ -227,18 +234,30 @@ if __name__ == '__main__':
             ), False)
 
     if runhadd:
-        print "\ntwin_point_ahtt :: merging toy files"
         toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
+        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
 
-        if len(toys) == 0:
-            print "\n0 main toys, fine"
-            toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
-            toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
-            print toys
+        if len(idxs) > 0:
+            print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
 
-        for toy in toys:
-            syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")), False, True)
-            syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
+            if len(toys) == 0:
+                toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+                toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
+
+            for toy in toys:
+                syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")), False, True)
+                syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
+
+    if runcompile:
+        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
+        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+
+        if len(toys) == 0 or len(idxs) > 0:
+            print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are present"
+            raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
+
+        print "\ntwin_point_ahtt :: compiling FC scan results..."
+        #FIXME continue
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
