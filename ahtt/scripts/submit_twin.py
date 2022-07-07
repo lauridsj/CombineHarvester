@@ -136,7 +136,6 @@ if __name__ == '__main__':
         if args.signal == "":
             signals = []
             for pnt in points:
-                print pnt
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                     if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
                         signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
@@ -145,12 +144,8 @@ if __name__ == '__main__':
                         if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
                             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
             signal = ','.join(set(signals))
-            print signals
         else:
             signal = args.signal
-
-        print signal
-        continue
 
         if not rundc and not os.path.isdir(pstr + args.tag) and os.path.isfile(pstr + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pstr + args.tag + ".tar.gz"))
