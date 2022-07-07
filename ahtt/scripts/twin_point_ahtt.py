@@ -144,7 +144,7 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runfc = "fc-scan" in modes or "contour" in modes
     runhadd = "hadd" in modes or "merge" in modes
-    runfc = "compile" in args.mode
+    runcompile = "compile" in args.mode
 
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
