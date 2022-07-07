@@ -147,6 +147,9 @@ if __name__ == '__main__':
         else:
             signal = args.signal
 
+        print signal
+        continue
+
         if not rundc and not os.path.isdir(pstr + args.tag) and os.path.isfile(pstr + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pstr + args.tag + ".tar.gz"))
 
