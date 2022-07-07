@@ -16,31 +16,32 @@ from ROOT import TFile, TTree
 from utilities import syscall
 from make_datacard import get_point
 
-def get_p_value(tname, asimov):
+def get_best_fit(dname, points):
+    dfile = TFile.Open(dname)
+    dtree = dfile.Get("limit")
+
+    bf = None
+    for i in dtree:
+        if dtree.quantileExpected == -1.:
+            bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]))
+
+        if bf is not None:
+            break
+
+    dfile.Close()
+    return bf
+
+def get_p_value(tname, whatever_needed):
     tfile = TFile.Open(tname)
     ttree = tfile.Get("limit")
-
-
 
     pval = OrderedDict()
 
     for i in ltree:
-        qstr = "obs"
-        if abs(ltree.quantileExpected - 0.025) < 0.01:
-            qstr = "exp-2"
-        elif abs(ltree.quantileExpected - 0.16) < 0.01:
-            qstr = "exp-1"
-        elif abs(ltree.quantileExpected - 0.5) < 0.01:
-            qstr = "exp0"
-        elif abs(ltree.quantileExpected - 0.84) < 0.01:
-            qstr = "exp+1"
-        elif abs(ltree.quantileExpected - 0.975) < 0.01:
-            qstr = "exp+2"
+        pass
 
-        limit[qstr] = ltree.limit
-
-    lfile.Close()
-    return limit
+    tfile.Close()
+    return pval
 
 max_g = 3.
 epsilon = 1e-5
@@ -92,13 +93,13 @@ if __name__ == '__main__':
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
     parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
-                        default = "0., 0.", dest = "fcgvl", required = False)
-    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. "
+                        default = "0.0, 0.0", dest = "fcgvl", required = False)
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan, if --unblind isn't used\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 200, dest = "fctoy", required = False, type = int)
-    parser.add_argument("--fc-skip-data", help = "skip data fit during FC scan, only do toys", dest = "fcskip", action = "store_true", required = False)
+    parser.add_argument("--fc-delete-data", help = "delete data file instead of returning it as output", dest = "fckeepdat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
 
-    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge"]
+    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge", "compile"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -143,6 +144,7 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runfc = "fc-scan" in modes or "contour" in modes
     runhadd = "hadd" in modes or "merge" in modes
+    runfc = "compile" in args.mode
 
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
@@ -169,11 +171,12 @@ if __name__ == '__main__':
                 ))
 
         print "\ntwin_point_ahtt :: making workspaces"
-        syscall("combineTool.py -M T2W -i {dcd} -o workspace_twin-g.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed --PO verbose --PO 'signal={pnt}' --PO no-r".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            mmm = mstr,
-            pnt = args.point.replace(" ", "")
-        ))
+        syscall("combineTool.py -M T2W -i {dcd} -o workspace_twin-g.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+                "--PO verbose --PO 'signal={pnt}' --PO no-r".format(
+                    dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                    mmm = mstr,
+                    pnt = args.point.replace(" ", "")
+                ))
 
     if runvalid:
         print "\ntwin_point_ahtt :: validating datacard"
@@ -184,44 +187,56 @@ if __name__ == '__main__':
         ))
 
     if runfc:
-        print "\ntwin_point_ahtt :: performing the FC scan"
-        if args.asimov:
-            print "\ntwin_point_ahtt :: WARNING note that --unblind is automatically enforced in the current implementation; no use of asimov toy is possible!"
+        allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
+        if args.fcexp not in allexp:
+            print "supported expected scenario:", allexp
+            raise RuntimeError("unexpected expected scenario is given. aborting.")
+
+        exp_scenario = OrderedDict()
+        exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
+        exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
+        exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
+        exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
         strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
         #strategy += " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1" # slow!
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
+        scan_name += "_" + args.fcexp if args.asimov else "_data"
 
-        if not args.fcskip:
-            print "\ntwin_point_ahtt :: performing the FC scan for data"
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
-                        dcd = dcdir,
-                        mmm = mstr,
-                        snm = scan_name + "_data",
-                        par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        stg = strategy,
-                        toy = "-s -1",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                    ))
+        print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
+        syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+                "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
+                    dcd = dcdir,
+                    mmm = mstr,
+                    snm = scan_name,
+                    par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                    exp = exp_scenario[args.fcexp],
+                    stg = strategy,
+                    asm = "-t -1" if args.asimov else "",
+                    toy = "-s -1",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
-                dcd = dcdir,
-                snm = scan_name + "_data",
-                mmm = mstr,
-            ), False)
+        syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root fc_scan_{snm}.root".format(snm = scan_name, mmm = mstr), False)
+        bfgvl = get_best_fit("fc_scan_{snm}.root".format(snm = scan_name), points)
+
+        if args.fckeepdat:
+            syscall("mv fc_scan_{snm}.root {dcd}".format(snm = scan_name, dcd = dcdir), False)
+        else:
+            syscall("rm fc_scan_{snm}.root".format(snm = scan_name), False)
 
         if args.fctoy > 0:
             scan_name += "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                        exp = "g_" + points[0] + "=" + bfgvl[0] + ",g_" + points[1] + "=" + bfgvl[1],
                         stg = strategy,
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""

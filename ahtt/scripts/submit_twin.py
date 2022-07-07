@@ -16,6 +16,16 @@ max_g = 3.
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 aggregate_submit = "conSub_aggregate.txt"
 
+def generate_g_grid(fcgvl, ggrid = []):
+    if fcgvl != "-1, -1":
+        fcgvl = fcgvl.replace(" ", "").split(',')
+        return [[float(fcgvl[0])], [float(fcgvl[1])]]
+    elif len(jname) == 1:
+        # whatever logic to generate in between points of existing grid
+        pass
+
+    return [list(np.linspace(min_g, max_g, num = 13)), list(np.linspace(min_g, max_g, num = 13))]
+
 def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
     if not hasattr(submit_twin_job, "firstprint"):
         submit_twin_job.firstprint = True
@@ -87,10 +97,13 @@ if __name__ == '__main__':
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
     parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
-                        default = "0., 0.", dest = "fcgvl", required = False)
+                        default = "-1, -1", dest = "fcgvl", required = False)
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan, if --unblind isn't used\n"
+                        "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
+                        default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 100, dest = "fctoy", required = False, type = int)
-    parser.add_argument("--fc-skip-data", help = "skip data fit during FC scan, only do toys", dest = "fcskip", action = "store_true", required = False)
+                        default = 200, dest = "fctoy", required = False, type = int)
+    parser.add_argument("--fc-delete-data", help = "delete data file instead of returning it as output", dest = "fckeepdat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
@@ -188,28 +201,29 @@ if __name__ == '__main__':
         )
 
         if runfc:
-            gvalues = list(np.linspace(min_g, max_g, num = 13))
-            jfile = glob.glob(pstr + args.tag + "/" + "fc_scan.json")
+            ggrid = glob.glob(pstr + args.tag + "/" + "fc_scan_xxx.json")
+            gvalues = generate_g_grid(args.fcgvl, ggrid)
 
-            if len(jfile) == 0:
-                for ig1 in gvalues:
-                    for ig2 in gvalues:
-                        scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2)
-                        scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
+            for ig1 in gvalues[0]:
+                for ig2 in gvalues[1]:
+                    scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2)
+                    scan_name += "_" + args.fcexp if args.asimov else "_data"
+                    scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
 
-                        rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}.root".format(snm = scan_name))
-                        if len(rfile) == 0:
-                            jname = job_name + scan_name.replace("pnt", "")
+                    rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}.root".format(snm = scan_name))
+                    if len(rfile) == 0:
+                        jname = job_name + scan_name.replace("pnt", "")
 
-                            jarg = job_arg
-                            jarg += " {gvl} {exp} {toy} {dat} {idx}".format(
-                                gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
-                                toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy != 100 else "",
-                                dat = "--fc-skip-data " if args.fcskip else "",
-                                idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
-                            )
+                        jarg = job_arg
+                        jarg += " {gvl} {exp} {toy} {dat} {idx}".format(
+                            gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
+                            exp = "--fc-expect " + args.fcexp,
+                            toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
+                            dat = "--fc-delete-data " if not args.fckeepdat else "",
+                            idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
+                        )
 
-                            submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+                        submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
