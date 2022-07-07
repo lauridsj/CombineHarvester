@@ -50,7 +50,7 @@ def get_nll_one_poi(lfile):
     nll["dnll"] = OrderedDict()
 
     for i in ltree:
-        if ltree.quantileExpected < 0.:
+        if ltree.quantileExpected == -1.:
             nll["obs"]["r"] = 1.
             nll["obs"]["g"] = ltree.r
             nll["obs"]["nll0"] = ltree.nll0
@@ -70,7 +70,7 @@ def get_nll_g_scan(lfile):
     nll0 = sys.float_info.max
 
     for i in ltree:
-        if ltree.quantileExpected < 0. and ltree.nll0 < nll0:
+        if ltree.quantileExpected == -1. and ltree.nll0 < nll0:
             nll["obs"]["r"] = ltree.r
             nll["obs"]["g"] = ltree.g
             nll["obs"]["nll0"] = ltree.nll0
@@ -487,7 +487,7 @@ if __name__ == '__main__':
 
         gvalues = [1e-5, 2e-5, 3e-5, 4e-5, 5e-5] + list(np.linspace(0., max_g, num = 151))
         gvalues.sort()
-        scenarii = ['exp-bkg', 'exp-sig', 'obs']
+        scenarii = ['exp-b', 'exp-s', 'obs']
         setpar = []
         frzpar = []
         nlls = OrderedDict()
@@ -520,7 +520,7 @@ if __name__ == '__main__':
 
             for sce in scenarii:
                 asimov = "-t -1" if sce != "obs" else ""
-                pois = ["r=0"] if sce == "exp-bkg" else ["r=1"] if sce == "exp-sig" else []
+                pois = ["r=0"] if sce == "exp-b" else ["r=1"] if sce == "exp-s" else []
 
                 syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll --rMin=0 --rMax={maxg} {gvl} "
                         "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {mcs}".format(
@@ -554,7 +554,7 @@ if __name__ == '__main__':
 
             for sce in scenarii:
                 asimov = "-t -1" if sce != "obs" else ""
-                pois = ["r=0", "g=0"] if sce == "exp-bkg" else ["r=1", "g=1"] if sce == "exp-sig" else []
+                pois = ["r=0", "g=0"] if sce == "exp-b" else ["r=1", "g=1"] if sce == "exp-s" else []
 
                 for gval in gvalues:
                     gstr = str(round(gval, 3)).replace('.', 'p')
