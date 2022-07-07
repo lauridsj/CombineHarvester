@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated",
                         default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root", required = False)
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
@@ -137,11 +137,11 @@ if __name__ == '__main__':
             signals = []
             for pnt in points:
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
-                    if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
+                    if any(cc in args.channel for cc in ["ee", "em", "mm"]):
                         signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
                 for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                     if im in pnt or im in args.injectsignal:
-                        if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
+                        if any(cc in args.channel for cc in ["ee", "em", "mm"]):
                             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
             signal = ','.join(set(signals))
         else:
