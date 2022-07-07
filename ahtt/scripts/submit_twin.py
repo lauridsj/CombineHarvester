@@ -134,9 +134,9 @@ if __name__ == '__main__':
         pstr = '__'.join(points)
 
         if args.signal == "":
+            signals = []
             for pnt in points:
                 print pnt
-                signals = []
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                     if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
                         signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
@@ -144,7 +144,7 @@ if __name__ == '__main__':
                     if im in pnt or im in args.injectsignal:
                         if any(cc in args.channel for cc in ["ll", "ee", "em", "mm"]):
                             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
-            signal = ','.join(signals)
+            signal = ','.join(set(signals))
             print signals
         else:
             signal = args.signal
