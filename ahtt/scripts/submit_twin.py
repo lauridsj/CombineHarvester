@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
-            submit_twin_job(job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
 
         if os.path.isfile(aggregate_submit):
             syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
