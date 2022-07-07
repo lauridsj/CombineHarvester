@@ -20,7 +20,7 @@ def generate_g_grid(fcgvl, ggrid = []):
     if fcgvl != "-1, -1":
         fcgvl = fcgvl.replace(" ", "").split(',')
         return [[float(fcgvl[0])], [float(fcgvl[1])]]
-    elif len(jname) == 1:
+    elif len(ggrid) == 1:
         # whatever logic to generate in between points of existing grid
         pass
 

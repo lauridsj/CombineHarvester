@@ -182,7 +182,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: validating datacard"
         syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}_validate.json --printLevel 3 {dcd}{crd}".format(
             dcd = dcdir,
-            pnt = args.point,
+            pnt = "__".join(points) + args.tag,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
