@@ -293,6 +293,7 @@ if __name__ == '__main__':
         toys = glob.glob("{dcd}fc_scan_*_{exp}_toys.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         idxs = glob.glob("{dcd}fc_scan_*_{exp}_toys_*.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         if len(toys) == 0 or len(idxs) > 0:
+            print len(toys), len(idxs)
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
