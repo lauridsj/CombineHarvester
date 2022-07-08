@@ -211,7 +211,8 @@ if __name__ == '__main__':
                     scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
 
                     rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}.root".format(snm = scan_name))
-                    if len(rfile) == 0:
+                    tfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}_toys*.root".format(snm = scan_name))
+                    if len(rfile) == 0 or len(tfile) == 0:
                         jname = job_name + scan_name.replace("pnt", "")
 
                         jarg = job_arg

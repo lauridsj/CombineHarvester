@@ -23,7 +23,7 @@ def get_best_fit(dname, points):
     bf = None
     for i in dtree:
         if dtree.quantileExpected == -1.:
-            bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]))
+            bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]), dtree.deltaNLL)
 
         if bf is not None:
             break
