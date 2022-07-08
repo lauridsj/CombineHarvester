@@ -16,13 +16,13 @@ from ROOT import TFile, TTree
 from utilities import syscall
 from make_datacard import get_point
 
-def get_best_fit(dname, points):
+def get_best_fit(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
     bf = None
     for i in dtree:
-        if dtree.quantileExpected == -1.:
+        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
             bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]), dtree.deltaNLL)
 
         if bf is not None:
@@ -31,17 +31,43 @@ def get_best_fit(dname, points):
     dfile.Close()
     return bf
 
-def get_p_value(tname, whatever_needed):
+def read_previous_grid(gpoints, gname):
+    with open(gname) as ff:
+        result = json.load(ff)
+
+    if result["points"] == gpoints:
+        return result["g-grid"]
+
+    return OrderedDict()
+
+def get_toys(tname, best_fit, whatever_else = None):
     tfile = TFile.Open(tname)
     ttree = tfile.Get("limit")
 
     pval = OrderedDict()
 
+    isum = 0
+    ipas = 0
+
     for i in ltree:
-        pass
+        if dtree.quantileExpected != -1.:
+            isum += 1
+            if dtree.deltaNLL < best_fit[2]:
+                ipas += 1
 
     tfile.Close()
+
+    pval["total"] = isum
+    pval["pass"] = ipas
+
     return pval
+
+def sum_up(g1, g2):
+    gs = OrderedDict()
+    gs["total"] = g1["total"] + g2["total"]
+    gs["pass"] = g1["pass"] + g2["pass"]
+
+    return gs
 
 max_g = 3.
 epsilon = 1e-5
@@ -264,15 +290,38 @@ if __name__ == '__main__':
                 syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if runcompile:
-        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
-        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
-
+        toys = glob.glob("{dcd}fc_scan_*_{exp}_toys.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        idxs = glob.glob("{dcd}fc_scan_*_{exp}_toys_*.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         if len(toys) == 0 or len(idxs) > 0:
-            print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are present"
+            print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
+        best = glob.glob("{dcd}fc_scan_*_{exp}.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        if len(best) == 0:
+            raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
+
         print "\ntwin_point_ahtt :: compiling FC scan results..."
-        #FIXME continue
+        ggrid = glob.glob("{dcd}fc_scan_{exp}_*.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        ggrid.sort()
+        idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
+
+        grid = OrderedDict()
+        grid["points"] = points
+        grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(grid["points"], ggrid[-1])
+
+        for bb in best:
+            bf = get_best_fit(bb, points)
+            gg = get_toys(bb.replace(".root", "_toys.root"), bf)
+            gv = get_best_fit(bb, points, False)
+            gv = (gv[0], gv[1])
+
+            if gv in grid["g-grid"]:
+                grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
+            else:
+                grid["g-grid"][gv] = gg
+
+        with open("{dcd}fc_scan_{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"), idx = str(idx), "w") as jj:
+            json.dump(grid, jj, indent = 1)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
