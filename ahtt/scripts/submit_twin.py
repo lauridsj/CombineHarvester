@@ -17,12 +17,12 @@ condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 aggregate_submit = "conSub_aggregate.txt"
 
 def generate_g_grid(fcgvl, ggrid = []):
-    if fcgvl != "-1, -1":
-        fcgvl = fcgvl.replace(" ", "").split(',')
-        return [[float(fcgvl[0])], [float(fcgvl[1])]]
-    elif len(ggrid) == 1:
+    if len(ggrid) > 0:
         # whatever logic to generate in between points of existing grid
         pass
+    elif fcgvl != "-1, -1":
+        fcgvl = fcgvl.replace(" ", "").split(',')
+        return [[float(fcgvl[0])], [float(fcgvl[1])]]
 
     return [list(np.linspace(min_g, max_g, num = 13)), list(np.linspace(min_g, max_g, num = 13))]
 
@@ -102,8 +102,8 @@ if __name__ == '__main__':
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 200, dest = "fctoy", required = False, type = int)
-    parser.add_argument("--fc-delete-data", help = "delete data file instead of returning it as output", dest = "fckeepdat", action = "store_false", required = False)
+                        default = 100, dest = "fctoy", required = False, type = int)
+    parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
@@ -201,16 +201,15 @@ if __name__ == '__main__':
         )
 
         if runfc:
-            ggrid = glob.glob(pstr + args.tag + "/" + "fc_scan_xxx.json")
+            ggrid = glob.glob(pstr + args.tag + "/fc_scan{exp}_*.json".format(exp = "_" + args.fcexp if args.asimov else "_data"))
+            ggrid.sort()
             gvalues = generate_g_grid(args.fcgvl, ggrid)
 
             for ig1 in gvalues[0]:
                 for ig2 in gvalues[1]:
                     scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2)
-                    scan_name += "_" + args.fcexp if args.asimov else "_data"
-                    scan_name += "_" + str(args.fcidx) if args.fcidx > -1 else ""
 
-                    rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}.root".format(snm = scan_name))
+                    rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}{exp}.root".format(snm = scan_name, exp = "_" + args.fcexp if args.asimov else "_data"))
                     tfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}_toys*.root".format(snm = scan_name))
                     if len(rfile) == 0 or len(tfile) == 0:
                         jname = job_name + scan_name.replace("pnt", "")
@@ -220,7 +219,7 @@ if __name__ == '__main__':
                             gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
                             exp = "--fc-expect " + args.fcexp,
                             toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
-                            dat = "--fc-delete-data " if not args.fckeepdat else "",
+                            dat = "--fc-skip-data " if not args.fcrundat else "",
                             idx = "--fc-idx " + str(args.fcidx) if args.fcidx > -1 else ""
                         )
 

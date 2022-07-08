@@ -49,10 +49,10 @@ def get_toys(tname, best_fit, whatever_else = None):
     isum = 0
     ipas = 0
 
-    for i in ltree:
-        if dtree.quantileExpected != -1.:
+    for i in ttree:
+        if ttree.quantileExpected != -1.:
             isum += 1
-            if dtree.deltaNLL < best_fit[2]:
+            if ttree.deltaNLL > best_fit[2]:
                 ipas += 1
 
     tfile.Close()
@@ -124,8 +124,8 @@ if __name__ == '__main__':
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 200, dest = "fctoy", required = False, type = int)
-    parser.add_argument("--fc-delete-data", help = "delete data file instead of returning it as output", dest = "fckeepdat", action = "store_false", required = False)
+                        default = 100, dest = "fctoy", required = False, type = int)
+    parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
@@ -229,40 +229,34 @@ if __name__ == '__main__':
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
-        scan_name += "_" + args.fcexp if args.asimov else "_data"
+        identifier = "_" + args.fcexp if args.asimov else "_data"
 
-        print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
-        syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
-                    dcd = dcdir,
-                    mmm = mstr,
-                    snm = scan_name,
-                    par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                    exp = exp_scenario[args.fcexp],
-                    stg = strategy,
-                    asm = "-t -1" if args.asimov else "",
-                    toy = "-s -1",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                ))
-
-        syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root fc_scan_{snm}.root".format(snm = scan_name, mmm = mstr), False)
-        bfgvl = get_best_fit("fc_scan_{snm}.root".format(snm = scan_name), points)
-
-        if args.fckeepdat:
-            syscall("mv fc_scan_{snm}.root {dcd}".format(snm = scan_name, dcd = dcdir), False)
-        else:
-            syscall("rm fc_scan_{snm}.root".format(snm = scan_name), False)
-
-        if args.fctoy > 0:
-            scan_name += "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
-            print "\ntwin_point_ahtt :: performing the FC scan for toys"
+        if args.fcrundat:
+            print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
-                        snm = scan_name,
+                        snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        exp = "g_" + points[0] + "=" + str(bfgvl[0]) + ",g_" + points[1] + "=" + str(bfgvl[1]),
+                        exp = exp_scenario[args.fcexp],
+                        stg = strategy,
+                        asm = "-t -1" if args.asimov else "",
+                        toy = "-s -1",
+                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                    ))
+
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(snm = scan_name + identifier, mmm = mstr, dcd = dcdir), False)
+
+        if args.fctoy > 0:
+            identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
+            print "\ntwin_point_ahtt :: performing the FC scan for toys"
+            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
+                        dcd = dcdir,
+                        mmm = mstr,
+                        snm = scan_name + identifier,
+                        par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
                         stg = strategy,
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
@@ -270,7 +264,7 @@ if __name__ == '__main__':
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
                 dcd = dcdir,
-                snm = scan_name,
+                snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
 
@@ -290,8 +284,8 @@ if __name__ == '__main__':
                 syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if runcompile:
-        toys = glob.glob("{dcd}fc_scan_*{exp}_toys.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
-        idxs = glob.glob("{dcd}fc_scan_*{exp}_toys_*.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
+        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
         if len(toys) == 0 or len(idxs) > 0:
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
@@ -311,7 +305,7 @@ if __name__ == '__main__':
 
         for bb in best:
             bf = get_best_fit(bb, points)
-            gg = get_toys(bb.replace(".root", "_toys.root"), bf)
+            gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
             gv = get_best_fit(bb, points, False)
             gv = (gv[0], gv[1])
 
