@@ -290,19 +290,18 @@ if __name__ == '__main__':
                 syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if runcompile:
-        toys = glob.glob("{dcd}fc_scan_*_{exp}_toys.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
-        idxs = glob.glob("{dcd}fc_scan_*_{exp}_toys_*.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        toys = glob.glob("{dcd}fc_scan_*{exp}_toys.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        idxs = glob.glob("{dcd}fc_scan_*{exp}_toys_*.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         if len(toys) == 0 or len(idxs) > 0:
-            print len(toys), len(idxs)
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
-        best = glob.glob("{dcd}fc_scan_*_{exp}.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        best = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         if len(best) == 0:
             raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
-        ggrid = glob.glob("{dcd}fc_scan_{exp}_*.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
+        ggrid = glob.glob("{dcd}fc_scan{exp}_*.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         ggrid.sort()
         idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
@@ -321,7 +320,7 @@ if __name__ == '__main__':
             else:
                 grid["g-grid"][gv] = gg
 
-        with open("{dcd}fc_scan_{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
+        with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
             json.dump(grid, jj, indent = 1)
 
     if args.compress:
