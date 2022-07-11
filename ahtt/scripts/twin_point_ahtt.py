@@ -69,6 +69,9 @@ def sum_up(g1, g2):
 
     return gs
 
+def stringify(gtuple):
+    return str(gtuple)[1: -1]
+
 max_g = 3.
 epsilon = 1e-5
 nstep = 5
@@ -317,9 +320,9 @@ if __name__ == '__main__':
             gv = (gv[0], gv[1])
 
             if gv in grid["g-grid"]:
-                grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
+                grid["g-grid"][stringify(gv)] = sum_up(grid["g-grid"][stringify(gv)], gg)
             else:
-                grid["g-grid"][gv] = gg
+                grid["g-grid"][stringify(gv)] = gg
 
         with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
             json.dump(grid, jj, indent = 1)
