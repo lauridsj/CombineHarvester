@@ -212,7 +212,7 @@ if __name__ == '__main__':
                     rfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}{exp}.root".format(snm = scan_name, exp = "_" + args.fcexp if args.asimov else "_data"))
                     tfile = glob.glob(pstr + args.tag + "/" + "fc_scan_{snm}_toys*.root".format(snm = scan_name))
                     if len(rfile) == 0 or len(tfile) == 0:
-                        jname = job_name + scan_name.replace("pnt", "")
+                        jname = job_name + scan_name.replace("pnt", "") + "{exp}".format(exp = "_" + args.fcexp if args.asimov else "_data")
 
                         jarg = job_arg
                         jarg += " {gvl} {exp} {toy} {dat} {idx}".format(

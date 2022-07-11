@@ -16,12 +16,13 @@ from ROOT import TFile, TTree
 from utilities import syscall
 from make_datacard import get_point
 
-def get_best_fit(dname, points, qexp_eq_m1 = True):
+def get_fit(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
     bf = None
     for i in dtree:
+        print qexp_eq_m1, dtree.quantileExpected
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
             bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]), dtree.deltaNLL)
 
@@ -304,9 +305,9 @@ if __name__ == '__main__':
         grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(grid["points"], ggrid[-1])
 
         for bb in best:
-            bf = get_best_fit(bb, points)
+            bf = get_fit(bb, points)
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
-            gv = get_best_fit(bb, points, False)
+            gv = get_fit(bb, points, False)
             gv = (gv[0], gv[1])
 
             if gv in grid["g-grid"]:
