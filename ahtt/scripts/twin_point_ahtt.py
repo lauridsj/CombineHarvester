@@ -57,7 +57,7 @@ def get_toys(tname, best_fit, whatever_else = None):
 
     tfile.Close()
 
-    pval["fit"] = best_fit[2]
+    pval["dnll"] = best_fit[2]
     pval["total"] = isum
     pval["pass"] = ipas
 
@@ -65,8 +65,8 @@ def get_toys(tname, best_fit, whatever_else = None):
 
 def sum_up(g1, g2):
     gs = OrderedDict()
-    if g1["fit"] != g2["fit"]:
-        print '\n WARNING :: incompatible best fit, when results should be!!'
+    if g1["dnll"] != g2["dnll"]:
+        print '\n WARNING :: incompatible expected/data dnll, when they should be!!'
 
     gs["total"] = g1["total"] + g2["total"]
     gs["pass"] = g1["pass"] + g2["pass"]
@@ -313,15 +313,23 @@ if __name__ == '__main__':
         ggrid.sort()
         idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
+        best_fit = get_fit(best[0], points)
+
         grid = OrderedDict()
         grid["points"] = points
+        grid["best_fit_g1_g2_dnll"] = best_fit
         grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(grid["points"], ggrid[-1])
 
         for bb in best:
-            bf = get_fit(bb, points)
+            if best_fit != get_fit(bb, points):
+                print '\n WARNING :: incompatible best fit across different g values, when they should be!!'
+                print "current result ", bb, ": ", get_fit(bb, points)
+                print "first result ", best[0], ": ", best_fit
+                print
+
+            bf = get_fit(bb, points, False)
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
-            gv = get_fit(bb, points, False)
-            gv = (gv[0], gv[1])
+            gv = (bf[0], bf[1])
 
             if gv in grid["g-grid"]:
                 grid["g-grid"][stringify(gv)] = sum_up(grid["g-grid"][stringify(gv)], gg)
