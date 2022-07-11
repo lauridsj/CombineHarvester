@@ -31,12 +31,16 @@ def get_fit(dname, points, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
-def read_previous_grid(gpoints, gname):
+def read_previous_grid(gpoints, prev_best_fit, gname):
     with open(gname) as ff:
         result = json.load(ff)
 
-    if result["points"] == gpoints:
+    if result["points"] == gpoints and result["best_fit_g1_g2_dnll"] == list(prev_best_fit):
         return result["g-grid"]
+    else:
+        print "\ninconsistent previous grid, ignoring..."
+        print "previous: ", gpoints, prev_best_fit
+        print "current: ", result["points"], result["best_fit_g1_g2_dnll"]
 
     return OrderedDict()
 
@@ -319,7 +323,7 @@ if __name__ == '__main__':
         grid = OrderedDict()
         grid["points"] = points
         grid["best_fit_g1_g2_dnll"] = best_fit
-        grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(grid["points"], ggrid[-1])
+        grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(points, best_fit, ggrid[-1])
 
         for bb in best:
             if best_fit != get_fit(bb, points):
