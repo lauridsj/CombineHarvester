@@ -307,6 +307,7 @@ if __name__ == '__main__':
         best = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
         if len(best) == 0:
             raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
+        best.sort()
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         ggrid = glob.glob("{dcd}fc_scan{exp}_*.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
@@ -322,10 +323,10 @@ if __name__ == '__main__':
 
         for bb in best:
             if best_fit != get_fit(bb, points):
-                print '\n WARNING :: incompatible best fit across different g values, when they should be!!'
+                print '\nWARNING :: incompatible best fit across different g values, when they should be!! ignoring current, assuming it is due to numerical instability!'
+                print 'this should NOT happen too frequently within a single compilation!!'
                 print "current result ", bb, ": ", get_fit(bb, points)
                 print "first result ", best[0], ": ", best_fit
-                print
 
             bf = get_fit(bb, points, False)
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
