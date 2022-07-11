@@ -33,7 +33,7 @@ def get_fit(dname, points, qexp_eq_m1 = True):
 
 def read_previous_grid(gpoints, prev_best_fit, gname):
     with open(gname) as ff:
-        result = json.load(ff)
+        result = json.loads(ff, object_pairs_hook=OrderedDict)
 
     if result["points"] == gpoints and result["best_fit_g1_g2_dnll"] == list(prev_best_fit):
         return result["g-grid"]
