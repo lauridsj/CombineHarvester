@@ -57,6 +57,7 @@ def get_toys(tname, best_fit, whatever_else = None):
 
     tfile.Close()
 
+    pval["fit"] = best_fit[2]
     pval["total"] = isum
     pval["pass"] = ipas
 
@@ -64,6 +65,9 @@ def get_toys(tname, best_fit, whatever_else = None):
 
 def sum_up(g1, g2):
     gs = OrderedDict()
+    if g1["fit"] != g2["fit"]:
+        print '\n WARNING :: incompatible best fit, when results should be!!'
+
     gs["total"] = g1["total"] + g2["total"]
     gs["pass"] = g1["pass"] + g2["pass"]
 
