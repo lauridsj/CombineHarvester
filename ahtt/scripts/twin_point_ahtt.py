@@ -17,13 +17,10 @@ from utilities import syscall
 from make_datacard import get_point
 
 def get_fit(dname, points, qexp_eq_m1 = True):
-    print dname
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
-    bf = None
     for i in dtree:
-        print qexp_eq_m1, dtree.quantileExpected
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
             bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]), dtree.deltaNLL)
 
@@ -31,7 +28,6 @@ def get_fit(dname, points, qexp_eq_m1 = True):
             break
 
     dfile.Close()
-    print
     return bf
 
 def read_previous_grid(gpoints, gname):
@@ -227,7 +223,7 @@ if __name__ == '__main__':
         exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
         exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {fstr} --cminFallbackAlgo Minuit2,Simplex,{fstr}"
         #strategy += " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1" # slow!
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
@@ -236,18 +232,25 @@ if __name__ == '__main__':
 
         if args.fcrundat:
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
-                        dcd = dcdir,
-                        mmm = mstr,
-                        snm = scan_name + identifier,
-                        par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        exp = exp_scenario[args.fcexp],
-                        stg = strategy,
-                        asm = "-t -1" if args.asimov else "",
-                        toy = "-s -1",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                    ))
+
+            for ifit in ["2", "1", "0"]:
+                syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+                        "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
+                            dcd = dcdir,
+                            mmm = mstr,
+                            snm = scan_name + identifier,
+                            par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                            exp = exp_scenario[args.fcexp],
+                            stg = strategy.format(fstr = ifit),
+                            asm = "-t -1" if args.asimov else "",
+                            toy = "-s -1",
+                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                        ))
+
+                if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], points, ff) is not None for ff in [True, False]]):
+                    break
+                else:
+                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(snm = scan_name + identifier, mmm = mstr, dcd = dcdir), False)
 
