@@ -334,12 +334,12 @@ if __name__ == '__main__':
 
             bf = get_fit(bb, points, False)
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
-            gv = (bf[0], bf[1])
+            gv = stringify((bf[0], bf[1]))
 
             if gv in grid["g-grid"]:
-                grid["g-grid"][stringify(gv)] = sum_up(grid["g-grid"][stringify(gv)], gg)
+                grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
             else:
-                grid["g-grid"][stringify(gv)] = gg
+                grid["g-grid"][gv] = gg
 
         with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
             json.dump(grid, jj, indent = 1)
