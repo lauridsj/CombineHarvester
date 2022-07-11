@@ -17,6 +17,7 @@ from utilities import syscall
 from make_datacard import get_point
 
 def get_fit(dname, points, qexp_eq_m1 = True):
+    print dname
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
@@ -30,6 +31,7 @@ def get_fit(dname, points, qexp_eq_m1 = True):
             break
 
     dfile.Close()
+    print
     return bf
 
 def read_previous_grid(gpoints, gname):
