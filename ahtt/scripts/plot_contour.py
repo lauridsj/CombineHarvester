@@ -162,4 +162,4 @@ if __name__ == '__main__':
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
     draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
-                 args.formal, args.cmsapp, args.luminosity, args.args.transparent)
+                 args.formal, args.cmsapp, args.luminosity, args.transparent)
