@@ -115,7 +115,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
         plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 32, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 30, ha = 'right', va = 'top')
+        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 28, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
         pass
@@ -126,7 +126,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
+    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 2. * ax.get_tick_padding())
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
