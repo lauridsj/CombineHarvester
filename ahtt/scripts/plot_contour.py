@@ -20,6 +20,28 @@ import matplotlib.colors as mcl
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
+def read_contour(cfiles):
+    contours = [OrderedDict() for cf in cfiles]
+
+    for ii, cf in enumerate(cfiles):
+        with open(cf) as ff:
+            cc = json.load(ff)
+
+        contours[ii]["best_fit"] = [cc["best_fit_g1_g2_dnll"][0], cc["best_fit_g1_g2_dnll"][1]]
+        contours[ii]["g1"] = []
+        contours[ii]["g2"] = []
+        contours[ii]["eff"] = []
+
+        for gv in cc["g-grid"].keys():
+            contours[ii]["g1"].append( gv.replace(" ", "").split(",")[0] )
+            contours[ii]["g2"].append( gv.replace(" ", "").split(",")[1] )
+            contours[ii]["eff"].append( cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] )
+
+    return contours
+
+def draw_contour(ofile, pair, contours, labels, maxsigma, transparent):
+    pass
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--contour", help = "the json files containing the contour information, comma separated. must be of the same signal pair.", default = "", required = True)
