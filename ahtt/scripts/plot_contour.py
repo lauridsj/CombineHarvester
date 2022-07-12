@@ -88,8 +88,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
             #cf = ax.contourf(xv, yv, zv, [-1., alpha], colors = ["#ffffff"], alpha = 0.)
             #ax.contour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
+            #cf = ax.tricontourf(contour["g1"], contour["g2"], contour["eff"],
+            #                    levels = np.array([-1., alpha]), colors = ["#ffffff"], alpha = 0.)
             cf = ax.tricontourf(contour["g1"], contour["g2"], contour["eff"],
-                                levels = np.array([-1., alpha]), colors = ["#ffffff"], alpha = 0.)
+                                levels = np.array([-1., alpha]))
             #ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
