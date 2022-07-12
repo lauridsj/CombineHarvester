@@ -90,7 +90,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
 
             cf = ax.tricontourf(contour["g1"], contour["g2"], contour["eff"],
                                 levels = np.array([-1., alpha]), colors = ["#ffffff"], alpha = 0.)
-            ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            #ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = solid, linewidth = 2), labels[ic]))
