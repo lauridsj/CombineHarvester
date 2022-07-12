@@ -126,7 +126,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 2. * ax.get_tick_padding())
+    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 15)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
