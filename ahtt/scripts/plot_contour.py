@@ -49,13 +49,13 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
     alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
 
     if not hasattr(draw_contour, "colors"):
-        draw_1D.colors = OrderedDict([
+        draw_contour.colors = OrderedDict([
             (1    , ["0"]),
             (2    , ["#cc0033", "#0033cc"]),
             (3    , ["0", "#cc0033", "#0033cc"]),
             (4    , ["0", "#cc0033", "#0033cc", "#33cc00"]),
         ])
-        draw_1D.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
+        draw_contour.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
 
 
     fig, ax = plt.subplots()
@@ -78,7 +78,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
-                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_1D.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
 
             alpha = alphas[isig]
 
@@ -86,10 +86,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
                 print("average toy count of " + str(contour["avg"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
             cf = ax.contourf(xv, yv, zv, [-1., alpha], colors = ["#ffffff"], alpha = 0.)
-            ax.contour(cf, colors = draw_1D.colors[len(contours)][ic], linestyles = draw_1D.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            ax.contour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = draw_1D.colors[len(contours)][ic], linestyle = solid, linewidth = 2), labels[ic]))
+                handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = solid, linewidth = 2), labels[ic]))
 
     plt.xlabel(axes["coupling"] % get_point(pair[0])[0], fontsize = 21, loc = "right")
     plt.ylabel(axes["coupling"] % get_point(pair[1])[0], fontsize = 21, loc = "top")
