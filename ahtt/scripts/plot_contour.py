@@ -136,7 +136,7 @@ if __name__ == '__main__':
     if len(contours) != len(labels):
         raise RuntimeError("there aren't as many input contours as there are labels. aborting")
 
-    pairs = [os.path.basename(cc).split(".")[0].split("__") for cc in contours]
+    pairs = [os.path.basename(os.path.dirname(cc)).split(".")[0].split("__") for cc in contours]
     print(pairs)
     pairs = [[pp[0], "_".join(pp[1].split("_")[:3])] for pp in pairs]
 
