@@ -137,11 +137,10 @@ if __name__ == '__main__':
         raise RuntimeError("there aren't as many input contours as there are labels. aborting")
 
     pairs = [os.path.basename(os.path.dirname(cc)).split(".")[0].split("__") for cc in contours]
-    print(pairs)
     pairs = [[pp[0], "_".join(pp[1].split("_")[:3])] for pp in pairs]
 
     if not all([pp == pairs[0] for pp in pairs]):
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
-    draw_contour("{ooo}/{prs}_fc-contour_{tag}{fmt}".format(ooo = args.odir, tag = args.otag, fmt = args.fmt), pair[0], contours, labels, args.maxsigma, args.transparent)
+    draw_contour("{ooo}/{prs}_fc-contour_{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pair[0]), tag = args.otag, fmt = args.fmt), pair[0], contours, labels, args.maxsigma, args.transparent)
     pass
