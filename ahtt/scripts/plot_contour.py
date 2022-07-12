@@ -12,8 +12,10 @@ import math
 import glob
 from collections import OrderedDict
 import json
+
 import matplotlib
 import matplotlib.pyplot as plt
+plt.rc('text', usetex = True)
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
@@ -104,10 +106,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
     if formal:
         ctxt = "{cms}{app}".format(cms = r"\textbf{CMS}", app = r" \textit{" + cmsapp + r"}" if cmsapp != "" else "")
-        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 28, ha = 'left', va = 'top')
+        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 24, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 28, ha = 'right', va = 'top')
+        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 24, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
         pass
