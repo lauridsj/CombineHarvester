@@ -103,12 +103,11 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
     ax.margins(x = 0, y = 0)
 
     if formal:
-        ctxt = r"\textbf{CMS}"
-        ctxt += r" \textit{" + cmsapp + r"}" if cmsapp != "" else "" 
-        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 32, ha = 'left', va = 'top')
+        ctxt = "{cms}{app}".format(cms = r"\textbf{CMS}", app = r" \textit{" + cmsapp + r"}" if cmsapp != "" else "")
+        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 28, ha = 'left', va = 'top')
 
-        ltxt = luminosity + r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)"
-        plt.text(0.98 * max_g, 0.98 * max_g, ctxt, fontsize = 32, ha = 'right', va = 'top')
+        ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
+        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 28, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
         pass
