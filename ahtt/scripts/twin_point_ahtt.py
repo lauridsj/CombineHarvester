@@ -333,6 +333,9 @@ if __name__ == '__main__':
                 print "first result ", best[0], ": ", best_fit
 
             bf = get_fit(bb, points, False)
+            if bf is None:
+                raise RuntimeError("failed getting best fit point for file " + bb + ". aborting.")
+
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
             gv = stringify((bf[0], bf[1]))
 
