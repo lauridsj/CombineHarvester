@@ -149,5 +149,5 @@ if __name__ == '__main__':
     if not all([pp == pairs[0] for pp in pairs]):
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
-    draw_contour("{ooo}/{prs}_fc-contour_{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma, args.transparent)
+    draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma, args.transparent)
     pass
