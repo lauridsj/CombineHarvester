@@ -18,18 +18,7 @@ import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
-epsilon = 1e-5
-axes = {
-    "dnll":    r"$-2\,\ln\,\dfrac{\mathcal{L}(\mathrm{g}_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
-    "coupling": r"g$_{\mathrm{\mathsf{%s}}}$"
-}
-
-first  = lambda vv: [ii for ii, _ in vv]
-second = lambda vv: [ii for _, ii in vv]
-
-def get_point(sigpnt):
-    pnt = sigpnt.split('_')
-    return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
 def read_nll(directories, onepoi, max_g):
     nlls = [OrderedDict() for dd in directories]

@@ -15,19 +15,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerErrorbar
 
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+
 nuisance_per_page = 30
-axes = {
-    "mass" :    r"m$_{\mathrm{\mathsf{%s}}}$ [GeV]",
-    "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [\%% m$_{\mathrm{\mathsf{%s}}}$]",
-    "coupling": r"g$_{\mathrm{\mathsf{%s}}}$"
-}
-
-first  = lambda vv: [i for i, _ in vv]
-second = lambda vv: [i for _, i in vv]
-
-def get_point(sigpnt):
-    pnt = sigpnt.split('_')
-    return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
 def read_pull(directories, onepoi):
     pulls = [OrderedDict() for dd in directories]
