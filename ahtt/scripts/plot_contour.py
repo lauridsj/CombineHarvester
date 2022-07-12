@@ -63,18 +63,18 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
     sigmas = []
 
     for ic, contour in enumerate(contours):
-        xv, yv = np.meshgrid(np.array(set(contour["g1"])), np.array(set(contour["g2"])))
-        zv = np.zeros_like(xv)
+        #xv, yv = np.meshgrid(np.array(set(contour["g1"])), np.array(set(contour["g2"])))
+        #zv = np.zeros_like(xv)
 
-        for ir, xr in enumerate(xv):
-            for ic, xc in enumerate(xr):
-                g1 = xv[ir][ic]
-                g2 = yv[ir][ic]
+        #for ir, xr in enumerate(xv):
+        #    for ic, xc in enumerate(xr):
+        #        g1 = xv[ir][ic]
+        #        g2 = yv[ir][ic]
 
-                for i1, i2, ie in zip(contour["g1"], contour["g2"], contour["eff"]):
-                    if i1 == g1 and i2 == g2:
-                        zv[ir][ic] = ie
-                        break
+        #        for i1, i2, ie in zip(contour["g1"], contour["g2"], contour["eff"]):
+        #            if i1 == g1 and i2 == g2:
+        #                zv[ir][ic] = ie
+        #                break
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
@@ -85,8 +85,11 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, transparent):
             if contour["avg"] < (4.5 / alpha):
                 print("average toy count of " + str(contour["avg"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            cf = ax.contourf(xv, yv, zv, [-1., alpha], colors = ["#ffffff"], alpha = 0.)
-            ax.contour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            #cf = ax.contourf(xv, yv, zv, [-1., alpha], colors = ["#ffffff"], alpha = 0.)
+            #ax.contour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+
+            cf = ax.tricontourf(np.array(contour["g1"]), np.array(contour["g2"]), np.array(contour["eff"]), [-1., alpha], colors = ["#ffffff"], alpha = 0.)
+            ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = solid, linewidth = 2), labels[ic]))
