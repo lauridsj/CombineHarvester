@@ -104,7 +104,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
             #ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = solid, linewidth = 2), labels[ic]))
+                handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
     plt.xlabel(axes["coupling"] % get_point(pair[0])[0], fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % get_point(pair[1])[0], fontsize = 23, loc = "top")
