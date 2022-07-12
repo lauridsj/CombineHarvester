@@ -111,8 +111,12 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
     ax.margins(x = 0, y = 0)
 
     if formal:
-        ctxt = "{cms}{app}".format(cms = r"\textbf{CMS}", app = r" \textit{" + cmsapp + r"}" if cmsapp != "" else "")
+        ctxt = "{cms}".format(cms = r"\textbf{CMS}")
         plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 34, ha = 'left', va = 'top')
+
+        if cmsapp != "":
+            atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
+            plt.text(0.02 * max_g, 0.9 * max_g, atxt, fontsize = 28, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 28, ha = 'right', va = 'top')
