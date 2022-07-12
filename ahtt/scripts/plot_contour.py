@@ -110,7 +110,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
-            plt.text(0.02 * max_g, 0.93 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
+            plt.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
