@@ -93,15 +93,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
             if contour["avg"] < (4.5 / alpha):
                 print("average toy count of " + str(contour["avg"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            #cf = ax.contourf(xv, yv, zv, [-1., alpha], colors = ["#ffffff"], alpha = 0.)
-            #ax.contour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
-
-            #cf = ax.tricontourf(contour["g1"], contour["g2"], contour["eff"],
-            #                    levels = np.array([-1., alpha]), colors = ["#ffffff"], alpha = 0.)
             cf = ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
                                levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
                                linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
-            #ax.tricontour(cf, colors = draw_contour.colors[len(contours)][ic], linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
@@ -116,7 +110,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
-            plt.text(0.02 * max_g, 0.9 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
+            plt.text(0.02 * max_g, 0.93 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
