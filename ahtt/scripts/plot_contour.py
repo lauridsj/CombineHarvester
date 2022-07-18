@@ -39,15 +39,13 @@ def read_contour(cfiles):
         contours[ii]["g1"] = []
         contours[ii]["g2"] = []
         contours[ii]["eff"] = []
-        contours[ii]["avg"] = 0
+        contours[ii]["min"] = sys.maxsize
 
         for gv in cc["g-grid"].keys():
             contours[ii]["g1"].append( gv.replace(" ", "").split(",")[0] )
             contours[ii]["g2"].append( gv.replace(" ", "").split(",")[1] )
             contours[ii]["eff"].append( cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] )
-            contours[ii]["avg"] += cc["g-grid"][gv]["total"]
-
-        contours[ii]["avg"] /= len(contours[ii]["eff"])
+            contours[ii]["min"] = min(contours[ii]["min"], cc["g-grid"][gv]["total"])
 
     return contours
 
@@ -90,8 +88,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
 
             alpha = alphas[isig]
 
-            if contour["avg"] < (4.5 / alpha):
-                print("average toy count of " + str(contour["avg"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
+            if contour["min"] < (4.5 / alpha):
+                print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
             cf = ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
                                levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
