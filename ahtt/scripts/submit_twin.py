@@ -20,7 +20,7 @@ condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 aggregate_submit = "conSub_aggregate.txt"
 
 def tuplize(gstring):
-    return tuple(gstring.replace(" ", "").split(","))
+    return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
 
 sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
@@ -84,7 +84,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                                     if gn not in g_grid:
                                         g_grid.append(gn)
 
-        return g_grid
+        return []
 
     # default LO case
     gvls = [list(np.linspace(min_g, max_g, num = 13)), list(np.linspace(min_g, max_g, num = 13))]
