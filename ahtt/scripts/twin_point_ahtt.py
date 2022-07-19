@@ -235,7 +235,7 @@ if __name__ == '__main__':
         exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
         exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {fstr} --cminFallbackAlgo Minuit2,Simplex,{fstr}"
+        fit_strategy  = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
         #strategy += " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1" # slow!
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
@@ -253,7 +253,7 @@ if __name__ == '__main__':
                             snm = scan_name + identifier,
                             par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
                             exp = exp_scenario[args.fcexp],
-                            stg = strategy.format(fstr = ifit),
+                            stg = fit_strategy(ifit),
                             asm = "-t -1" if args.asimov else "",
                             toy = "-s -1",
                             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
