@@ -65,20 +65,23 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                 gts = [tuplize(gv) for gv in cc["g-grid"].keys()]
                 effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys()]
 
-                print ggrid
-                print gts
-                print effs
-
                 for gt, eff in zip(gts, effs):
                     unary_sqd = lambda pp: sqd(pp[0], gt)
 
-                    gx = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]], key = unary_sqd)
-                    gy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[0] == gt[0] and gg[1] > gt[1]], key = unary_sqd)
-                    gxy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[1] > gt[1] and gg[0] > gt[0]], key = unary_sqd)
+                    gx = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]]
+                    gy = [(gg, ee) for gg, ee in zip(gts, effs) if gg[0] == gt[0] and gg[1] > gt[1]]
+                    gxy = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] > gt[1] and gg[0] > gt[0]]
+
+                    gx = min(gx, key = unary_sqd) if len(gx) > 0 else None
+                    gy = min(gy, key = unary_sqd) if len(gy) > 0 else None
+                    gxy = min(gy, key = unary_sqd) if len(gxy) > 0 else None
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
                             for gg in [gx, gy, gxy]:
+                                if gg is None:
+                                    continue
+
                                 if (gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha):
                                     gn = halfway(gg[0], gt)
                                     if gn not in g_grid:
