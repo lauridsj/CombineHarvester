@@ -327,7 +327,7 @@ if __name__ == '__main__':
                         args.fcrundat = False
 
                     jarg = job_arg
-                    jarg += " {gvl} {exp} {toy} {dat} {idx}".format(
+                    jarg += " {gvl} {toy} {dat} {idx}".format(
                         gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
                         toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
                         dat = "--fc-skip-data " if not args.fcrundat else "",
