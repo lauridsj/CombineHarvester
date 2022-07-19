@@ -63,7 +63,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
                 gts = [tuplize(gv) for gv in cc["g-grid"].keys()]
-                effs = [cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] for gv in cc["g-grid"].keys()]
+                effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys()]
 
                 print ggrid
                 print gts
