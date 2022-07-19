@@ -54,7 +54,7 @@ def get_toys(tname, best_fit, whatever_else = None):
     ipas = 0
 
     for i in ttree:
-        if ttree.quantileExpected != -1.:
+        if ttree.quantileExpected != -1. and not ttree.deltaNLL < 0.:
             isum += 1
             if ttree.deltaNLL > best_fit[2]:
                 ipas += 1
@@ -275,7 +275,7 @@ if __name__ == '__main__':
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        stg = strategy,
+                        stg = fit_strategy("2"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
