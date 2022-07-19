@@ -74,7 +74,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
 
                     gx = min(gx, key = unary_sqd) if len(gx) > 0 else None
                     gy = min(gy, key = unary_sqd) if len(gy) > 0 else None
-                    gxy = min(gy, key = unary_sqd) if len(gxy) > 0 else None
+                    gxy = min(gxy, key = unary_sqd) if len(gxy) > 0 else None
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
