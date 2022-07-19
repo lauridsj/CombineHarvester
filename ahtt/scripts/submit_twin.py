@@ -76,7 +76,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                     gy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[0] == gt[0] and gg[1] > gt[1]], key = unary_sqd)
                     gxy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[1] > gt[1] and gg[0] > gt[0]], key = unary_sqd)
 
-                    for cut, alpha in zip(cuts, alphas):
+                    for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
                             for gg in [gx, gy, gxy]:
                                 if (gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha):
