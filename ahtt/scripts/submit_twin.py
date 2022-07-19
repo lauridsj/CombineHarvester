@@ -22,9 +22,9 @@ aggregate_submit = "conSub_aggregate.txt"
 def tuplize(gstring):
     return tuple(gstring.replace(" ", "").split(","))
 
-sqd: lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
+sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
-halfway: lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
+halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 
 def generate_g_grid(pair, ggrids = "", gmode = "add"):
     if not hasattr(generate_g_grid, "alphas"):
