@@ -269,7 +269,7 @@ if __name__ == '__main__':
         #    continue
 
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}"
-                   "{shp} {mcs} {prj} {asm} {com} {rmt} {bsd}").format(
+                   "{shp} {mcs} {prj} {asm} {com} {rmt} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -289,7 +289,8 @@ if __name__ == '__main__':
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             asm = "--unblind" if not args.asimov else "",
             com = "--compress" if rundc else "",
-            rmt = "--delete-toy" if args.rmtoy else "", 
+            rmt = "--delete-toy" if args.rmtoy else "",
+            exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
@@ -318,7 +319,6 @@ if __name__ == '__main__':
                     jarg = job_arg
                     jarg += " {gvl} {exp} {toy} {dat} {idx}".format(
                         gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
-                        exp = "--fc-expect " + args.fcexp,
                         toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
                         dat = "--fc-skip-data " if not args.fcrundat else "",
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
