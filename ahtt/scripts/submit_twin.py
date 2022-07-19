@@ -22,30 +22,63 @@ aggregate_submit = "conSub_aggregate.txt"
 def tuplize(gstring):
     return tuple(gstring.replace(" ", "").split(","))
 
-def generate_g_grid(pair, ggrid = "", gmode = "add"):
+sqd: lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
+
+halfway: lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
+
+def generate_g_grid(pair, ggrids = "", gmode = "add"):
+    if not hasattr(generate_g_grid, "alphas"):
+        generate_g_grid.alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
+
     g_grid = []
 
-    if ggrid != "":
-        if not os.path.isfile(ggrid):
-            print "g grid file " + ggrid + " is not accessible, skipping..."
-            return g_grid
+    if ggrids != "":
+        ggrids = ggrids.replace(" ", "").split(",")
 
-        with open(ggrid) as ff:
-            result = json.load(ff, object_pairs_hook = OrderedDict)
+        for ggrid in ggrids:
+            if not os.path.isfile(ggrid):
+                print "g grid file " + ggrid + " is not accessible, skipping..."
+                return g_grid
 
-        if result["points"] != pair:
-            print "given pair in grid is inconsistent with currently expected pair, skipping..."
-            print "in grid: ", result["points"]
-            print "currently expected: ", pair
-            return g_grid
+            with open(ggrid) as ff:
+                cc = json.load(ff, object_pairs_hook = OrderedDict)
 
-        if gmode == "add":
-            for gv in result["g-grid"].keys():
-                g_grid.append( tuplize(gv) )
+            if cc["points"] != pair:
+                print "given pair in grid is inconsistent with currently expected pair, skipping..."
+                print "in grid: ", cc["points"]
+                print "currently expected: ", pair
+                return g_grid
 
-        # whatever logic to generate in between points of existing grid
-        if gmode == "refine":
-            pass
+            if gmode == "add":
+                for gv in cc["g-grid"].keys():
+                    gt = tuplize(gv)
+                    if gt not in g_grid:
+                        g_grid.append(gt)
+
+            # whatever logic to generate in between points of existing grid
+            if gmode == "refine":
+                mintoy = sys.maxsize
+                for gv in cc["g-grid"].keys():
+                    mintoy = min(mintoy, cc["g-grid"][gv]["total"])
+
+                cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
+                gts = [tuplize(gv) for gv in cc["g-grid"].keys()]
+                effs = [cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] for gv in cc["g-grid"].keys()]
+
+                for gt, eff in zip(gts, effs):
+                    unary_sqd = lambda pp: sqd(pp[0], gt)
+
+                    gx = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]], key = unary_sqd)
+                    gy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[0] == gt[0] and gg[1] > gt[1]], key = unary_sqd)
+                    gxy = min([(gg, ee) for gg, ee in zip(gts, effs) if gg[1] > gt[1] and gg[0] > gt[0]], key = unary_sqd)
+
+                    for cut, alpha in zip(cuts, alpha):
+                        if cut:
+                            for gg in [gx, gy, gxy]:
+                                if (gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha):
+                                    gn = halfway(gg[0], gt)
+                                    if gn not in g_grid:
+                                        g_grid.append(gn)
 
         return g_grid
 
@@ -57,29 +90,32 @@ def generate_g_grid(pair, ggrid = "", gmode = "add"):
 
     return g_grid
 
-def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir):
+def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir, runlocal = False):
     if not hasattr(submit_twin_job, "firstprint"):
         submit_twin_job.firstprint = True
 
-    syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
-        csub = condordir + "condorSubmit.sh",
-        cpar = condordir + "condorParam.txt",
-        crun = condordir + "condorRun.sh",
-        name = job_name,
-        executable = script_dir + "/twin_point_ahtt.py",
-        job_arg = job_arg,
-        job_time = job_time,
-        tmp = "--run-in-tmp",
-        job_dir = job_dir
-    ), submit_twin_job.firstprint)
-    submit_twin_job.firstprint = False
-
-    if not os.path.isfile(aggregate_submit):
-        syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
+    if runlocal:
+        syscall('{executable} {job_arg}'.format(executable = script_dir + "/twin_point_ahtt.py", job_arg = job_arg), True)
     else:
-        syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
-            name = 'conSub_' + job_name + '.txt',
-            agg = aggregate_submit), False)
+        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
+            csub = condordir + "condorSubmit.sh",
+            cpar = condordir + "condorParam.txt",
+            crun = condordir + "condorRun.sh",
+            name = job_name,
+            executable = script_dir + "/twin_point_ahtt.py",
+            job_arg = job_arg,
+            job_time = job_time,
+            tmp = "--run-in-tmp",
+            job_dir = job_dir
+        ), submit_twin_job.firstprint)
+        submit_twin_job.firstprint = False
+
+        if not os.path.isfile(aggregate_submit):
+            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
+        else:
+            syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
+                name = 'conSub_' + job_name + '.txt',
+                agg = aggregate_submit), False)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -127,7 +163,7 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
-    parser.add_argument("--fc-g-grid", help = "json file generated by compile mode to read points from",
+    parser.add_argument("--fc-g-grid", help = "comma (between files) and semicolon (between pairs) separated json files generated by compile mode to read points from",
                         default = "", dest = "fcgrid", required = False)
     parser.add_argument("--fc-mode",
                         help = "what to do with the grid read from --fc-g-grid, can be 'add' for submitting more toys of the same points,\n"
@@ -146,6 +182,8 @@ if __name__ == '__main__':
                         default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
 
+    parser.add_argument("--delete-toy", help = "delete toy after compiling", dest = "rmtoy", action = "store_true", required = False)
+
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
@@ -155,6 +193,16 @@ if __name__ == '__main__':
     # FIXME something to allow --point to be non-default
     pairs = args.point.replace(" ", "").split(';')
 
+    ggrids = None
+    if args.fcgrid != "":
+        ggrids = args.fcgrid.replace(" ", "").split(';')
+
+    if ggrids is not None:
+        if len(ggrids) != len(pairs):
+            raise RuntimeError("there needs to be as many json file groups as there are pairs")
+    else:
+        ggrids = ["" for pair in pairs]
+
     if args.injectsignal != "":
         args.pseudodata = True
 
@@ -163,12 +211,17 @@ if __name__ == '__main__':
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
+    runhadd = "hadd" in modes or "merge" in modes
+    runcompile = "compile" in args.mode
+
+    if runcompile and (rundc or runfc or runhadd):
+        raise RuntimeError("compile mode must be ran on its own!")
 
     # clean up before doing anything else, in case someone aborts previous run
     if os.path.isfile(aggregate_submit):
         syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
 
-    for pair in pairs:
+    for pair, ggrid in zip(pairs, ggrids):
         points = pair.split(',')
         pstr = '__'.join(points)
 
@@ -216,7 +269,7 @@ if __name__ == '__main__':
         #    continue
 
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}"
-                   "{shp} {mcs} {prj} {asm} {com} {bsd}").format(
+                   "{shp} {mcs} {prj} {asm} {com} {rmt} {bsd}").format(
             pnt = pair,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -236,11 +289,12 @@ if __name__ == '__main__':
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             asm = "--unblind" if not args.asimov else "",
             com = "--compress" if rundc else "",
+            rmt = "--delete-toy" if args.rmtoy else "", 
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
         if runfc:
-            gvalues = generate_g_grid(points, args.fcgrid, args.fcmode)
+            gvalues = generate_g_grid(points, ggrid, args.fcmode)
             idxs = []
             if args.fctoy > 0:
                 if "," in args.fcidxs and "..." in args.fcidxs:
@@ -274,7 +328,7 @@ if __name__ == '__main__':
 
             # FIXME cumulative toys, compilation, NLO submission, ...
         else:
-            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir, runhadd or runcompile)
 
         if os.path.isfile(aggregate_submit):
             syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
