@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
-    runhadd = "hadd" in modes or "merge" in modes
+    runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
 
     if runcompile and (rundc or runfc or runhadd):
