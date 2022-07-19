@@ -65,6 +65,10 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                 gts = [tuplize(gv) for gv in cc["g-grid"].keys()]
                 effs = [cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] for gv in cc["g-grid"].keys()]
 
+                print ggrid
+                print gts
+                print effs
+
                 for gt, eff in zip(gts, effs):
                     unary_sqd = lambda pp: sqd(pp[0], gt)
 
