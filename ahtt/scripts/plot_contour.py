@@ -97,7 +97,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
                 xs.sort()
 
-                ax.plot(np.array(xs), np.array(ys),
+                ax.plot(np.array(xs), np.array(ys), scalex = False, scaley = False,
                         marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
