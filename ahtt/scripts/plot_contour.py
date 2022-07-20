@@ -78,15 +78,15 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            cf = ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
-                               levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
-                               linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
+                          levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
+                          linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5, clip_on = False)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
