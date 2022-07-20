@@ -133,7 +133,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
             ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
 
     ax.minorticks_on()
-    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
+    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
