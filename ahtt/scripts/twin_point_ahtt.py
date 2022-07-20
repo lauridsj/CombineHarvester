@@ -341,7 +341,7 @@ if __name__ == '__main__':
             gv = stringify((bf[0], bf[1]))
 
             if args.rmtoy:
-                syscall(bb.replace("rm {exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), False, True)
+                syscall("rm " + bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), False, True)
 
             if gv in grid["g-grid"]:
                 grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
