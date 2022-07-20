@@ -86,21 +86,21 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            #ax2 = ax.twinx().twiny()
-            ax.autoscale(False)
+            yv = set([yy for yy in contour["g2"]])
 
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]),
-                     marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+            for yy in yv:
+                ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
+                xs = first(ps)
+                ys = second(ps)
+
+                xs.sort()
+
+                ax.plot(np.array(xs), np.array(ys),
+                        marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
-
-    #ax2.margins(x = 0, y = 0)
-    #ax2.set_xticks([])
-    #ax2.set_yticks([])
-    #ax2.set_xlim(ax.get_xlim())
-    #ax2.set_ylim(ax.get_ylim())
 
     if formal:
         ctxt = "{cms}".format(cms = r"\textbf{CMS}")
