@@ -17,3 +17,7 @@ second = lambda vv: [ii for _, ii in vv]
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
+
+def str_point(sigpnt):
+    pnt = sigpnt.split('_')
+    return pnt[0][0] + '(' + pnt[1][1:] + ', ' + pnt[2][1:].replace('p', '.') + ' \%)' 

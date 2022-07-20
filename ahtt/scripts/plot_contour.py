@@ -49,7 +49,7 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosity, transparent):
+def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp, luminosity, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
@@ -69,18 +69,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
     sigmas = []
 
     for ic, contour in enumerate(contours):
-        #xv, yv = np.meshgrid(np.array(set(contour["g1"])), np.array(set(contour["g2"])))
-        #zv = np.zeros_like(xv)
-
-        #for ir, xr in enumerate(xv):
-        #    for ic, xc in enumerate(xr):
-        #        g1 = xv[ir][ic]
-        #        g2 = yv[ir][ic]
-
-        #        for i1, i2, ie in zip(contour["g1"], contour["g2"], contour["eff"]):
-        #            if i1 == g1 and i2 == g2:
-        #                zv[ir][ic] = ie
-        #                break
+        if scatter:
+            ax.scatter(contour["g1"], contour["g2"], c = draw_contour.colors[len(contours)][ic])
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
@@ -98,8 +88,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, formal, cmsapp, luminosi
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
-    plt.xlabel(axes["coupling"] % get_point(pair[0])[0], fontsize = 23, loc = "right")
-    plt.ylabel(axes["coupling"] % get_point(pair[1])[0], fontsize = 23, loc = "top")
+    plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
+    plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
 
     if formal:
@@ -137,10 +127,15 @@ if __name__ == '__main__':
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = 2, type = int, required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each json input, semicolon separated", default = "", required = False)
+
+    parser.add_argument("--draw-scatter", help = "draw the scatter points used to build the contours",
+                        dest = "scatter", action = "store_true", required = False)
+
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "XXX", required = False)
+
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
                         dest = "transparent", action = "store_true", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "pdf", dest = "fmt", required = False)
@@ -165,4 +160,4 @@ if __name__ == '__main__':
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
     draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
-                 args.formal, args.cmsapp, args.luminosity, args.transparent)
+                 args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
