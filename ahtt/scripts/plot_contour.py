@@ -86,7 +86,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 0.5, c = draw_contour.colors[len(contours)][ic])
+            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 1., c = draw_contour.colors[len(contours)][ic])
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
@@ -94,14 +94,14 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     if formal:
         ctxt = "{cms}".format(cms = r"\textbf{CMS}")
-        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top')
+        ax.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top')
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
-            plt.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
+            ax.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
+        ax.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
         pass
