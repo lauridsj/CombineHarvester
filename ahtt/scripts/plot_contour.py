@@ -56,10 +56,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     if not hasattr(draw_contour, "colors"):
         draw_contour.colors = OrderedDict([
-            (1    , ["0"]),
+            (1    , ["black"]),
             (2    , ["#cc0033", "#0033cc"]),
-            (3    , ["0", "#cc0033", "#0033cc"]),
-            (4    , ["0", "#cc0033", "#0033cc", "#33cc00"]),
+            (3    , ["black", "#cc0033", "#0033cc"]),
+            (4    , ["black", "#cc0033", "#0033cc", "#33cc00"]),
         ])
         draw_contour.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
 
