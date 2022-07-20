@@ -72,8 +72,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
         if bestfit:
             ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
                     marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
-
-            sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+            if ic == 0:
+                sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
