@@ -85,21 +85,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
-        if scatter:
-            yv = list(set([yy for yy in contour["g2"]]))
-            yv.sort()
-
-            for yy in yv:
-                print(yy)
-                ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
-                xs = first(ps)
-                ys = second(ps)
-
-                xs.sort()
-
-                ax.plot(np.array(xs), np.array(ys), scalex = False, scaley = False,
-                        marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
-
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
@@ -129,6 +114,14 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
+
+    # matplotlib is insane, so this must happen last, don't ask why
+    if scatter:
+        ax.autoscale(False)
+        for ic, contour in enumerate(contours):
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2")),
+                    marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
