@@ -325,7 +325,7 @@ if __name__ == '__main__':
                 jname = job_name + scan_name.replace("pnt", "") + "{exp}".format(exp = "_" + args.fcexp if args.asimov else "_data")
 
                 for idx in idxs:
-                    fcrundat = False if idx != idx[0] else args.fcrundat
+                    fcrundat = False if idx != idxs[0] else args.fcrundat
 
                     jarg = job_arg
                     jarg += " {gvl} {toy} {dat} {idx}".format(
