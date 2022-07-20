@@ -86,7 +86,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            ax2 = ax.twinx()
+            ax2 = ax.twinx().twiny()
             ax2.autoscale(False)
 
             ax2.plot(np.array(contour["g1"]), np.array(contour["g2"]), scalex = False, scaley = False,
