@@ -70,7 +70,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     for ic, contour in enumerate(contours):
         if scatter:
-            ax.scatter(contour["g1"], contour["g2"], c = draw_contour.colors[len(contours)][ic])
+            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 0.25, c = draw_contour.colors[len(contours)][ic])
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
