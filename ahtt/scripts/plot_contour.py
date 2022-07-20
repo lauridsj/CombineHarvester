@@ -69,6 +69,12 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
     sigmas = []
 
     for ic, contour in enumerate(contours):
+        if bestfit:
+            ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
+                    marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
+
+            sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
                 sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
@@ -84,10 +90,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
-
-        if bestfit:
-            ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
-                    marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
@@ -109,7 +111,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
     elif len(handles) > 0:
         pass
     elif len(sigmas) > 0:
-        pass
+        ax.legend(first(sigmas), second(sigmas),
+	          loc = "upper left", ncol = len(sigmas), bbox_to_anchor = (0.02 * max_g, 0.87 * max_g),
+                  mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21, frameon = False)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
