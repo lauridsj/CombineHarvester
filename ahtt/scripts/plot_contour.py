@@ -69,11 +69,15 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
     sigmas = []
 
     for ic, contour in enumerate(contours):
-        if bestfit:
+        if bestfit and not scatter:
             ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
                     marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
             if ic == 0:
                 sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+
+        if scatter:
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]),
+                    marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
@@ -84,9 +88,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
-                          levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
-                          linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            if not scatter:
+                ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
+                              levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
+                              linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
@@ -123,14 +128,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
-
-    # matplotlib is insane, so this must happen last, don't ask why
-    if scatter:
-        ax.autoscale(False)
-        for ic, contour in enumerate(contours):
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), scalex = False, scaley = False,
-                    marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
-        ax.axis([min_g, max_g, min_g, max_g])
 
     fig.savefig(oname, transparent = transparent)
     fig.clf()
