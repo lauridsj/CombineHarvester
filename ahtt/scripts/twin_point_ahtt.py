@@ -45,10 +45,12 @@ def read_previous_grid(gpoints, prev_best_fit, gname):
     return OrderedDict()
 
 def get_toys(tname, best_fit, whatever_else = None):
+    pval = OrderedDict()
+    if not os.path.isfile(tname):
+        return None
+
     tfile = TFile.Open(tname)
     ttree = tfile.Get("limit")
-
-    pval = OrderedDict()
 
     isum = 0
     ipas = 0
@@ -68,6 +70,13 @@ def get_toys(tname, best_fit, whatever_else = None):
     return pval
 
 def sum_up(g1, g2):
+    if g1 is None and g2 is not None:
+        return g2
+    if g1 is not None and g2 is None:
+        return g1
+    if g1 is None and g2 is None:
+        return None
+
     gs = OrderedDict()
     if g1["dnll"] != g2["dnll"]:
         print '\n WARNING :: incompatible expected/data dnll, when they should be!!'
