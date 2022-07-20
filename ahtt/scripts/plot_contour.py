@@ -49,7 +49,7 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp, luminosity, transparent):
+def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal, cmsapp, luminosity, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
@@ -84,6 +84,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
+
+        if bestfit:
+            ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
+                    marker = 'x', markersize = 2.0, ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
@@ -134,8 +138,10 @@ if __name__ == '__main__':
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = 2, type = int, required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each json input, semicolon separated", default = "", required = False)
 
-    parser.add_argument("--draw-scatter", help = "draw the scatter points used to build the contours",
+    parser.add_argument("--draw-scatter", help = "draw the scatter points used to build the contours. matplotlib is insane, so this feature doesn't actually work!",
                         dest = "scatter", action = "store_true", required = False)
+    parser.add_argument("--draw-best-fit", help = "draw the best fit point.",
+                        dest = "bestfit", action = "store_true", required = False)
 
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
@@ -165,5 +171,10 @@ if __name__ == '__main__':
     if not all([pp == pairs[0] for pp in pairs]):
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
+    if args.scatter:
+        print("you've chosen --draw-scatter. the author wanted this feature to draw the scaffolding points together with the contour.")
+        print("however, due to matplotlib's inability to turn of autoscaling the scatter plot ruins any scaling in the axis leading to a nonsensical plot if used.")
+        print("so, don't use the option, and if you do, you get a wrong plot. you've been warned.")
+
     draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
-                 args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
+                 args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
