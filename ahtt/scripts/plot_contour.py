@@ -69,6 +69,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
     sigmas = []
 
     for ic, contour in enumerate(contours):
+        if scatter:
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), draw_contour.colors[len(contours)][ic])
+
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
                 sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
@@ -85,23 +88,20 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
-        if scatter:
-            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 1., c = draw_contour.colors[len(contours)][ic])
-
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
 
     if formal:
         ctxt = "{cms}".format(cms = r"\textbf{CMS}")
-        ax.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top')
+        plt.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top')
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
-            ax.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
+            plt.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
+        plt.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
         pass
