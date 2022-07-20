@@ -56,10 +56,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     if not hasattr(draw_contour, "colors"):
         draw_contour.colors = OrderedDict([
-            (1    , ["black"]),
+            (1    , ["0"]),
             (2    , ["#cc0033", "#0033cc"]),
-            (3    , ["black", "#cc0033", "#0033cc"]),
-            (4    , ["black", "#cc0033", "#0033cc", "#33cc00"]),
+            (3    , ["0", "#cc0033", "#0033cc"]),
+            (4    , ["0", "#cc0033", "#0033cc", "#33cc00"]),
         ])
         draw_contour.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
 
@@ -70,7 +70,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
     for ic, contour in enumerate(contours):
         if scatter:
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), draw_contour.colors[len(contours)][ic])
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.75)
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
