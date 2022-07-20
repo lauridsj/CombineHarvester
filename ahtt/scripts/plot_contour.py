@@ -86,10 +86,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            sc = ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
-            sc.remove()
-            ax.relim()
-            ax.add_collection(sc, autolim = False)
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5, autolim = False)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
