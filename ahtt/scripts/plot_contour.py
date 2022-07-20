@@ -86,7 +86,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
 
         if scatter:
-            yv = set([yy for yy in contour["g2"]])
+            yv = list(set([yy for yy in contour["g2"]]))
+            yv.sort()
 
             for yy in yv:
                 print(yy)
