@@ -26,7 +26,7 @@ import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
 
 def read_contour(cfiles):
     contours = [OrderedDict() for cf in cfiles]
