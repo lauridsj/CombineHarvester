@@ -121,6 +121,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
         for ic, contour in enumerate(contours):
             ax.plot(np.array(contour["g1"]), np.array(contour["g2"]),
                     marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+        ax.axis([min_g max_g, min_g, max_g])
 
     fig.savefig(oname, transparent = transparent)
     fig.clf()
