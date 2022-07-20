@@ -88,7 +88,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
         if scatter:
             ax2 = ax.twinx()
             ax2.autoscale(False)
-            ax2.set_yticks([])
 
             ax2.plot(np.array(contour["g1"]), np.array(contour["g2"]), scalex = False, scaley = False,
                      marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
@@ -96,6 +95,11 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
+
+    ax2.margins(x = 0, y = 0)
+    ax2.set_xticks([])
+    ax2.set_yticks([])
+    ax2.set_xlim(ax.get_xlim())
     ax2.set_ylim(ax.get_ylim())
 
     if formal:
