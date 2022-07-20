@@ -107,9 +107,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
         ax.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
 
     if len(handles) > 0 and len(sigmas) > 0:
-        pass
+        ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
     elif len(handles) > 0:
-        pass
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
     elif len(sigmas) > 0:
         ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
 
