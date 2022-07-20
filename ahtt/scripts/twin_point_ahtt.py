@@ -45,9 +45,10 @@ def read_previous_grid(gpoints, prev_best_fit, gname):
     return OrderedDict()
 
 def get_toys(tname, best_fit, whatever_else = None):
-    pval = OrderedDict()
     if not os.path.isfile(tname):
         return None
+
+    pval = OrderedDict()
 
     tfile = TFile.Open(tname)
     ttree = tfile.Get("limit")
