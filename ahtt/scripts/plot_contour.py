@@ -69,9 +69,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
     sigmas = []
 
     for ic, contour in enumerate(contours):
-        if scatter:
-            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 0.25, c = draw_contour.colors[len(contours)][ic])
-
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
                 sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
@@ -87,6 +84,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
+
+        if scatter:
+            ax.scatter(np.array(contour["g1"]), np.array(contour["g2"]), s = 0.5, c = draw_contour.colors[len(contours)][ic])
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
