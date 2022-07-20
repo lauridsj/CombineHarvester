@@ -87,7 +87,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
         if bestfit:
             ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
-                    marker = 'x', markersize = 20.0, color = draw_contour.colors[len(contours)][ic])
+                    marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
