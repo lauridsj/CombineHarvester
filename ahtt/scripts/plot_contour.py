@@ -76,8 +76,18 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
                 sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
         if scatter:
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]),
-                    marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+            yv = list(set([yy for yy in contour["g2"]]))
+            yv.sort()
+
+            for yy in yv:
+                ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
+                xs = first(ps)
+                ys = second(ps)
+
+                xs.sort()
+
+                ax.plot(np.array(xs), np.array(ys),
+                        marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
