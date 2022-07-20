@@ -111,7 +111,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
     elif len(handles) > 0:
         pass
     elif len(sigmas) > 0:
-        ax.legend(first(sigmas), second(sigmas), loc='lower right', fontsize = 21, frameon = False)
+        ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, borderaxespad = 1., frameon = False)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
