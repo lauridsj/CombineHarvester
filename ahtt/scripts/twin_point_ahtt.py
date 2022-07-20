@@ -357,6 +357,7 @@ if __name__ == '__main__':
             else:
                 grid["g-grid"][gv] = gg
 
+        grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
         with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
             json.dump(grid, jj, indent = 1)
 
