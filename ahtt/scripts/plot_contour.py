@@ -89,7 +89,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, scatter, formal, cmsapp,
             #ax2 = ax.twinx().twiny()
             ax.autoscale(False)
 
-            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]), scalex = False, scaley = False,
+            ax.plot(np.array(contour["g1"]), np.array(contour["g2"]),
                      marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
