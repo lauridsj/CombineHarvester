@@ -190,6 +190,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
 
     parser.add_argument("--delete-toy", help = "delete toy after compiling", dest = "rmtoy", action = "store_true", required = False)
+    parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     args = parser.parse_args()
@@ -276,7 +277,7 @@ if __name__ == '__main__':
         #    continue
 
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}"
-                   "{shp} {mcs} {prj} {asm} {com} {rmt} {exp} {bsd}").format(
+                   "{shp} {mcs} {prj} {asm} {com} {rmt} {igp} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -297,6 +298,7 @@ if __name__ == '__main__':
             asm = "--unblind" if not args.asimov else "",
             com = "--compress" if rundc else "",
             rmt = "--delete-toy" if args.rmtoy else "",
+            igp = "--ignore-previous" if args.ignoreprev else "",
             exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
@@ -323,14 +325,13 @@ if __name__ == '__main__':
                 jname = job_name + scan_name.replace("pnt", "") + "{exp}".format(exp = "_" + args.fcexp if args.asimov else "_data")
 
                 for idx in idxs:
-                    if idx != idxs[0]:
-                        args.fcrundat = False
+                    fcrundat = False if idx != idx[0] else args.fcrundat
 
                     jarg = job_arg
                     jarg += " {gvl} {toy} {dat} {idx}".format(
                         gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
                         toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
-                        dat = "--fc-skip-data " if not args.fcrundat else "",
+                        dat = "--fc-skip-data " if not fcrundat else "",
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
                     )
 

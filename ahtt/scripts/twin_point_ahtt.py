@@ -141,6 +141,7 @@ if __name__ == '__main__':
                         default = -1, dest = "fcidx", required = False, type = int)
 
     parser.add_argument("--delete-toy", help = "delete toy after compiling", dest = "rmtoy", action = "store_true", required = False)
+    parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
 
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
@@ -289,15 +290,13 @@ if __name__ == '__main__':
             ), False)
 
     if runhadd:
-        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
         idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
 
         if len(idxs) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
 
-            if len(toys) == 0:
-                toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
-                toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
+            toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+            toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
 
             for toy in toys:
                 syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")), False, True)
@@ -325,7 +324,7 @@ if __name__ == '__main__':
         grid = OrderedDict()
         grid["points"] = points
         grid["best_fit_g1_g2_dnll"] = best_fit
-        grid["g-grid"] = OrderedDict() if idx == 0 else read_previous_grid(points, best_fit, ggrid[-1])
+        grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
 
         for bb in best:
             if best_fit != get_fit(bb, points):
