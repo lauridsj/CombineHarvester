@@ -80,11 +80,21 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                         if cut:
                             differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in [gx, gy, gxy]]
                             if any(differences):
-                                halfsies = [halfway(p1, p2) for p1, p2 in [(gx[0], gt), (gy[0], gt), (gxy[0], gt), (gx[0], gxy[0]), (gy[0], gxy[0])]
-                                            if p1 is not None and p2 is not None else None]
+                                halfsies = []
+                                for g1 in [gx, gy, gxy]:
+                                    if g1 is None:
+                                        continue
+
+                                    for g2 in [gx, gy, gxy]:
+                                        if g2 is None or g2 == g1:
+                                            continue
+
+                                        halfsies.append(g1[0], gt)
+                                        halfsies.append(g1[0], g2[0])
+                                halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
 
                                 for half in halfsies:
-                                    if half is not None and half not in g_grid:
+                                    if half not in g_grid:
                                         g_grid.append(gn)
 
         return g_grid
