@@ -81,8 +81,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
             for yy in yv:
                 ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
-                xs = first(ps)
-                ys = second(ps)
+                #xs = first(ps)
+                #ys = second(ps)
+                xs = [float(x) for x in first(ps)]
+                ys = [float(y) for y in second(ps)]
 
                 xs.sort()
 
