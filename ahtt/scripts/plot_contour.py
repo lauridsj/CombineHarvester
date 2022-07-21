@@ -42,8 +42,8 @@ def read_contour(cfiles):
         contours[ii]["min"] = sys.maxsize
 
         for gv in cc["g-grid"].keys():
-            contours[ii]["g1"].append( gv.replace(" ", "").split(",")[0] )
-            contours[ii]["g2"].append( gv.replace(" ", "").split(",")[1] )
+            contours[ii]["g1"].append( float(gv.replace(" ", "").split(",")[0]) )
+            contours[ii]["g2"].append( float(gv.replace(" ", "").split(",")[1]) )
             contours[ii]["eff"].append( cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] )
             contours[ii]["min"] = min(contours[ii]["min"], cc["g-grid"][gv]["total"])
 
@@ -81,8 +81,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
             for yy in yv:
                 ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
-                xs = [float(x) for x in first(ps)]
-                ys = [float(y) for y in second(ps)]
+                xs = first(ps)
+                ys = second(ps)
 
                 xs.sort()
 
@@ -98,7 +98,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
+            ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
                           levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
                           linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
@@ -182,11 +182,6 @@ if __name__ == '__main__':
 
     if not all([pp == pairs[0] for pp in pairs]):
         raise RuntimeError("provided contours are not all of the same pair of points!!")
-
-    if args.scatter:
-        print("you've chosen --draw-scatter. the author wanted this feature to draw the scaffolding points together with the contour.")
-        print("however, due to matplotlib's inability to turn of autoscaling the scatter plot ruins any scaling in the axis leading to a nonsensical plot if used.")
-        print("so, don't use the option, and if you do, you get a wrong plot. you've been warned.")
 
     draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
                  args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
