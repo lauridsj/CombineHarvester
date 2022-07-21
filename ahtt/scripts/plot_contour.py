@@ -49,7 +49,7 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal, cmsapp, luminosity, transparent):
+def draw_contour(oname, pair, cfiles, labels, maxsigma, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
@@ -98,9 +98,10 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
-                          levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
-                          linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            if drawcontour:
+                ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
+                              levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
+                              linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
@@ -154,6 +155,8 @@ if __name__ == '__main__':
                         dest = "scatter", action = "store_true", required = False)
     parser.add_argument("--draw-best-fit", help = "draw the best fit point.",
                         dest = "bestfit", action = "store_true", required = False)
+    parser.add_argument("--skip-contour", help = "dont draw the contour",
+                        dest = "drawcontour", action = "store_false", required = False)
 
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
@@ -184,4 +187,4 @@ if __name__ == '__main__':
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
     draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
-                 args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
+                 args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
