@@ -89,13 +89,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                                         if g2 is None or g2 == g1:
                                             continue
 
-                                        halfsies.append(g1[0], gt)
-                                        halfsies.append(g1[0], g2[0])
+                                        halfsies.append((g1[0], gt))
+                                        halfsies.append((g1[0], g2[0]))
                                 halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
 
                                 for half in halfsies:
                                     if half not in g_grid:
-                                        g_grid.append(gn)
+                                        g_grid.append(half)
 
         return g_grid
 
