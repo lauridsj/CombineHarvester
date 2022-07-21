@@ -69,7 +69,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
     sigmas = []
 
     for ic, contour in enumerate(contours):
-        if bestfit and not scatter:
+        if bestfit:
             ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
                     marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
             if ic == 0:
@@ -81,8 +81,6 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
 
             for yy in yv:
                 ps = [(x, y) for x, y in zip(contour["g1"], contour["g2"]) if y == yy]
-                #xs = first(ps)
-                #ys = second(ps)
                 xs = [float(x) for x in first(ps)]
                 ys = [float(y) for y in second(ps)]
 
@@ -100,10 +98,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, bestfit, scatter, formal
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
 
-            if not scatter:
-                ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
-                              levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
-                              linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+            ax.tricontour(contour["g1"], contour["g2"], contour["eff"],
+                          levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
+                          linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
