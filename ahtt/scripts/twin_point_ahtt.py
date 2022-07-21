@@ -150,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
-    parser.add_argument("--delete-toy", help = "delete toy after compiling", dest = "rmtoy", action = "store_true", required = False)
+    parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
 
     parser.add_argument("--seed",
@@ -350,8 +350,8 @@ if __name__ == '__main__':
             gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
             gv = stringify((bf[0], bf[1]))
 
-            if args.rmtoy:
-                syscall("rm " + bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), False, True)
+            if args.rmroot:
+                syscall("rm " + bb + " " + bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), False, True)
 
             if gv in grid["g-grid"]:
                 grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)

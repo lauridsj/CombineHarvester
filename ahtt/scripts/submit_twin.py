@@ -199,7 +199,7 @@ if __name__ == '__main__':
                         default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
 
-    parser.add_argument("--delete-toy", help = "delete toy after compiling", dest = "rmtoy", action = "store_true", required = False)
+    parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         #    continue
 
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}"
-                   "{shp} {mcs} {prj} {asm} {com} {rmt} {igp} {exp} {bsd}").format(
+                   "{shp} {mcs} {prj} {asm} {com} {rmr} {igp} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -307,7 +307,7 @@ if __name__ == '__main__':
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             asm = "--unblind" if not args.asimov else "",
             com = "--compress" if rundc else "",
-            rmt = "--delete-toy" if args.rmtoy else "",
+            rmr = "--delete-root" if args.rmroot else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
             exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
