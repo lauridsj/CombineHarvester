@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# for ipoint in w2p5; do for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ll_ULFR2 --drop ColorRec,UEtune --mode ${imode} --point ${ipoint}; done; done
+# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ll_run2 --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,pileup,lumi,norm' --mode ${imode}; done
 
 from argparse import ArgumentParser
 import os
@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated",
-                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root", required = False)
+                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--drop",
@@ -98,11 +98,11 @@ if __name__ == '__main__':
         if args.signal == "":
             if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                 if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                    signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
+                    signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
             for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                 if im in pnt or im in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
+                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
             signal = ','.join(signals)
         else:
             signal = args.signal
