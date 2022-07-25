@@ -174,7 +174,7 @@ if __name__ == '__main__':
         if len(logs) > 0:
             continue
 
-        job_arg = ('"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns}'
+        job_arg = ('"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
                    '{shp} {mcs} {prj} {frz} {asm} {one} {ims} {gvl} {com} {bsd}"').format(
             pnt = pnt,
             mmm = args.mode,
