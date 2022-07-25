@@ -69,6 +69,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_MEFac_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("QCDscale_ISR_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("QCDscale_MEFac_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -103,6 +106,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("CMS_JEC_13TeV_FlavorQCD",   (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_RelativeBal", (("2016pre", "2016post", "2017", "2018"), 1.)),
         ])
+
+        for ipdf in range(100):
+            read_category_process_nuisance.specials["CMS_PDF_PCA_" + str(ipdf)] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
@@ -246,8 +252,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     drop_nuisance = not any([dn in nn2 for dn in keeps])
                 elif drops is not None:
                     drop_nuisance = drops == ['*'] or any([dn in nn2 for dn in drops])
-
-                print nn2, drop_nuisance, keeps
 
                 if not drop_nuisance and not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
