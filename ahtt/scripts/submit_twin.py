@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated",
-                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root", required = False)
+                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
@@ -251,11 +251,11 @@ if __name__ == '__main__':
             for pnt in points:
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33_m3xx_m1000.root")
+                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
                 for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                     if im in pnt or im in args.injectsignal:
                         if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_templates_3D-33" + im + "xx.root")
+                            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
             signal = ','.join(set(signals))
         else:
             signal = args.signal
@@ -350,7 +350,7 @@ if __name__ == '__main__':
 
                     submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
         else:
-            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir, runhadd or runcompile)
+            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir, runcompile)
 
         if os.path.isfile(aggregate_submit):
             syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
