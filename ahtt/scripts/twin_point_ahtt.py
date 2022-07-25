@@ -199,7 +199,7 @@ if __name__ == '__main__':
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {inj} {tag} {drp} {kfc} {thr} {lns} {shp} {mcs} {prj} {rsd}".format(
+                "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {prj} {rsd}".format(
                     scr = scriptdir,
                     sig = args.signal,
                     bkg = args.background,
