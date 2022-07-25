@@ -49,10 +49,11 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, transparent):
+def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
-    alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
+    alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
+    alphas = [1. - pval for pval in alphas]
 
     if not hasattr(draw_contour, "colors"):
         draw_contour.colors = OrderedDict([
@@ -91,7 +92,12 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, drawcontour, bestfit, sc
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
-                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
+                if isig > 1:
+                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
+                elif isig == 1:
+                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"95% CL"))
+                elif isig == 0:
+                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"68% CL"))
 
             alpha = alphas[isig]
 
@@ -157,6 +163,8 @@ if __name__ == '__main__':
                         dest = "bestfit", action = "store_true", required = False)
     parser.add_argument("--skip-contour", help = "dont draw the contour",
                         dest = "drawcontour", action = "store_false", required = False)
+    parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in alphas",
+                        dest = "propersig", action = "store_true", required = False)
 
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
@@ -186,5 +194,5 @@ if __name__ == '__main__':
     if not all([pp == pairs[0] for pp in pairs]):
         raise RuntimeError("provided contours are not all of the same pair of points!!")
 
-    draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma,
+    draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = "__".join(pairs[0]), tag = args.otag, fmt = args.fmt), pairs[0], contours, labels, args.maxsigma, args.propersig,
                  args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)

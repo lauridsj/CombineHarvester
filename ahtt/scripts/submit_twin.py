@@ -26,9 +26,10 @@ sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 
-def generate_g_grid(pair, ggrids = "", gmode = "add"):
+def generate_g_grid(pair, ggrids = "", gmode = "add", propersig = False):
     if not hasattr(generate_g_grid, "alphas"):
-        generate_g_grid.alphas = [1 - pval for pval in [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997]]
+        generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
+        generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
 
     g_grid = []
 
@@ -55,7 +56,6 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
                     if gt not in g_grid:
                         g_grid.append(gt)
 
-            # whatever logic to generate in between points of existing grid
             if gmode == "refine":
                 mintoy = sys.maxsize
                 for gv in cc["g-grid"].keys():
@@ -100,7 +100,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "add"):
         return g_grid
 
     # default LO case
-    gvls = [list(np.linspace(min_g, max_g, num = 13)), list(np.linspace(min_g, max_g, num = 13))]
+    gvls = [list(np.linspace(min_g, max_g, num = 7)), list(np.linspace(min_g, max_g, num = 7))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
             g_grid.append( (ig1,ig2) )
@@ -201,6 +201,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
+
+    parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in alphas",
+                        dest = "propersig", action = "store_true", required = False)
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     args = parser.parse_args()
@@ -314,7 +317,7 @@ if __name__ == '__main__':
         )
 
         if runfc:
-            gvalues = generate_g_grid(points, ggrid, args.fcmode)
+            gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig)
             idxs = []
             if args.fctoy > 0:
                 if "," in args.fcidxs and "..." in args.fcidxs:
@@ -346,8 +349,6 @@ if __name__ == '__main__':
                     )
 
                     submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
-
-            # FIXME cumulative toys, compilation, NLO submission, ...
         else:
             submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir, runhadd or runcompile)
 
