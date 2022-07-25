@@ -247,9 +247,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 elif drops is not None:
                     drop_nuisance = drops == ['*'] or any([dn in nn2 for dn in drops])
 
-                # FIXME quick hack while the PDF business is being finalized
-                if "PDF_" in nn2 and "CMS_" not in nn2:
-                    drop_nuisance = True
+                print nn2, drop_nuisance, keeps
 
                 if not drop_nuisance and not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
