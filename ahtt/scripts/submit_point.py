@@ -8,9 +8,7 @@ import sys
 import glob
 import subprocess
 
-from utilities import syscall
-
-condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
+from utilities import syscall, submit_job, aggregate_submit
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -93,6 +91,10 @@ if __name__ == '__main__':
     rundc = "datacard" in args.mode or "workspace" in args.mode
     resub = "resubmit" in args.mode
 
+    # clean up before doing anything else, in case someone aborts previous run
+    if os.path.isfile(aggregate_submit):
+        syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
+
     for pnt in points:
         signals = []
         if args.signal == "":
@@ -133,16 +135,7 @@ if __name__ == '__main__':
                 )
 
                 syscall("rm {fff}".format(fff = failure))
-                syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {job}".format(
-                    csub = condordir + "condorSubmit.sh",
-                    cpar = condordir + "condorParam.txt",
-                    crun = condordir + "condorRun.sh",
-                    name = job_name,
-                    executable = scriptdir + "/single_point_ahtt.py",
-                    job_arg = job_arg,
-                    job_time = args.jobtime,
-                    job = "-l $(readlink -f " + pnt + args.tag + ")"
-                ))
+                submit_job(job_name, job_arg, args.jobtime, "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py")
             continue
 
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
@@ -202,14 +195,8 @@ if __name__ == '__main__':
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
-        syscall("{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a {job_arg} {job_time} {tmp} {job}".format(
-            csub = condordir + "condorSubmit.sh",
-            cpar = condordir + "condorParam.txt",
-            crun = condordir + "condorRun.sh",
-            name = job_name,
-            executable = scriptdir + "/single_point_ahtt.py",
-            job_arg = job_arg,
-            job_time = args.jobtime,
-            tmp = "--run-in-tmp",
-            job = "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")"
-        ))
+        submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
+
+    if os.path.isfile(aggregate_submit):
+        syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
+        syscall('rm {agg}'.format(agg = aggregate_submit), False)

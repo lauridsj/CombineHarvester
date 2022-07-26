@@ -11,13 +11,10 @@ import numpy as np
 from collections import OrderedDict
 import json
 
-from utilities import syscall
+from utilities import syscall, submit_job, aggregate_submit
 
 min_g = 0.
 max_g = 3.
-
-condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
-aggregate_submit = "conSub_aggregate.txt"
 
 def tuplize(gstring):
     return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
@@ -106,33 +103,6 @@ def generate_g_grid(pair, ggrids = "", gmode = "add", propersig = False):
             g_grid.append( (ig1,ig2) )
 
     return g_grid
-
-def submit_twin_job(job_name, job_arg, job_time, job_dir, script_dir, runlocal = False):
-    if not hasattr(submit_twin_job, "firstprint"):
-        submit_twin_job.firstprint = True
-
-    if runlocal:
-        syscall('{executable} {job_arg}'.format(executable = script_dir + "/twin_point_ahtt.py", job_arg = job_arg), True)
-    else:
-        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
-            csub = condordir + "condorSubmit.sh",
-            cpar = condordir + "condorParam.txt",
-            crun = condordir + "condorRun.sh",
-            name = job_name,
-            executable = script_dir + "/twin_point_ahtt.py",
-            job_arg = job_arg,
-            job_time = job_time,
-            tmp = "--run-in-tmp",
-            job_dir = job_dir
-        ), submit_twin_job.firstprint)
-        submit_twin_job.firstprint = False
-
-        if not os.path.isfile(aggregate_submit):
-            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
-        else:
-            syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
-                name = 'conSub_' + job_name + '.txt',
-                agg = aggregate_submit), False)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -348,9 +318,9 @@ if __name__ == '__main__':
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
                     )
 
-                    submit_twin_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir)
+                    submit_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
         else:
-            submit_twin_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir, runcompile)
+            submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
 
         if os.path.isfile(aggregate_submit):
             syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)

@@ -105,3 +105,33 @@ def project(histogram, rule):
         hist.SetBinError(it1 + 1, math.sqrt(tgt_error**2 + src_error**2))
 
     return hist
+
+condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
+aggregate_submit = "conSub_aggregate.txt"
+
+def submit_job(job_name, job_arg, job_time, job_dir, executable, runtmp = False, runlocal = False):
+    if not hasattr(submit_job, "firstprint"):
+        submit_job.firstprint = True
+
+    if runlocal:
+        syscall('{executable} {job_arg}'.format(executable = executable, job_arg = job_arg), True)
+    else:
+        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
+            csub = condordir + "condorSubmit.sh",
+            cpar = condordir + "condorParam.txt",
+            crun = condordir + "condorRun.sh",
+            name = job_name,
+            executable = executable,
+            job_arg = job_arg,
+            job_time = job_time,
+            tmp = "--run-in-tmp" if runtmp else "",
+            job_dir = job_dir
+        ), submit_job.firstprint)
+        submit_job.firstprint = False
+
+        if not os.path.isfile(aggregate_submit):
+            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
+        else:
+            syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
+                name = 'conSub_' + job_name + '.txt',
+                agg = aggregate_submit), False)
