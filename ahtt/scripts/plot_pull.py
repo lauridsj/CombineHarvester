@@ -19,10 +19,14 @@ from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
 nuisance_per_page = 30
 
-def read_pull(directories, onepoi):
+def read_pull(directories, onepoi, fixg, impactsb):
     pulls = [OrderedDict() for dd in directories]
     for ii, dd in enumerate(directories):
-        with open("{dd}/{pnt}_impacts_{mod}.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]), mod = "one-poi" if onepoi else "g-scan")) as ff:
+        with open("{dd}/{pnt}_impacts_{gvl}_{exp}.json".format(
+                dd = dd,
+                pnt = '_'.join(dd.split('_')[:3]),
+                gvl = "one-poi" if onepoi else "fix-g_" + str(fixg).replace(".", "p"),
+                exp = "sig" if impactsb else "bkg")) as ff:
             result = json.load(ff)
 
         nuisances = result["params"]
@@ -95,8 +99,8 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
             fig, ax = plt.subplots()
             counter = counter - 1
 
-def draw_pull(oname, directories, labels, onepoi, mcstat, transparent, plotformat):
-    pulls = read_pull(directories, onepoi)
+def draw_pull(oname, directories, labels, onepoi, fixg, impactsb, mcstat, transparent, plotformat):
+    pulls = read_pull(directories, onepoi, fixg, impactsb)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
     expth = []
@@ -121,7 +125,14 @@ if __name__ == '__main__':
     parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "Pulls", required = False)
+
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
+
+    parser.add_argument("--g-value", help = "g value to use when evaluating pull/impact, if one-poi is not used. defaults to 1",
+                        dest = "fixg", default = 1, required = False, type = float)
+    parser.add_argument("--impact-sb", help = "read sb pull/impact fit instead of b",
+                        dest = "impactsb", action = "store_true", required = False)
+
     parser.add_argument("--no-mc-stats", help = "don't consider nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
@@ -142,6 +153,6 @@ if __name__ == '__main__':
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     dirs = [args.point + '_' + tag for tag in tags]
-    draw_pull(args.odir + "/" + args.point + "_pull" + args.otag, dirs, labels, args.onepoi, args.mcstat, args.transparent, args.fmt)
+    draw_pull(args.odir + "/" + args.point + "_pull" + args.otag, dirs, labels, args.onepoi, args.fixg, args.impactsb, args.mcstat, args.transparent, args.fmt)
 
     pass

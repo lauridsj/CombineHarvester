@@ -372,7 +372,12 @@ if __name__ == '__main__':
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
-        syscall("rm {dcd}{pnt}_impacts_{mod}*".format(dcd = dcdir, mod = "one-poi" if args.onepoi else "g-scan", pnt = args.point), False, True)
+        syscall("rm {dcd}{pnt}_impacts_{gvl}_{exp}*".format(
+            dcd = dcdir,
+            pnt = args.point,
+            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
+            exp = "sig" if args.impactsb else "bkg"
+        ), False, True)
 
         r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
         strategy = "--cminPreScan --cminDefaultMinimizerStrategy 0 --cminFallbackAlgo Minuit2,Simplex,0"
