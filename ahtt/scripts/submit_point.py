@@ -17,8 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated",
-                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
+    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--drop",
