@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
                 job_name = "single_point_" + pnt + args.tag + "_" + "_".join(options[options.index("--mode") + 1].split(","))
                 # only combine-specific settings are needed; this wont tag make_datacard failures as that's the first point of entry
-                job_arg = '"--point {pnt} {mmm} {tag} {mcs} {asm} {one} {ims} {gvl} {frz} {com} {bsd}"'.format(
+                job_arg = '--point {pnt} {mmm} {tag} {mcs} {asm} {one} {ims} {gvl} {frz} {com} {bsd}'.format(
                     pnt = pnt,
                     mmm = "--mode " + options[options.index("--mode") + 1] if "--mode" in options else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
@@ -167,8 +167,8 @@ if __name__ == '__main__':
         if len(logs) > 0:
             continue
 
-        job_arg = ('"--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {prj} {frz} {asm} {one} {ims} {gvl} {com} {bsd}"').format(
+        job_arg = ('--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
+                   '{shp} {mcs} {prj} {frz} {asm} {one} {ims} {gvl} {com} {bsd}').format(
             pnt = pnt,
             mmm = args.mode,
             sus = "--sushi-kfactor" if args.kfactor else "",
