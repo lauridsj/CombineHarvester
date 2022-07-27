@@ -294,7 +294,7 @@ def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, trans
             continue
 
         draw_1D(oname.format(www = 'w' + str(ww).replace('.', 'p')),
-                read_limit(dirs, masses, onepoi, dump_spline, oname.xxxx()),
+                read_limit(dirs, masses, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes["mass"] % points[0][0], yaxis,
                 ", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$" % (points[0][0], ww, points[0][0]),
                 observed, transparent)
