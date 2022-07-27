@@ -129,7 +129,7 @@ if __name__ == '__main__':
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
     parser.add_argument("--g-value", help = "g value to use when evaluating pull/impact, if one-poi is not used. defaults to 1",
-                        dest = "fixg", default = 1, required = False, type = float)
+                        dest = "fixg", default = 1.0, required = False, type = float)
     parser.add_argument("--impact-sb", help = "read sb pull/impact fit instead of b",
                         dest = "impactsb", action = "store_true", required = False)
 
