@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm' --tag ll_run2 --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,pileup,lumi,norm' --mode ${imode}; done
+# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm,e3j,e4pj,m3j,m4pj' --tag lx --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm' --mode ${imode}; done
 
 from argparse import ArgumentParser
 import os
 import sys
 import glob
 import subprocess
+import copy
 
 from utilities import syscall, submit_job, aggregate_submit
 
@@ -95,9 +96,32 @@ if __name__ == '__main__':
     if os.path.isfile(aggregate_submit):
         syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
 
+    # backgrounds if not given
+    backgrounds = []
+    if args.background == "":
+        if any(cc in args.channel for cc in ["ee", "em", "mm"]):
+            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root")
+        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rename.root")
+        background = ','.join(backgrounds)
+    else:
+        background = args.background
+
+    siglj = []
+    if args.signal == "":
+        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+            if "2016pre" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
+            if "2016post" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
+            if "2017" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
+            if "2018" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
+
     for pnt in points:
-        signals = []
         if args.signal == "":
+            signals = copy.deepcopy(siglj)
             if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                 if any(cc in args.channel for cc in ["ee", "em", "mm"]):
                     signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
@@ -178,7 +202,7 @@ if __name__ == '__main__':
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
             sig = "--signal " + signal,
-            bkg = "--background " + args.background,
+            bkg = "--background " + background,
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
             thr = "--threshold " + str(args.threshold),

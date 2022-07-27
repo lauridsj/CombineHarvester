@@ -69,8 +69,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_MEFac_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("QCDscale_ISR_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_FSR_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_ISR_AH",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_AH",           (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("QCDscale_MEFac_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -454,7 +454,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
-    os.remove(oname)
+    syscall("rm {ooo}".format(ooo = oname), False, True)
 
     writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
     sstr = "__".join(sorted(sigpnt))
