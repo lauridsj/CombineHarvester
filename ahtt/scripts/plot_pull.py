@@ -70,7 +70,7 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
                                          marker = markers[jj], ms = 5, capsize = 5, color = colors[jj], label = labels[jj]))
 
             ax.set_yticks([kk for kk in range(ymax)])
-            ax.set_yticklabels(nuisances[ii - ymax + 1 : ii + 1] + r"$\,$")
+            ax.set_yticklabels([nn + + r"$\,$" for nn in nuisances[ii - ymax + 1 : ii + 1]])
             plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
             ax.margins(x = 0, y = 0)
             plt.xlim((-1.5, 1.5))
