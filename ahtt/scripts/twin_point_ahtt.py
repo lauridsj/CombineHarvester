@@ -258,7 +258,7 @@ if __name__ == '__main__':
         if args.fcrundat:
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
 
-            for ifit in ["2", "1", "0"]:
+            for ifit in ["1", "2", "0"]:
                 syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
                         "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
                             dcd = dcdir,
@@ -288,7 +288,7 @@ if __name__ == '__main__':
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        stg = fit_strategy("2"),
+                        stg = fit_strategy("1"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                     ))
