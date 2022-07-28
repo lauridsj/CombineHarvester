@@ -6,7 +6,7 @@ import os
 import sys
 import numpy as np
 
-from multiprocessing
+import multiprocessing
 from collections import OrderedDict
 import json
 
