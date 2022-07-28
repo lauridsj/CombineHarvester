@@ -565,7 +565,7 @@ if __name__ == '__main__':
     if injects is not None:
         args.pseudodata = True
 
-    oname = "./tmp.root"
+    oname = "{cwd}/tmp.root".format(cwd = os.getcwd())
     output = TFile(oname, "recreate")
     cpn = OrderedDict()
     for yy in years:
