@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
                         default = "0.0, 0.0", dest = "fcgvl", required = False)
-    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan, if --unblind isn't used\n"
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
@@ -196,6 +196,15 @@ if __name__ == '__main__':
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
 
+    allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
+    fcexps = args.fcexp.replace(" ", "").split(',')
+    if not all([exp in allexp for exp in fcexps]):
+        print "supported expected scenario:", allexp
+        raise RuntimeError("unexpected expected scenario is given. aborting.")
+
+    if not args.asimov:
+        fcexps.append("obs")
+
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
@@ -237,11 +246,6 @@ if __name__ == '__main__':
         ))
 
     if runfc:
-        allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
-        if args.fcexp not in allexp:
-            print "supported expected scenario:", allexp
-            raise RuntimeError("unexpected expected scenario is given. aborting.")
-
         exp_scenario = OrderedDict()
         exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
         exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
@@ -253,37 +257,39 @@ if __name__ == '__main__':
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
-        identifier = "_" + args.fcexp if args.asimov else "_data"
 
         if args.fcrundat:
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
 
-            for ifit in ["1", "2", "0"]:
-                syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                        "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
-                            dcd = dcdir,
-                            mmm = mstr,
-                            snm = scan_name + identifier,
-                            par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                            exp = exp_scenario[args.fcexp],
-                            stg = fit_strategy(ifit),
-                            asm = "-t -1" if args.asimov else "",
-                            toy = "-s -1",
-                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                        ))
+            for fcexp in fcexps:
+                identifier = "_" + fcexp
 
-                if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], points, ff) is not None for ff in [True, False]]):
-                    break
-                else:
-                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
+                for ifit in ["1", "1", "1", "2", "0"]:
+                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+                            "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
+                                dcd = dcdir,
+                                mmm = mstr,
+                                snm = scan_name + identifier,
+                                par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                                exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
+                                stg = fit_strategy(ifit),
+                                asm = "-t -1" if fcexp != "obs" else "",
+                                toy = "-s -1",
+                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                            ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(snm = scan_name + identifier, mmm = mstr, dcd = dcdir), False)
+                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], points, ff) is not None for ff in [True, False]]):
+                        break
+                    else:
+                        syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
+
+                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(snm = scan_name + identifier, mmm = mstr, dcd = dcdir), False)
 
         if args.fctoy > 0:
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs} --parallel 8".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -319,48 +325,49 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
-        best = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
-        if len(best) == 0:
-            raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
-        best.sort()
-
         print "\ntwin_point_ahtt :: compiling FC scan results..."
-        ggrid = glob.glob("{dcd}fc_scan{exp}_*.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data"))
-        ggrid.sort()
-        idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
+        for fcexp in fcexps:
+            best = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + fcexp))
+            if len(best) == 0:
+                raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
+            best.sort()
 
-        best_fit = get_fit(best[0], points)
+            ggrid = glob.glob("{dcd}fc_scan{exp}_*.json".format(dcd = dcdir, exp = "_" + fcexp))
+            ggrid.sort()
+            idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
-        grid = OrderedDict()
-        grid["points"] = points
-        grid["best_fit_g1_g2_dnll"] = best_fit
-        grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
+            best_fit = get_fit(best[0], points)
 
-        for bb in best:
-            if best_fit != get_fit(bb, points):
-                print '\nWARNING :: incompatible best fit across different g values, when they should be!! ignoring current, assuming it is due to numerical instability!'
-                print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
-                print "current result ", bb, ": ", get_fit(bb, points)
-                print "first result ", best[0], ": ", best_fit
+            grid = OrderedDict()
+            grid["points"] = points
+            grid["best_fit_g1_g2_dnll"] = best_fit
+            grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
 
-            bf = get_fit(bb, points, False)
-            if bf is None:
-                raise RuntimeError("failed getting best fit point for file " + bb + ". aborting.")
+            for bb in best:
+                if best_fit != get_fit(bb, points):
+                    print '\nWARNING :: incompatible best fit across different g values!! ignoring current, assuming it is due to numerical instability!'
+                    print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
+                    print "current result ", bb, ": ", get_fit(bb, points)
+                    print "first result ", best[0], ": ", best_fit
 
-            gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), bf)
-            gv = stringify((bf[0], bf[1]))
+                bf = get_fit(bb, points, False)
+                if bf is None:
+                    raise RuntimeError("failed getting best fit point for file " + bb + ". aborting.")
 
-            if args.rmroot:
-                syscall("rm " + bb + " " + bb.replace("{exp}.root".format(exp = "_" + args.fcexp if args.asimov else "_data"), "_toys.root"), False, True)
+                gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
+                gv = stringify((bf[0], bf[1]))
 
-            if gv in grid["g-grid"]:
-                grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
-            else:
-                grid["g-grid"][gv] = gg
+                if args.rmroot:
+                    syscall("rm " + bb + " " + bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
 
-        grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-        with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + args.fcexp if args.asimov else "_data", idx = str(idx)), "w") as jj:
-            json.dump(grid, jj, indent = 1)
+                if gv in grid["g-grid"]:
+                    grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
+                else:
+                    grid["g-grid"][gv] = gg
+
+                grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
+                with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+                    json.dump(grid, jj, indent = 1)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

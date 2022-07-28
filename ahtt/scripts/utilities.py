@@ -107,9 +107,11 @@ def project(histogram, rule):
     return hist
 
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
-aggregate_submit = "conSub_aggregate.txt"
 
-def submit_job(job_name, job_arg, job_time, job_dir, executable, runtmp = False, runlocal = False):
+def aggregate_submit():
+    return 'conSub_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
+
+def submit_job(job_agg, job_name, job_arg, job_time, job_dir, executable, runtmp = False, runlocal = False):
     if not hasattr(submit_job, "firstprint"):
         submit_job.firstprint = True
 
@@ -129,9 +131,9 @@ def submit_job(job_name, job_arg, job_time, job_dir, executable, runtmp = False,
         ), submit_job.firstprint)
         submit_job.firstprint = False
 
-        if not os.path.isfile(aggregate_submit):
-            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = aggregate_submit), False)
+        if not os.path.isfile(job_agg):
+            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = job_agg), False)
         else:
             syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
                 name = 'conSub_' + job_name + '.txt',
-                agg = aggregate_submit), False)
+                agg = job_agg), False)

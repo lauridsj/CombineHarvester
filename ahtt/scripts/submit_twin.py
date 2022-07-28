@@ -7,6 +7,7 @@ import sys
 import glob
 import subprocess
 import numpy as np
+import copy
 
 from collections import OrderedDict
 import json
@@ -110,8 +111,8 @@ if __name__ == '__main__':
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated",
-                        default = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root", required = False)
+    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
+
     parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm", required = False)
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
@@ -162,7 +163,7 @@ if __name__ == '__main__':
                         "mixing of both syntaxes are not allowed.",
                         default = "-1", dest = "fcidxs", required = False)
 
-    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan, if --unblind isn't used\n"
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
@@ -208,16 +209,38 @@ if __name__ == '__main__':
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
 
-    # clean up before doing anything else, in case someone aborts previous run
-    if os.path.isfile(aggregate_submit):
-        syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
+    # backgrounds if not given
+    backgrounds = []
+    if args.background == "":
+        if any(cc in args.channel for cc in ["ee", "em", "mm"]):
+            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root")
+        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rename.root")
+        background = ','.join(backgrounds)
+    else:
+        background = args.background
+
+    siglj = []
+    if args.signal == "":
+        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+            if "2016pre" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
+            if "2016post" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
+            if "2017" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
+            if "2018" in args.year:
+                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
 
     for pair, ggrid in zip(pairs, ggrids):
+        # generate an aggregate submission file name
+        agg = aggregate_submit()
+
         points = pair.split(',')
         pstr = '__'.join(points)
 
         if args.signal == "":
-            signals = []
+            signals = copy.deepcopy(siglj)
             for pnt in points:
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
@@ -270,7 +293,7 @@ if __name__ == '__main__':
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
             sig = "--signal " + signal,
-            bkg = "--background " + args.background,
+            bkg = "--background " + background,
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
             thr = "--threshold " + str(args.threshold),
@@ -304,8 +327,7 @@ if __name__ == '__main__':
 
             for ig1, ig2 in gvalues:
                 scan_name = "pnt_g1_" + str(ig1) + "_g2_" + str(ig2)
-
-                jname = job_name + scan_name.replace("pnt", "") + "{exp}".format(exp = "_" + args.fcexp if args.asimov else "_data")
+                jname = job_name + scan_name.replace("pnt", "")
 
                 for idx in idxs:
                     fcrundat = False if idx != idxs[0] else args.fcrundat
@@ -322,6 +344,6 @@ if __name__ == '__main__':
         else:
             submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
 
-        if os.path.isfile(aggregate_submit):
-            syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
-            syscall('rm {agg}'.format(agg = aggregate_submit), False)
+        if os.path.isfile(agg):
+            syscall('condor_submit {agg}'.format(agg = agg), False)
+            syscall('rm {agg}'.format(agg = agg), False)

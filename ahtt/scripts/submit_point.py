@@ -91,9 +91,8 @@ if __name__ == '__main__':
     rundc = "datacard" in args.mode or "workspace" in args.mode
     resub = "resubmit" in args.mode
 
-    # clean up before doing anything else, in case someone aborts previous run
-    if os.path.isfile(aggregate_submit):
-        syscall('rm {agg}'.format(agg = aggregate_submit), False, True)
+    # generate an aggregate submission file name
+    agg = aggregate_submit()
 
     # backgrounds if not given
     backgrounds = []
@@ -220,6 +219,6 @@ if __name__ == '__main__':
 
         submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
 
-    if os.path.isfile(aggregate_submit):
-        syscall('condor_submit {agg}'.format(agg = aggregate_submit), False)
-        syscall('rm {agg}'.format(agg = aggregate_submit), False)
+    if os.path.isfile(agg):
+        syscall('condor_submit {agg}'.format(agg = agg), False)
+        syscall('rm {agg}'.format(agg = agg), False)
