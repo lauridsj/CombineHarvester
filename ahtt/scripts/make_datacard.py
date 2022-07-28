@@ -232,10 +232,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             if pp + '_' in kname and kname.endswith("Up"):
                 nn1 = "".join(kname.rsplit("Up", 1)).replace(pp + '_', "", 1)
-                if channel in read_category_process_nuisance.aliases:
-                    for c1, c2 in read_category_process_nuisance.aliases.items():
-                        nn1 = nn1.replace(c2, c1)
-
                 if nn1 in read_category_process_nuisance.specials:
                     nn2 = nn1 if (year in read_category_process_nuisance.specials[nn1][0] or year in nn1) else nn1 + '_' + year
 
@@ -246,6 +242,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 else:
                     nn2 = nn1 if year in nn1 else nn1 + '_' + year
                     nuisance.append((nn2, 1.))
+
+                if channel in read_category_process_nuisance.aliases:
+                    for c1, c2 in read_category_process_nuisance.aliases.items():
+                        nn2 = nn2.replace(c2, c1)
 
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
