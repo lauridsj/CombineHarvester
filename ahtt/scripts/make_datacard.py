@@ -237,15 +237,14 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                     if "QCDscale_ME" in nn2 and "_AH" in nn2:
                         nn2 = nn2 + "_res" if "_res" in pp else nn2 + "_int"
-
-                    nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]))
                 else:
                     nn2 = nn1 if year in nn1 else nn1 + '_' + year
-                    nuisance.append((nn2, 1.))
 
                 if channel in read_category_process_nuisance.aliases:
                     for c1, c2 in read_category_process_nuisance.aliases.items():
                         nn2 = nn2.replace(c2, c1)
+
+                nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]) if nn1 in read_category_process_nuisance.specials else (nn2, 1.))
 
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
