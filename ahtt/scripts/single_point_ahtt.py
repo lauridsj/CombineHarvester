@@ -90,7 +90,7 @@ def single_point_scan(args):
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-            "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg}"
+            "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
             "--singlePoint 1 {stg} {asm} {mcs}".format(
                 dcd = dcdir,
                 mmm = mstr,
