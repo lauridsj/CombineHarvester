@@ -62,6 +62,15 @@ def get_lo_ratio(sigpnt, channel):
 # current assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
+    # because afiq hates seeing jets spelled outside of text
+    if not hasattr(read_category_process_nuisance, "aliases"):
+        read_category_process_nuisance.aliases = OrderedDict([
+            ("e3j" , "e3jets"),
+            ("e4pj", "e4pjets"),
+            ("m3j" , "mu3jets"),
+            ("m4pj", "mu4pjets"),
+        ])
+
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(read_category_process_nuisance, "specials"):
@@ -94,9 +103,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("CMS_eff_e_reco",            (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_e_id",              (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_trigger_e",         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_eff_m_id_syst",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_m_iso_syst",        (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_trigger_m_syst",    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_eff_b_13TeV",           (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_fake_b_13TeV",          (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -110,14 +121,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         for ipdf in range(100):
             read_category_process_nuisance.specials["CMS_PDF_PCA_" + str(ipdf)] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
-    # because afiq hates seeing jets spelled outside of text
-    if not hasattr(read_category_process_nuisance, "aliases"):
-        read_category_process_nuisance.aliases = OrderedDict([
-            ("e3j" , "e3jets"),
-            ("e4pj", "e4pjets"),
-            ("m3j" , "mu3jets"),
-            ("m4pj", "mu4pjets"),
-        ])
+        for c1, c2 in read_category_process_nuisance.aliases.items():
+            read_category_process_nuisance.specials[c1 + '_shape_EWQCD'] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
     processes = []
     nuisances = []
@@ -227,6 +232,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             if pp + '_' in kname and kname.endswith("Up"):
                 nn1 = "".join(kname.rsplit("Up", 1)).replace(pp + '_', "", 1)
+                if channel in read_category_process_nuisance.aliases:
+                    for c1, c2 in read_category_process_nuisance.aliases.items():
+                        nn1 = nn1.replace(c2, c1)
+
                 if nn1 in read_category_process_nuisance.specials:
                     nn2 = nn1 if (year in read_category_process_nuisance.specials[nn1][0] or year in nn1) else nn1 + '_' + year
 
@@ -393,18 +402,18 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
                 ("lumi_13TeV",           ("2018",), "all", 1.02),
             )),
             ("ll" , (
-                ("CMS_DY_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "DY", 1.3),
+                ("CMS_DY_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "DY", 1.1),
                 ("CMS_VV_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "VV", 1.5),
                 ("CMS_TTV_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TTV", 1.3),
             )),
             ("lj" , (
-                ("CMS_EWQCD_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "EWQCD", (2.0, 1.5)), # down/up, where down = scale by 1/x and up = scale by x
+                ("CMS_EWQCD_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "EWQCD", 1.1),
             )),
             ("common" , (
                 ("CMS_TQ_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TQ", 1.15),
                 ("CMS_TW_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TW", 1.15),
                 ("CMS_TB_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TB", 1.15),
-                ("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # as above, with down 0.939 * nominal
+                ("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # down/up, down = scale by 1/x and up = x
             ))
         ])
         write_datacard.lnNs["ee"] = write_datacard.lnNs["ll"]
