@@ -6,6 +6,7 @@ import os
 import sys
 import numpy as np
 
+from multiprocessing
 from collections import OrderedDict
 import json
 
@@ -14,8 +15,10 @@ from ROOT import TFile, TTree
 from utilities import syscall
 from make_datacard import get_point
 
+min_g = 0.
 max_g = 3.
-epsilon = 1e-5
+
+epsilon = 2.**-17
 nstep = 5
 
 def get_limit(lfile):
@@ -82,42 +85,70 @@ def get_nll_g_scan(lfile):
     lfile.Close()
     return nll
 
-# compares the estimated second derivative using the last 3 points in xys
-# and the second derivative using the last 2 points and the current point
-# true if these two quantities are similar enough based on an arbitrarily defined criteria
-def seemingly_continuous(x, y, xys, tolerance = 0.1):
-    if len(xys) < 3:
-        return True
+def single_point_scan(args):
+    gval, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
+    gstr = str(round(gval, 3)).replace('.', 'p')
 
-    if len(y) != 6:
-        return False
+    syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+            "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg}"
+            "--singlePoint 1 {stg} {asm} {mcs}".format(
+                dcd = dcdir,
+                mmm = mstr,
+                gst = gstr,
+                gvl = gval,
+                acc = accuracies,
+                rrg = r_range,
+                stg = strategy,
+                asm = "-t -1" if asimov else "",
+                mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
+            ))
 
-    if tolerance <= 0. or tolerance >= 1.:
-        tolerance = 0.1
+    limit = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
+        mmm = mstr,
+        gstr = gstr,
+    ))
 
-    xs = []
-    ys = []
-    for ii in range(1, 4):
-        xs.append(xys.keys()[-ii])
-        ys.append(xys[xs[-1]])
+    if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
+        return [gval, limit]
 
-    dx_previous = 0.5 * (xs[0] - xs[2])
-    dx_current = 0.5 * (x - xs[1])
-    d2ydx2_previous = ys[0]
-    d2ydx2_current = ys[0]
+    geps = 0.
+    syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
 
-    for quantile in d2ydx2_previous.keys():
-        if quantile == "obs":
-            continue
+    for factor in [1., -1.]:
+        fgood = False
+        for ii in range(1, nstep + 1):
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
+                    "--singlePoint 1 {stg} {asm} {mcs}".format(
+                        dcd = dcdir,
+                        mmm = mstr,
+                        gst = gstr + "eps",
+                        gvl = gval + (ii * factor * epsilon),
+                        acc = accuracies,
+                        rrg = r_range,
+                        stg = strategy,
+                        asm = "-t -1" if asimov else "",
+                        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
+                    ))
 
-        d2ydx2_previous[quantile] = (ys[0][quantile] - (2. * ys[1][quantile]) + ys[2][quantile]) / dx_previous**2.
-        d2ydx2_current[quantile] = (y[quantile] - (2. * ys[0][quantile]) + ys[1][quantile]) / dx_current**2.
+            leps = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
+                mmm = mstr,
+                gstr = gstr + "eps",
+            ))
+            fgood = all([ll >= 0. and ll <= 1. for qq, ll in leps.items()])
 
-        fom = abs(d2ydx2_current[quantile] / d2ydx2_previous[quantile])
-        if fom < (1. / (1. + tolerance)) or fom > (1. / (1. - tolerance)):
-            return False
+            if fgood:
+                geps = (ii * factor * epsilon)
+                for quantile in leps.keys():
+                    limit[quantile] = leps[quantile]
+                break
+        if fgood:
+            break
 
-    return True
+    if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
+        return [gval + geps, limit]
+
+    return None
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -285,84 +316,18 @@ if __name__ == '__main__':
             syscall("rm {dcd}{pnt}_limits_g-scan.root {dcd}{pnt}_limits_g-scan.json ".format(dcd = dcdir, pnt = args.point), False, True)
             syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
             limits = OrderedDict()
-            gval = 0.
             r_range = "--rMin=0 --rMax=2"
-            consecutive_failure = 0
 
-            while gval < max_g:
-                gstr = str(round(gval, 3)).replace('.', 'p')
-
-                syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                        "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} --parallel 4"
-                        "--singlePoint 1 {stg} {asm} {mcs}".format(
-                            dcd = dcdir,
-                            mmm = mstr,
-                            gst = gstr,
-                            gvl = gval,
-                            acc = accuracies,
-                            rrg = r_range,
-                            stg = strategy,
-                            asm = "-t -1" if args.asimov else "",
-                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                        ))
-
-                limit = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
-                    mmm = mstr,
-                    gstr = gstr,
-                ))
-
-                good_cls = all([ll >= 0. and ll <= 1. for qq, ll in limit.items()])
-                geps = 0.
-                if not good_cls:
-                    syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
-
-                    for factor in [1., -1.]:
-                        fgood = False
-                        for ii in range(1, nstep + 1):
-                            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
-                                    "--singlePoint 1 {stg} {asm} {mcs} --parallel 4".format(
-                                        dcd = dcdir,
-                                        mmm = mstr,
-                                        gst = gstr + "eps",
-                                        gvl = gval + (ii * factor * epsilon),
-                                        acc = accuracies,
-                                        rrg = r_range,
-                                        stg = strategy,
-                                        asm = "-t -1" if args.asimov else "",
-                                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
-                                    ))
-
-                            leps = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
-                                mmm = mstr,
-                                gstr = gstr + "eps",
-                            ))
-                            fgood = all([ll >= 0. and ll <= 1. for qq, ll in leps.items()])
-
-                            if fgood:
-                                geps = (ii * factor * epsilon)
-                                for quantile in leps.keys():
-                                    limit[quantile] = leps[quantile]
-                                break
-                        if fgood:
-                            break
-
-                good_cls = all([ll >= 0. and ll <= 1. for qq, ll in limit.items()])
-                if good_cls:
-                    limits[gval + geps] = limit
-                    consecutive_failure = 0
-                    if any([ll > 0.01 and ll < 0.1 for qq, ll in limit.items()]):
-                        gval += 0.02
-                    else:
-                        gval += 0.05
-                else:
-                    gval += 0.01
-                    consecutive_failure += 1
-                    print "\nsingle_point_ahtt :: consecutive failure ", consecutive_failure
-                    if consecutive_failure > 10:
-                        break
+            pool = multiprocessing.Pool(4)
+            lll = pool.map(single_point_scan, [(gval, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gval in list(np.linspace(min_g, max_g, num = 193))])
+            pool.close()
 
             print "\nsingle_point_ahtt :: collecting limit"
+            for ll in lll:
+                if ll is not None:
+                    limits[ll[0]] = ll[1]
+            limits = OrderedDict(sorted(limits.items()))
+
             syscall("hadd {dcd}{pnt}_limits_g-scan.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                         dcd = dcdir,
@@ -490,7 +455,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1"
 
-        gvalues = [1e-5, 2e-5, 3e-5, 4e-5, 5e-5] + list(np.linspace(0., max_g, num = 151))
+        gvalues = [2.**-17, 2.**-16, 2.**-15, 2.**-14, 2.**-13] + list(np.linspace(min_g, max_g, num = 193))
         gvalues.sort()
         scenarii = ['exp-b', 'exp-s', 'obs']
         setpar = []
