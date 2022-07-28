@@ -89,6 +89,8 @@ if __name__ == '__main__':
         args.jobtime = "-t " + args.jobtime
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
+    runlimit = "limit" in args.mode
+    runpull = "pull" in args.mode or "impact" in args.mode
     resub = "resubmit" in args.mode
 
     # generate an aggregate submission file name
@@ -157,7 +159,7 @@ if __name__ == '__main__':
                 )
 
                 syscall("rm {fff}".format(fff = failure))
-                submit_job(job_name, job_arg, args.jobtime, "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py")
+                submit_job(agg, job_name, job_arg, args.jobtime, 2, "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py")
             continue
 
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
@@ -217,7 +219,8 @@ if __name__ == '__main__':
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
-        submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
+        submit_job(agg, job_name, job_arg, args.jobtime, 4 if runlimit or runpull else 1, 
+                   "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
 
     if os.path.isfile(agg):
         syscall('condor_submit {agg}'.format(agg = agg), False)

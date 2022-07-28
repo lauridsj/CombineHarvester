@@ -111,14 +111,14 @@ condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 def aggregate_submit():
     return 'conSub_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
 
-def submit_job(job_agg, job_name, job_arg, job_time, job_dir, executable, runtmp = False, runlocal = False):
+def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_dir, executable, runtmp = False, runlocal = False):
     if not hasattr(submit_job, "firstprint"):
         submit_job.firstprint = True
 
     if runlocal:
         syscall('{executable} {job_arg}'.format(executable = executable, job_arg = job_arg), True)
     else:
-        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {tmp} {job_dir} --debug'.format(
+        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {job_cpu} {tmp} {job_dir} --debug'.format(
             csub = condordir + "condorSubmit.sh",
             cpar = condordir + "condorParam.txt",
             crun = condordir + "condorRun.sh",
@@ -126,6 +126,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_dir, executable, runtmp
             executable = executable,
             job_arg = job_arg,
             job_time = job_time,
+            job_cpu = "-p " + str(job_cpu) if job_cpu > 1 else "",
             tmp = "--run-in-tmp" if runtmp else "",
             job_dir = job_dir
         ), submit_job.firstprint)

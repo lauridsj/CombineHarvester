@@ -289,7 +289,7 @@ if __name__ == '__main__':
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs} --parallel 8".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs} --parallel 4".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + identifier,

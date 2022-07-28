@@ -264,7 +264,7 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs} --parallel 2".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs} --parallel 4".format(
                 dcd = dcdir,
                 mmm = mstr,
                 maxg = max_g,
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                 gstr = str(round(gval, 3)).replace('.', 'p')
 
                 syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                        "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} --parallel 2"
+                        "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} --parallel 4"
                         "--singlePoint 1 {stg} {asm} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
@@ -321,7 +321,7 @@ if __name__ == '__main__':
                         for ii in range(1, nstep + 1):
                             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
                                     "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
-                                    "--singlePoint 1 {stg} {asm} {mcs} --parallel 2".format(
+                                    "--singlePoint 1 {stg} {asm} {mcs} --parallel 4".format(
                                         dcd = dcdir,
                                         mmm = mstr,
                                         gst = gstr + "eps",
@@ -399,7 +399,7 @@ if __name__ == '__main__':
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 4 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,

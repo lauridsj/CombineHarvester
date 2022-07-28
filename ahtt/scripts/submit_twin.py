@@ -340,9 +340,11 @@ if __name__ == '__main__':
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
                     )
 
-                    submit_job(jname, jarg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
+                    submit_job(agg, jname, jarg, args.jobtime, 4,
+                               "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
         else:
-            submit_job(job_name, job_arg, args.jobtime, "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
+            submit_job(agg, job_name, job_arg, args.jobtime, 1,
+                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
 
         if os.path.isfile(agg):
             syscall('condor_submit {agg}'.format(agg = agg), False)
