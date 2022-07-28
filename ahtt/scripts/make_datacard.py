@@ -122,7 +122,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             read_category_process_nuisance.specials["CMS_PDF_PCA_" + str(ipdf)] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
         for c1, c2 in read_category_process_nuisance.aliases.items():
-            read_category_process_nuisance.specials[c1 + '_shape_EWQCD'] = (("2016pre", "2016post", "2017", "2018"), 1.)
+            read_category_process_nuisance.specials[c2 + '_shape_EWQCD'] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
     processes = []
     nuisances = []
