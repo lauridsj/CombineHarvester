@@ -107,7 +107,7 @@ def project(histogram, rule):
     return hist
 
 def chunks(lst, npart):
-    if npart > float(len(lst)) / 2 or npart < 1:
+    if npart > math.ceil(float(len(lst)) / 2) or npart < 1:
         print 'chunks called with a invalid npart. setting it to 2.'
         npart = 2
 
