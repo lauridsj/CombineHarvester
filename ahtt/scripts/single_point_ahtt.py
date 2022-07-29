@@ -346,10 +346,12 @@ if __name__ == '__main__':
             limits = OrderedDict()
             r_range = "--rMin=0 --rMax=2"
 
-            pool = multiprocessing.Pool(4)
-            #lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
-            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 7)), 4)])
-            pool.close()
+            #pool = multiprocessing.Pool(4)
+            ##lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
+            #lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 7)), 4)])
+            #pool.close()
+
+            lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 7)), 4)[-1], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
 
             print "\nsingle_point_ahtt :: collecting limit"
             for ll in lll:
