@@ -160,6 +160,8 @@ def dotty_scan(args):
     maxg = gvals[-1]
     step = gvals[1] - gvals[0]
 
+    print gvals
+
     results = []
     while ming < maxg:
         result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
