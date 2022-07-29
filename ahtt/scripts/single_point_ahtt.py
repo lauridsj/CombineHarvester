@@ -164,6 +164,7 @@ def dotty_scan(args):
     while ming < maxg:
         result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
 
+        print 'LOLK', result[2][1]
         if result is not None and ((result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1)):
             ming += step
         else:
