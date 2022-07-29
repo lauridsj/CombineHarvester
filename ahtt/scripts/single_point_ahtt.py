@@ -12,7 +12,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall
+from utilities import syscall, chunks
 from make_datacard import get_point
 
 min_g = 0.
@@ -149,6 +149,30 @@ def single_point_scan(args):
         return [gval + geps, limit, min[(abs(ll - 0.05), ll) for qq, ll in limit.items()][1]] # third being the closest cls to 0.05 among the quantiles
 
     return None
+
+def dotty_scan(args):
+    gvals, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
+    if len(gvals) < 2:
+        return None
+
+    gvals = sorted(gvals)
+    ming = gvals[0]
+    maxg = gvals[-1]
+    step = gvals[1] - gvals[0]
+
+    results = []
+    while ming < maxg:
+        result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
+
+        if result is not None and ((result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1)):
+            ming += step
+        else:
+            ming += 2. * step
+
+        if result is not None:
+            results.append(result)
+
+    return results
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -319,13 +343,14 @@ if __name__ == '__main__':
             r_range = "--rMin=0 --rMax=2"
 
             pool = multiprocessing.Pool(4)
-            lll = pool.map(single_point_scan, [(gval, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gval in list(np.linspace(min_g, max_g, num = 193))])
+            #lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
+            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 13)), 4)])
             pool.close()
 
             print "\nsingle_point_ahtt :: collecting limit"
             for ll in lll:
-                if ll is not None:
-                    limits[ll[0]] = ll[1]
+                for l in ll:
+                    limits[l[0]] = l[1]
             limits = OrderedDict(sorted(limits.items()))
 
             syscall("hadd {dcd}{pnt}_limits_g-scan.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
