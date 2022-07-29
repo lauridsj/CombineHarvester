@@ -160,17 +160,14 @@ def dotty_scan(args):
     maxg = gvals[-1]
     step = gvals[1] - gvals[0]
 
-    print gvals
-
     results = []
-    while ming < maxg:
+    while not ming > maxg:
         result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
 
         if result is None:
             ming += 2. * step
             continue
 
-        print 'LOLK', result
         if (result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1):
             ming += step
         else:
@@ -348,17 +345,15 @@ if __name__ == '__main__':
             limits = OrderedDict()
             r_range = "--rMin=0 --rMax=2"
 
-            #pool = multiprocessing.Pool(4)
-            ##lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
-            #lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 7)), 4)])
-            #pool.close()
-
-            lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 7)), 4)[-1], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
+            pool = multiprocessing.Pool(4)
+            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
+            pool.close()
 
             print "\nsingle_point_ahtt :: collecting limit"
             for ll in lll:
                 for l in ll:
-                    limits[l[0]] = l[1]
+                    if l is not None:
+                        limits[l[0]] = l[1]
             limits = OrderedDict(sorted(limits.items()))
 
             syscall("hadd {dcd}{pnt}_limits_g-scan.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
