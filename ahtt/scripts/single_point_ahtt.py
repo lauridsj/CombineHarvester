@@ -164,14 +164,17 @@ def dotty_scan(args):
     while ming < maxg:
         result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
 
-        print 'LOLK', result[2][1]
-        if result is not None and ((result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1)):
+        if result is None:
+            ming += 2. * step
+            continue
+
+        print 'LOLK', result
+        if (result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1):
             ming += step
         else:
             ming += 2. * step
 
-        if result is not None:
-            results.append(result)
+        results.append(result)
 
     return results
 
@@ -345,7 +348,7 @@ if __name__ == '__main__':
 
             pool = multiprocessing.Pool(4)
             #lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
-            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 13)), 4)])
+            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 7)), 4)])
             pool.close()
 
             print "\nsingle_point_ahtt :: collecting limit"
