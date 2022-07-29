@@ -106,6 +106,20 @@ def project(histogram, rule):
 
     return hist
 
+def chunks(lst, npart):
+    nf = float(len(lst)) / npart
+    nc = int(math.ceil(nf))
+    ni = len(lst) / npart
+    ii = 0
+    result = []
+    if nf - ni > 0.5:
+        ni, nc = nc, ni
+    result.append(lst[ii:ii + nc])
+    ii += nc
+    for i in xrange(ii, len(lst), ni):
+        result.append(lst[i:i + ni])
+    return result
+
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 
 def aggregate_submit():

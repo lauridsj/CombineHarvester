@@ -18,9 +18,6 @@ from make_datacard import get_point
 min_g = 0.
 max_g = 3.
 
-epsilon = 2.**-17
-nstep = 5
-
 def get_limit(lfile):
     lfile = TFile.Open(lfile)
     ltree = lfile.Get("limit")
@@ -89,6 +86,9 @@ def single_point_scan(args):
     gval, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
+    epsilon = 2.**-17
+    nstep = 1
+
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
             "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
             "--singlePoint 1 {stg} {asm} {mcs}".format(
@@ -109,7 +109,7 @@ def single_point_scan(args):
     ))
 
     if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
-        return [gval, limit]
+        return [gval, limit, min[(abs(ll - 0.05), ll) for qq, ll in limit.items()][1]] # third being the closest cls to 0.05 among the quantiles
 
     geps = 0.
     syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
@@ -146,7 +146,7 @@ def single_point_scan(args):
             break
 
     if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
-        return [gval + geps, limit]
+        return [gval + geps, limit, min[(abs(ll - 0.05), ll) for qq, ll in limit.items()][1]] # third being the closest cls to 0.05 among the quantiles
 
     return None
 
@@ -497,7 +497,7 @@ if __name__ == '__main__':
                             dcd = dcdir,
                             mmm = mstr,
                             maxg = max_g,
-                            gvl = "--points 151 --alignEdges 1",
+                            gvl = "--points 193 --alignEdges 1",
                             stg = strategy,
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois) + "'" if len(setpar) + len(pois) > 0 else "",
