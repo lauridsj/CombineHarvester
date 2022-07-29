@@ -109,7 +109,7 @@ def single_point_scan(args):
     ))
 
     if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
-        return [gval, limit, min[(abs(ll - 0.05), ll) for qq, ll in limit.items()][1]] # third being the closest cls to 0.05 among the quantiles
+        return [gval, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     geps = 0.
     syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
@@ -146,7 +146,7 @@ def single_point_scan(args):
             break
 
     if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
-        return [gval, limit, min[(abs(ll - 0.05), ll) for qq, ll in limit.items()][1]] # third being the closest cls to 0.05 among the quantiles
+        return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     return None
 
