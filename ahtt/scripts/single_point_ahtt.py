@@ -168,8 +168,7 @@ def dotty_scan(args):
             ming += 2. * step
             continue
 
-        print result
-        if (result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1):
+        if (result[2] < 0.05 and result[2] > 0.025) or (result[2] > 0.05 and result[2] < 0.1):
             ming += step
         else:
             ming += 2. * step
@@ -362,6 +361,8 @@ if __name__ == '__main__':
 
             #lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
             lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
+
+            print chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk]
 
             print "\nsingle_point_ahtt :: collecting limit"
             for ll in lll:

@@ -51,11 +51,24 @@ if __name__ == '__main__':
                         "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
-    parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+
+    parser.add_argument("--freeze-mc-stats-zero", help = "only in the pull/impact/prepost/corrmat mode, freeze mc stats nuisances to zero",
                         dest = "frzbb0", action = "store_true", required = False)
+    parser.add_argument("--freeze-mc-stats-post", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
+                        "requires pull/impact to have been run. --freeze-mc-stats-zero takes priority over this option",
+                        dest = "frzbbp", action = "store_true", required = False)
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
+
+    parser.add_argument("--raster-n", help = "number of chunks to split the g raster limit scan into",
+                        dest = "nchunk", default = 6, required = False, type = int)
+    parser.add_argument("--raster-i", help = "which chunks to process, in doing the raster scan.\n"
+                        "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
+                        "where the comma separated version is plainly the list of indices to be given to --raster-i, if --raster-n > 0\n"
+                        "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
+                        "mixing of both syntaxes are not allowed.",
+                        dest = "ichunk", default = "...[--raster-n value]", required = False)
 
     parser.add_argument("--impact-sb", help = "do sb impact fit instead of b", dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used",
@@ -210,7 +223,7 @@ if __name__ == '__main__':
             shp = "--use-shape-always" if args.alwaysshape else "",
             mcs = "--no-mc-stats" if not args.mcstat else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
-            frz = "--freeze-mc-stats-zero" if args.frzbb0 else "",
+            frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "",
             asm = "--unblind" if not args.asimov else "",
             one = "--one-poi" if args.onepoi else "",
             ims = "--impact-sb" if args.impactsb else "",
@@ -219,8 +232,45 @@ if __name__ == '__main__':
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
-        submit_job(agg, job_name, job_arg, args.jobtime, 4 if runlimit or runpull else 1, 
-                   "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
+        if runlimit and not args.onepoi:
+            if args.nchunk < 0:
+                args.nchunk = 6
+
+            if args.ichunk == "...[--raster-n value]":
+                args.ichunk = "..." + str(args.nchunk)
+
+            idxs = []
+            if args.nchunk > 1:
+                if "," in args.ichunk and "..." in args.ichunk:
+                    raise RuntimeError("it is said that mixing syntaxes is not allowed smh.")
+                elif "," in args.ichunk:
+                    idxs = [int(ii) for ii in args.ichunk.replace(" ", "").split(",")]
+                elif "..." in args.ichunk:
+                    idxs = args.ichunk.replace(" ", "").split("...")
+                    idxs = range(int(idxs[0]), int(idxs[1])) if idxs[0] != "" else range(int(idxs[1]))
+                else:
+                    idxs = [int(args.ichunk.replace(" ", ""))]
+            else:
+                idxs = [0]
+
+            for idx in idxs:
+                jname = job_name.replace("g-scan", "g-scan_{nch}_{idx}".format(nch = "n" + str(args.nchunk), idx = "i" + str(idx)))
+                logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
+
+                if len(logs) > 0:
+                    continue
+
+                jarg = job_arg
+                jarg += " {nch} {idx}".format(
+                    nch = "--raster-n " + str(args.nchunk),
+                    idx = "--raster-i " + str(idx)
+                )
+
+                submit_job(agg, jname, jarg, args.jobtime, 1,
+                           "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
+        else:
+            submit_job(agg, job_name, job_arg, args.jobtime, 8 if runpull else 1, 
+                       "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
 
     if os.path.isfile(agg):
         syscall('condor_submit {agg}'.format(agg = agg), False)
