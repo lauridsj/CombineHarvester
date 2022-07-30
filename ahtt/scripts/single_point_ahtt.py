@@ -168,6 +168,7 @@ def dotty_scan(args):
             ming += 2. * step
             continue
 
+        print result
         if (result[2][1] < 0.05 and result[2][1] > 0.025) or (result[2][1] > 0.05 and result[2][1] < 0.1):
             ming += step
         else:
@@ -221,7 +222,7 @@ if __name__ == '__main__':
     parser.add_argument("--freeze-mc-stats-zero", help = "only in the pull/impact/prepost/corrmat mode, freeze mc stats nuisances to zero",
                         dest = "frzbb0", action = "store_true", required = False)
     parser.add_argument("--freeze-mc-stats-post", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
-                        "requires pull/impact to have been run",
+                        "requires pull/impact to have been run. --freeze-mc-stats-zero takes priority over this option",
                         dest = "frzbbp", action = "store_true", required = False)
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
@@ -463,8 +464,7 @@ if __name__ == '__main__':
         if args.frzbb0:
             setpar.append("rgx{prop_bin.*}=0")
             frzpar.append("rgx{prop_bin.*}")
-
-        if args.frzbbp:
+        elif args.frzbbp:
             frzpar.append("rgx{prop_bin.*}")
             iname = "{dcd}/{pnt}_impacts_{gvl}_{exp}.json".format(
                 dcd = dcdir,
