@@ -355,8 +355,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
             r_range = "--rMin=0 --rMax=2"
 
-            gvals = chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk]
-            #gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
+            gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
             lll = dotty_scan((gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
 
             print "\nsingle_point_ahtt :: collecting limit"
