@@ -108,7 +108,7 @@ def single_point_scan(args):
         gstr = gstr,
     ))
 
-    if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
+    if all([ll >= 0. for qq, ll in limit.items()]):
         return [gval, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     geps = 0.
@@ -135,7 +135,7 @@ def single_point_scan(args):
                 mmm = mstr,
                 gstr = gstr + "eps",
             ))
-            fgood = all([ll >= 0. and ll <= 1. for qq, ll in leps.items()])
+            fgood = all([ll >= 0. for qq, ll in leps.items()])
 
             if fgood:
                 geps = (ii * factor * epsilon)
@@ -145,7 +145,7 @@ def single_point_scan(args):
         if fgood:
             break
 
-    if all([ll >= 0. and ll <= 1. for qq, ll in limit.items()]):
+    if all([ll >= 0. for qq, ll in limit.items()]):
         return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     return None
@@ -154,27 +154,23 @@ def dotty_scan(args):
     gvals, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
     if len(gvals) < 2:
         return None
-
     gvals = sorted(gvals)
-    ming = gvals[0]
-    maxg = gvals[-1]
-    step = gvals[1] - gvals[0]
 
     results = []
-    while not ming > maxg:
-        result = single_point_scan((ming, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
+    ii = 0
+    while ii < len(gvals):
+        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
 
         if result is None:
-            ming += 2. * step
+            ii += 3
             continue
 
         if (result[2] < 0.05 and result[2] > 0.025) or (result[2] > 0.05 and result[2] < 0.1):
-            ming += step
+            ii += 1
         else:
-            ming += 2. * step
+            ii += 2
 
         results.append(result)
-
     return results
 
 if __name__ == '__main__':
@@ -359,12 +355,14 @@ if __name__ == '__main__':
             limits = OrderedDict()
             r_range = "--rMin=0 --rMax=2"
 
-            #lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
-            lll = dotty_scan((chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
-
-            print chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk]
+            gvals = chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk]
+            #gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
 
             print "\nsingle_point_ahtt :: collecting limit"
+            print "\nthe following points have been processed:"
+            print gvals
+
             for ll in lll:
                 if ll is not None:
                     limits[ll[0]] = ll[1]
