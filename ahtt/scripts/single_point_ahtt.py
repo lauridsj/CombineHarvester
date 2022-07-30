@@ -218,7 +218,7 @@ if __name__ == '__main__':
                         "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
-    parser.add_argument("--freeze-mc-stats-zero", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+    parser.add_argument("--freeze-mc-stats-zero", help = "only in the pull/impact/prepost/corrmat mode, freeze mc stats nuisances to zero",
                         dest = "frzbb0", action = "store_true", required = False)
     parser.add_argument("--freeze-mc-stats-post", help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
                         "requires pull/impact to have been run",
@@ -229,6 +229,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
+
+    parser.add_argument("--raster-n", help = "number of chunks to split the g raster limit scan into",
+                        dest = "nchunk", default = 6, required = False, type = int)
+    parser.add_argument("--raster-i", help = "which chunk to process, in doing the raster scan",
+                        dest = "ichunk", default = 0, required = False, type = int)
 
     parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
                         "also used in prepost/corrmat o steer which pull to be read with --freeze-mc-stats-post",
@@ -322,7 +327,7 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs} --parallel 4".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 maxg = max_g,
@@ -340,28 +345,37 @@ if __name__ == '__main__':
                         pnt = args.point
                     ))
         else:
-            syscall("rm {dcd}{pnt}_limits_g-scan.root {dcd}{pnt}_limits_g-scan.json ".format(dcd = dcdir, pnt = args.point), False, True)
+            if args.nchunk < 0:
+                args.nchunk = 6
+            if args.ichunk < 0 or args.ichunk >= args.nchunk:
+                args.ichunk = 0
+
+            syscall("rm {dcd}{pnt}_limits_g-scan_{nch}_{idx}.root {dcd}{pnt}_limits_g-scan_{nch}_{idx}.json ".format(
+                dcd = dcdir,
+                pnt = args.point,
+                nch = "n" + str(args.nchunk),
+                idx = "i" + str(args.ichunk)), False, True)
             syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
             limits = OrderedDict()
             r_range = "--rMin=0 --rMax=2"
 
-            pool = multiprocessing.Pool(4)
-            lll = pool.map(dotty_scan, [(gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat) for gvals in chunks(list(np.linspace(min_g, max_g, num = 193)), 4)])
-            pool.close()
+            #lll = dotty_scan(chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat)
+            lll = dotty_scan(chunks(list(np.linspace(min_g, max_g, num = 25)), args.nchunk)[args.ichunk], dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat)
 
             print "\nsingle_point_ahtt :: collecting limit"
             for ll in lll:
-                for l in ll:
-                    if l is not None:
-                        limits[l[0]] = l[1]
+                if ll is not None:
+                    limits[ll[0]] = ll[1]
             limits = OrderedDict(sorted(limits.items()))
 
-            syscall("hadd {dcd}{pnt}_limits_g-scan.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
+            syscall("hadd {dcd}{pnt}_limits_g-scan_{nch}_{idx}.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                         dcd = dcdir,
-                        pnt = args.point
+                        pnt = args.point,
+                        nch = "n" + str(args.nchunk),
+                        idx = "i" + str(args.ichunk)
                     ))
-            with open("{dcd}{pnt}_limits_g-scan.json".format(dcd = dcdir, pnt = args.point), "w") as jj:
+            with open("{dcd}{pnt}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, pnt = args.point, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
@@ -378,8 +392,16 @@ if __name__ == '__main__':
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
+        setpar = []
+        frzpar = []
+
+        args.mcstat = args.mcstat or args.frzbb0
+        if args.frzbb0:
+            setpar.append("rgx{prop_bin.*}=0")
+            frzpar.append("rgx{prop_bin.*}")
+
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig} {stp} {frz}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -388,11 +410,13 @@ if __name__ == '__main__':
             poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
+            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0",
+            stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 4 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig} {stp} {frz}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -401,7 +425,9 @@ if __name__ == '__main__':
             poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0"
+            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0",
+            stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
@@ -456,7 +482,7 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {stp} {frz} {poi}".format(
+                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {stp} {frz}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
