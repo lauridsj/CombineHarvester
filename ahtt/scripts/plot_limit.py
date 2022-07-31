@@ -51,7 +51,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         for quantile, g in lmt.items():
                             limit[quantile].append([g, max_g])
             else:
-                chunks = glob.glob("{dd}/{pnt}_limits_g-scan_n*_i*.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]))
+                chunks = glob.glob("{dd}/{pnt}_limits_g-scan_n*_i*.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3])))
                 chunks.sort()
                 for nn in chunks:
                     with open(nn) as ff:
