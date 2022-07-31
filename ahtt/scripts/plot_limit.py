@@ -43,70 +43,71 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                 ("exp+2", False),
             ])
 
-            with open("{dd}/{pnt}_limits_{mod}.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]), mod = "one-poi" if onepoi else "g-scan")) as ff:
-                result = json.load(ff)
-
-            # save the exclusion intervals i.e. CLs < 0.05
             if onepoi:
-                for mm, lmt in result.items():
-                    for quantile, g in lmt.items():
-                        limit[quantile].append([g, max_g])
+                with open("{dd}/{pnt}_limits_one-poi.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]))) as ff:
+                    result = json.load(ff)
 
+                    for mm, lmt in result.items():
+                        for quantile, g in lmt.items():
+                            limit[quantile].append([g, max_g])
             else:
-                for g, lmt in result.items():
-                    # FIXME in some cases combine gives strange cls values
-                    # not understood why, skip
-                    if any([cls > 1. or cls < 0. for cls in lmt.values()]):
-                        continue
+                for nn in glob.glob("{dd}/{pnt}_limits_g-scan_n*_i*.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]))):
+                    with open(nn) as ff:
+                        result = json.load(ff)
 
-                    for quantile, cls in lmt.items():
-                        limit[quantile].append((round(float(g), 4), round(cls, 3)))
+                    for g, lmt in result.items():
+                        # FIXME in some cases combine gives strange cls values
+                        # not understood why, skip
+                        if any([round(cls, 3) > 1. or round(cls, 3) < 0. for cls in lmt.values()]):
+                            continue
 
-                for quantile in limit.keys():
-                    if quantile == "obs":
-                        continue
+                        for quantile, cls in lmt.items():
+                            limit[quantile].append((round(float(g), 4), round(cls, 3)))
 
-                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.25] )
-                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.0005 and cc < 0.25] )
+                    for quantile in limit.keys():
+                        if quantile == "obs":
+                            continue
 
-                    if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
-                        spline = UnivariateSpline(g, cls)
+                        g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.025 and cc < 0.1] )
+                        cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.025 and cc < 0.1] )
 
-                        if dump_spline:
-                            qstr = quantile.replace('+', 'pp').replace('-', 'm')
-                            fig, ax = plt.subplots()
+                        if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
+                            spline = UnivariateSpline(g, cls)
 
-                            ax.plot(g, spline(g), 'g', lw = 3)
-                            fig.tight_layout()
-                            fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
-                            fig.clf()
+                            if dump_spline:
+                                qstr = quantile.replace('+', 'pp').replace('-', 'm')
+                                fig, ax = plt.subplots()
 
-                        crossing = max_g
-                        for ii in range(1, len(cls) - 1):
-                            if cls[ii] > 0.05 and (cls[ii - 1] <= cls[ii] <= cls[ii + 1] or cls[ii + 1] <= cls[ii] <= cls[ii - 1]):
-                                crossing = cls[ii]
+                                ax.plot(g, spline(g), 'g', lw = 3)
+                                fig.tight_layout()
+                                fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
+                                fig.clf()
 
-                        residual = abs(spline(crossing) - 0.05)
-                        while residual > epsilon and crossing < max_g:
-                            crossing += epsilon
-                            if abs(spline(crossing) - 0.05) > residual:
-                                crossing -= epsilon
-                                if residual > 250. * epsilon:
-                                    print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
-                                break
-                            else:
-                                residual = abs(spline(crossing) - 0.05)
+                            crossing = max_g
+                            for ii in range(1, len(cls) - 1):
+                                if cls[ii] > 0.05 and (cls[ii - 1] <= cls[ii] <= cls[ii + 1] or cls[ii + 1] <= cls[ii] <= cls[ii - 1]):
+                                    crossing = cls[ii]
 
-                        limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
+                            residual = abs(spline(crossing) - 0.05)
+                            while residual > epsilon and crossing < max_g:
+                                crossing += epsilon
+                                if abs(spline(crossing) - 0.05) > residual:
+                                    crossing -= epsilon
+                                    if residual > 250. * epsilon:
+                                        print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
+                                    break
+                                else:
+                                    residual = abs(spline(crossing) - 0.05)
 
-                    else:
-                        print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.25 are insufficient to form a spline:")
-                        print(g)
-                        print(cls)
-                        print("\n")
+                            limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
-                        limit[quantile] = []
+                        else:
+                            print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.25 are insufficient to form a spline:")
+                            print(g)
+                            print(cls)
+                            print("\n")
 
+                            limit[quantile] = []
             limits[ii][xvalues[jj]] = limit
 
     return limits
