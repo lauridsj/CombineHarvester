@@ -70,8 +70,28 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if quantile == "obs":
                         continue
 
-                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
-                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
+                    #g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
+                    #cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
+
+                    g = [gg for gg, cc in limit[quantile]]
+                    cls = [cc for gg, cc in limit[quantile]]
+                    vmin = min([(abs(cc - 0.05), gg, cc) for gg, cc in limit[quantile]])
+                    vmin = (vmin[1], vmin[2])
+                    imin = limit[quantile].index(vmin)
+
+                    if imin > 1 and len(cls) - imin > 1:
+                        if cls[imin] < (0.5 * (cls[imin - 1] + cls[imin - 2])) and cls[imin] > (0.5 * (cls[imin + 1] + cls[imin + 2])):
+                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and gc[1] <= cls[imin]) or (ii >= imin and gc[1] >= cls[imin])]
+                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and gc[1] <= cls[imin]) or (ii >= imin and gc[1] >= cls[imin])]
+                        elif cls[imin] > (0.5 * (cls[imin - 1] + cls[imin - 2])) and cls[imin] < (0.5 * (cls[imin + 1] + cls[imin + 2])):
+                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and gc[1] >= cls[imin]) or (ii <= imin and gc[1] <= cls[imin])]
+                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and gc[1] >= cls[imin]) or (ii <= imin and gc[1] <= cls[imin])]
+                        else:
+                            g = []
+                            cls = []
+                    else:
+                        g = []
+                        cls = []
 
                     if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
                         spline = UnivariateSpline(g, cls)
@@ -104,7 +124,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
                     else:
-                        print("in " + dd + ", quantile " + quantile + ", following g and cls within 0.005 - 0.25 are insufficient to form a spline:")
+                        print("in " + dd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
                         print(g)
                         print(cls)
                         print("\n")
