@@ -68,8 +68,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if quantile == "obs":
                         continue
 
-                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.025 and cc < 0.1] )
-                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.025 and cc < 0.1] )
+                    g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
+                    cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
 
                     if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
                         spline = UnivariateSpline(g, cls)
