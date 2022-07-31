@@ -79,16 +79,16 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     vmin = (vmin[1], vmin[2])
                     imin = limit[quantile].index(vmin)
 
-                    if imin > 2 and len(cls) - imin > 3:
-                        left = (cls[imin - 1] + cls[imin - 2] + cls[imin - 3]) / 3.
-                        right = (cls[imin + 1] + cls[imin + 2] + cls[imin + 3]) / 3.
+                    if imin > 3 and len(cls) - imin > 4:
+                        left = sum(cls[imin - 4 : imin]) / 4.
+                        right = sum(cls[imin + 1 : imin + 5]) / 4.
 
                         if cls[imin] < left and cls[imin] > right:
-                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1])]
-                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1])]
+                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
+                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
                         elif cls[imin] > left and cls[imin] < right:
-                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1])]
-                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1])]
+                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
+                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
                         else:
                             g = []
                             cls = []
@@ -108,21 +108,19 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
                             fig.clf()
 
-                        crossing = max_g
-                        for ii in range(1, len(cls) - 1):
-                            if cls[ii] > 0.05 and (cls[ii - 1] <= cls[ii] <= cls[ii + 1] or cls[ii + 1] <= cls[ii] <= cls[ii - 1]):
-                                crossing = cls[ii]
+                        crossing = limit[quantile][imin][0]
+                        factor = 1. if limit[quantile][imin][1] < limit[quantile][imin - 1][1] else -1.
 
                         residual = abs(spline(crossing) - 0.05)
-                        while residual > epsilon and crossing < max_g:
-                            crossing += epsilon
-                            if abs(spline(crossing) - 0.05) > residual:
-                                crossing -= epsilon
-                                if residual > 250. * epsilon:
+                        while residual > epsilon and crossing < max_g and crossing > min_g:
+                            crossing += factor * epsilon
+                            if abs(spline(crossing) - 0.05) < residual:
+                                residual = abs(spline(crossing) - 0.05)
+                            else:
+                                crossing -= factor * epsilon
+                                if residual > 2.**8 * epsilon:
                                     print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
                                 break
-                            else:
-                                residual = abs(spline(crossing) - 0.05)
 
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
