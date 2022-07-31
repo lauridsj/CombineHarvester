@@ -23,7 +23,7 @@ from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     limits = [OrderedDict() for tag in directories]
 
-    for ii, tag in enumerate(directories):
+    for tt, tag in enumerate(directories):
         for jj, dd in enumerate(tag):
             #print(dd)
             limit = OrderedDict([
@@ -111,8 +111,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                         limit[quantile] = []
 
-            print(ii, xvalues, jj)
-            limits[ii][xvalues[jj]] = limit
+            print(yy, xvalues, jj)
+            limits[yy][xvalues[jj]] = limit
 
     return limits
 
