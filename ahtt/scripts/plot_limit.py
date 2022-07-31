@@ -110,6 +110,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         print("\n")
 
                         limit[quantile] = []
+
+            print(ii, xvalues, jj)
             limits[ii][xvalues[jj]] = limit
 
     return limits
