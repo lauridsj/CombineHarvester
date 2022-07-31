@@ -78,9 +78,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     vmin = min([(abs(cc - 0.05), gg, cc) for gg, cc in limit[quantile]])
                     vmin = (vmin[1], vmin[2])
                     imin = limit[quantile].index(vmin)
-                    print(vmin, imin)
 
-                    if imin > 2 and len(cls) - imin > 2:
+                    if imin > 2 and len(cls) - imin > 3:
                         left = (cls[imin - 1] + cls[imin - 2] + cls[imin - 3]) / 3.
                         right = (cls[imin + 1] + cls[imin + 2] + cls[imin + 3]) / 3.
 
