@@ -70,18 +70,15 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if quantile == "obs":
                         continue
 
-                    #g = np.array( [gg for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
-                    #cls = np.array( [cc for gg, cc in limit[quantile] if cc > 0.005 and cc < 0.25] )
-
                     g = [gg for gg, cc in limit[quantile]]
                     cls = [cc for gg, cc in limit[quantile]]
                     vmin = min([(abs(cc - 0.05), gg, cc) for gg, cc in limit[quantile]])
                     vmin = (vmin[1], vmin[2])
                     imin = limit[quantile].index(vmin)
 
-                    if imin > 3 and len(cls) - imin > 4:
-                        left = sum(cls[imin - 4 : imin]) / 4.
-                        right = sum(cls[imin + 1 : imin + 5]) / 4.
+                    if imin > 0 and len(cls) - imin > 0:
+                        left = sum(cls[:imin]) / len(cls[:imin])
+                        right = sum(cls[imin + 1:]) / len(cls[imin + 1:])
 
                         if cls[imin] < left and cls[imin] > right:
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
@@ -89,15 +86,12 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         elif cls[imin] > left and cls[imin] < right:
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
                             cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
-                        else:
-                            g = []
-                            cls = []
                     else:
                         g = []
                         cls = []
 
                     if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
-                        spline = UnivariateSpline(g, cls)
+                        spline = UnivariateSpline(np.array(g), np.array(cls))
 
                         if dump_spline:
                             qstr = quantile.replace('+', 'pp').replace('-', 'm')
