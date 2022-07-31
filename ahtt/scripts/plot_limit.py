@@ -81,6 +81,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     print(vmin, imin)
 
                     if imin > 1 and len(cls) - imin > 1:
+                        print(cls[imin], cls[imin - 1], cls[imin - 2], cls[imin + 1], cls[imin + 2])
+
                         if cls[imin] < (0.5 * (cls[imin - 1] + cls[imin - 2])) and cls[imin] > (0.5 * (cls[imin + 1] + cls[imin + 2])):
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and gc[1] <= cls[imin]) or (ii >= imin and gc[1] >= cls[imin])]
                             cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and gc[1] <= cls[imin]) or (ii >= imin and gc[1] >= cls[imin])]
