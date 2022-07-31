@@ -80,14 +80,14 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     imin = limit[quantile].index(vmin)
                     print(vmin, imin)
 
-                    if imin > 1 and len(cls) - imin > 1:
-                        print(cls[imin], cls[imin - 1], imin - 1, cls[imin - 2], imin - 2, cls[imin + 1], imin + 1, cls[imin + 2], imin + 2)
+                    if imin > 2 and len(cls) - imin > 2:
+                        left = (cls[imin - 1] + cls[imin - 2] + cls[imin - 3]) / 3.
+                        right = (cls[imin + 1] + cls[imin + 2] + cls[imin + 3]) / 3.
 
-                        if cls[imin] < (0.5 * (cls[imin - 1] + cls[imin - 2])) and cls[imin] > (0.5 * (cls[imin + 1] + cls[imin + 2])):
+                        if cls[imin] < left and cls[imin] > right:
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1])]
                             cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1])]
-
-                        elif cls[imin] > (0.5 * (cls[imin - 1] + cls[imin - 2])) and cls[imin] < (0.5 * (cls[imin + 1] + cls[imin + 2])):
+                        elif cls[imin] > left and cls[imin] < right:
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1])]
                             cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if (ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1])]
                         else:
