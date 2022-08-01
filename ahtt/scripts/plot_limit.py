@@ -77,8 +77,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     imin = limit[quantile].index(vmin)
 
                     if imin > 0 and len(cls) - imin > 0:
-                        left = sum(cls[:imin]) / len(cls[:imin])
-                        right = sum(cls[imin + 1:]) / len(cls[imin + 1:])
+                        left = sum(cls[:imin]) / len(cls[:imin]) if len(cls[:imin]) > 0 else -1.
+                        right = sum(cls[imin + 1:]) / len(cls[imin + 1:]) if len(cls[imin + 1:]) > 0 else -1.
 
                         if cls[imin] < left and cls[imin] > right:
                             g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 0.01 < gc[1] < 0.25 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
@@ -90,7 +90,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         g = []
                         cls = []
 
-                    if len(g) > 3 and not all([cc > 0.05 for cc in cls]):
+                    if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
                         if dump_spline:
