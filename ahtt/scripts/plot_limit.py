@@ -130,7 +130,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
     return limits
 
-def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
+def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, transparent):
     if len(limits) > 3:
         raise RuntimeError("current plotting code is not meant for more than 3 tags. aborting")
 
@@ -195,23 +195,25 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
     ymax = 0.
 
     for ii, yy in enumerate(yvalues):
-        ax.fill_between(xvalues, np.array(yy["exp-2"]), np.array(yy["exp+2"]),
-                        color = draw_1D.colors[len(limits)][ii]["exp2"], linewidth = 0, alpha = draw_1D.colors[len(limits)][ii]["alpe"])
+        if drawband or ii == 0:
+            ax.fill_between(xvalues, np.array(yy["exp-2"]), np.array(yy["exp+2"]),
+                            color = draw_1D.colors[len(limits)][ii]["exp2"], linewidth = 0, alpha = draw_1D.colors[len(limits)][ii]["alpe"])
 
-        label = "95% expected" if labels[ii] == "" else "95% exp."
-        handles.append((mpt.Patch(color = draw_1D.colors[len(limits)][ii]["exp2"], alpha = draw_1D.colors[len(limits)][ii]["alpe"]),
-                        label + " " + labels[ii]))
-        ymin = min(ymin, min(yy["exp-2"]))
-        ymax = max(ymax, max(yy["exp+2"]))
-        ymax1 = math.ceil(ymax * 2.) / 2.
+            label = "95% expected" if labels[ii] == "" else "95% exp."
+            handles.append((mpt.Patch(color = draw_1D.colors[len(limits)][ii]["exp2"], alpha = draw_1D.colors[len(limits)][ii]["alpe"]),
+                            label + " " + labels[ii]))
+            ymin = min(ymin, min(yy["exp-2"]))
+            ymax = max(ymax, max(yy["exp+2"]))
+            ymax1 = math.ceil(ymax * 2.) / 2.
 
     for ii, yy in enumerate(yvalues):
-        ax.fill_between(xvalues, np.array(yy["exp-1"]), np.array(yy["exp+1"]),
-                        color = draw_1D.colors[len(limits)][ii]["exp1"], linewidth = 0, alpha = draw_1D.colors[len(limits)][ii]["alpe"])
+        if drawband or ii == 0:
+            ax.fill_between(xvalues, np.array(yy["exp-1"]), np.array(yy["exp+1"]),
+                            color = draw_1D.colors[len(limits)][ii]["exp1"], linewidth = 0, alpha = draw_1D.colors[len(limits)][ii]["alpe"])
 
-        label = "68% expected" if labels[ii] == "" else "68% exp."
-        handles.append((mpt.Patch(color = draw_1D.colors[len(limits)][ii]["exp1"], alpha = draw_1D.colors[len(limits)][ii]["alpe"]),
-                        label + " " + labels[ii]))
+            label = "68% expected" if labels[ii] == "" else "68% exp."
+            handles.append((mpt.Patch(color = draw_1D.colors[len(limits)][ii]["exp1"], alpha = draw_1D.colors[len(limits)][ii]["alpe"]),
+                            label + " " + labels[ii]))
 
     for ii, yy in enumerate(yvalues):
         ax.plot(xvalues, np.array(yy["exp0"]), color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = "dashed", linewidth = 1.5)
@@ -290,7 +292,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, observed, transparent):
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
-def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, observed, transparent):
+def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawband, observed, transparent):
     masses = [pnt[1] for pnt in points]
     if len(set(masses)) != len(masses):
         raise RuntimeError("producing " + oname + ", --function natural expects unique mass points only. aborting")
@@ -298,9 +300,9 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, obser
     if len(masses) < 2:
         print("There are less than 2 masses points. skipping")
 
-    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", observed, transparent)
+    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, transparent)
 
-def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, transparent, dump_spline):
+def draw_mass(oname, points, directories, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
     widths = set([pnt[2] for pnt in points])
 
     for ww in widths:
@@ -316,7 +318,7 @@ def draw_mass(oname, points, directories, labels, yaxis, onepoi, observed, trans
                 read_limit(dirs, masses, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes["mass"] % points[0][0], yaxis,
                 ", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$" % (points[0][0], ww, points[0][0]),
-                observed, transparent)
+                drawband, observed, transparent)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -333,6 +335,8 @@ if __name__ == '__main__':
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
     parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
                         dest = "transparent", action = "store_true", required = False)
+    parser.add_argument("--skip-secondary-bands", help = "do not draw the +-1, 2 sigma bands except for first tag",
+                        dest = "drawband", action = "store_false", required = False)
     parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",
                         dest = "dump_spline", action = "store_true", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "pdf", dest = "fmt", required = False)
@@ -377,17 +381,17 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent)
+                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent)
+                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
     elif args.function == "mass":
         if len(apnt) > 0:
             draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.observed, args.transparent, args.dump_spline)
+                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.observed, args.transparent, args.dump_spline)
+                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
     elif args.function == "width":
         pass
 
