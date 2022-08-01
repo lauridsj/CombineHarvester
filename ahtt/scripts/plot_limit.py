@@ -222,6 +222,10 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
         handles.append((mln.Line2D([0], [0], color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = "dashed", linewidth = 1.5),
                         label + " " + labels[ii]))
 
+        ymin = min(ymin, min(yy["exp0"]))
+        ymax = max(ymax, max(yy["exp0"]))
+        ymax1 = math.ceil(ymax * 2.) / 2.
+
     if observed:
         for i1, yy in enumerate(yvalues):
             ymin = min(ymin, min([min(first(oo)) for oo in yy["obs"]]))
@@ -275,7 +279,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
     lmargin = 0.06 if len(limits) == 1 else 0.02
     lwidth = 1. - (2. * lmargin) 
     legend = ax.legend(first(handles), second(handles),
-	               loc = "upper right", ncol = 2 if len(limits) < 3 else len(limits), bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
+	               loc = "upper right", ncol = 2, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
                        mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 - (2 * len(limits)), frameon = False,
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21)
     #fontprop = matplotlib.font_manager.FontProperties()
