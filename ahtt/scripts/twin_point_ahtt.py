@@ -357,7 +357,7 @@ if __name__ == '__main__':
                 gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
                 gv = stringify((bf[0], bf[1]))
 
-                if args.rmroot:
+                if args.rmroot and fcexp == fcexps[-1]:
                     syscall("rm " + bb + " " + bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
 
                 if gv in grid["g-grid"]:
