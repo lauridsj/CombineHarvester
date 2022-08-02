@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 )
 
                 syscall("rm {fff}".format(fff = failure))
-                submit_job(agg, job_name, job_arg, args.jobtime, 2, "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py")
+                submit_job(agg, job_name, job_arg, args.jobtime, 2, "", "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py")
             continue
 
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
@@ -266,10 +266,10 @@ if __name__ == '__main__':
                     idx = "--raster-i " + str(idx)
                 )
 
-                submit_job(agg, jname, jarg, args.jobtime, 1,
+                submit_job(agg, jname, jarg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         else:
-            submit_job(agg, job_name, job_arg, args.jobtime, 8 if runpull else 1, 
+            submit_job(agg, job_name, job_arg, args.jobtime, 8 if runpull else 1, "4 GB" if runpull else "",
                        "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
 
     if os.path.isfile(agg):

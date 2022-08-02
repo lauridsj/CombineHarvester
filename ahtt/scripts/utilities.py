@@ -129,7 +129,7 @@ condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 def aggregate_submit():
     return 'conSub_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
 
-def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_dir, executable, runtmp = False, runlocal = False):
+def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
     if not hasattr(submit_job, "firstprint"):
         submit_job.firstprint = True
 
@@ -145,6 +145,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_dir, executabl
             job_arg = job_arg,
             job_time = job_time,
             job_cpu = "-p " + str(job_cpu) if job_cpu > 1 else "",
+            job_mem = "-m " + job_mem if job_mem != "" else "",
             tmp = "--run-in-tmp" if runtmp else "",
             job_dir = job_dir
         ), submit_job.firstprint)
