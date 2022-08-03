@@ -131,8 +131,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     return limits
 
 def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, transparent):
-    if len(limits) > 3:
-        raise RuntimeError("current plotting code is not meant for more than 3 tags. aborting")
+    if len(limits) > 5:
+        raise RuntimeError("current plotting code is not meant for more than 5 tags. aborting")
 
     if len(limits) > 1 and not all([list(ll) == list(limits[0]) for ll in limits]):
         raise RuntimeError("limits in the tags are not over the same x points for plot " + oname + ". aborting")
@@ -147,6 +147,17 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
             (3    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
                      {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
                      {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},]),
+
+            (4    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
+                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},]),
+
+            (5    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
+                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#ffcc33", "exp1": "#cc99ff", "exp0": "#9966cc", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},]),
         ])
 
     yvalues = []
