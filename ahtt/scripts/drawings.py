@@ -3,7 +3,7 @@
 
 min_g = 0.
 max_g = 3.
-epsilon = 2.**-17
+epsilon = 2.**-18
 axes = {
     "mass" :    r"m$_{\mathrm{\mathsf{%s}}}$ [GeV]",
     "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [\%% m$_{\mathrm{\mathsf{%s}}}$]",
