@@ -291,7 +291,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
     lwidth = 1. - (2. * lmargin) 
     legend = ax.legend(first(handles), second(handles),
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
-                       mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 19, frameon = False,
+                       mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21)
     #fontprop = matplotlib.font_manager.FontProperties()
     #fontprop.set_size(21)
