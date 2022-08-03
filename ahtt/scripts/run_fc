@@ -10,13 +10,13 @@ pairs='A_m400_w15p0,H_m400_w15p0;A_m400_w15p0,H_m700_w15p0;A_m400_w15p0,H_m1000_
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --channel 'ee,em,mm' --year '2016pre,2016post,2017,2018' --tag ll_run2 --sushi-kfactor --use-pseudodata --lnN-under-threshold --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,pileup,lumi,norm'
 
 #3 run the LO points for the exp-b and data cases - here we assume 1000 toys per point
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --fc-idxs '...10' --unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --fc-idxs '...10' #--unblind
 
 #4 merge the toy files
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag lx
 
 #5 compile the available statistics - the toys are deleted, but all the relevant numbers we have gotten already
-./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --unblind #--delete-root
+./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' #--unblind --delete-root
 
 #5a only if extra toys are needed - this submits another 5000 - rerun #4 and #5 when done
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-g-grid SOME_MAGIC_TO_GET_LAST_JSONS --fc-idxs '...10'
