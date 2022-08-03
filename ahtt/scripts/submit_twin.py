@@ -167,7 +167,7 @@ if __name__ == '__main__':
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 500, dest = "fctoy", required = False, type = int)
+                        default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
 
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
@@ -340,7 +340,7 @@ if __name__ == '__main__':
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
                     )
 
-                    submit_job(agg, jname, jarg, args.jobtime, 4, "8 GB",
+                    submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
         else:
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
