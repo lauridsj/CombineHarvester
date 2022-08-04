@@ -51,6 +51,7 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
         nuisances = list(reversed(nuisances))
 
     for ii, nn in enumerate(nuisances):
+        print(ii, len(pulls))
         for jj in range(len(pulls)):
             xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 0.
 
