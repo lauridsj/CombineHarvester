@@ -53,7 +53,7 @@ def read_nuisance(dname, points):
             if nn in skip:
                 continue
 
-            setpar.append(nn + "=" + str(getattr(dtree, nn)))
+            setpar.append(nn + "=" + str(round(getattr(dtree, nn), 3)))
             frzpar.append(nn)
 
         if len(setpar) > 0 and len(setpar) == len(frzpar):
