@@ -181,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)",
                         default = "profile", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 100, dest = "fctoy", required = False, type = int)
+                        default = 175, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
@@ -345,8 +345,8 @@ if __name__ == '__main__':
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
-            setpar, frzpar = read_nuisance(snapshot, points)
-            syscall("combineTool.py -v -999 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+            setpar, frzpar = read_nuisance(snapshot, points) if args.fcnui == "profile" else ([], [])
+            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
                     "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
