@@ -191,10 +191,7 @@ if __name__ == '__main__':
     if args.fcgrid != "" and args.fcmode != "":
         ggrids = args.fcgrid.replace(" ", "").split(';')
     else:
-        if args.fcmode != "":
-            ggrids = ["" for pair in pairs]
-        else:
-            raise RuntimeError("fc-mode is empty, but fc-g-grid is not. don't know what to do!")
+        ggrids = ["" for pair in pairs]
 
     if ggrids is not None:
         if len(ggrids) != len(pairs):
