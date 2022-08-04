@@ -24,7 +24,7 @@ sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 
-def generate_g_grid(pair, ggrids = "", gmode = "add", propersig = False):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-mode",
                         help = "what to do with the grid read from --fc-g-grid, can be 'add' for submitting more toys of the same points,\n"
                         "or 'refine', for refining the contour that can be drawn using the grid",
-                        default = "add", dest = "fcmode", required = False)
+                        default = "", dest = "fcmode", required = False)
     parser.add_argument("--fc-idxs", help = "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
                         "where the comma separated version is plainly the list of indices to be given to --fc-idx, if --fc-n-toy > 0\n"
                         "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
@@ -186,8 +186,13 @@ if __name__ == '__main__':
     pairs = args.point.replace(" ", "").split(';')
 
     ggrids = None
-    if args.fcgrid != "":
+    if args.fcgrid != "" and args.fcmode != "":
         ggrids = args.fcgrid.replace(" ", "").split(';')
+    else:
+        if args.fcmode != "":
+            ggrids = ["" for pair in pairs]
+        else:
+            raise RuntimeError("fc-mode is empty, but fc-g-grid is not. don't know what to do!")
 
     if ggrids is not None:
         if len(ggrids) != len(pairs):
@@ -275,13 +280,7 @@ if __name__ == '__main__':
             else:
                 continue
 
-        # FIXME finer-grained check for FC
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
-        #logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
-
-        #if len(logs) > 0:
-        #    continue
-
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
                    "{shp} {mcs} {prj} {asm} {com} {rmr} {igp} {exp} {bsd}").format(
             pnt = pair,
@@ -310,6 +309,13 @@ if __name__ == '__main__':
         )
 
         if runfc:
+            if args.fcmode != "" and ggrid == "":
+                fcexps = args.fcexp.replace(" ", "").split(',')
+                for fcexp in fcexps:
+                    ggg = glob.glob(pstr + args.tag + "/fc_scan_" + fcexp + "_*.json")
+                    ggg.sort(key = os.path.getmtime)
+                    ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
+
             gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig)
             idxs = []
             if args.fctoy > 0:
@@ -330,6 +336,12 @@ if __name__ == '__main__':
                 jname = job_name + scan_name.replace("pnt", "")
 
                 for idx in idxs:
+                    jname += '_' + str(idx) if idx != -1 else ''
+                    logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+
+                    if len(logs) > 0:
+                        continue
+
                     fcrundat = False if idx != idxs[0] else args.fcrundat
 
                     jarg = job_arg
@@ -343,6 +355,11 @@ if __name__ == '__main__':
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
         else:
+            logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
+
+            if len(logs) > 0:
+                continue
+
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                        "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
 
