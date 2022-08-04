@@ -42,7 +42,7 @@ def read_nuisance(dname, points):
             "limit", "limitErr", "mh", "syst",
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
-    nuisances = dtree.GetListOfBranches()
+    nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
     print nuisances
 
     for i in dtree:
