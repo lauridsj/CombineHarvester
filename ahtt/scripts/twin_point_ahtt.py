@@ -340,15 +340,15 @@ if __name__ == '__main__':
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
-            setpar, frzpar = read_nuisance(snapshot)
+            setpar, frzpar = read_nuisance(snapshot, points)
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par},{nus}' {nuf} {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        nus = ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
-                        nuf = ",".join(frzpar) if args.fcnui == "profile" and len(frzpar) > 0 else "",
+                        nus = "," + ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
+                        nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
