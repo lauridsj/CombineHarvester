@@ -346,7 +346,7 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
             setpar, frzpar = read_nuisance(snapshot, points)
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+            syscall("combineTool.py -v 0 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
                     "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
