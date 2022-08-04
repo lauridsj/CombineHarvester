@@ -43,7 +43,6 @@ def read_nuisance(dname, points):
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
     nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
-    nuisances.sort()
 
     for i in dtree:
         if dtree.quantileExpected != -1.:
@@ -53,7 +52,9 @@ def read_nuisance(dname, points):
             if nn in skip:
                 continue
 
-            frzpar.append(nn)
+            if "prop_bin" not in nn:
+                frzpar.append(nn)
+
             vv = round(getattr(dtree, nn), 3)
             if abs(vv) > 0.:
                 setpar.append(nn + "=" + str(vv))
@@ -61,6 +62,7 @@ def read_nuisance(dname, points):
         if len(frzpar) > 0:
             break
 
+    frzpar.append("rgx{prop_bin.*}")
     return (setpar, frzpar)
 
 def read_previous_grid(gpoints, prev_best_fit, gname):
