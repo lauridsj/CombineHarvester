@@ -42,12 +42,13 @@ def read_nuisance(dname, points):
             "limit", "limitErr", "mh", "syst",
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
+    nuisances = dtree.GetListOfBranches()
+    print nuisances
+
     for i in dtree:
         if dtree.quantileExpected != -1.:
             continue
 
-        nuisances = dir(dtree)
-        print nuisances
         for nn in nuisances:
             if nn in skip:
                 continue
