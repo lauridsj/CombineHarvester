@@ -322,19 +322,19 @@ if __name__ == '__main__':
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-                    if args.fcnui == "profile" and fcexp == snapexp:
-                        syscall("cp higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {snp}".format(
-                            snm = scan_name + identifier,
-                            mmm = mstr,
-                            snp = snapshot), False)
+                if args.fcnui == "profile" and fcexp == snapexp:
+                    syscall("cp higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {snp}".format(
+                        snm = scan_name + identifier,
+                        mmm = mstr,
+                        snp = snapshot), False)
 
-                    if args.fcrundat:
-                        syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
-                            snm = scan_name + identifier,
-                            mmm = mstr,
-                            dcd = dcdir), False)
-                    else:
-                        syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
+                if args.fcrundat:
+                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+                        snm = scan_name + identifier,
+                        mmm = mstr,
+                        dcd = dcdir), False)
+                else:
+                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
         if args.fctoy > 0:
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
