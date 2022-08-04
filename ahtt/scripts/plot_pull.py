@@ -42,16 +42,15 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
     yval = [np.zeros(nuisance_per_page) for pp in pulls]
     err = [np.zeros((2, nuisance_per_page)) for pp in pulls]
 
-    offset = [0.2, -0.2] if len(pulls) == 2 else [0.]
-    colors = ["#cc0033", "#0033cc"] if len(pulls) == 2 else ["black"]
-    markers = ["o", "s"] if len(pulls) == 2 else ["o"]
+    offset = [0.3, 0., -0.3] if len(pulls) == 3 else [0.2, -0.2] if len(pulls) == 2 else [0.]
+    colors = ['0', "#cc0033", "#0033cc"] if len(pulls) == 3 else ["#cc0033", "#0033cc"] if len(pulls) == 2 else ["black"]
+    markers = ["o", "s", "^"] if len(pulls) == 3 else ["o", "s"] if len(pulls) == 2 else ["o"]
     counter = math.ceil(len(nuisances) / nuisance_per_page) - 1 # not floor, because that doesn't give 0, 1, 2, ... for integer multiples
 
     if reverse:
         nuisances = list(reversed(nuisances))
 
     for ii, nn in enumerate(nuisances):
-        print(ii, len(pulls))
         for jj in range(len(pulls)):
             xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 0.
 
