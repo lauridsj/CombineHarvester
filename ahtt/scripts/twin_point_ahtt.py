@@ -31,6 +31,35 @@ def get_fit(dname, points, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
+def read_nuisance(dname, points):
+    dfile = TFile.Open(dname)
+    dtree = dfile.Get("limit")
+
+    setpar = []
+    frzpar = []
+
+    skip = ["g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected"
+            "limit", "limitErr", "mh", "syst",
+            "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
+
+    for i in dtree:
+        if dtree.quantileExpected != -1.:
+            continue
+
+        nuisances = dtree.__dict__
+        print nuisances
+        for nn, vv in nuisances:
+            if nn in skip:
+                continue
+
+            setpar.append(nn + "=" + str(vv))
+            frzpar.append(nn)
+
+        if len(setpar) > 0 and len(setpar) == len(frzpar):
+            break
+
+    return (setpar, frzpar)
+
 def read_previous_grid(gpoints, prev_best_fit, gname):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
@@ -144,6 +173,8 @@ if __name__ == '__main__':
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
+    parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)",
+                        default = "profile", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
@@ -198,9 +229,14 @@ if __name__ == '__main__':
 
     allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
     fcexps = args.fcexp.replace(" ", "").split(',')
-    if not all([exp in allexp for exp in fcexps]):
+    if len(fcexps) == 0 or not all([exp in allexp for exp in fcexps]):
         print "supported expected scenario:", allexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
+
+    allnui = ["conservative", "profile"]
+    if not args.fcnui in allnui:
+        print "supported nuisance modes:", allnui
+        raise RuntimeError("unexpected nuisance mode is given. aborting.")
 
     if not args.asimov:
         fcexps.append("obs")
@@ -257,16 +293,18 @@ if __name__ == '__main__':
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
+        snapshot = "fc_scan_snap.root"
+        snapexp = "obs" if not args.asimov else "exp-s" if "exp-s" in fcexps else fcexps[0]
 
-        if args.fcrundat:
+        if args.fcrundat or args.fcnui == "profile":
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
 
             for fcexp in fcexps:
                 identifier = "_" + fcexp
 
-                for ifit in ["1", "1", "1", "2", "0"]:
+                for ifit in ["0", "1", "2"]:
                     syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                            "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs}".format(
+                            "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs} {wsp}".format(
                                 dcd = dcdir,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
@@ -275,7 +313,8 @@ if __name__ == '__main__':
                                 stg = fit_strategy(ifit),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
-                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                                wsp = "--saveWorkspace --saveSpecifiedNuis=all" if args.fcnui == "profile" and fcexp == snapexp else ""
                             ))
 
                     if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], points, ff) is not None for ff in [True, False]]):
@@ -283,20 +322,36 @@ if __name__ == '__main__':
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(snm = scan_name + identifier, mmm = mstr, dcd = dcdir), False)
+                    if args.fcnui == "profile" and fcexp == snapexp:
+                        syscall("cp higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {snp}".format(
+                            snm = scan_name + identifier,
+                            mmm = mstr,
+                            snp = snapshot), False)
+
+                    if args.fcrundat:
+                        syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+                            snm = scan_name + identifier,
+                            mmm = mstr,
+                            dcd = dcdir), False)
+                    else:
+                        syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
         if args.fctoy > 0:
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
+
+            setpar, frzpar = read_nuisance(snapshot)
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}' {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par},{nus}' {nuf} {stg} {toy} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
-                        stg = fit_strategy("1"),
+                        nus = ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
+                        nuf = ",".join(frzpar) if args.fcnui == "profile" and len(frzpar) > 0 else "",
+                        stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
@@ -304,6 +359,7 @@ if __name__ == '__main__':
                 snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
+            syscall("rm {snp}".format(snp = snapshot), False)
 
     if runhadd:
         idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))

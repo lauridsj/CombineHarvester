@@ -166,6 +166,8 @@ if __name__ == '__main__':
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
+    parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)",
+                        default = "profile", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 100, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
@@ -342,11 +344,12 @@ if __name__ == '__main__':
                     if len(logs) > 0:
                         continue
 
-                    fcrundat = False if idx != idxs[0] else args.fcrundat
+                    fcrundat = args.fcrundat and idx == idxs[0]
 
                     jarg = job_arg
-                    jarg += " {gvl} {toy} {dat} {idx}".format(
+                    jarg += " {gvl} {nui} {toy} {dat} {idx}".format(
                         gvl = "--fc-g-values '" + str(ig1) + "," + str(ig2) + "'",
+                        nui = "--fc-nuisance-mode " + args.fcnui,
                         toy = "--fc-n-toy " + str(args.fctoy) if args.fctoy > 0 else "",
                         dat = "--fc-skip-data " if not fcrundat else "",
                         idx = "--fc-idx " + str(idx) if idx > -1 else ""
