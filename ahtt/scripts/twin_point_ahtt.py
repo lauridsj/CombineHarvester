@@ -43,7 +43,7 @@ def read_nuisance(dname, points):
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
     nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
-    print nuisances
+    nuisances.sort()
 
     for i in dtree:
         if dtree.quantileExpected != -1.:
