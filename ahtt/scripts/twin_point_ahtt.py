@@ -46,13 +46,13 @@ def read_nuisance(dname, points):
         if dtree.quantileExpected != -1.:
             continue
 
-        nuisances = dtree.__dict__
+        nuisances = dir(dtree)
         print nuisances
-        for nn, vv in nuisances:
+        for nn in nuisances:
             if nn in skip:
                 continue
 
-            setpar.append(nn + "=" + str(vv))
+            setpar.append(nn + "=" + str(getattr(dtree, nn)))
             frzpar.append(nn)
 
         if len(setpar) > 0 and len(setpar) == len(frzpar):
