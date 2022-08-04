@@ -356,7 +356,7 @@ if __name__ == '__main__':
                         nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat and args.fcnui != "profile" else "",
+                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
@@ -364,7 +364,7 @@ if __name__ == '__main__':
                 snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
-            syscall("rm {snp}".format(snp = snapshot), False)
+            syscall("rm {snp}".format(snp = snapshot), False, True)
 
     if runhadd:
         idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
