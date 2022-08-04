@@ -50,7 +50,7 @@ def read_nuisance(dname, points):
             continue
 
         for nn in nuisances:
-            if nn in skip:
+            if nn in skip or "prop_bin" in nn:
                 continue
 
             setpar.append(nn + "=" + str(getattr(dtree, nn)))
