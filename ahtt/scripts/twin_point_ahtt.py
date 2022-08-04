@@ -38,7 +38,7 @@ def read_nuisance(dname, points):
     setpar = []
     frzpar = []
 
-    skip = ["g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected"
+    skip = ["g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected",
             "limit", "limitErr", "mh", "syst",
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
