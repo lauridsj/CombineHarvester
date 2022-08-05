@@ -200,7 +200,7 @@ if __name__ == '__main__':
                 continue
 
         job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
-        job_name += "{mod}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan")
+        job_name += "{mod}{isb}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan", isb = "_sig" if runpull and args.impactsb else "_bkg" if runpull else "")
         logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
         if len(logs) > 0:

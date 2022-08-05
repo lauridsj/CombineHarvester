@@ -178,7 +178,8 @@ if __name__ == '__main__':
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
-    parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)",
+    parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
+                        "WARNING: profile mode implementation is incomplete!!",
                         default = "conservative", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 175, dest = "fctoy", required = False, type = int)
