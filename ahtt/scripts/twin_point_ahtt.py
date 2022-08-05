@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)",
-                        default = "profile", dest = "fcnui", required = False)
+                        default = "conservative", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 175, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
@@ -346,9 +346,9 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
             setpar, frzpar = read_nuisance(snapshot, points) if args.fcnui == "profile" else ([], [])
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
+            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _{snm} "
                     "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
-                        dcd = dcdir,
+                        dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
@@ -358,7 +358,7 @@ if __name__ == '__main__':
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                        byp = "--fastScan" if args.fcnui == "profile" else "",
+                        byp = "--bypassFrequentistFit" if args.fcnui == "profile" else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
