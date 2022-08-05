@@ -353,11 +353,11 @@ if __name__ == '__main__':
                         snm = scan_name + identifier,
                         par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
                         nus = "," + ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
-                        nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
+                        #nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                        byp = "--bypassFrequentistFit" if args.fcnui == "profile" else "",
+                        byp = "--fastScan" if args.fcnui == "profile" else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
