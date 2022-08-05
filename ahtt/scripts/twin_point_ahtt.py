@@ -359,7 +359,7 @@ if __name__ == '__main__':
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                        byp = "--bypassFrequentistFit --profilingMode none" if args.fcnui == "profile" else "",
+                        byp = "--bypassFrequentistFit --fastScan" if args.fcnui == "profile" else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
