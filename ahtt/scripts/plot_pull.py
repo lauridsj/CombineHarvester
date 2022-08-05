@@ -76,7 +76,7 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
             plt.xlim((-1.5, 1.5))
             plt.ylim((-0.5, ymax - 0.5))
 
-            if len(pulls) == 2:
+            if len(pulls) > 1:
                 legend = ax.legend(loc = "lower left", ncol = len(pulls), bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
                                    mode = "expand", borderaxespad = 0., handletextpad = 1.5, fontsize = 15, frameon = False,
                                    handler_map = {plots[0]: HandlerErrorbar(xerr_size = 1.5), plots[1]: HandlerErrorbar(xerr_size = 1.5)})
