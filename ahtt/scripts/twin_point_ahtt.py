@@ -347,7 +347,7 @@ if __name__ == '__main__':
 
             setpar, frzpar = read_nuisance(snapshot, points) if args.fcnui == "profile" else ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -357,6 +357,7 @@ if __name__ == '__main__':
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                        byp = "--bypassFrequentistFit" if args.fcnui == "profile" else "",
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(

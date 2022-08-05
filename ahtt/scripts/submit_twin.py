@@ -308,16 +308,13 @@ if __name__ == '__main__':
         )
 
         if runfc:
-            print ggrid
             if args.fcmode != "" and ggrid == "":
                 print "checking last grids"
                 fcexps = args.fcexp.replace(" ", "").split(',')
                 for fcexp in fcexps:
                     ggg = glob.glob(pstr + args.tag + "/fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
-                    print ggg
                     ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
-            print ggrid
 
             gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig)
             idxs = []
