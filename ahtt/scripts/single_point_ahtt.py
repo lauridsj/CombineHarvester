@@ -386,7 +386,7 @@ if __name__ == '__main__':
         ), False, True)
 
         r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1"
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
