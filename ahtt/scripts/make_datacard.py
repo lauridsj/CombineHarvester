@@ -469,9 +469,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
     sstr = "__".join(sorted(sigpnt))
     writer.WriteCards(sstr + tag, cb)
 
-    sys.stdout = open(sstr + tag + "/ahtt_nuisances.txt", 'w')
-    cb.PrintSysts()
-    sys.stdout.close()
+    cb.PrintSysts(sstr + tag + "/ahtt_nuisances.txt")
 
     if mcstat:
         txts = glob.glob(sstr + tag + "/ahtt_*.txt")
