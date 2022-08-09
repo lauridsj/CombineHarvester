@@ -311,10 +311,6 @@ if __name__ == '__main__':
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
-                print jname
-                print jarg
-                print
-                continue
                 submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         else:
