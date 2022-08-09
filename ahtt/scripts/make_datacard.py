@@ -271,7 +271,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
                         # the last condition is to remove wildly asymmetric variations in signal
                         # where the stats is so bad both smoother and flat cant model anything reliably
-                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (abs(chi2s[4]) > 1e-4 and abs(chi2s[5]) > 1e-4)
+                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
 
                         scaleu = chi2s[4] if keepvalue else 0.
                         scaled = chi2s[5] if keepvalue else 0.
