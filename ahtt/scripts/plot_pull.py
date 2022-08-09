@@ -55,7 +55,7 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
         nuisances = list(reversed(nuisances))
 
     if isimpact:
-        impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) for nn in nuisances if nn in pulls[0] else 0.]
+        impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) if nn in pulls[0] else 0. for nn in nuisances]
         nuisances = [nn for nn, ii in sorted(zip(nuisances, impacts), reverse = True)]
 
     for ii, nn in enumerate(nuisances):
