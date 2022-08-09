@@ -296,7 +296,7 @@ if __name__ == '__main__':
                         nparts = chunks(range(nbin), 4 if nbin > 149 else 3 if nbin > 99 else 2 if nbin > 49 else 1)
 
                         for ip, ipart in enumerate(nparts):
-                            group = "{cc}_{yy}_{ii}".format(cc = cc, yy = yy, ii = str(ip))
+                            group = "mcstat_{cc}_{yy}_{ii}".format(cc = cc, yy = yy, ii = str(ip))
                             mcstats = ["prop_bin" + "{cc}_{yy}_bin".format(cc = cc, yy = yy) + str(ii) for ii in ipart]
                             nuisances[group] = copy.deepcopy(mcstats)
 

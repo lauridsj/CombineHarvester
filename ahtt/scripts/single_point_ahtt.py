@@ -235,7 +235,7 @@ if __name__ == '__main__':
                         dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--impact-nuisances", help = "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, "
                         "and n1,n2,...,nN are the nuisances belonging to that group",
-                        dest = "impactnui", action = "store_true", required = False)
+                        dest = "impactnui", default = "", required = False)
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used. defaults to 1",
                         dest = "fixg", default = 1, required = False, type = float)
 
