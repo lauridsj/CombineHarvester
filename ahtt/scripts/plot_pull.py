@@ -19,24 +19,28 @@ from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
 nuisance_per_page = 32
 
-def read_pull(directories, onepoi, fixg, impactsb):
+def read_pull(directories, isimpact, onepoi, fixg, impactsb):
     pulls = [OrderedDict() for dd in directories]
     for ii, dd in enumerate(directories):
-        with open("{dd}/{pnt}_impacts_{gvl}_{exp}.json".format(
-                dd = dd,
-                pnt = '_'.join(dd.split('_')[:3]),
-                gvl = "one-poi" if onepoi else "fix-g_" + str(fixg).replace(".", "p"),
-                exp = "sig" if impactsb else "bkg")) as ff:
-            result = json.load(ff)
+        impacts = glob.glob("{dd}/{pnt}_impacts_{gvl}_{exp}*.json".format(
+            dd = dd,
+            pnt = '_'.join(dd.split('_')[:3]),
+            gvl = "one-poi" if onepoi else "fix-g_" + str(fixg).replace(".", "p"),
+            exp = "sig" if impactsb else "bkg"
+        ))
 
-        nuisances = result["params"]
-        for nn in nuisances:
-            if nn["name"] != "g":
-                pulls[ii][nn["name"]] = nn["fit"]
+        for imp in impacts:
+            with open(imp) as ff:
+                result = json.load(ff)
+
+            nuisances = result["params"]
+            for nn in nuisances:
+                if nn["name"] != "g":
+                    pulls[ii][nn["name"]] = nn["r"] if isimpact else nn["fit"]
 
     return pulls
 
-def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparent, plotformat):
+def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, transparent, plotformat):
     fig, ax = plt.subplots()
     xval = [np.zeros(nuisance_per_page) for pp in pulls]
     yval = [np.zeros(nuisance_per_page) for pp in pulls]
@@ -50,6 +54,10 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
     if reverse:
         nuisances = list(reversed(nuisances))
 
+    if isimpact:
+        impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) for nn in nuisances if nn in pulls[0] else 0.]
+        nuisances = [nn for nn, ii in sorted(zip(nuisances, impacts), reverse = True)]
+
     for ii, nn in enumerate(nuisances):
         for jj in range(len(pulls)):
             xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 0.
@@ -62,7 +70,8 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
         if ii % nuisance_per_page == nuisance_per_page - 1 or ii == len(nuisances) - 1:
             ymax = (ii % nuisance_per_page) + 1 if ii == len(nuisances) - 1 else nuisance_per_page
 
-            ax.fill_between(np.array([-1, 1]), np.array([-0.5, -0.5]), np.array([ymax - 0.5, ymax - 0.5]), color = "silver", linewidth = 0)
+            if not isimpact:
+                ax.fill_between(np.array([-1, 1]), np.array([-0.5, -0.5]), np.array([ymax - 0.5, ymax - 0.5]), color = "silver", linewidth = 0)
 
             plots = []
             for jj in range(len(pulls)):
@@ -71,9 +80,13 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
 
             ax.set_yticks([kk for kk in range(ymax)])
             ax.set_yticklabels([nn + r"$\,$" for nn in nuisances[ii - ymax + 1 : ii + 1]])
-            plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
+            if isimpact:
+                plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
+            else:
+                plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance impacts", fontsize = 21, labelpad = 10)
             ax.margins(x = 0, y = 0)
-            plt.xlim((-1.5, 1.5))
+            if not isimpact:
+                plt.xlim((-1.5, 1.5))
             plt.ylim((-0.5, ymax - 0.5))
 
             if len(pulls) > 1:
@@ -99,8 +112,8 @@ def plot_pull(oname, labels, pulls, nuisances, extra, point, reverse, transparen
             fig, ax = plt.subplots()
             counter = counter - 1
 
-def draw_pull(oname, directories, labels, onepoi, fixg, impactsb, mcstat, transparent, plotformat):
-    pulls = read_pull(directories, onepoi, fixg, impactsb)
+def draw_pull(oname, directories, labels, isimpact, onepoi, fixg, impactsb, mcstat, transparent, plotformat):
+    pulls = read_pull(directories, isimpact, onepoi, fixg, impactsb)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
     expth = []
@@ -108,15 +121,15 @@ def draw_pull(oname, directories, labels, onepoi, fixg, impactsb, mcstat, transp
         for nn in pull.keys():
             if "prop_bin" not in nn:
                 expth.append(nn)
-    plot_pull(oname, labels, pulls, sorted(list(set(expth))), "_expth_", point, True, transparent, plotformat)
+    plot_pull(oname, labels, isimpact, pulls, sorted(list(set(expth))), "_expth_", point, True, transparent, plotformat)
 
     if mcstat:
-        stat = []
+        mcstat = []
         for pull in pulls:
             for nn in pull.keys():
                 if "prop_bin" in nn:
-                    stat.append(nn)
-        plot_pull(oname, labels, pulls, sorted(list(set(stat))), "_stat_", point, True, transparent, plotformat)
+                    mcstat.append(nn)
+        plot_pull(oname, labels, isimpact, pulls, sorted(list(set(mcstat))), "_mcstat_", point, True, transparent, plotformat)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -124,7 +137,8 @@ if __name__ == '__main__':
     parser.add_argument("--itag", help = "input directory tags to plot pulls of, semicolon separated", default = "", required = False)
     parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
-    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "Pulls", required = False)
+    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False)
+    parser.add_argument("--draw", help = "what to draw, pulls or impacts", default = "pull", required = False)
 
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
@@ -148,11 +162,12 @@ if __name__ == '__main__':
 
     tags = args.itag.replace(" ", "").split(';')
     labels = args.label.split(';')
+    isimpact = "impact" in args.draw
 
     if len(tags) != len(labels):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     dirs = [args.point + '_' + tag for tag in tags]
-    draw_pull(args.odir + "/" + args.point + "_pull" + args.otag, dirs, labels, args.onepoi, args.fixg, args.impactsb, args.mcstat, args.transparent, args.fmt)
-
+    draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.otag,
+              dirs, labels, isimpact, args.onepoi, args.fixg, args.impactsb, args.mcstat, args.transparent, args.fmt)
     pass
