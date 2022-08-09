@@ -40,7 +40,7 @@ def read_pull(directories, isimpact, onepoi, fixg, impactsb):
 
     return pulls
 
-def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, transparent, plotformat):
+def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point, reverse, transparent, plotformat):
     fig, ax = plt.subplots()
     xval = [np.zeros(nuisance_per_page) for pp in pulls]
     yval = [np.zeros(nuisance_per_page) for pp in pulls]
@@ -60,7 +60,7 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
 
     for ii, nn in enumerate(nuisances):
         for jj in range(len(pulls)):
-            xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 0.
+            xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 1. if isimpact and impactsb else 0.
 
             err[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][0] if nn in pulls[jj] else 0.
             err[jj][1, ii % nuisance_per_page] = pulls[jj][nn][2] - pulls[jj][nn][1] if nn in pulls[jj] else 0.
@@ -121,7 +121,7 @@ def draw_pull(oname, directories, labels, isimpact, onepoi, fixg, impactsb, mcst
         for nn in pull.keys():
             if "prop_bin" not in nn:
                 expth.append(nn)
-    plot_pull(oname, labels, isimpact, pulls, sorted(list(set(expth))), "_expth_", point, True, transparent, plotformat)
+    plot_pull(oname, labels, isimpact, impactsb, pulls, sorted(list(set(expth))), "_expth_", point, True, transparent, plotformat)
 
     if mcstat:
         mcstat = []
@@ -129,7 +129,7 @@ def draw_pull(oname, directories, labels, isimpact, onepoi, fixg, impactsb, mcst
             for nn in pull.keys():
                 if "prop_bin" in nn:
                     mcstat.append(nn)
-        plot_pull(oname, labels, isimpact, pulls, sorted(list(set(mcstat))), "_mcstat_", point, True, transparent, plotformat)
+        plot_pull(oname, labels, isimpact, impactsb, pulls, sorted(list(set(mcstat))), "_mcstat_", point, True, transparent, plotformat)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
