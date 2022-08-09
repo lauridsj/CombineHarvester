@@ -269,10 +269,17 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     scaleu = 1.
                     scaled = 1.
 
-                    if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
-                        # the last condition is to remove wildly asymmetric variations in signal
-                        # where the stats is so bad both smoother and flat cant model anything reliably
-                        keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
+                    # original curation: if flat better than smooth...
+                    #if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
+                    #    # the last condition is to remove wildly asymmetric variations in signal
+                    #    # where the stats is so bad both smoother and flat cant model anything reliably
+                    #    keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
+
+                    # test: use flat if smooth is worse than...
+                    if not (chi2s[0] < 50. and chi2s[1] < 50.):
+                        keepvalue = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
+                        keepvalue = keepvalue and (1. > abs(chi2s[4]) > 1e-7 and 1. > abs(chi2s[5]) > 1e-7)
+                        keepvalue = keepvalue and chi2s[4] / chi2s[5] < 0.
 
                         scaleu = chi2s[4] if keepvalue else 0.
                         scaled = chi2s[5] if keepvalue else 0.
@@ -468,8 +475,6 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
     writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
     sstr = "__".join(sorted(sigpnt))
     writer.WriteCards(sstr + tag, cb)
-
-    cb.PrintSysts(sstr + tag + "/ahtt_nuisances.txt")
 
     if mcstat:
         txts = glob.glob(sstr + tag + "/ahtt_*.txt")
