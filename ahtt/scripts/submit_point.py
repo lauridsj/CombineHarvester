@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+    parser.add_argument("--no-mc-stats", help = "don't add/run nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
@@ -289,7 +289,7 @@ if __name__ == '__main__':
                     nuisances[group] = copy.deepcopy(ipart)
             syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
-            if not args.frzbb0:
+            if not args.mcstat:
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
