@@ -6,7 +6,6 @@ import os
 import sys
 import numpy as np
 
-import multiprocessing
 from collections import OrderedDict
 import json
 
@@ -234,6 +233,9 @@ if __name__ == '__main__':
     parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
                         "also used in prepost/corrmat o steer which pull to be read with --freeze-mc-stats-post",
                         dest = "impactsb", action = "store_true", required = False)
+    parser.add_argument("--impact-nuisances", help = "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, "
+                        "and n1,n2,...,nN are the nuisances belonging to that group",
+                        dest = "impactnui", action = "store_true", required = False)
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used. defaults to 1",
                         dest = "fixg", default = 1, required = False, type = float)
 
@@ -414,8 +416,15 @@ if __name__ == '__main__':
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
+        group = ""
+        nuisances = ""
+        if args.impactnui != "":
+            group = "_" + args.impactnui.replace(" ", "").split(';')[0]
+            nuisances = args.impactnui.replace(" ", "").split(';')[1]
+
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits --parallel 8 -n _pull {stg} {rrg} {poi} {asm} {mcs} {sig} {stp} {frz}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull "
+                "{stg} {rrg} {poi} {asm} {mcs} {sig} {nui} {stp} {frz}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -425,28 +434,31 @@ if __name__ == '__main__':
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0",
+            nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
             stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}{grp}.json".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             pnt = args.point,
             gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
-            exp = "sig" if args.impactsb else "bkg"
+            exp = "sig" if args.impactsb else "bkg",
+            grp = group
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{gvl}_{exp}.json -o {dcd}{pnt}_impacts_{gvl}_{exp}".format(
+        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{gvl}_{exp}{grp}.json -o {dcd}{pnt}_impacts_{gvl}_{exp}{grp}".format(
             dcd = dcdir,
             gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             pnt = args.point,
-            exp = "sig" if args.impactsb else "bkg"
+            exp = "sig" if args.impactsb else "bkg",
+            grp = group
         ))
 
     if runprepost:

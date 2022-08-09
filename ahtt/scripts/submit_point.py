@@ -8,8 +8,9 @@ import sys
 import glob
 import subprocess
 import copy
+from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit
+from utilities import syscall, submit_job, aggregate_submit, chunks, read_expth_nuisances, get_nbin
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -200,11 +201,7 @@ if __name__ == '__main__':
                 continue
 
         job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
-        job_name += "{mod}{isb}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan", isb = "_sig" if runpull and args.impactsb else "_bkg" if runpull else "")
-        logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
-
-        if len(logs) > 0:
-            continue
+        job_name += "{mod}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan")
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
                    '{shp} {mcs} {prj} {frz} {asm} {one} {ims} {gvl} {com} {bsd}').format(
@@ -270,8 +267,59 @@ if __name__ == '__main__':
 
                 submit_job(agg, jname, jarg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
+        elif runpull:
+            nuisances = OrderedDict()
+            syscall("python ${CMSSW_BASE}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
+                    "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk '{print $1}' "
+                    "> {dcd}/{nui}".format(
+                        dcd = pnt + args.tag,
+                        ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
+                        nui = "ahtt_nuisance.txt"
+                    ))
+            with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
+                nparts = fexp.readlines()
+                nparts = [et.rstrip() for et in expth]
+                nparts = chunks(nparts, 4 if nbin > 149 else 3 if nbin > 99 else 2 if nbin > 49 else 1)
+
+                for ip, ipart in enumerate(nparts):
+                    group = "expth_{ii}".format(cc = cc, yy = yy, ii = str(ip))
+                    nuisances[group] = ipart
+            syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
+
+            if not args.frzbb0:
+                for cc in args.channel.replace(" ", "").split(','):
+                    for yy in args.year.replace(" ", "").split(','):
+                        nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
+                        nparts = chunks(range(nbin), 4 if nbin > 149 else 3 if nbin > 99 else 2 if nbin > 49 else 1)
+
+                        for ip, ipart in enumerate(nparts):
+                            group = "{cc}_{yy}_{ii}".format(cc = cc, yy = yy, ii = str(ip))
+                            mcstats = ["prop_bin" + "{cc}_{yy}_bin".format(cc = cc, yy = yy) + str(ii) for ii in ipart]
+                            nuisances[group] = mcstats
+
+            for group, nuisance in nuisances.items():
+                jname = job_name + "{isb}".format(isb = "_sig" if runpull and args.impactsb else "_bkg" if runpull else "")
+                jname += "_" + group
+                logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
+
+                if len(logs) > 0:
+                    continue
+
+                jarg = job_arg
+                jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(mcstats))
+
+                print jname
+                print jarg
+                continue
+                submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
+                           "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         else:
-            submit_job(agg, job_name, job_arg, args.jobtime, 8 if runpull else 1, "4 GB" if runpull else "",
+            logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
+
+            if len(logs) > 0:
+                continue
+
+            submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                        "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
 
     if os.path.isfile(agg):

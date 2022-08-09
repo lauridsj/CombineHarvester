@@ -106,6 +106,15 @@ def project(histogram, rule):
 
     return hist
 
+def get_nbin(fname, channel, year):
+    hfile = TFile.Open(fname, "read")
+    hfile.cd(channel + "_" + year)
+    keys = gDirectory.GetListOfKeys()
+    histogram = keys[0].ReadObj()
+    nbin = histogram.GetNbinsX()
+    hfile.Close()
+    return nbin
+
 def chunks(lst, npart):
     if npart > math.ceil(float(len(lst)) / 2) or npart < 1:
         print 'chunks called with a invalid npart. setting it to 2.'
