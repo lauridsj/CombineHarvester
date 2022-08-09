@@ -309,7 +309,7 @@ if __name__ == '__main__':
                     continue
 
                 jarg = job_arg
-                jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(mcstats))
+                jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
                 print jname
                 print jarg
