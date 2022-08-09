@@ -272,7 +272,7 @@ if __name__ == '__main__':
             syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
                     "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk '{print $1}' "
                     "> {dcd}/{nui}".format(
-                        cms = r'${CMSSW_BASE}'
+                        cms = r'${CMSSW_BASE}',
                         dcd = pnt + args.tag,
                         ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                         nui = "ahtt_nuisance.txt"
