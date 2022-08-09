@@ -73,6 +73,9 @@ if __name__ == '__main__':
                         "mixing of both syntaxes are not allowed.",
                         dest = "ichunk", default = "...[--raster-n value]", required = False)
 
+    parser.add_argument("--impact-n", help = "maximum number of nuisances to run in a single impact job",
+                        dest = "nnuisance", default = 25, required = False, type = int)
+
     parser.add_argument("--impact-sb", help = "do sb impact fit instead of b", dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics, if one-poi is not used",
                         dest = "fixg", default = 1, required = False, type = float)
@@ -268,6 +271,9 @@ if __name__ == '__main__':
                 submit_job(agg, jname, jarg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         elif runpull:
+            if args.nnuisance < 0:
+                args.nnuisance = 25
+
             nuisances = OrderedDict()
             syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
                     "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
@@ -281,7 +287,7 @@ if __name__ == '__main__':
             with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                 nparts = fexp.readlines()
                 nparts = [et.rstrip() for et in nparts]
-                nsplit = (len(nparts) // 25) + 1 
+                nsplit = (len(nparts) // args.nnuisance) + 1 
                 nparts = chunks(nparts, nsplit)
 
                 for ip, ipart in enumerate(nparts):
@@ -293,7 +299,7 @@ if __name__ == '__main__':
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
-                        nsplit = (nbin // 25) + 1 
+                        nsplit = (nbin // args.nnuisance) + 1 
                         nparts = chunks(range(nbin), nsplit)
 
                         for ip, ipart in enumerate(nparts):
