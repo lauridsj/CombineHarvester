@@ -29,31 +29,30 @@ def get_point(sigpnt):
 kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
 def get_kfactor(sigpnt):
-    kfile = TFile.Open(kfactor_file_name)
-    khist = [
-        (kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst),
-         kfile.Get(sigpnt[0] + "_int_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst))
-        for syst in scale_choices
-    ]
-    kvals = tuple([(syst[0].Interpolate(sigpnt[1], sigpnt[2]), syst[1].Interpolate(sigpnt[1], sigpnt[2])) for syst in khist])
-    kfile.Close()
+    with TFile.Open(kfactor_file_name, "read") as kfile:
+        khist = [
+            (kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst),
+             kfile.Get(sigpnt[0] + "_int_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst))
+            for syst in scale_choices
+        ]
+        kvals = tuple([(syst[0].Interpolate(sigpnt[1], sigpnt[2]), syst[1].Interpolate(sigpnt[1], sigpnt[2])) for syst in khist])
+
     return kvals
 
 def get_lo_ratio(sigpnt, channel):
-    kfile = TFile.Open(kfactor_file_name)
-    xhist = [
-        (kfile.Get(sigpnt[0] + "_res_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xsec_" + channel),
-         kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xabs_" + channel),
-         kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_positive_event_fraction_" + channel))
-        for syst in scale_choices
-    ]
+    with TFile.Open(kfactor_file_name, "read") as kfile:
+        xhist = [
+            (kfile.Get(sigpnt[0] + "_res_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xsec_" + channel),
+             kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xabs_" + channel),
+             kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_positive_event_fraction_" + channel))
+            for syst in scale_choices
+        ]
 
-    rvals = [[syst[0].Interpolate(sigpnt[1], sigpnt[2]),
-              syst[1].Interpolate(sigpnt[1], sigpnt[2]) * syst[2].Interpolate(sigpnt[1], sigpnt[2]),
-              syst[1].Interpolate(sigpnt[1], sigpnt[2]) * (1. - syst[2].Interpolate(sigpnt[1], sigpnt[2]))] for syst in xhist]
+        rvals = [[syst[0].Interpolate(sigpnt[1], sigpnt[2]),
+                  syst[1].Interpolate(sigpnt[1], sigpnt[2]) * syst[2].Interpolate(sigpnt[1], sigpnt[2]),
+                  syst[1].Interpolate(sigpnt[1], sigpnt[2]) * (1. - syst[2].Interpolate(sigpnt[1], sigpnt[2]))] for syst in xhist]
 
-    rvals = tuple([[r[0] / rvals[0][0], r[1] / rvals[0][1], r[2] / rvals[0][2]] for r in rvals])
-    kfile.Close()
+        rvals = tuple([[r[0] / rvals[0][0], r[1] / rvals[0][1], r[2] / rvals[0][2]] for r in rvals])
 
     # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
@@ -139,7 +138,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     if sigpnt == None:
         fname = ""
         for iname in inames:
-            ifile = TFile.Open(iname)
+            ifile = TFile.Open(iname, "read")
             dirs = [key.GetName() for key in ifile.GetListOfKeys()]
             if idir in dirs:
                 fname = iname
@@ -176,7 +175,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             fname = ""
             for iname in inames:
-                ifile = TFile.Open(iname)
+                ifile = TFile.Open(iname, "read")
                 dirs = [key.GetName() for key in ifile.GetListOfKeys()]
 
                 if idir in dirs:
@@ -221,7 +220,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             if kfactor:
                 kfactors = get_kfactor(get_point(sig))
 
-        ifile = TFile.Open(ff)
+        ifile = TFile.Open(ff, "read")
         ifile.cd(idir)
 
         nuisance = []
@@ -467,6 +466,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
     writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
     sstr = "__".join(sorted(sigpnt))
     writer.WriteCards(sstr + tag, cb)
+
+    cb.PrintSysts()
 
     if mcstat:
         txts = glob.glob(sstr + tag + "/ahtt_*.txt")
