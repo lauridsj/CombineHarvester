@@ -289,7 +289,7 @@ if __name__ == '__main__':
                     nuisances[group] = copy.deepcopy(ipart)
             syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
-            if not args.mcstat:
+            if args.mcstat:
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
