@@ -281,10 +281,11 @@ if __name__ == '__main__':
             with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                 nparts = fexp.readlines()
                 nparts = [et.rstrip() for et in nparts]
-                nparts = chunks(nparts, 4 if nbin > 149 else 3 if nbin > 99 else 2 if nbin > 49 else 1)
+                nnui = len(nparts)
+                nparts = chunks(nparts, 4 if nnui > 149 else 3 if nnui > 99 else 2 if nnui > 49 else 1)
 
                 for ip, ipart in enumerate(nparts):
-                    group = "expth_{ii}".format(cc = cc, yy = yy, ii = str(ip))
+                    group = "expth_{ii}".format(ii = str(ip))
                     nuisances[group] = ipart
             syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
