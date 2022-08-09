@@ -56,11 +56,11 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
 
     if isimpact:
         impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) if nn in pulls[0] else 0. for nn in nuisances]
-        nuisances = [nn for nn, ii in sorted(zip(nuisances, impacts), reverse = True)]
+        nuisances = [nn for ii, nn in sorted(zip(impacts, nuisances), reverse = True)]
 
     for ii, nn in enumerate(nuisances):
         for jj in range(len(pulls)):
-            xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 1. if isimpact and impactsb else 0.
+            xval[jj][ii % nuisance_per_page] = 1. if isimpact and impactsb else 0. if isimpact else pulls[jj][nn][1] if nn in pulls[jj]
 
             err[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][0] if nn in pulls[jj] else 0.
             err[jj][1, ii % nuisance_per_page] = pulls[jj][nn][2] - pulls[jj][nn][1] if nn in pulls[jj] else 0.
