@@ -281,7 +281,7 @@ if __name__ == '__main__':
             with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                 nparts = fexp.readlines()
                 nparts = [et.rstrip() for et in nparts]
-                nsplit = (len(nparts) // 10) + 1 
+                nsplit = (len(nparts) // 25) + 1 
                 nparts = chunks(nparts, nsplit)
 
                 for ip, ipart in enumerate(nparts):
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
-                        nsplit = (nbin // 30) + 1 
+                        nsplit = (nbin // 25) + 1 
                         nparts = chunks(range(nbin), nsplit)
 
                         for ip, ipart in enumerate(nparts):
