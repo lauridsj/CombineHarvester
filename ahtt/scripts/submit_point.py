@@ -232,7 +232,6 @@ if __name__ == '__main__':
         )
 
         if runlimit and not args.onepoi:
-            print "test 1"
             if args.nchunk < 0:
                 args.nchunk = 6
 
@@ -269,11 +268,11 @@ if __name__ == '__main__':
                 submit_job(agg, jname, jarg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         elif runpull:
-            print "test 2"
             nuisances = OrderedDict()
-            syscall("python ${CMSSW_BASE}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
+            syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
                     "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk '{print $1}' "
                     "> {dcd}/{nui}".format(
+                        cms = r'${CMSSW_BASE}'
                         dcd = pnt + args.tag,
                         ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                         nui = "ahtt_nuisance.txt"
@@ -312,11 +311,11 @@ if __name__ == '__main__':
 
                 print jname
                 print jarg
+                print
                 continue
                 submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                            "" if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True)
         else:
-            print "test 3"
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
             if len(logs) > 0:
