@@ -10,7 +10,7 @@ import subprocess
 import copy
 from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit, chunks, read_expth_nuisances, get_nbin
+from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin
 
 if __name__ == '__main__':
     parser = ArgumentParser()
