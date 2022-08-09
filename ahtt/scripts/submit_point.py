@@ -286,7 +286,7 @@ if __name__ == '__main__':
 
                 for ip, ipart in enumerate(nparts):
                     group = "expth_{ii}".format(ii = str(ip))
-                    nuisances[group] = ipart
+                    nuisances[group] = copy.deepcopy(ipart)
             syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
             if not args.frzbb0:
@@ -298,7 +298,7 @@ if __name__ == '__main__':
                         for ip, ipart in enumerate(nparts):
                             group = "{cc}_{yy}_{ii}".format(cc = cc, yy = yy, ii = str(ip))
                             mcstats = ["prop_bin" + "{cc}_{yy}_bin".format(cc = cc, yy = yy) + str(ii) for ii in ipart]
-                            nuisances[group] = mcstats
+                            nuisances[group] = copy.deepcopy(mcstats)
 
             for group, nuisance in nuisances.items():
                 jname = job_name + "{isb}".format(isb = "_sig" if args.impactsb else "_bkg")
