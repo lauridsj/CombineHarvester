@@ -354,7 +354,7 @@ if __name__ == '__main__':
                         dest = "drawband", action = "store_false", required = False)
     parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",
                         dest = "dump_spline", action = "store_true", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = "pdf", dest = "fmt", required = False)
+    parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
 
     args = parser.parse_args()
     if (args.otag != "" and not args.otag.startswith("_")):
