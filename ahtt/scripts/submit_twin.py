@@ -320,6 +320,8 @@ if __name__ == '__main__':
                     ggg = glob.glob(pstr + args.tag + "/fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
                     ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
+                print "using the following as last grids:"
+                print ggrid
 
             gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
             idxs = []
