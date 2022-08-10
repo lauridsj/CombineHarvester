@@ -24,7 +24,7 @@ sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -98,7 +98,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False):
         return g_grid
 
     # default LO case
-    gvls = [list(np.linspace(min_g, max_g, num = 7)), list(np.linspace(min_g, max_g, num = 7))]
+    gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
             g_grid.append( (ig1,ig2) )
@@ -172,6 +172,9 @@ if __name__ == '__main__':
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
                         default = 175, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
+
+    parser.add_argument("--fc-initial-distance", help = "initial distance between g grid points for FC scans",
+                        default = 0.5, dest = "fcinit", required = False, type = float)
 
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
@@ -317,7 +320,7 @@ if __name__ == '__main__':
                     ggg.sort(key = os.path.getmtime)
                     ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
 
-            gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig)
+            gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
             idxs = []
             if args.fctoy > 0:
                 if "," in args.fcidxs and "..." in args.fcidxs:
