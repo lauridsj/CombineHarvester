@@ -369,7 +369,7 @@ if __name__ == '__main__':
                 continue
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
-                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runcompile)
+                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, runhadd or runcompile)
 
         if os.path.isfile(agg):
             syscall('condor_submit {agg}'.format(agg = agg), False)
