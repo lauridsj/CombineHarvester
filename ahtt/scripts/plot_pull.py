@@ -96,8 +96,8 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
 
         if ii % nuisance_per_page == nuisance_per_page - 1 or ii == len(nuisances) - 1:
             ymax = (ii % nuisance_per_page) + 1 if ii == len(nuisances) - 1 else nuisance_per_page
-            rmax = max([[imp[0:, ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].max() for imp in imu],
-                        [imp[0:, ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].max() for imp in imd]]) if isimpact else 1.5
+            rmax = max([[imp[0:, ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].amax() for imp in imu],
+                        [imp[0:, ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].amax() for imp in imd]]) if isimpact else 1.5
             lmax = -rmax if isimpact else -1.5
 
             plots = []
