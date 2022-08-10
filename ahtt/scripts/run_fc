@@ -7,10 +7,12 @@ pairs='A_m400_w5p0,H_m400_w5p0;A_m400_w5p0,H_m700_w5p0;A_m400_w5p0,H_m1000_w5p0;
 pairs='A_m400_w15p0,H_m400_w15p0;A_m400_w15p0,H_m700_w15p0;A_m400_w15p0,H_m1000_w15p0;A_m700_w15p0,H_m700_w15p0;A_m700_w15p0,H_m1000_w15p0;A_m1000_w15p0,H_m1000_w15p0'
 
 #2 make the datacard
-./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --channel 'ee,em,mm' --year '2016pre,2016post,2017,2018' --tag ll_run2 --sushi-kfactor --use-pseudodata --lnN-under-threshold --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,pileup,lumi,norm'
+./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm,e3j,e4pj,m3j,m4pj' --tag lx --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm'
 
-#3 run the LO points for the exp-b and data cases - here we assume 1000 toys per point
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --fc-idxs '...10' #--unblind
+#3 run the LO points for the exp-b and data cases
+#3a this submits 10 jobs, indexed 0 - 9, each running 50 toys
+#3b indexing can either be 'i1,i2,...,iN' or 'init...final'; with init defaulting to 0 if omitted
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --fc-n-toy 50 --fc-idxs '...10' #--unblind
 
 #4 merge the toy files
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag lx
@@ -18,5 +20,6 @@ pairs='A_m400_w15p0,H_m400_w15p0;A_m400_w15p0,H_m700_w15p0;A_m400_w15p0,H_m1000_
 #5 compile the available statistics - the toys are deleted, but all the relevant numbers we have gotten already
 ./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' #--unblind --delete-root
 
-#5a only if extra toys are needed - this submits another 5000 - rerun #4 and #5 when done
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-g-grid SOME_MAGIC_TO_GET_LAST_JSONS --fc-idxs '...10'
+#5a only if extra toys are needed rerun #4 and #5 when done
+#5b if you don't use --delete-root in #5, make sure the --fc-idxs are different!
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag lx --fc-n-toy 50 --fc-idxs '...10'
