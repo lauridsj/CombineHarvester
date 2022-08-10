@@ -60,11 +60,8 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
         nuisances = list(reversed(nuisances))
 
     if isimpact:
-        print(nuisances)
         impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) if nn in pulls[0] else 0. for nn in nuisances]
-        print(impacts)
         nuisances = [nn for ii, nn in sorted(zip(impacts, nuisances))]
-        print(nuisances)
 
     for ii, nn in enumerate(nuisances):
         for jj in range(len(pulls)):
@@ -110,18 +107,18 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
             if isimpact:
                 for jj in range(len(pulls)):
                     plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imu[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
-                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[1], label = "Up"))
+                                             marker = markers[jj], ms = 7, capsize = 5, color = icolors[1], label = "Up"))
                     plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imd[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
-                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[2], label = "Down"))
+                                             marker = markers[jj], ms = 7, capsize = 5, color = icolors[2], label = "Down"))
                     plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imc[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
-                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[0], label = labels[jj]))
+                                             marker = markers[jj], ms = 7, capsize = 5, color = icolors[0], label = labels[jj]))
 
                     if jj == 0:
                         handles.append((mln.Line2D([0], [0], color = icolors[1], linestyle = "solid", linewidth = 1.5), "Up"))
                         handles.append((mln.Line2D([0], [0], color = icolors[2], linestyle = "solid", linewidth = 1.5), "Down"))
 
                     handles.append((mln.Line2D([0], [0], color = icolors[0], linestyle = "solid", linewidth = 1.5,
-                                               marker = markers[jj], ms = 5), labels[jj]))
+                                               marker = markers[jj], ms = 7), labels[jj]))
 
             else:
                 ax.fill_between(np.array([-1, 1]), np.array([-0.5, -0.5]), np.array([ymax - 0.5, ymax - 0.5]), color = "silver", linewidth = 0)
@@ -143,7 +140,7 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
             if isimpact:
                 legend = ax.legend(first(handles), second(handles),
 	                           loc = "lower left", ncol = len(pulls) + 2, bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
-                                   mode = "expand", borderaxespad = 0., handletextpad = 1.5, fontsize = 15, frameon = False)
+                                   mode = "expand", borderaxespad = 0., fontsize = 15, frameon = False)
             else:
                 if len(pulls) > 1:
                     legend = ax.legend(loc = "lower left", ncol = len(pulls), bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
