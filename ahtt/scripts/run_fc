@@ -18,7 +18,7 @@ pairs='A_m400_w15p0,H_m400_w15p0;A_m400_w15p0,H_m700_w15p0;A_m400_w15p0,H_m1000_
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag lx
 
 #5 compile the available statistics - the toys are deleted, but all the relevant numbers we have gotten already
-./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' #--unblind --delete-root
+./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag lx --fc-expect 'exp-b,exp-s' --delete-root #--unblind
 
 #6 only if extra toys are needed rerun #4 and #5 when done
 #6a if you don't use --delete-root in #5, make sure the --fc-idxs are different!
