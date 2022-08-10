@@ -463,7 +463,7 @@ if __name__ == '__main__':
 
     if runprepost:
         # option '--set/freezeParameters' cannot be specified more than once
-        strategy = "--robustFit 1 --setRobustFitStrategy 2 --robustHesse 1 --cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2"
+        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
         setpar = []
         frzpar = []
         if not args.onepoi:
@@ -517,7 +517,7 @@ if __name__ == '__main__':
 
     if runnll:
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1"
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
 
         gvalues = [2.**-17, 2.**-16, 2.**-15, 2.**-14, 2.**-13] + list(np.linspace(min_g, max_g, num = 193))
         gvalues.sort()

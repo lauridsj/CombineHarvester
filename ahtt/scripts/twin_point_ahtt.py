@@ -294,8 +294,7 @@ if __name__ == '__main__':
         exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
         exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
 
-        fit_strategy  = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
-        #strategy += " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1" # slow!
+        fit_strategy = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
 
         fcgvl = args.fcgvl.replace(" ", "").split(',')
         scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
