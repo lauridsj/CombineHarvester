@@ -45,9 +45,13 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
     xval = [np.zeros(nuisance_per_page) for pp in pulls]
     yval = [np.zeros(nuisance_per_page) for pp in pulls]
     err = [np.zeros((2, nuisance_per_page)) for pp in pulls]
+    imu = [np.zeros((2, nuisance_per_page)) for pp in pulls]
+    imd = [np.zeros((2, nuisance_per_page)) for pp in pulls]
+    imc = [np.zeros((2, nuisance_per_page)) for pp in pulls]
 
     offset = [0.3, 0., -0.3] if len(pulls) == 3 else [0.2, -0.2] if len(pulls) == 2 else [0.]
-    colors = ['0', "#cc0033", "#0033cc"] if len(pulls) == 3 else ["#cc0033", "#0033cc"] if len(pulls) == 2 else ["black"]
+    pcolors = ['0', "#cc0033", "#0033cc"] if len(pulls) == 3 else ["#cc0033", "#0033cc"] if len(pulls) == 2 else ["black"]
+    icolors = ['0', "#cc0033", "#0033cc"]
     markers = ["o", "s", "^"] if len(pulls) == 3 else ["o", "s"] if len(pulls) == 2 else ["o"]
     counter = math.ceil(len(nuisances) / nuisance_per_page) - 1 # not floor, because that doesn't give 0, 1, 2, ... for integer multiples
 
@@ -56,34 +60,71 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
 
     if isimpact:
         impacts = [abs(pulls[0][nn][2] - pulls[0][nn][0]) if nn in pulls[0] else 0. for nn in nuisances]
-        nuisances = [nn for ii, nn in sorted(zip(impacts, nuisances), reverse = True)]
+        nuisances = [nn for ii, nn in sorted(zip(impacts, nuisances))]
 
     for ii, nn in enumerate(nuisances):
         for jj in range(len(pulls)):
             if isimpact:
-                xval[jj][ii % nuisance_per_page] = 1. if impactsb else 0.
+                xval[jj][ii % nuisance_per_page] = 0.
             else:
                 xval[jj][ii % nuisance_per_page] = pulls[jj][nn][1] if nn in pulls[jj] else 0.
 
-            err[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][0] if nn in pulls[jj] else 0.
-            err[jj][1, ii % nuisance_per_page] = pulls[jj][nn][2] - pulls[jj][nn][1] if nn in pulls[jj] else 0.
-
             if isimpact:
-                err[jj][0, ii % nuisance_per_page] = abs(err[jj][0, ii % nuisance_per_page])
-                err[jj][1, ii % nuisance_per_page] = abs(err[jj][1, ii % nuisance_per_page])
+                if nn in pulls[jj]:
+                    if pulls[jj][nn][0] - pulls[jj][nn][1] > 0.:
+                        imu[jj][0, ii % nuisance_per_page] = 0.
+                        imu[jj][1, ii % nuisance_per_page] = pulls[jj][nn][0] - pulls[jj][nn][1]
+                    else:
+                        imu[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][0]
+                        imu[jj][1, ii % nuisance_per_page] = 0.
+
+                    if pulls[jj][nn][2] - pulls[jj][nn][1] > 0.:
+                        imd[jj][0, ii % nuisance_per_page] = 0.
+                        imd[jj][1, ii % nuisance_per_page] = pulls[jj][nn][2] - pulls[jj][nn][1]
+                    else:
+                        imd[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][2]
+                        imd[jj][1, ii % nuisance_per_page] = 0.
+                else:
+                    imu[jj][0, ii % nuisance_per_page] = 0.
+                    imd[jj][0, ii % nuisance_per_page] = 0.
+                    imu[jj][1, ii % nuisance_per_page] = 0.
+                    imd[jj][1, ii % nuisance_per_page] = 0.
+            else:
+                err[jj][0, ii % nuisance_per_page] = pulls[jj][nn][1] - pulls[jj][nn][0] if nn in pulls[jj] else 0.
+                err[jj][1, ii % nuisance_per_page] = pulls[jj][nn][2] - pulls[jj][nn][1] if nn in pulls[jj] else 0.
 
             yval[jj][ii % nuisance_per_page] = (ii % nuisance_per_page) + offset[jj]
 
         if ii % nuisance_per_page == nuisance_per_page - 1 or ii == len(nuisances) - 1:
             ymax = (ii % nuisance_per_page) + 1 if ii == len(nuisances) - 1 else nuisance_per_page
-
-            if not isimpact:
-                ax.fill_between(np.array([-1, 1]), np.array([-0.5, -0.5]), np.array([ymax - 0.5, ymax - 0.5]), color = "silver", linewidth = 0)
+            rmax = max([imu[ ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].max(),
+                        imd[ ii * nuisance_per_page : (ii + 1) * nuisance_per_page ].max()]) if isimpact else 1.5
+            lmax = -rmax if isimpact else -1.5
 
             plots = []
-            for jj in range(len(pulls)):
-                plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = err[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
-                                         marker = markers[jj], ms = 5, capsize = 5, color = colors[jj], label = labels[jj]))
+            handles = []
+            if isimpact:
+                for jj in range(len(pulls)):
+                    plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imu[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
+                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[1], label = "Up"))
+                    plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imd[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
+                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[2], label = "Down"))
+                    plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = imc[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
+                                             marker = markers[jj], ms = 5, capsize = 5, color = icolors[0], label = labels[jj]))
+
+                    if jj == 0:
+                        handles.append((mln.Line2D([0], [0], color = icolors[1], linestyle = "solid", linewidth = 1.5), "Up"))
+                        handles.append((mln.Line2D([0], [0], color = icolors[2], linestyle = "solid", linewidth = 1.5), "Down"))
+
+                    handles.append((mln.Line2D([0], [0], color = icolors[0], linestyle = "solid", linewidth = 1.5,
+                                               marker = markers[jj], ms = 5), labels[jj]))
+
+            else:
+                ax.fill_between(np.array([-1, 1]), np.array([-0.5, -0.5]), np.array([ymax - 0.5, ymax - 0.5]), color = "silver", linewidth = 0)
+
+                for jj in range(len(pulls)):
+                    plots.append(ax.errorbar(xval[jj][:ymax], yval[jj][:ymax], xerr = err[jj][0:, :ymax], ls = "none", elinewidth = 1.5,
+                                             marker = markers[jj], ms = 5, capsize = 5, color = pcolors[jj], label = labels[jj]))
 
             ax.set_yticks([kk for kk in range(ymax)])
             ax.set_yticklabels([nn + r"$\,$" for nn in nuisances[ii - ymax + 1 : ii + 1]])
@@ -92,14 +133,18 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
             else:
                 plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
             ax.margins(x = 0, y = 0)
-            if not isimpact:
-                plt.xlim((-1.5, 1.5))
+            plt.xlim((lmax, rmax))
             plt.ylim((-0.5, ymax - 0.5))
 
-            if len(pulls) > 1:
-                legend = ax.legend(loc = "lower left", ncol = len(pulls), bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
-                                   mode = "expand", borderaxespad = 0., handletextpad = 1.5, fontsize = 15, frameon = False,
-                                   handler_map = {plots[0]: HandlerErrorbar(xerr_size = 1.5), plots[1]: HandlerErrorbar(xerr_size = 1.5)})
+            if isimpact:
+                legend = ax.legend(first(handles), second(handles),
+	                           loc = "lower left", ncol = len(pulls) + 2, bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
+                                   mode = "expand", borderaxespad = 0., handletextpad = 1.5, fontsize = 15, frameon = False)
+            else:
+                if len(pulls) > 1:
+                    legend = ax.legend(loc = "lower left", ncol = len(pulls), bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
+                                       mode = "expand", borderaxespad = 0., handletextpad = 1.5, fontsize = 15, frameon = False,
+                                       handler_map = {plots[0]: HandlerErrorbar(xerr_size = 1.5), plots[1]: HandlerErrorbar(xerr_size = 1.5)})
 
             ax.minorticks_on()
             ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
