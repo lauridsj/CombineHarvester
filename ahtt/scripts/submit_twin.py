@@ -221,7 +221,7 @@ if __name__ == '__main__':
     backgrounds = []
     if args.background == "":
         if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33.root")
+            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root")
         if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
             backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rename.root")
         background = ','.join(backgrounds)
@@ -252,11 +252,11 @@ if __name__ == '__main__':
             for pnt in points:
                 if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
                     if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
+                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33_m3xx_and_m1000.root")
                 for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
                     if im in pnt or im in args.injectsignal:
                         if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
+                            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33" + im + "xx.root")
             signal = ','.join(set(signals))
         else:
             signal = args.signal
