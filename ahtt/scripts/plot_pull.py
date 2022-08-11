@@ -139,7 +139,7 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
 
             if isimpact:
                 legend = ax.legend(first(handles), second(handles),
-	                           loc = "lower left", ncol = len(pulls) + 2, bbox_to_anchor = (0.05, 1.005, 0.9, 0.01),
+	                           loc = "lower left", ncol = len(pulls) + 2, bbox_to_anchor = (0., 1.005, 1., 0.01),
                                    mode = "expand", borderaxespad = 0., fontsize = 15, frameon = False)
             else:
                 if len(pulls) > 1:
