@@ -12,9 +12,10 @@ channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
 years='2016pre,2016post,2017,2018'
 ntoy='50'
 idxs='...20'
+systs='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm'
 
 #2 make the datacard
-./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year "${years}" --channel "${channels}" --tag "${tag}" --keep 'eff,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm'
+./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year "${years}" --channel "${channels}" --tag "${tag}" --keep ${systs}
 
 #3 run the LO points for the exp-b and data cases
 #3a this submits 10 jobs, indexed 0 - 9, each running 50 toys

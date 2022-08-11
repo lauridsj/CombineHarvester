@@ -106,6 +106,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("CMS_eff_e_id",              (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_trigger_e",         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("CMS_eff_m_reco",            (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_m_id_syst",         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_m_iso_syst",        (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_trigger_m_syst",    (("2016pre", "2016post", "2017", "2018"), 1.)),
