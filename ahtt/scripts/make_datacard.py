@@ -276,7 +276,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     #    keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
 
                     # test: use flat if smooth is worse than...
-                    if not (chi2s[0] < 50. and chi2s[1] < 50.):
+                    #if not (chi2s[0] < 50. and chi2s[1] < 50.):
+                    #    keepvalue = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
+                    #    keepvalue = keepvalue and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
+                    #    keepvalue = keepvalue and chi2s[4] / chi2s[5] < 0.
+
+                    # test: use flat if smooth isnt better in both cases
+                    if chi2s[2] < chi2s[0] or chi2s[3] < chi2s[1]:
                         keepvalue = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
                         keepvalue = keepvalue and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
                         keepvalue = keepvalue and chi2s[4] / chi2s[5] < 0.
