@@ -17,10 +17,10 @@ import matplotlib
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
-plt.rc('text', usetex = True)
-plt.rcParams['text.latex.preamble'] = r"\usepackage{amsmath}"
-plt.rcParams["mathtext.default"] = 'regular'
-plt.rc('font', **{'family' : 'sans-serif', 'sans-serif' : ['Helvetica']})
+#plt.rc('text', usetex = True)
+#plt.rcParams['text.latex.preamble'] = r"\usepackage{amsmath}"
+#plt.rcParams["mathtext.default"] = 'regular'
+#plt.rc('font', **{'family' : 'sans-serif', 'sans-serif' : ['Helvetica']})
 
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
