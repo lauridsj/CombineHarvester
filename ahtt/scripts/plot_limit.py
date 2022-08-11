@@ -139,25 +139,25 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
 
     if not hasattr(draw_1D, "colors"):
         draw_1D.colors = OrderedDict([
-            (1    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25}]),
+            (1    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "expl": "dashed", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25}]),
 
-            (2    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.4, "alpo": 0.},
-                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.4, "alpo": 0.}]),
+            (2    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashed", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.4, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": "dotted", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.4, "alpo": 0.}]),
 
-            (3    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
-                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},]),
+            (3    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "expl": "dashed", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
+                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashdot", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": "dotted", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},]),
 
-            (4    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
-                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},]),
+            (4    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "expl": "dashed", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
+                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashdot", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": "dashdotdotted", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "expl": "dotted", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},]),
 
-            (5    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
-                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#ffcc33", "exp1": "#cc99ff", "exp0": "#9966cc", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},]),
+            (5    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "expl": "solid", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25},
+                     {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashed", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": "dashdot", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "expl": "dashdotdotted", "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},
+                     {"exp2": "#ffcc33", "exp1": "#cc99ff", "exp0": "#9966cc", "expl": "dotted", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},]),
         ])
 
     yvalues = []
@@ -227,10 +227,10 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
                             label + " " + labels[ii]))
 
     for ii, yy in enumerate(yvalues):
-        ax.plot(xvalues, np.array(yy["exp0"]), color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = "dashed", linewidth = 1.5)
+        ax.plot(xvalues, np.array(yy["exp0"]), color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = draw_1D.colors[len(limits)][ii]["expl"], linewidth = 1.5)
 
         label = "Expected" if labels[ii] == "" else "Exp."
-        handles.append((mln.Line2D([0], [0], color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = "dashed", linewidth = 1.5),
+        handles.append((mln.Line2D([0], [0], color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = draw_1D.colors[len(limits)][ii]["expl"], linewidth = 1.5),
                         label + " " + labels[ii]))
 
         ymin = min(ymin, min(yy["exp0"]))
