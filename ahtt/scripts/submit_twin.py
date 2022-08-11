@@ -316,6 +316,9 @@ if __name__ == '__main__':
             if args.fcmode != "" and ggrid == "":
                 print "checking last grids"
                 fcexps = args.fcexp.replace(" ", "").split(',')
+                if not args.asimov:
+                    fcexps.append("obs")
+
                 for fcexp in fcexps:
                     ggg = glob.glob(pstr + args.tag + "/fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
