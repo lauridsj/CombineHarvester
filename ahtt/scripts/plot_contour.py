@@ -17,10 +17,6 @@ import matplotlib
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
-#plt.rc('text', usetex = True)
-#plt.rcParams['text.latex.preamble'] = r"\usepackage{amsmath}"
-#plt.rcParams["mathtext.default"] = 'regular'
-#plt.rc('font', **{'family' : 'sans-serif', 'sans-serif' : ['Helvetica']})
 
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
@@ -95,9 +91,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
                 if isig > 1:
                     sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
                 elif isig == 1:
-                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"95\% CL"))
+                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"95% CL"))
                 elif isig == 0:
-                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"68\% CL"))
+                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"68% CL"))
 
             alpha = alphas[isig]
 
