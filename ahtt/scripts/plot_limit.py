@@ -93,19 +93,11 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
-                        if dump_spline:
-                            qstr = quantile.replace('+', 'pp').replace('-', 'm')
-                            fig, ax = plt.subplots()
-
-                            ax.plot(g, spline(g), 'g', lw = 3)
-                            fig.tight_layout()
-                            fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
-                            fig.clf()
-
                         crossing = limit[quantile][imin][0]
                         factor = 1. if limit[quantile][imin][1] < limit[quantile][imin - 1][1] else -1.
 
                         residual = abs(spline(crossing) - 0.05)
+                        need_checking = False
                         while residual > epsilon and crossing < max_g and crossing > min_g:
                             crossing += factor * epsilon
                             if abs(spline(crossing) - 0.05) < residual:
@@ -113,8 +105,18 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             else:
                                 crossing -= factor * epsilon
                                 if residual > 0.01:
+                                    need_checking = True
                                     print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
                                 break
+
+                        if dump_spline or need_checking:
+                            qstr = quantile.replace('+', 'pp').replace('-', 'm')
+                            fig, ax = plt.subplots()
+
+                            ax.plot(g, spline(g), 'g', lw = 3)
+                            fig.tight_layout()
+                            fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
+                            fig.clf()
 
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
