@@ -13,7 +13,7 @@ from collections import OrderedDict
 import json
 import math
 
-from utilities import syscall, submit_job, aggregate_submit
+from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig
 
 min_g = 0.
 max_g = 3.
@@ -218,49 +218,12 @@ if __name__ == '__main__':
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
 
-    # backgrounds if not given
-    backgrounds = []
-    if args.background == "":
-        if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root")
-        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-            backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rename.root")
-        background = ','.join(backgrounds)
-    else:
-        background = args.background
-
-    siglj = []
-    if args.signal == "":
-        if any(cc in args.channel for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-            if "2016pre" in args.year:
-                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
-            if "2016post" in args.year:
-                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
-            if "2017" in args.year:
-                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
-            if "2018" in args.year:
-                siglj.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
-
     for pair, ggrid in zip(pairs, ggrids):
         # generate an aggregate submission file name
         agg = aggregate_submit()
 
         points = pair.split(',')
         pstr = '__'.join(points)
-
-        if args.signal == "":
-            signals = copy.deepcopy(siglj)
-            for pnt in points:
-                if "_m3" in pnt or "_m1000" in pnt or "_m3" in args.injectsignal or "_m1000" in args.injectsignal:
-                    if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                        signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33_m3xx_and_m1000.root")
-                for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
-                    if im in pnt or im in args.injectsignal:
-                        if any(cc in args.channel for cc in ["ee", "em", "mm"]):
-                            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33" + im + "xx.root")
-            signal = ','.join(set(signals))
-        else:
-            signal = args.signal
 
         if not rundc and not os.path.isdir(pstr + args.tag) and os.path.isfile(pstr + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pstr + args.tag + ".tar.gz"))
@@ -295,8 +258,8 @@ if __name__ == '__main__':
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-            sig = "--signal " + signal,
-            bkg = "--background " + background,
+            sig = "--signal " + input_sig(args.signal, pnt, args.injectsignal, args.channel, args.year),
+            bkg = "--background " + input_bkg(args.background, args.channel),
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
             thr = "--threshold " + str(args.threshold),

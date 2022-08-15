@@ -133,6 +133,45 @@ def chunks(lst, npart):
         result.append(lst[i:i + ni])
     return result
 
+def input_bkg(background, channels):
+    # far be it for us to get in the way of those who know what they are doing
+    if background != "":
+        return background
+
+    backgrounds = []
+    if any(cc in channels for cc in ["ee", "em", "mm"]):
+        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_templates_3D-33.root")
+    if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rename.root")
+
+    return ','.join(backgrounds)
+
+def input_sig(signal, points, injects, channels, years):
+    # far be it for us to get in the way of those who know what they are doing
+    if signal != "":
+        return signal
+
+    signals = []
+    if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
+        if "2016pre" in args.year:
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
+        if "2016post" in args.year:
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
+        if "2017" in args.year:
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
+        if "2018" in args.year:
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
+
+    if any(cc in channels for cc in ["ee", "em", "mm"]):
+        if any([im in points or im in injects for im in ["_m3", "_m1000"]]):
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33_m3xx_and_m1000.root")
+        for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
+            if im in points or im in injects:
+                signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33" + im + "xx.root")
+    signals = ','.join(signals)
+
+    return ','.join(signals)
+
 condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 
 def aggregate_submit():
