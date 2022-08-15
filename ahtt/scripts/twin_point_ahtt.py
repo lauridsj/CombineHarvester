@@ -31,40 +31,6 @@ def get_fit(dname, points, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
-def read_nuisance(dname, points):
-    dfile = TFile.Open(dname)
-    dtree = dfile.Get("limit")
-
-    setpar = []
-    frzpar = []
-
-    skip = ["g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected",
-            "limit", "limitErr", "mh", "syst",
-            "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
-
-    nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
-
-    for i in dtree:
-        if dtree.quantileExpected != -1.:
-            continue
-
-        for nn in nuisances:
-            if nn in skip:
-                continue
-
-            if "prop_bin" not in nn:
-                frzpar.append(nn)
-
-            vv = round(getattr(dtree, nn), 3)
-            if abs(vv) > 0.:
-                setpar.append(nn + "=" + str(vv))
-
-        if len(frzpar) > 0:
-            break
-
-    frzpar.append("rgx{prop_bin.*}")
-    return (setpar, frzpar)
-
 def read_previous_grid(gpoints, prev_best_fit, gname):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
@@ -345,7 +311,7 @@ if __name__ == '__main__':
             identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
-            setpar, frzpar = read_nuisance(snapshot, points) if args.fcnui == "profile" else ([], [])
+            setpar, frzpar = read_nuisance(snapshot, points, False) if args.fcnui == "profile" else ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _{snm} "
                     "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",

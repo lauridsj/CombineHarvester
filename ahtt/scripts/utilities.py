@@ -204,3 +204,37 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
                 name = 'conSub_' + job_name + '.txt',
                 agg = job_agg), False)
+
+def read_nuisance(dname, points, qexp_eq_m1 = True):
+    dfile = TFile.Open(dname)
+    dtree = dfile.Get("limit")
+
+    setpar = []
+    frzpar = []
+
+    skip = ["r", "g", "g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected",
+            "limit", "limitErr", "mh", "syst",
+            "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
+
+    nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
+
+    for i in dtree:
+        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
+            continue
+
+        for nn in nuisances:
+            if nn in skip:
+                continue
+
+            if "prop_bin" not in nn:
+                frzpar.append(nn)
+
+            vv = round(getattr(dtree, nn), 3)
+            if abs(vv) > 0.:
+                setpar.append(nn + "=" + str(vv))
+
+        if len(frzpar) > 0:
+            break
+
+    frzpar.append("rgx{prop_bin.*}")
+    return (setpar, frzpar)
