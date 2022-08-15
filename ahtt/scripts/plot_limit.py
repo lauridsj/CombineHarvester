@@ -165,7 +165,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
                      {"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashed", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},
                      {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": "dashdot", "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.25, "alpo": 0.},
                      {"exp2": "#99ff66", "exp1": "#66ff33", "exp0": "#33cc00", "expl": (0, (3, 5, 1, 5)), "obsf": "#ffffff", "obsl": "#33cc00", "alpe": 0.25, "alpo": 0.},
-                     {"exp2": "#ffcc33", "exp1": "#cc99ff", "exp0": "#9966cc", "expl": (0, (1, 1)), "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},]),
+                     {"exp2": "#ffcc33", "exp1": "#cc99ff", "exp0": "#9966cc", "expl": (0, (1, 1)), "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},,
                      {"exp2": "#ffffff", "exp1": "#ffffff", "exp0": "#4D5D53", "expl": (0, (1, 10)), "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.25, "alpo": 0.},]),
         ])
 
