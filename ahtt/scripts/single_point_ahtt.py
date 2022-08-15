@@ -489,7 +489,7 @@ if __name__ == '__main__':
                         mmm = mstr,
                         par = "r=1",
                         stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
-                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                         stg = strategy,
                         asm = "-t -1" if args.asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -568,7 +568,7 @@ if __name__ == '__main__':
                         mmm = mstr,
                         par = "r=1",
                         stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
-                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                         stg = strategy,
                         asm = "-t -1" if args.asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
