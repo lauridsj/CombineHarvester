@@ -258,7 +258,7 @@ if __name__ == '__main__':
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-            sig = "--signal " + input_sig(args.signal, pnt, args.injectsignal, args.channel, args.year),
+            sig = "--signal " + input_sig(args.signal, points, args.injectsignal, args.channel, args.year),
             bkg = "--background " + input_bkg(args.background, args.channel),
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
