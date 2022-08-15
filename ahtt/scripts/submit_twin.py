@@ -108,7 +108,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = "desired pairs of signal points to run on, comma (between points) and semicolon (between pairs) separated", default = "", required = True)
+    parser.add_argument("--point",
+                        help = "desired pairs of signal points to run on, comma (between points) and semicolon (between pairs) separated\n"
+                        "another syntax is: m1,m2,...,mN;w1,w2,...,wN;m1,m2,...,mN;w1,w2,...,wN, where:\n"
+                        "the first mass and width strings refer to the A grid, and the second to the H grid.\n"
+                        "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
+                        "e.g. m400,m450;w5p0;m600,m750;w10p0 expands to A_m400_w5p0,H_m600_w10p0;A_m450_w5p0,H_m600_w10p0;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w10p0",
+                        default = "", required = True)
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
@@ -189,8 +195,26 @@ if __name__ == '__main__':
         args.tag = "_" + args.tag
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    # FIXME something to allow --point to be non-default
     pairs = args.point.replace(" ", "").split(';')
+
+    # handle the case of gridding pairs
+    if len(pairs) == 4:
+        pairgrid = [pp.split(",") for pp in pairs]
+        if all([mm.startswith("m") for mm in pairgrid[0] + pairgrid[2]]) and all([ww.startswith("w") for ww in pairgrid[1] + pairgrid[3]]):
+            alla = []
+            for mm in pairgrid[0]:
+                for ww in pairgrid[1]:
+                    alla.append("_".join(["A", mm, ww]))
+
+            allh = []
+            for mm in pairgrid[2]:
+                for ww in pairgrid[3]:
+                    alla.append("_".join(["H", mm, ww]))
+
+            pairs = []
+            for aa in alla:
+                for hh in allh:
+                    pairs.append(aa + "," + hh)
 
     ggrids = None
     if args.fcgrid != "" and args.fcmode != "":
