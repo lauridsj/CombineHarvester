@@ -133,8 +133,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     return limits
 
 def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, transparent):
-    if len(limits) > 5:
-        raise RuntimeError("current plotting code is not meant for more than 5 tags. aborting")
+    if len(limits) > 6:
+        raise RuntimeError("current plotting code is not meant for more than 6 tags. aborting")
 
     if len(limits) > 1 and not all([list(ll) == list(limits[0]) for ll in limits]):
         raise RuntimeError("limits in the tags are not over the same x points for plot " + oname + ". aborting")
