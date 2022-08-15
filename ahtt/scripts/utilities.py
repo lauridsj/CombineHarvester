@@ -168,7 +168,6 @@ def input_sig(signal, points, injects, channels, years):
         for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
             if im in points or im in injects:
                 signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33" + im + "xx.root")
-    signals = ','.join(signals)
 
     return ','.join(signals)
 
