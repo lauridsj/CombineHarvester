@@ -200,6 +200,7 @@ if __name__ == '__main__':
     # handle the case of gridding pairs
     if len(pairs) == 4:
         pairgrid = [pp.split(",") for pp in pairs]
+        print pairgrid
         if all([mm.startswith("m") for mm in pairgrid[0] + pairgrid[2]]) and all([ww.startswith("w") for ww in pairgrid[1] + pairgrid[3]]):
             alla = []
             for mm in pairgrid[0]:
