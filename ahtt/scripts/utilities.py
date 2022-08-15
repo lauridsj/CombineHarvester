@@ -153,13 +153,13 @@ def input_sig(signal, points, injects, channels, years):
 
     signals = []
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        if "2016pre" in args.year:
+        if "2016pre" in years:
             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
-        if "2016post" in args.year:
+        if "2016post" in years:
             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
-        if "2017" in args.year:
+        if "2017" in years:
             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
-        if "2018" in args.year:
+        if "2018" in years:
             signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
 
     if any(cc in channels for cc in ["ee", "em", "mm"]):
