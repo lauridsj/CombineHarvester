@@ -13,7 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall
+from utilities import syscall, read_nuisance
 from make_datacard import get_point
 
 def get_fit(dname, points, qexp_eq_m1 = True):
