@@ -164,10 +164,10 @@ def input_sig(signal, points, injects, channels, years):
 
     if any(cc in channels for cc in ["ee", "em", "mm"]):
         if any([im in points or im in injects for im in ["_m3", "_m1000"]]):
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33_m3xx_and_m1000.root")
+            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
         for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
             if im in points or im in injects:
-                signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/nonsense_timestamp/sig_ll_3D-33" + im + "xx.root")
+                signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
 
     return ','.join(signals)
 
