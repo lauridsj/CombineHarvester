@@ -250,6 +250,8 @@ if __name__ == '__main__':
     print "single_point_ahtt :: called with the following arguments"
     print sys.argv[1:]
     print "\n"
+    print " ".join(sys.argv)
+    print "\n"
     sys.stdout.flush()
 
     if (args.tag != "" and not args.tag.startswith("_")):
