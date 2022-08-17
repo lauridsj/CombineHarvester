@@ -503,7 +503,7 @@ if __name__ == '__main__':
                 mmm = mstr,
                 snp = snapshot), False)
 
-            setpar, frzpar = read_nuisance(snapshot, points, True)
+            setpar, frzpar = read_nuisance(snapshot, args.point, True)
 
             if not args.frznui:
                 setpar = [ss for ss in setpar if "prop_bin" in ss]
@@ -582,7 +582,7 @@ if __name__ == '__main__':
                 mmm = mstr,
                 snp = snapshot), False)
 
-            setpar, frzpar = read_nuisance(snapshot, points, True)
+            setpar, frzpar = read_nuisance(snapshot, args.point, True)
 
             if not args.frznui:
                 setpar = [ss for ss in setpar if "prop_bin" in ss]
