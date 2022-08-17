@@ -266,6 +266,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if not drop_nuisance and not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
+                    print chi2s
 
                     scaleu = 1.
                     scaled = 1.
