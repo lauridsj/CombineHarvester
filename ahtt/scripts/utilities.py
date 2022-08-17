@@ -230,7 +230,7 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
                 frzpar.append(nn)
 
             vv = round(getattr(dtree, nn), 2)
-            if abs(vv) > 0.:
+            if abs(vv) > 0.01:
                 setpar.append(nn + "=" + str(vv))
 
         if len(frzpar) > 0:
