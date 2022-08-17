@@ -229,7 +229,7 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
             if "prop_bin" not in nn:
                 frzpar.append(nn)
 
-            vv = round(getattr(dtree, nn), 3)
+            vv = round(getattr(dtree, nn), 2)
             if abs(vv) > 0.:
                 setpar.append(nn + "=" + str(vv))
 
