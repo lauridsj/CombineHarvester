@@ -198,10 +198,8 @@ if __name__ == '__main__':
     pairs = args.point.replace(" ", "").split(';')
 
     # handle the case of gridding pairs
-    print pairs
     if len(pairs) == 4:
         pairgrid = [pp.split(",") for pp in pairs]
-        print pairgrid
         if all([mm.startswith("m") for mm in pairgrid[0] + pairgrid[2]]) and all([ww.startswith("w") for ww in pairgrid[1] + pairgrid[3]]):
             alla = []
             for mm in pairgrid[0]:
@@ -217,8 +215,6 @@ if __name__ == '__main__':
             for aa in alla:
                 for hh in allh:
                     pairs.append(aa + "," + hh)
-    print pairs
-    raise RuntimeError()
 
     ggrids = None
     if args.fcgrid != "" and args.fcmode != "":
