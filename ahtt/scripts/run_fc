@@ -12,7 +12,8 @@ tag='lx'
 channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
 years='2016pre,2016post,2017,2018'
 ntoy='50'
-idxs='...20'
+idxs='...10'
+exps='exp-b,exp-s'
 systs='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm'
 
 #2 make the datacard
@@ -21,18 +22,18 @@ systs='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdam
 #3 run the LO points for the exp-b and data cases
 #3a this submits 10 jobs, indexed 0 - 9, each running 50 toys
 #3b indexing can either be 'i1,i2,...,iN' or 'init...final'; with init defaulting to 0 if omitted
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect 'exp-b,exp-s' --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" #--unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" #--unblind
 
 #4 merge the toy files
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag "${tag}"
 
 #5 compile the available statistics - the toys are deleted, but all the relevant numbers we have gotten already
-./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag "${tag}" --fc-expect 'exp-b,exp-s' --delete-root #--unblind
+./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root #--unblind
 
 #6 only if extra toys are needed rerun #4 and #5 when done
 #6a if you don't use --delete-root in #5, make sure the --fc-idxs are different!
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect 'exp-b,exp-s' --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" --fc-mode add #--unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" --fc-mode add #--unblind
 
 #7 if enough toys are made for each point, refine the grid
 #7a always do #4 and #5 every time after #6 and #7
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect 'exp-b,exp-s' --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" --fc-mode refine #--unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" --fc-mode refine #--unblind
