@@ -6,7 +6,7 @@
 #1a default settings here are what has been found to have good job efficiency (DESY default HTC slot) for the combined fits
 #1b i.e. 50 toys/job and 20 jobs per point
 #1c the pair specification below here uses the grid syntax i.e. the first 'm...;w...' refers to A masses and widths, and the second H masses and widths
-#1d it is also possible to directly specify the desired pairs like 'A_maaa_wbbpb,H_mccc_wddpd;A_meee_wffpf,H_mggg_whhph;...'
+#1d it is also possible to directly specify the desired pairs like 'A_m1_w1,H_m2_w2;A_m3_w3,H_m4_w4;...'
 pairs='m400;m1000;w2p0,w5p0;m400;m1000;w2p0,w5p0'
 tag='lx'
 channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
