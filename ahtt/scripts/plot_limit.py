@@ -94,7 +94,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
                         crossing = limit[quantile][imin][0]
-                        factor = 1. if limit[quantile][imin][1] < 0.5 * (limit[quantile][imin - 1][1] + limit[quantile][imin - 2][1]) else -1.
+                        factor = 1. if limit[quantile][imin][1] < sum([limit[quantile][imin - ii][1] for ii in range(1, 5)]) / 5. else -1.
 
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
