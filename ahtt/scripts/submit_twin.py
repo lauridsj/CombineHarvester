@@ -217,6 +217,7 @@ if __name__ == '__main__':
             for aa in alla:
                 for hh in allh:
                     pairs.append(aa + "," + hh)
+    print pairs
     raise RuntimeError()
 
     ggrids = None
