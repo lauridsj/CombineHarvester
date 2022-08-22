@@ -277,7 +277,7 @@ if __name__ == '__main__':
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
                    "{shp} {mcs} {prj} {asm} {com} {rmr} {igp} {exp} {bsd}").format(
             pnt = pair,
-            mmm = args.mode,
+            mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
             psd = "--use-pseudodata" if args.pseudodata else "",
             inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
