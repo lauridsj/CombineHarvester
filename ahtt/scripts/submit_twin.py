@@ -355,7 +355,7 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
-            if len(logs) > 0:
+            if len(logs) > 0 and not runhadd:
                 continue
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
