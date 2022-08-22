@@ -357,11 +357,14 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
-            if len(logs) > 0 and not runhadd:
+            if len(logs) > 0:
                 continue
 
             if runclean:
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag))
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_fc-scan_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag))
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.tag))
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag))
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                        "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, (runhadd and len(pairs) < 3) or runcompile)
