@@ -251,7 +251,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: validating datacard"
         syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}_validate.json --printLevel 3 {dcd}{crd}".format(
             dcd = dcdir,
-            pnt = "__".join(points) + args.tag,
+            pnt = "__".join(points),
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
@@ -364,7 +364,7 @@ if __name__ == '__main__':
                 raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
             best.sort()
 
-            ggrid = glob.glob("{dcd}fc_scan{exp}_*.json".format(dcd = dcdir, exp = "_" + fcexp))
+            ggrid = glob.glob("{dcd}{pnt}_fc_scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp))
             ggrid.sort()
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
@@ -398,7 +398,7 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
                 grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-                with open("{dcd}fc_scan{exp}_{idx}.json".format(dcd = dcdir, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+                with open("{dcd}{pnt}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp, idx = str(idx)), "w") as jj:
                     json.dump(grid, jj, indent = 1)
 
     if args.compress:

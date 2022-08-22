@@ -309,7 +309,7 @@ if __name__ == '__main__':
                     fcexps.append("obs")
 
                 for fcexp in fcexps:
-                    ggg = glob.glob(pstr + args.tag + "/fc_scan_" + fcexp + "_*.json")
+                    ggg = glob.glob(pstr + args.tag + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
                     ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
                 print "using the following as last grids:"
