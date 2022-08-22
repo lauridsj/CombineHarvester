@@ -51,18 +51,19 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
             if gmode == "add":
                 for gv in cc["g-grid"].keys():
-                    gt = tuplize(gv)
-                    if gt not in g_grid:
-                        g_grid.append(gt)
+                    if cc["g-grid"][gv] is not None:
+                        gt = tuplize(gv)
+                        if gt not in g_grid:
+                            g_grid.append(gt)
 
             if gmode == "refine":
                 mintoy = sys.maxsize
                 for gv in cc["g-grid"].keys():
-                    mintoy = min(mintoy, cc["g-grid"][gv]["total"])
+                    mintoy = min(mintoy, cc["g-grid"][gv]["total"] if cc["g-grid"][gv] is not None else sys.maxsize)
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
-                gts = [tuplize(gv) for gv in cc["g-grid"].keys()]
-                effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys()]
+                gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
+                effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
 
                 for gt, eff in zip(gts, effs):
                     unary_sqd = lambda pp: sqd(pp[0], gt)
@@ -238,6 +239,7 @@ if __name__ == '__main__':
     runfc = "fc-scan" in args.mode or "contour" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
+    runclean = "clean" in args.mode
 
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
@@ -357,6 +359,9 @@ if __name__ == '__main__':
 
             if len(logs) > 0 and not runhadd:
                 continue
+
+            if runclean:
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag))
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                        "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, (runhadd and len(pairs) < 3) or runcompile)

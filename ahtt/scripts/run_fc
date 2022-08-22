@@ -28,7 +28,7 @@ systs='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdam
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag "${tag}"
 
 #5 compile the available statistics - the toys are deleted, but all the relevant numbers we have gotten already
-./../scripts/submit_twin.py --mode compile --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root #--unblind
+./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root #--unblind
 
 #6 only if extra toys are needed rerun #4 and #5 when done
 #6a if you don't use --delete-root in #5, make sure the --fc-idxs are different!
