@@ -83,6 +83,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
+                            print cut, gg, alpha
                             differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in [gx, gy, gxy]]
                             print differences
                             if any(differences):
