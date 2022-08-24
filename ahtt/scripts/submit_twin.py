@@ -62,6 +62,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     mintoy = min(mintoy, cc["g-grid"][gv]["total"] if cc["g-grid"][gv] is not None else sys.maxsize)
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
+                print mintoy, cuts
                 gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
                 effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
 
