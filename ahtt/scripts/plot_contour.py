@@ -248,3 +248,4 @@ if __name__ == '__main__':
         print("using the following contours: ", contour)
         draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.otag, fmt = args.fmt), pair, contour, labels,
                      args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
+        print()
