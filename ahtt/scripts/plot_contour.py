@@ -99,6 +99,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
             if contour["min"] < (4.5 / alpha):
                 print("minimum toy count of " + str(contour["min"]) + " likely insufficient to determine contour with CL " + str(alpha) + "\n")
+                drawcontour = False
 
             if drawcontour:
                 ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
