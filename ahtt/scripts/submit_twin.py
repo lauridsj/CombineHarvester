@@ -80,11 +80,11 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     print gx
                     print gy
                     print gxy
-                    print
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
                             differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in [gx, gy, gxy]]
+                            print differences
                             if any(differences):
                                 halfsies = []
                                 for g1 in [gx, gy, gxy]:
@@ -102,6 +102,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                 for half in halfsies:
                                     if half not in g_grid:
                                         g_grid.append(half)
+                    print
 
         print g_grid
         return []
