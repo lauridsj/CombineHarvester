@@ -230,7 +230,7 @@ if __name__ == '__main__':
         if args.point != "":
             contour = []
             tags = args.contour.replace(" ", "").split(';')
-            tags = [tt for tt in tags if tt.startswith("_") else "_" + tt]
+            tags = [tt if tt.startswith("_") else "_" + tt for tt in tags]
 
             for tag in tags:
                 fcexps = tag.split('/')[1].split(',')
