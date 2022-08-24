@@ -66,6 +66,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
 
                 for gt, eff in zip(gts, effs):
+                    print gt, eff
                     unary_sqd = lambda pp: sqd(pp[0], gt)
 
                     gx = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]]
@@ -75,6 +76,11 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     gx = min(gx, key = unary_sqd) if len(gx) > 0 else None
                     gy = min(gy, key = unary_sqd) if len(gy) > 0 else None
                     gxy = min(gxy, key = unary_sqd) if len(gxy) > 0 else None
+
+                    print gx
+                    print gy
+                    print gxy
+                    print
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
