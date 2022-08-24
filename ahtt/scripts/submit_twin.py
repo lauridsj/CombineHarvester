@@ -62,12 +62,14 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     mintoy = min(mintoy, cc["g-grid"][gv]["total"] if cc["g-grid"][gv] is not None else sys.maxsize)
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
-                print mintoy, cuts
+                if sum([1 if cc else 0 for cc in cuts]) < 2:
+                    print "minimum toy count: " + str(mintoy)
+                    raise RuntimeError("minimum toys insufficient to determine 2 sigma contour!! likely unintended, recheck!!")
+
                 gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
                 effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
 
                 for gt, eff in zip(gts, effs):
-                    print gt, eff
                     unary_sqd = lambda pp: sqd(pp[0], gt)
 
                     gx = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]]
@@ -78,15 +80,9 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     gy = min(gy, key = unary_sqd) if len(gy) > 0 else None
                     gxy = min(gxy, key = unary_sqd) if len(gxy) > 0 else None
 
-                    print gx
-                    print gy
-                    print gxy
-
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
-                            print cut, gg, alpha
                             differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in [gx, gy, gxy]]
-                            print differences
                             if any(differences):
                                 halfsies = []
                                 for g1 in [gx, gy, gxy]:
@@ -104,10 +100,6 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                 for half in halfsies:
                                     if half not in g_grid:
                                         g_grid.append(half)
-                    print
-
-        print g_grid
-        return []
         return g_grid
 
     # default LO case
