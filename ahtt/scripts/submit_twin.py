@@ -97,6 +97,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                     if half not in g_grid:
                                         g_grid.append(half)
 
+        print g_grid
+        return []
         return g_grid
 
     # default LO case
