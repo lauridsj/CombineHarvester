@@ -235,8 +235,7 @@ if __name__ == '__main__':
             for tag in tags:
                 fcexps = tag.split('/')[1].split(',')
                 for fcexp in fcexps:
-                    print(pstr + tag + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
-                    ggg = glob.glob(pstr + tag + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
+                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
                     contour.append(ggg[-1])
         else:
