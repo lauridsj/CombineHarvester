@@ -131,12 +131,10 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 residual = abs(spline(crossing) - 0.05)
                             else:
                                 factor /= -2.
-                                if abs(factor) > min_factor:
-                                    continue
-
-                                if abs(factor) < min_factor and residual > 0.0025:
-                                    need_checking = True
-                                break
+                                if abs(factor) < min_factor:
+                                    if residual > 0.0025:
+                                        need_checking = True
+                                    break
 
                         if need_checking:
                             print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
