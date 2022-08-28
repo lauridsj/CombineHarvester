@@ -129,6 +129,9 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                                 residual = abs(spline(crossing) - 0.05)
                                 factor /= -2.
+                                if abs(factor) < min_factor:
+                                    need_checking = True
+
                                 continue
 
                             #while crossing >= g[-1] or crossing <= g[0]:
