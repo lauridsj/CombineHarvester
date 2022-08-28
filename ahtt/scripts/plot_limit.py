@@ -119,7 +119,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         while residual > epsilon and crossing < max_g and crossing > min_g:
                             print(crossing, residual, factor)
                             crossing += factor * epsilon
-                            while crossing > g[-1] or crossing < g[0]:
+                            while crossing >= g[-1] or crossing <= g[0]:
                                 factor /= 2.
                                 crossing -= factor * epsilon
 
