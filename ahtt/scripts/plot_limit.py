@@ -111,18 +111,23 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         factor = 2.**12 if cls[0] > cls[-1] else -2.**12
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
+                        min_factor = 2.**-4
 
                         while residual > epsilon and crossing < max_g and crossing > min_g:
                             print(crossing, residual, factor)
                             crossing += factor * epsilon
+                            while crossing > g[-1] or crossing < g[0]:
+                                factor /= 2.
+                                crossing -= factor * epsilon
+
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
                             else:
                                 factor /= -2.
-                                if abs(factor) > 0.1:
+                                if abs(factor) > min_factor:
                                     continue
 
-                                if abs(factor) < 0.1 and residual > 0.01:
+                                if abs(factor) < min_factor and residual > 0.01:
                                     need_checking = True
                                     print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
                                           str(residual) + " at g = " + str(crossing))
