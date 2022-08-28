@@ -114,7 +114,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         nstraight = 0
 
                         while residual > epsilon and crossing < max_g and crossing > min_g:
-                            print(crossing, residual, factor)
+                            print(crossing, residual, factor, nstraight)
                             crossing += factor * epsilon
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
