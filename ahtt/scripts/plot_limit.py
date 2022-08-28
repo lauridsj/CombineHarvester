@@ -100,8 +100,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], left > vmin[1] > right):
                                         g.append(gg)
                                         cls.append(cc)
-                        else:
-                            print(left, right, vmin)
                     else:
                         g = []
                         cls = []
@@ -177,6 +175,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         print("in " + dd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
                         print(g)
                         print(cls)
+                        print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
                         print("\n")
 
                         limit[quantile] = []
@@ -252,9 +251,6 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
                             print("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
                                   " strange exclusion interval. recheck.\n")
                     else:
-                        print(quantile, exclusion)
-                        print("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
-                              " no exclusion interval. recheck.\n")
                         limit[quantile].append(max_g)
 
         yvalues.append(limit)
