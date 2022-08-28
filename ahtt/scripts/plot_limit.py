@@ -108,7 +108,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
                         crossing = g[0]
-                        factor = 1. if cls[0] > cls[-1] else -1.
+                        factor = 2e12 if cls[0] > cls[-1] else -2e12
 
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
@@ -124,7 +124,12 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                                 if abs(factor) < 0.1 and residual > 0.01:
                                     need_checking = True
-                                    print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " + str(residual) + " at g = " + str(crossing) + "\n")
+                                    print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
+                                          str(residual) + " at g = " + str(crossing) + "\n")
+                                    print("g and cls values used to build the spline:")
+                                    print(g)
+                                    print(cls)
+                                    print("minimum distance to 0.05 from a raw search: ", vmin)
                                 break
 
                         if dump_spline or need_checking:
