@@ -77,15 +77,28 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     imin = limit[quantile].index(vmin)
 
                     if imin > 0 and len(cls) - imin > 0:
+                        cmin = 5e-3
+                        cmax = 0.5
+
                         left = sum(cls[:imin]) / len(cls[:imin]) if len(cls[:imin]) > 0 else -1.
                         right = sum(cls[imin + 1:]) / len(cls[imin + 1:]) if len(cls[imin + 1:]) > 0 else -1.
 
-                        if cls[imin] < left and cls[imin] > right:
-                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 1.e-3 < gc[1] < 0.5 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
-                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if 1.e-3 < gc[1] < 0.5 and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
-                        elif cls[imin] > left and cls[imin] < right:
-                            g = [gc[0] for ii, gc in enumerate(limit[quantile]) if 1.e-3 < gc[1] < 0.5 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
-                            cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if 1.e-3 < gc[1] < 0.5 and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
+                        #if cls[imin] < left and cls[imin] > right:
+                        #    g = [gc[0] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
+                        #    cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
+                        #elif cls[imin] > left and cls[imin] < right:
+                        #    g = [gc[0] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
+                        #    cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
+                        g = [g[0]]
+                        cls = [cls[0]]
+
+                        condition: lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
+                        if left < vmin[1] < right or left > vmin[1] > right:
+                            for ii in range(1, len(limit[quantile])):
+                                gg, cc = limit[quantile][ii]
+                                if condition(cc, cls[-1], left > vmin[1] > right):
+                                    g.append(gg)
+                                    cls.append(cc)
                     else:
                         g = []
                         cls = []
@@ -93,8 +106,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
-                        crossing = limit[quantile][imin][0]
-                        factor = 1. if limit[quantile][imin][1] < sum([limit[quantile][imin - ii][1] for ii in range(1, 5)]) / 5. else -1.
+                        crossing = g[0]
+                        factor = 1. if cls[0] > cls[-1] else -1.
 
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
