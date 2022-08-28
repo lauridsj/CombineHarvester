@@ -130,6 +130,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     print(g)
                                     print(cls)
                                     print("minimum distance to 0.05 from a raw search: ", vmin)
+                                    print("n")
                                 break
 
                         if dump_spline or need_checking:
