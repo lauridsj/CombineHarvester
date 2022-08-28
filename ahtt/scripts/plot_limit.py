@@ -92,7 +92,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         g = [g[0]]
                         cls = [cls[0]]
 
-                        condition: lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
+                        condition = lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
                         if left < vmin[1] < right or left > vmin[1] > right:
                             for ii in range(1, len(limit[quantile])):
                                 gg, cc = limit[quantile][ii]
