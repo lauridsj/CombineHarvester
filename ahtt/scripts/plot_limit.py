@@ -25,7 +25,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
     for tt, tag in enumerate(directories):
         for jj, dd in enumerate(tag):
-            #print(dd)
+            print(dd)
             limit = OrderedDict([
                 ("exp-2", []),
                 ("exp-1", []),
