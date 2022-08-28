@@ -97,6 +97,16 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], vmin[1] < cls[0]):
                                         g.append(gg)
                                         cls.append(cc)
+                                    else:
+                                        cprev = condition(cc, cls[-2], vmin[1] < cls[0])
+                                        nprev = condition(limit[quantile][ii + 1], cls[-2], vmin[1] < cls[0]) if ii < len(limit[quantile]) - 1 else False
+
+                                        if cprev and nprev:
+                                            g.pop()
+                                            cls.pop()
+
+                                            g.append(gg)
+                                            cls.append(cc)
                     else:
                         g = []
                         cls = []
