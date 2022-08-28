@@ -127,7 +127,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     nstraight = 0
 
                                 factor /= 2.
-
                                 if abs(factor) > 0.1:
                                     continue
 
