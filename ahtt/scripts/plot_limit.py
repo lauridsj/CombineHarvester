@@ -123,6 +123,9 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     print("g and cls values used to build the spline:")
                                     print(g)
                                     print(cls)
+                                    print(vmin)
+                                    print(left)
+                                    print(right)
                                     raise RuntimeError("weird!")
 
                             if abs(spline(crossing) - 0.05) < residual:
