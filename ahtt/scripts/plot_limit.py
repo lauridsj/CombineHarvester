@@ -120,8 +120,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 residual = abs(spline(crossing) - 0.05)
                                 nstraight += 1
                             else:
-                                crossing -= factor * epsilon
-
                                 if nstraight > 1:
                                     factor *= -1.
                                     nstraight = 0
