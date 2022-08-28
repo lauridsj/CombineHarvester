@@ -104,7 +104,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
-                        min_factor = 2.**-4
+                        min_factor = 2.**-7
                         crossing = vmin[0]
                         factor = 2.**12 if vmin[1] > 0.05 else -2.**12
                         residual = abs(spline(crossing) - 0.05)
@@ -114,30 +114,44 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             #if "m775" in dd and "w1p0" in dd:
                             #    print(crossing, residual, factor, vmin)
 
-                            if need_checking:
+                            if need_checking or abs(factor) < min_factor:
                                 break
 
                             crossing += factor * epsilon
-                            if crossing >= g[-1] or crossing <= g[0]:
+                            if abs(spline(crossing) - 0.05) > residual or crossing >= g[-1] or crossing <= g[0]:
                                 if crossing >= g[-1]:
                                     crossing = g[-1] - (min_factor * epsilon / 2.)
                                 if crossing <= g[0]:
                                     crossing = g[0] + (min_factor * epsilon / 2.)
 
-                                residual = abs(spline(crossing) - 0.05)
                                 factor /= -2.
-                                if abs(factor) < min_factor:
-                                    need_checking = True
-                                continue
 
-                            if abs(spline(crossing) - 0.05) > residual:
-                                if abs(factor) < min_factor:
-                                    if residual > 0.0025:
-                                        need_checking = True
-                                    break
-                                factor /= -2.
+                            if abs(factor) < min_factor and residual > 0.0025:
+                                need_checking = True
 
                             residual = abs(spline(crossing) - 0.05)
+
+                            #crossing += factor * epsilon
+                            #if crossing >= g[-1] or crossing <= g[0]:
+                            #    if crossing >= g[-1]:
+                            #        crossing = g[-1] - (min_factor * epsilon / 2.)
+                            #    if crossing <= g[0]:
+                            #        crossing = g[0] + (min_factor * epsilon / 2.)
+
+                            #    residual = abs(spline(crossing) - 0.05)
+                            #    factor /= -2.
+                            #    if abs(factor) < min_factor:
+                            #        need_checking = True
+                            #    continue
+
+                            #if abs(spline(crossing) - 0.05) > residual:
+                            #    if abs(factor) < min_factor:
+                            #        if residual > 0.0025:
+                            #            need_checking = True
+                            #        break
+                            #    factor /= -2.
+
+                            #residual = abs(spline(crossing) - 0.05)
 
                         if need_checking:
                             print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
