@@ -96,7 +96,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         if left < vmin[1] < right or left > vmin[1] > right:
                             for ii in range(1, len(limit[quantile])):
                                 gg, cc = limit[quantile][ii]
-                                if condition(cc, cls[-1], left > vmin[1] > right):
+                                if cmin < cc < cmax and condition(cc, cls[-1], left > vmin[1] > right):
                                     g.append(gg)
                                     cls.append(cc)
                         print(g)
