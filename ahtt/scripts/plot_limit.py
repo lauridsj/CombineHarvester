@@ -122,11 +122,12 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             else:
                                 crossing -= factor * epsilon
 
-                                if nstraight > 0:
+                                if nstraight > 1:
                                     factor *= -1.
                                     nstraight = 0
+                                else:
+                                    factor /= 2.
 
-                                factor /= 2.
                                 if abs(factor) > 0.1:
                                     continue
 
