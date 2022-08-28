@@ -104,7 +104,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
-                        min_factor = 2.**-4
+                        min_factor = 2.**-7
                         crossing = g[0] + (min_factor * epsilon / 2.)
                         factor = 2.**12 if cls[0] > cls[-1] else -2.**12
                         residual = abs(spline(crossing) - 0.05)
