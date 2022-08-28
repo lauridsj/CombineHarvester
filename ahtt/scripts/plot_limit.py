@@ -80,15 +80,12 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         cmin = 5e-3
                         cmax = 0.5
 
-                        left = sum(cls[:imin]) / len(cls[:imin]) if len(cls[:imin]) > 0 else -1.
-                        right = sum(cls[imin + 1:]) / len(cls[imin + 1:]) if len(cls[imin + 1:]) > 0 else -1.
+                        left = [cc for cc in cls if cc < 0.05]
+                        right = [cc for cc in cls if cc > 0.05]
 
-                        #if cls[imin] < left and cls[imin] > right:
-                        #    g = [gc[0] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
-                        #    cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii <= imin and cls[imin] <= gc[1]) or (ii >= imin and cls[imin] >= gc[1]))]
-                        #elif cls[imin] > left and cls[imin] < right:
-                        #    g = [gc[0] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
-                        #    cls = [gc[1] for ii, gc in enumerate(limit[quantile]) if cmin < gc[1] < cmax and ((ii >= imin and cls[imin] >= gc[1]) or (ii <= imin and cls[imin] <= gc[1]))]
+                        left = sum(left) / len(left) if len(left) > 0 else -1.
+                        right = sum(right) / len(right) if len(right) > 0 else -1.
+
                         g = []
                         cls = []
 
@@ -129,16 +126,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 if abs(factor) < min_factor:
                                     need_checking = True
                                 continue
-
-                            #while crossing >= g[-1] or crossing <= g[0]:
-                            #    print(crossing, residual, factor)
-                            #    crossing -= factor * epsilon
-                            #    factor /= 2.
-                            #    crossing += factor * epsilon
-                            #    print(crossing, residual, factor)
-
-                            #    if abs(factor) < min_factor:
-                            #        need_checking = True
 
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
