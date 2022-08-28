@@ -90,11 +90,11 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         cls = []
 
                         condition = lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
-                        if left >= 0. and right >= 0. and (left < vmin[1] < right or left > vmin[1] > right):
+                        if left >= 0. and right >= 0.:
                             for ii in range(1, len(limit[quantile])):
                                 gg, cc = limit[quantile][ii]
                                 if cmin < cc < cmax:
-                                    if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], left > vmin[1] > right):
+                                    if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], vmin[1] < cls[0]):
                                         g.append(gg)
                                         cls.append(cc)
                     else:
