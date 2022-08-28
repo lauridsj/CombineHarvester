@@ -111,7 +111,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         need_checking = False
 
                         while residual > epsilon and crossing < max_g and crossing > min_g:
-                            if dd.split('_')[1] == "m380" and dd.split('_')[2] == "0p5":
+                            if "m380" in dd and "w0p5" in dd:
                                 print(crossing, residual, factor, vmin)
 
                             if need_checking:
