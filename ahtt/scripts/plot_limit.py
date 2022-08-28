@@ -109,7 +109,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
-                        crossing = g[0]
+                        crossing = g[0] + epsilon
                         factor = 2.**12 if cls[0] > cls[-1] else -2.**12
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
@@ -131,7 +131,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 factor /= -2.
                                 if abs(factor) < min_factor:
                                     need_checking = True
-
                                 continue
 
                             #while crossing >= g[-1] or crossing <= g[0]:
