@@ -120,14 +120,23 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 break
 
                             crossing += factor * epsilon
-                            while crossing >= g[-1] or crossing <= g[0]:
-                                print(crossing, factor)
-                                crossing -= factor * epsilon
-                                factor /= 2.
-                                crossing += factor * epsilon
+                            if crossing >= g[-1] or crossing <= g[0]:
+                                factor /= -2.
 
-                                if abs(factor) < min_factor:
-                                    need_checking = True
+                                if crossing >= g[-1]:
+                                    crossing = g[-1]
+                                if crossing <= g[0]:
+                                    crossing = g[0]
+
+                            #while crossing >= g[-1] or crossing <= g[0]:
+                            #    print(crossing, residual, factor)
+                            #    crossing -= factor * epsilon
+                            #    factor /= 2.
+                            #    crossing += factor * epsilon
+                            #    print(crossing, residual, factor)
+
+                            #    if abs(factor) < min_factor:
+                            #        need_checking = True
 
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
