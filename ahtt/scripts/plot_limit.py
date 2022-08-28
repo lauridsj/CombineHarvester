@@ -121,8 +121,10 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                             crossing += factor * epsilon
                             while crossing >= g[-1] or crossing <= g[0]:
-                                factor /= 2.
                                 crossing -= factor * epsilon
+                                factor /= 2.
+                                crossing += factor * epsilon
+
                                 if abs(factor) < min_factor:
                                     need_checking = True
 
