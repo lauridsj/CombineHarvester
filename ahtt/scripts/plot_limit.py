@@ -99,6 +99,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 if condition(cc, cls[-1], left > vmin[1] > right):
                                     g.append(gg)
                                     cls.append(cc)
+                        print(g)
+                        print(cls)
                     else:
                         g = []
                         cls = []
