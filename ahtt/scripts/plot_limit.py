@@ -113,15 +113,17 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         need_checking = False
                         min_factor = 2.**-4
 
-                        #print(g)
-                        #print(cls)
-
                         while residual > epsilon and crossing < max_g and crossing > min_g:
-                            #print(crossing, residual, factor)
                             crossing += factor * epsilon
                             while crossing >= g[-1] or crossing <= g[0]:
                                 factor /= 2.
                                 crossing -= factor * epsilon
+                                if abs(factor) < min_factor:
+                                    print("something strange happened. stuck at ", crossing, factor)
+                                    print("g and cls values used to build the spline:")
+                                    print(g)
+                                    print(cls)
+                                    raise RuntimeError("weird!")
 
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
@@ -130,14 +132,14 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                 if abs(factor) > min_factor:
                                     continue
 
-                                if abs(factor) < min_factor and residual > 0.01:
+                                if abs(factor) < min_factor and residual > 0.0025:
                                     need_checking = True
                                     print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
                                           str(residual) + " at g = " + str(crossing))
                                     print("g and cls values used to build the spline:")
                                     print(g)
                                     print(cls)
-                                    print("minimum distance to 0.05 from a raw search: ", vmin)
+                                    print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
                                     print("\n")
                                 break
 
