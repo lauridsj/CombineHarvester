@@ -101,6 +101,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                                     cls.append(cc)
                         print(g)
                         print(cls)
+                        print()
                     else:
                         g = []
                         cls = []
