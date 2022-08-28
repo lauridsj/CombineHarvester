@@ -64,7 +64,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             continue
 
                         for quantile, cls in lmt.items():
-                            limit[quantile].append((round(float(g), 4), round(cls, 3)))
+                            limit[quantile].append((round(float(g), 4), round(cls, 5)))
 
                 for quantile in limit.keys():
                     if quantile == "obs":
@@ -93,7 +93,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         cls = []
 
                         condition = lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
-                        if left > 0. and right > 0. and (left < vmin[1] < right or left > vmin[1] > right):
+                        if left >= 0. and right >= 0. and (left < vmin[1] < right or left > vmin[1] > right):
                             for ii in range(1, len(limit[quantile])):
                                 gg, cc = limit[quantile][ii]
                                 if cmin < cc < cmax:
@@ -116,17 +116,15 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         min_factor = 2.**-4
 
                         while residual > epsilon and crossing < max_g and crossing > min_g:
+                            if need_checking:
+                                break
+
                             crossing += factor * epsilon
                             while crossing >= g[-1] or crossing <= g[0]:
                                 factor /= 2.
                                 crossing -= factor * epsilon
                                 if abs(factor) < min_factor:
-                                    print("something strange happened. stuck at ", crossing, factor)
-                                    print("g and cls values used to build the spline:")
-                                    print(g)
-                                    print(cls)
-                                    print(vmin)
-                                    raise RuntimeError("weird!")
+                                    need_checking = True
 
                             if abs(spline(crossing) - 0.05) < residual:
                                 residual = abs(spline(crossing) - 0.05)
@@ -137,14 +135,15 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                                 if abs(factor) < min_factor and residual > 0.0025:
                                     need_checking = True
-                                    print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
-                                          str(residual) + " at g = " + str(crossing))
-                                    print("g and cls values used to build the spline:")
-                                    print(g)
-                                    print(cls)
-                                    print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
-                                    print("\n")
-                                break
+
+                        if need_checking:
+                            print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
+                                  str(residual) + " at g = " + str(crossing))
+                            print("g and cls values used to build the spline:")
+                            print(g)
+                            print(cls)
+                            print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
+                            print("\n")
 
                         if dump_spline or need_checking:
                             qstr = quantile.replace('+', 'pp').replace('-', 'm')
