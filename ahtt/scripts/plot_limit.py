@@ -114,9 +114,12 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                     if len(g) > 3:
                         spline = UnivariateSpline(np.array(g), np.array(cls))
 
+                        smin = min([(abs(cc - 0.05), gg, cc) for gg, cc in zip(g, cls)])
+                        smin = (smin[1], smin[2])
+
                         min_factor = 2.**-7
-                        crossing = vmin[0]
-                        factor = 2.**12 if vmin[1] > 0.05 else -2.**12
+                        crossing = smin[0]
+                        factor = 2.**12 if smin[1] > 0.05 else -2.**12
                         residual = abs(spline(crossing) - 0.05)
                         need_checking = False
 
@@ -147,7 +150,8 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             print("g and cls values used to build the spline:")
                             print(g)
                             print(cls)
-                            print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
+                            print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled points: ", vmin)
+                            print("g, cls point with minimum distance to cls = 0.05 from points considered for the spline: ", smin)
                             print("\n")
 
                         if dump_spline or need_checking:
