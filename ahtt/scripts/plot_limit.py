@@ -370,22 +370,28 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawb
 
     draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, transparent)
 
-def draw_mass(oname, points, directories, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
-    widths = set([pnt[2] for pnt in points])
+def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
+    if not hasattr(draw_variable, "settings"):
+        draw_variable.settings = OrderedDict([
+            ("mass",  {"iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
+            ("width", {"iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{%s}}}\,=$ %d GeV$"})
+        ])
 
-    for ww in widths:
-        print("running width", ww)
-        masses = [pnt[1] for pnt in points if pnt[2] == ww]
-        dirs = [[dd for dd, pnt in zip(tag, points) if pnt[2] == ww] for tag in directories]
+    var1s = set([pnt[draw_variable.settings[var1]["iv1"]] for pnt in points])
 
-        if len(masses) < 2 or not all([len(dd) == len(masses) for dd in dirs]):
-            print("Width " + str(ww) + " has too few masses, or inconsistent input. skipping")
+    for vv in var1s:
+        print("running", var1, vv)
+        var2s = [pnt[draw_variable.settings[var1]["iv2"]] for pnt in points if pnt[draw_variable.settings[var1]["iv1"]] == vv]
+        dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv1"]] == vv] for tag in directories]
+
+        if len(var2s) < 2 or not all([len(dd) == len(var2s) for dd in dirs]):
+            print("Variable 1 " + str(vv) + " has too few variable 2s, or inconsistent input. skipping")
             continue
 
-        draw_1D(oname.format(www = 'w' + str(ww).replace('.', 'p')),
-                read_limit(dirs, masses, onepoi, dump_spline, os.path.dirname(oname)),
-                labels, axes["mass"] % points[0][0], yaxis,
-                ", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$" % (points[0][0], ww, points[0][0]),
+        draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p')),
+                read_limit(dirs, var2s, onepoi, dump_spline, os.path.dirname(oname)),
+                labels, axes[var1] % points[0][0], yaxis,
+                draw_variable.settings[var1]["label"] % (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv),
                 drawband, observed, transparent)
 
 if __name__ == '__main__':
@@ -453,14 +459,15 @@ if __name__ == '__main__':
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
                          hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
-    elif args.function == "mass":
+    else:
         if len(apnt) > 0:
-            draw_mass("{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+            draw_variable(args.function,
+                          "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
+                                                                       tag = args.otag, fmt = args.fmt),
+                          apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
-            draw_mass("{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-                      hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
-    elif args.function == "width":
-        pass
-
+            draw_variable(args.function,
+                          "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
+                                                                       tag = args.otag, fmt = args.fmt),
+                          hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
     pass
