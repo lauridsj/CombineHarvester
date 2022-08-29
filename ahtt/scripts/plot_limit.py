@@ -379,7 +379,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
 
     var2s = set([pnt[draw_variable.settings[var1]["iv2"]] for pnt in points])
 
-    for vv in var1s:
+    for vv in var2s:
         print("running", draw_variable.settings[var1]["iv2"], vv)
         var1s = [pnt[draw_variable.settings[var1]["iv1"]] for pnt in points if pnt[draw_variable.settings[var1]["iv2"]] == vv]
         dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
