@@ -374,7 +374,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
             ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
-            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{%s}}}\,=$ %d GeV$"})
+            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{%s}}}\,=$ %d GeV"})
         ])
 
     var2s = set([pnt[draw_variable.settings[var1]["iv2"]] for pnt in points])
@@ -390,7 +390,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
 
         axislabel = points[0][0] if var1 == "mass" else (points[0][0], points[0][0])
         legendtext = (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv)
-        draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p')),
+        draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))),
                 read_limit(dirs, var1s, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
