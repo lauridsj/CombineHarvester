@@ -390,7 +390,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
 
         draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p')),
                 read_limit(dirs, var1s, onepoi, dump_spline, os.path.dirname(oname)),
-                labels, axes[var1] % points[0][0], yaxis,
+                labels, axes[var1] % points[0][0] if var1 == "mass" else (points[0][0], points[0][0]), yaxis,
                 draw_variable.settings[var1]["label"] % (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv),
                 drawband, observed, transparent)
 
