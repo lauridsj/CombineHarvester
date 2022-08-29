@@ -373,23 +373,23 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawb
 def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
-            ("mass",  {"iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
-            ("width", {"iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{%s}}}\,=$ %d GeV$"})
+            ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
+            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{%s}}}\,=$ %d GeV$"})
         ])
 
-    var1s = set([pnt[draw_variable.settings[var1]["iv1"]] for pnt in points])
+    var2s = set([pnt[draw_variable.settings[var1]["iv2"]] for pnt in points])
 
     for vv in var1s:
-        print("running", var1, vv)
-        var2s = [pnt[draw_variable.settings[var1]["iv2"]] for pnt in points if pnt[draw_variable.settings[var1]["iv1"]] == vv]
-        dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv1"]] == vv] for tag in directories]
+        print("running", draw_variable.settings[var1]["iv2"], vv)
+        var1s = [pnt[draw_variable.settings[var1]["iv1"]] for pnt in points if pnt[draw_variable.settings[var1]["iv2"]] == vv]
+        dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
 
         if len(var2s) < 2 or not all([len(dd) == len(var2s) for dd in dirs]):
-            print("Variable 1 " + str(vv) + " has too few variable 2s, or inconsistent input. skipping")
+            print("Variable 2 " + str(vv) + " has too few variable 1s, or inconsistent input. skipping")
             continue
 
         draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p')),
-                read_limit(dirs, var2s, onepoi, dump_spline, os.path.dirname(oname)),
+                read_limit(dirs, var1s, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes[var1] % points[0][0], yaxis,
                 draw_variable.settings[var1]["label"] % (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv),
                 drawband, observed, transparent)
