@@ -118,7 +118,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         smin = (smin[1], smin[2])
 
                         min_factor = 2.**-7
-                        abs_tolerance = 0.0005
+                        abs_tolerance = 0.00005
                         need_checking = False
                         crossing = smin[0]
                         residual = abs(spline(crossing) - 0.05)
