@@ -380,12 +380,12 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
     var2s = set([pnt[draw_variable.settings[var1]["iv2"]] for pnt in points])
 
     for vv in var2s:
-        print("running", draw_variable.settings[var1]["iv2"], vv)
+        print("running", draw_variable.settings[var1]["var2"], vv)
         var1s = [pnt[draw_variable.settings[var1]["iv1"]] for pnt in points if pnt[draw_variable.settings[var1]["iv2"]] == vv]
         dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
 
-        if len(var2s) < 2 or not all([len(dd) == len(var2s) for dd in dirs]):
-            print("Variable 2 " + str(vv) + " has too few variable 1s, or inconsistent input. skipping")
+        if len(var1s) < 2 or not all([len(dd) == len(var1s) for dd in dirs]):
+            print(draw_variable.settings[var1]["var2"] + str(vv) + " has too few " + var1 + ", or inconsistent input. skipping")
             continue
 
         draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p')),
