@@ -118,15 +118,15 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         smin = (smin[1], smin[2])
 
                         min_factor = 2.**-7
-                        abs_tolerance = 0.00005
+                        abs_tolerance = 0.0005
                         need_checking = False
                         crossing = smin[0]
                         residual = abs(spline(crossing) - 0.05)
                         factor = 2.**12 if smin[1] > 0.05 else -2.**12
 
                         while residual > abs_tolerance and crossing < max_g and crossing > min_g:
-                            #if "m775" in dd and "w1p0" in dd:
-                            #    print(crossing, residual, factor, vmin)
+                            if "m750" in dd and "w21p0" in dd and quantile == "exp+2":
+                                print(crossing, residual, factor, vmin, smin)
 
                             if need_checking or abs(factor) < min_factor:
                                 break
