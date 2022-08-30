@@ -574,7 +574,7 @@ if __name__ == '__main__':
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
         print starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi)
-        print starting_nuisance(args.point, args.frzbb0)
+        print starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
         raise RuntimeError("lolk")
 
         gvalues = [2.**-17, 2.**-15, 2.**-13, 2.**-11, 2.**-9] + list(np.linspace(min_g, max_g, num = 193))
