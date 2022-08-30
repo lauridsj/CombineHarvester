@@ -276,6 +276,7 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     return [setpar, frzpar]
 
 def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisance_post = False, best_fit_file = ""):
+    print point, frz_bb_zero, frz_bb_post, frz_nuisance_post, best_fit_file
     if frz_bb_zero:
         return [["rgx{prop_bin.*}=0"], ["rgx{prop_bin.*}"]]
     elif frz_bb_post or frz_nuisance_post:
