@@ -444,10 +444,10 @@ if __name__ == '__main__':
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file))
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file)])
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -525,10 +525,10 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file))
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -567,7 +567,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
