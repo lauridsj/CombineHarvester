@@ -284,6 +284,9 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
             raise RuntimeError("postfit bb/nuisance freezing is requested, but no best fit file is provided!!!")
 
         setpar, frzpar = read_nuisance(best_fit_file, point, True)
+        print "what happened???"
+        print setpar
+        print frzpar
         if not frz_nuisance_post:
             setpar = [nn for nn in setpar if "prop_bin" in nn]
             frzpar = [nn for nn in frzpar if "prop_bin" in nn]
