@@ -258,6 +258,8 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
             if nn in skip:
                 continue
 
+            print nn, getattr(dtree, nn)
+
             if "prop_bin" not in nn:
                 frzpar.append(nn)
             else:
