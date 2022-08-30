@@ -157,7 +157,12 @@ if __name__ == '__main__':
                 continue
 
         job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
-        job_name += "{mod}".format(mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan")
+        job_name += "{mod}{gvl}{rvl}{fix}".format(
+            mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
+        )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
                    '{shp} {mcs} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {rsd} {com} {bsd}').format(
@@ -263,8 +268,7 @@ if __name__ == '__main__':
                             nuisances[group] = copy.deepcopy(mcstats)
 
             for group, nuisance in nuisances.items():
-                jname = job_name + "{isb}".format(isb = "_sig" if args.impactsb else "_bkg")
-                jname += "_" + group
+                jname = job_name + "_" + group
                 logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
 
                 if len(logs) > 0:

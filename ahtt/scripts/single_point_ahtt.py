@@ -430,7 +430,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi else ""
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         ), False, True)
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
@@ -490,7 +490,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi else ""
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         ), False, True)
 
         print "\nsingle_point_ahtt :: collecting impact results"
@@ -501,7 +501,7 @@ if __name__ == '__main__':
             pnt = args.point,
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi else "",
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
             grp = group
         ))
 
@@ -514,7 +514,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi else "",
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
             grp = group
         ))
 
@@ -557,7 +557,7 @@ if __name__ == '__main__':
             pnt = args.point,
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi else "",
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
         ), False)
 
     if runnll:
