@@ -250,17 +250,13 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     setpar = []
     frzpar = []
 
-    print nuisances
-
     for i in dtree:
-        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
+        if (dtree.quantileExpected != -1. and qexp_eq_m1) or (dtree.quantileExpected == -1. and not qexp_eq_m1):
             continue
 
         for nn in nuisances:
             if nn in skip:
                 continue
-
-            print nn, getattr(dtree, nn)
 
             if "prop_bin" not in nn:
                 frzpar.append(nn)
@@ -280,7 +276,6 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     return [setpar, frzpar]
 
 def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisance_post = False, best_fit_file = ""):
-    print point, frz_bb_zero, frz_bb_post, frz_nuisance_post, best_fit_file
     if frz_bb_zero:
         return [["rgx{prop_bin.*}=0"], ["rgx{prop_bin.*}"]]
     elif frz_bb_post or frz_nuisance_post:
@@ -288,9 +283,7 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
             raise RuntimeError("postfit bb/nuisance freezing is requested, but no best fit file is provided!!!")
 
         setpar, frzpar = read_nuisance(best_fit_file, point, True)
-        print "what happened???"
-        print setpar
-        print frzpar
+
         if not frz_nuisance_post:
             setpar = [nn for nn in setpar if "prop_bin" in nn]
             frzpar = [nn for nn in frzpar if "prop_bin" in nn]
