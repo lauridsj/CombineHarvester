@@ -361,7 +361,7 @@ if __name__ == '__main__':
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                               "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
+                               "." if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
@@ -375,7 +375,7 @@ if __name__ == '__main__':
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
-                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
+                       "." if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
                        True, (runhadd and len(pairs) < 3) or runcompile or args.runlocal)
 
         if os.path.isfile(agg):
