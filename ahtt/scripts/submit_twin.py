@@ -13,10 +13,7 @@ from collections import OrderedDict
 import json
 import math
 
-from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig
-
-min_g = 0.
-max_g = 3.
+from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g
 
 def tuplize(gstring):
     return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
@@ -143,12 +140,13 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
+    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+                        dest = "mcstat", action = "store_false", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--inject-signal",
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
                         "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
@@ -158,6 +156,10 @@ if __name__ == '__main__':
                         "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
                         "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
+                        default = "", required = False)
+
+    parser.add_argument("--seed",
+                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
 
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
@@ -194,6 +196,8 @@ if __name__ == '__main__':
                         dest = "propersig", action = "store_true", required = False)
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
+    parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
+
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
         args.tag = "_" + args.tag
@@ -278,7 +282,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {prj} {asm} {com} {rmr} {igp} {exp} {bsd}").format(
+                   "{shp} {mcs} {prj} {asm} {rsd} {com} {rmr} {igp} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -297,6 +301,7 @@ if __name__ == '__main__':
             mcs = "--no-mc-stats" if not args.mcstat else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             asm = "--unblind" if not args.asimov else "",
+            rsd = "--seed " + args.seed if args.seed != "" else "",
             com = "--compress" if rundc else "",
             rmr = "--delete-root" if args.rmroot else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
@@ -356,7 +361,7 @@ if __name__ == '__main__':
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                               "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True)
+                               "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
@@ -370,7 +375,8 @@ if __name__ == '__main__':
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
-                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, (runhadd and len(pairs) < 3) or runcompile)
+                       "" if rundc else "-l $(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
+                       True, (runhadd and len(pairs) < 3) or runcompile or args.runlocal)
 
         if os.path.isfile(agg):
             syscall('condor_submit {agg}'.format(agg = agg), False)

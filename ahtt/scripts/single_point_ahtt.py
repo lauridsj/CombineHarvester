@@ -11,11 +11,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, chunks, read_nuisance
-from make_datacard import get_point
-
-min_g = 0.
-max_g = 3.
+from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add
 
 def get_limit(lfile):
     lfile = TFile.Open(lfile)
@@ -82,21 +78,21 @@ def get_nll_g_scan(lfile):
     return nll
 
 def single_point_scan(args):
-    gval, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
+    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     epsilon = 2.**-17
     nstep = 1
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-            "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
+            "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
             "--singlePoint 1 {stg} {asm} {mcs}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 gst = gstr,
                 gvl = gval,
                 acc = accuracies,
-                rrg = r_range,
+                prg = poi_range,
                 stg = strategy,
                 asm = "-t -1" if asimov else "",
                 mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
@@ -117,14 +113,14 @@ def single_point_scan(args):
         fgood = False
         for ii in range(1, nstep + 1):
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {rrg} "
+                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
                     "--singlePoint 1 {stg} {asm} {mcs}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         gst = gstr + "eps",
                         gvl = gval + (ii * factor * epsilon),
                         acc = accuracies,
-                        rrg = r_range,
+                        prg = poi_range,
                         stg = strategy,
                         asm = "-t -1" if asimov else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
@@ -150,7 +146,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat = args
+    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -158,7 +154,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, r_range, strategy, asimov, mcstat))
+        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat))
 
         if result is None:
             ii += 3
@@ -172,15 +168,42 @@ def dotty_scan(args):
         results.append(result)
     return results
 
+def starting_poi(onepoi, gvalue, rvalue, fixpoi):
+    setpar = []
+    frzpar = []
+
+    if onepoi:
+        if gvalue >= 0.:
+            setpar.append('r=' + str(gvalue))
+
+        if fixpoi:
+            frzpar.append('r')
+    else:
+        if gvalue >= 0.:
+            setpar.append('g=' + str(gvalue))
+
+            if fixpoi:
+                frzpar.append('g')
+
+        if rvalue >= 0.:
+            setpar.append('r=' + str(rvalue))
+
+            if fixpoi:
+                frzpar.append('r')
+
+    return [setpar, frzpar]
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
     parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False)
 
-    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "../input/ll_sig.root", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "../input/ll_bkg.root", required = False)
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
+    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
+    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
+
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2016pre,2016post,2017,2018", required = False)
+
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
                         help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
@@ -197,12 +220,13 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
+    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+                        dest = "mcstat", action = "store_false", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--inject-signal",
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
                         "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
@@ -213,13 +237,7 @@ if __name__ == '__main__':
                         "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
                         default = "", required = False)
-    parser.add_argument("--freeze-mc-stats-zero", help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
-                        dest = "frzbb0", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-post", help = "only in the prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "
-                        "--freeze-mc-stats-zero takes priority over this option",
-                        dest = "frzbbp", action = "store_true", required = False)
-    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values.",
-                        dest = "frznui", action = "store_true", required = False)
+
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
@@ -232,14 +250,34 @@ if __name__ == '__main__':
     parser.add_argument("--raster-i", help = "which chunk to process, in doing the raster scan",
                         dest = "ichunk", default = 0, required = False, type = int)
 
-    parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
-                        "also used in prepost/corrmat/nll for the scenario to consider when finding best fit for freezing nuisances",
-                        dest = "impactsb", action = "store_true", required = False)
+    #parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
+    #                    "also used in prepost/corrmat/nll for the scenario to consider when finding best fit for freezing nuisances",
+    #                    dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--impact-nuisances", help = "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, "
                         "and n1,n2,...,nN are the nuisances belonging to that group",
                         dest = "impactnui", default = "", required = False)
-    parser.add_argument("--g-value", help = "g value to use when evaluating impacts/fit diagnostics/nll, if one-poi is not used. defaults to 1",
-                        dest = "fixg", default = 1, required = False, type = float)
+
+    parser.add_argument("--freeze-mc-stats-zero",
+                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
+                        dest = "frzbb0", action = "store_true", required = False)
+    parser.add_argument("--freeze-mc-stats-post",
+                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "
+                        "--freeze-mc-stats-zero takes priority over this option",
+                        dest = "frzbbp", action = "store_true", required = False)
+    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values.",
+                        dest = "frznui", action = "store_true", required = False)
+
+    parser.add_argument("--g-value",
+                        help = "g to use when evaluating impacts/fit diagnostics/nll. "
+                        "does NOT freeze the value, unless --fix-poi is also used. "
+                        "note: semantically sets value of 'r' with --one-poi, as despite the name it plays the role of g.",
+                        dest = "setg", default = -1., required = False, type = float)
+    parser.add_argument("--r-value",
+                        help = "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used."
+                        "does NOT freeze the value, unless --fix-poi is also used.",
+                        dest = "setr", default = -1., required = False, type = float)
+    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
+                        dest = "fixpoi", action = "store_true", required = False)
 
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
     parser.add_argument("--base-directory",
@@ -267,6 +305,8 @@ if __name__ == '__main__':
 
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
+    poi_range = "--setParameterRanges r=0.,5." if args.onepoi else "--setParameterRanges r=0.,2.:g=0.,5."
+    best_fit_file = ""
 
     allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
@@ -329,10 +369,11 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit --rMin=0 --rMax={maxg} {acc} {stg} {asm} {mcs}".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {mcs}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 maxg = max_g,
+                prg = poi_range,
                 acc = accuracies,
                 stg = strategy,
                 asm = "--run blind -t -1" if args.asimov else "",
@@ -359,10 +400,9 @@ if __name__ == '__main__':
                 idx = "i" + str(args.ichunk)), False, True)
             syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
             limits = OrderedDict()
-            r_range = "--rMin=0 --rMax=2"
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, r_range, strategy, args.asimov, args.mcstat))
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, strategy, args.asimov, args.mcstat))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -384,41 +424,42 @@ if __name__ == '__main__':
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
-        syscall("rm {dcd}{pnt}_impacts_{gvl}_{exp}*".format(
+        syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}*".format(
             dcd = dcdir,
             pnt = args.point,
-            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
-            exp = "sig" if args.impactsb else "bkg"
+            mod = "one-poi" if args.onepoi else "g-scan",
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi else ""
         ), False, True)
-
-        r_range = "--rMin=0 --rMax={maxg}".format(maxg = max_g if args.onepoi else "2")
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        setpar = []
-        frzpar = []
+        if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
+            raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
 
-        if not args.onepoi:
-            setpar.append("g=" + str(args.fixg))
-            frzpar.append("g")
+        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
 
-        args.mcstat = args.mcstat or args.frzbb0
-        if args.frzbb0:
-            setpar.append("rgx{prop_bin.*}=0")
-            frzpar.append("rgx{prop_bin.*}")
+        if args.frzbbp:
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
+
+        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+        set_freeze = elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file))
+        setpar = set_freeze[0]
+        frzpar = set_freeze[1]
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {rrg} {asm} {mcs} {sig} {stp} {frz}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {stp} {frz}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            rrg = r_range,
+            prg = poi_range,
             stg = strategy,
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0",
             stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
@@ -430,97 +471,75 @@ if __name__ == '__main__':
             nuisances = args.impactnui.replace(" ", "").split(';')[1]
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull "
-                "{stg} {rrg} {poi} {asm} {mcs} {sig} {nui} {stp} {frz}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {stp} {frz}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            rrg = r_range,
+            prg = poi_range,
             stg = strategy,
-            poi = "" if args.onepoi else "--setParameters g=" + str(args.fixg) + " --freezeParameters g",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            sig = "--expectSignal 1" if args.impactsb else "--expectSignal 0",
             nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
             stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
+        syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}*".format(
+            dcd = dcdir,
+            pnt = args.point,
+            mod = "one-poi" if args.onepoi else "g-scan",
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi else ""
+        ), False, True)
+
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{gvl}_{exp}{grp}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             pnt = args.point,
-            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
-            exp = "sig" if args.impactsb else "bkg",
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi else "",
             grp = group
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
 
-        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{gvl}_{exp}{grp}.json -o {dcd}{pnt}_impacts_{gvl}_{exp}{grp}".format(
+        syscall("plotImpacts.py -i {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json -o {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}".format(
             dcd = dcdir,
-            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p"),
             pnt = args.point,
-            exp = "sig" if args.impactsb else "bkg",
+            mod = "one-poi" if args.onepoi else "g-scan",
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi else "",
             grp = group
         ))
 
     if runprepost:
         # option '--set/freezeParameters' cannot be specified more than once
         strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
-        setpar = []
-        frzpar = []
-        snapshot = "best_fit_nuisance.root"
-        if not args.onepoi:
-            setpar.append("g=" + str(args.fixg))
-            frzpar.append("g")
 
-        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp or args.frznui
-        if args.frzbb0:
-            setpar.append("rgx{prop_bin.*}=0")
-            frzpar.append("rgx{prop_bin.*}")
-        elif args.frzbbp or args.frznui:
-            # find best fit values
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_{mod}.root -m {mmm} -n _best_fit "
-                    "--fixedPointPOIs '{par}' {stp} {frz} {stg} {asm} {mcs} {wsp}".format(
-                        dcd = dcdir,
-                        mod = "one-poi" if args.onepoi else "g-scan",
-                        mmm = mstr,
-                        par = "r=1",
-                        stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
-                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                        stg = strategy,
-                        asm = "-t -1" if args.asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                        wsp = "--saveWorkspace --saveSpecifiedNuis=all"
-                    ))
+        if args.frzbbp or args.frznui:
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
 
-            syscall("cp higgsCombine_{bff}.MultiDimFit.mH{mmm}*.root {snp}".format(
-                bff = "best_fit",
-                mmm = mstr,
-                snp = snapshot), False)
-
-            setpar, frzpar = read_nuisance(snapshot, args.point, True)
-
-            if not args.frznui:
-                setpar = [ss for ss in setpar if "prop_bin" in ss]
-                frzpar = [ff for ff in frzpar if "prop_bin" in ff]
-
-            # readd, as read_nuisance nukes it out
-            if not args.onepoi:
-                setpar.append("g=" + str(args.fixg))
-                frzpar.append("g")
+        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+        set_freeze = elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file))
+        setpar = set_freeze[0]
+        frzpar = set_freeze[1]
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {asm} {mcs} {stp} {frz}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     stg = strategy,
+                    prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
@@ -533,77 +552,50 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
             dcd = dcdir,
             pnt = args.point,
-            gvl = "one-poi" if args.onepoi else "fix-g_" + str(args.fixg).replace(".", "p")
+            gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
+            rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
+            fix = "_fixed" if args.fixpoi else "",
         ), False)
-        syscall("rm {snp}".format(snp = snapshot), False, True)
 
     if runnll:
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
-        snapshot = "best_fit_nuisance.root"
 
-        gvalues = [2.**-17, 2.**-16, 2.**-15, 2.**-14, 2.**-13] + list(np.linspace(min_g, max_g, num = 193))
-        gvalues.sort()
-        scenarii = ['exp-b', 'exp-s', 'obs']
-        setpar = []
-        frzpar = []
-        nlls = OrderedDict()
-        if not args.onepoi:
-            frzpar.append("g")
+        if args.frzbbp or args.frznui:
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          elementwise_add(starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)))
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        if args.frzbb0:
-            setpar.append("rgx{prop_bin.*}=0")
-            frzpar.append("rgx{prop_bin.*}")
-        elif args.frzbbp or args.frznui:
-            if not args.onepoi:
-                setpar.append("g=" + str(args.fixg))
+        set_freeze = starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
+        setpar = set_freeze[0]
+        frzpar = set_freeze[1]
 
-            # find best fit values
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_{mod}.root -m {mmm} -n _best_fit "
-                    "--fixedPointPOIs '{par}' {stp} {frz} {stg} {asm} {mcs} {wsp}".format(
-                        dcd = dcdir,
-                        mod = "one-poi" if args.onepoi else "g-scan",
-                        mmm = mstr,
-                        par = "r=1",
-                        stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
-                        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                        stg = strategy,
-                        asm = "-t -1" if args.asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                        wsp = "--saveWorkspace --saveSpecifiedNuis=all"
-                    ))
+        gvalues = [2.**-17, 2.**-15, 2.**-13, 2.**-11, 2.**-9] + list(np.linspace(min_g, max_g, num = 193))
+        gvalues.sort()
+        scenarii = ['exp-b', 'exp-s', 'obs']
+        nlls = OrderedDict()
 
-            syscall("cp higgsCombine_{bff}.MultiDimFit.mH{mmm}*.root {snp}".format(
-                bff = "best_fit",
-                mmm = mstr,
-                snp = snapshot), False)
+        syscall("rm {dcd}{pnt}_nll_one-poi.root {dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), False, True)
 
-            setpar, frzpar = read_nuisance(snapshot, args.point, True)
+        for sce in scenarii:
+            asimov = "-t -1" if sce != "obs" else ""
+            pois = []
+            if sce != "obs":
+                if args.onepoi:
+                    pois = ["r=0"] if sce == "exp-b" else ["r=1"]
+                else:
+                    pois = ["r=0", "g=0"] if sce == "exp-b" else ["r=1", "g=1"]
 
-            if not args.frznui:
-                setpar = [ss for ss in setpar if "prop_bin" in ss]
-                frzpar = [ff for ff in frzpar if "prop_bin" in ff]
-
-            # readd, as read_nuisance nukes it out
-            if not args.onepoi:
-                frzpar.append("g")
-
-        if args.onepoi:
-            syscall("rm {dcd}{pnt}_nll_one-poi.root {dcd}{pnt}_nll_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-
-            for sce in scenarii:
-                asimov = "-t -1" if sce != "obs" else ""
-                pois = ["r=0"] if sce == "exp-b" else ["r=1"] if sce == "exp-s" else []
-
-                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll --rMin=0 --rMax={maxg} {gvl} "
+            if args.onepoi:
+                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll {prg} {gvl} "
                         "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {mcs}".format(
                             dcd = dcdir,
                             mmm = mstr,
-                            maxg = max_g,
+                            prg = poi_range,
                             gvl = "--points 193 --alignEdges 1",
                             stg = strategy,
                             asm = asimov,
@@ -623,24 +615,15 @@ if __name__ == '__main__':
                     sce = sce,
                     pnt = args.point
                 ))
-
-        else:
-            syscall("rm {dcd}{pnt}_nll_g-scan.root {dcd}{pnt}_nll_g-scan.json".format(dcd = dcdir, pnt = args.point), False, True)
-            nlls = OrderedDict()
-            r_range = "--rMin=0 --rMax=2"
-
-            for sce in scenarii:
-                asimov = "-t -1" if sce != "obs" else ""
-                pois = ["r=0", "g=0"] if sce == "exp-b" else ["r=1", "g=1"] if sce == "exp-s" else []
-
+            else:
                 for gval in gvalues:
                     gstr = str(round(gval, 3)).replace('.', 'p')
-                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {rrg} "
+                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {prg} "
                             "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {mcs}".format(
                                 dcd = dcdir,
                                 mmm = mstr,
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
-                                rrg = r_range,
+                                prg = poi_range,
                                 gvl = str(gval),
                                 stg = strategy,
                                 asm = asimov,
@@ -663,7 +646,6 @@ if __name__ == '__main__':
                 ))
 
         syscall("rm combine_logger.out", False, True)
-        syscall("rm {snp}".format(snp = snapshot), False, True)
 
         with open("{dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)

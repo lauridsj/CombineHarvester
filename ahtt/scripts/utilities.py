@@ -14,6 +14,9 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
+min_g = 0.
+max_g = 3.
+
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
         print ("Executing: %s" % cmd)
@@ -21,6 +24,10 @@ def syscall(cmd, verbose = True, nothrow = False):
     retval = os.system(cmd)
     if not nothrow and retval != 0:
         raise RuntimeError("Command failed!")
+
+def get_point(sigpnt):
+    pnt = sigpnt.split('_')
+    return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
 def flat_reldev_wrt_nominal(varied, nominal, offset):
     for ii in range(1, nominal.GetNbinsX() + 1):
@@ -205,18 +212,39 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
                 name = 'conSub_' + job_name + '.txt',
                 agg = job_agg), False)
 
+def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze):
+    fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    setpar = set_freeze[0]
+    frzpar = set_freeze[1]
+
+    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stp} {frz} {stg} {prg} {asm} {mcs} {wsp}".format(
+        dcd = dcdir + card,
+        bff = fname,
+        stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+        frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+        stg = strategy,
+        prg = poi_range,
+        asm = "-t -1" if asimov else "",
+        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
+        #wsp = "--saveWorkspace --saveSpecifiedNuis=all"
+        wsp = "--saveSpecifiedNuis=all"
+    ))
+    syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
+    return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)
+
 def read_nuisance(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
-
-    setpar = []
-    frzpar = []
 
     skip = ["r", "g", "g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected",
             "limit", "limitErr", "mh", "syst",
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
     nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
+    hasbb = False
+
+    setpar = []
+    frzpar = []
 
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
@@ -228,6 +256,8 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
 
             if "prop_bin" not in nn:
                 frzpar.append(nn)
+            else:
+                hasbb = True
 
             vv = round(getattr(dtree, nn), 2)
             if abs(vv) > 0.01:
@@ -236,5 +266,34 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
         if len(frzpar) > 0:
             break
 
-    frzpar.append("rgx{prop_bin.*}")
-    return (setpar, frzpar)
+    if hasbb:
+        frzpar.append("rgx{prop_bin.*}")
+
+    return [setpar, frzpar]
+
+def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisance_post = False, best_fit_file = ""):
+    if frz_bb_zero:
+        return [["rgx{prop_bin.*}=0"], ["rgx{prop_bin.*}"]]
+    elif frz_bb_post or frz_nuisance_post:
+        if best_fit_file == "":
+            raise RuntimeError("postfit bb/nuisance freezing is requested, but no best fit file is provided!!!")
+
+        setpar, frzpar = read_nuisance(best_fit_file, point, True)
+        if not frz_nuisance_post:
+            setpar = [nn for nn in setpar if "prop_bin" in nn]
+            frzpar = [nn for nn in frzpar if "prop_bin" in nn]
+
+        return [setpar, frzpar]
+
+    return [[], []]
+
+def elementwise_add(list_of_lists):
+    if len(list_of_lists) < 1 or any(len(ll) < 1 or len(ll) != len(list_of_lists[0]) for ll in list_of_lists):
+        raise RuntimeError("this method assumes that the argument is a list of lists of nonzero equal lengths!!!")
+
+    result = list_of_lists[0]
+    for ll in range(1, len(list_of_lists)):
+        for rr in range(len(result)):
+            result[rr] += list_of_lists[ll][rr]
+
+    return result

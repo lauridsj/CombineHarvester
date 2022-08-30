@@ -13,8 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, read_nuisance
-from make_datacard import get_point
+from utilities import syscall, get_point, read_nuisance
 
 def get_fit(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
@@ -122,7 +121,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal", help = "signal point to inject into the pseudodata", dest = "injectsignal", default = "", required = False)
+    parser.add_argument("--inject-signal",
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--projection",

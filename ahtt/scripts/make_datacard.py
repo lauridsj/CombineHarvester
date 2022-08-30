@@ -20,11 +20,7 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilities import syscall, flat_reldev_wrt_nominal, scale, zero_out, project
-
-def get_point(sigpnt):
-    pnt = sigpnt.split('_')
-    return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
+from utilities import syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
 
 kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
@@ -503,8 +499,8 @@ if __name__ == '__main__':
     parser.add_argument("--background", help = "data/background filenames, comma separated", default = "", required = True)
     parser.add_argument("--point", help = "signal points to make datacard of. comma separated", default = "", required = True)
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "", required = False)
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "", required = False)
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
                         help = "comma separated list of nuisances to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
@@ -522,7 +518,8 @@ if __name__ == '__main__':
                         dest = "alwaysshape", action = "store_true", required = False)
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal", help = "signal points to inject into the pseudodata. comma separated", dest = "injectsignal", default = "", required = False)
+    parser.add_argument("--inject-signal",
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--projection",
