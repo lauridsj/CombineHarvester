@@ -203,7 +203,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             job_cpu = "-p " + str(job_cpu) if job_cpu > 1 else "",
             job_mem = "-m " + job_mem if job_mem != "" else "",
             tmp = "--run-in-tmp" if runtmp else "",
-            job_dir = job_dir
+            job_dir = "-l " + job_dir
         ), submit_job.firstprint)
         submit_job.firstprint = False
 
