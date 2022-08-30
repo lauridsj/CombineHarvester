@@ -250,6 +250,8 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     setpar = []
     frzpar = []
 
+    print nuisances
+
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
             continue
