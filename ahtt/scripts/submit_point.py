@@ -229,7 +229,7 @@ if __name__ == '__main__':
                 )
 
                 submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                           "." if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True, args.runlocal)
+                           "." if rundc else "$(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True, args.runlocal)
         elif runpull:
             if args.nnuisance < 0:
                 args.nnuisance = 25
@@ -286,7 +286,7 @@ if __name__ == '__main__':
                 continue
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
-                       "." if rundc else "-l $(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True, args.runlocal)
+                       "." if rundc else "$(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True, args.runlocal)
 
     if os.path.isfile(agg):
         syscall('condor_submit {agg}'.format(agg = agg), False)
