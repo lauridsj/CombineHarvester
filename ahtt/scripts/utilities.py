@@ -16,6 +16,7 @@ TH1.SetDefaultSumw2(True)
 
 min_g = 0.
 max_g = 3.
+condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -28,6 +29,12 @@ def syscall(cmd, verbose = True, nothrow = False):
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
+
+def stringify(gtuple):
+    return str(gtuple)[1: -1]
+
+def tuplize(gstring):
+    return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
 
 def flat_reldev_wrt_nominal(varied, nominal, offset):
     for ii in range(1, nominal.GetNbinsX() + 1):
@@ -177,8 +184,6 @@ def input_sig(signal, points, injects, channels, years):
                 signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
 
     return ','.join(signals)
-
-condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
 
 def aggregate_submit():
     return 'conSub_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'

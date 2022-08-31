@@ -13,7 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, read_nuisance
+from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify
 
 def get_fit(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
@@ -86,12 +86,21 @@ def sum_up(g1, g2):
 
     return gs
 
-def stringify(gtuple):
-    return str(gtuple)[1: -1]
+def starting_poi(points, gvalues, fixpoi):
+    if all(float(gg) < 0. for gg in gvalues):
+        return [[], []]
 
-max_g = 3.
-epsilon = 1e-5
-nstep = 5
+    setpar = []
+    frzpar = []
+
+    for pp, gg in zip(points, gvl):
+        if float(gg) >= 0.:
+            setpar.append('g_' + pp + '=' + gg)
+
+            if fixpoi:
+                frzpar.append('g_' + pp)
+
+    return [setpar, frzpar]
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -139,22 +148,35 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
-    parser.add_argument("--fc-g-values", help = "the two values of g to do the FC grid scan for, comma separated",
-                        default = "0.0, 0.0", dest = "fcgvl", required = False)
-    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the scan. comma separated.\n"
+    parser.add_argument("--g-values", help = "the two values of g to e.g. do the FC grid scan for, comma separated",
+                        default = "-1., -1.", dest = "gvalues", required = False)
+    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-values",
+                        dest = "fixpoi", action = "store_true", required = False)
+
+    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the FC scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
                         "WARNING: profile mode implementation is incomplete!!",
                         default = "conservative", dest = "fcnui", required = False)
     parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 175, dest = "fctoy", required = False, type = int)
+                        default = 50, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
     parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
                         default = -1, dest = "fcidx", required = False, type = int)
 
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
+
+    parser.add_argument("--freeze-mc-stats-zero",
+                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+                        dest = "frzbb0", action = "store_true", required = False)
+    parser.add_argument("--freeze-mc-stats-post",
+                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
+                        "--freeze-mc-stats-zero takes priority over this option",
+                        dest = "frzbbp", action = "store_true", required = False)
+    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
+                        dest = "frznui", action = "store_true", required = False)
 
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
@@ -179,7 +201,8 @@ if __name__ == '__main__':
         args.pseudodata = True
 
     points = args.point.replace(" ", "").split(',')
-    if len(points) != 2:
+    gvalues = args.gvalues.replace(" ", "").split(',')
+    if len(points) != 2 or len(gvalues) != 2:
         raise RuntimeError("this script is to be used with exactly two A/H points!")
 
     modes = args.mode.replace(" ", "").split(',')
@@ -188,8 +211,15 @@ if __name__ == '__main__':
     dcdir = args.basedir + "__".join(points) + args.tag + "/"
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
+    poi_range = "--setParameterRanges " + ":".join(["g_" + pp + "=0.,5." for pp in points])
+    best_fit_file = ""
 
-    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge", "compile"]
+    gstr = ""
+    for ii, gg in enumerate(gvalues):
+        usc = "_" if ii > 0 else ""
+        gstr += usc + "g" + str(ii + 1) + "_" + gvalues[ii] if float(gvalues[ii]) >= 0. else ""
+
+    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge", "compile", "prepost", "corrmat"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -200,6 +230,7 @@ if __name__ == '__main__':
     runfc = "fc-scan" in modes or "contour" in modes
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
+    runprepost = "prepost" in modes or "corrmat" in modes
 
     allexp = ["exp-b", "exp-s", "exp-01", "exp-10"]
     fcexps = args.fcexp.replace(" ", "").split(',')
@@ -256,6 +287,9 @@ if __name__ == '__main__':
         ))
 
     if runfc:
+        if any(float(gg) < 0. for gg in gvalues):
+            raise RuntimeError("in FC scans both g can't be negative!!")
+
         exp_scenario = OrderedDict()
         exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
         exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
@@ -264,8 +298,7 @@ if __name__ == '__main__':
 
         fit_strategy = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
 
-        fcgvl = args.fcgvl.replace(" ", "").split(',')
-        scan_name = "pnt_g1_" + fcgvl[0] + "_g2_" + fcgvl[1]
+        scan_name = "pnt_g1_" + gvalues[0] + "_g2_" + gvalues[1]
         snapshot = "fc_scan_snap.root"
         snapexp = "obs" if not args.asimov else "exp-s" if "exp-s" in fcexps else fcexps[0]
 
@@ -281,7 +314,7 @@ if __name__ == '__main__':
                                 dcd = dcdir,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
-                                par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                                par = "g_" + points[0] + "=" + gvalues[0] + ",g_" + points[1] + "=" + gvalues[1],
                                 exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
                                 stg = fit_strategy(ifit),
                                 asm = "-t -1" if fcexp != "obs" else "",
@@ -319,7 +352,7 @@ if __name__ == '__main__':
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
-                        par = "g_" + points[0] + "=" + fcgvl[0] + ",g_" + points[1] + "=" + fcgvl[1],
+                        par = "g_" + points[0] + "=" + gvalues[0] + ",g_" + points[1] + "=" + gvalues[1],
                         #nus = "," + ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
                         nus = "",
                         nuf = "",
@@ -400,6 +433,46 @@ if __name__ == '__main__':
                 grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
                 with open("{dcd}{pnt}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp, idx = str(idx)), "w") as jj:
                     json.dump(grid, jj, indent = 1)
+
+    if runprepost:
+        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
+
+        if args.frzbbp or args.frznui:
+            best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
+                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          elementwise_add([starting_poi(points, gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]))
+
+        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+        set_freeze = elementwise_add([starting_poi(points, gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
+        setpar = set_freeze[0]
+        frzpar = set_freeze[1]
+
+        print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
+        syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_twin-g.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz}".format(
+                    dcd = dcdir,
+                    mmm = mstr,
+                    stg = strategy,
+                    prg = poi_range,
+                    asm = "-t -1" if args.asimov else "",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                    stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+                    frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+        ))
+
+        syscall("rm *_th1x_*.png", False, True)
+        syscall("rm covariance_fit_?.png", False, True)
+        syscall("rm higgsCombine_prepost*.root", False, True)
+        syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
+
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}{fix}.root".format(
+            dcd = dcdir,
+            pnt = "__".join(points),
+            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+            fix = "_fixed" if args.fixpoi and gstr != "" else "",
+        ), False)
+        pass
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
