@@ -338,10 +338,13 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
-        #may_partial_g = [gg + 0.25 for gg in max_partial_g]
+        max_partial_g = [mm for mm in max_g_values if mm < ymax1]
+        xmaxg = [xx for mm, xx in zip(max_g_values, xvalues) if mm < ymax1]
+        may_partial_g = [min(gg + 0.02 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
 
-        ax.plot(xvalues, np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
-        handles.append((mln.Line2D([0], [0], color = '#848482', linestyle = "solid", linewidth = 1.5), gcurve))
+        ax.fill_between(np.array(xmaxg), np.array(max_partial_g), np.array(may_partial_g), facecolor = 'none', hatch = '||', edgecolor = '#848482', linewidth = 0.)
+        ax.plot(np.array(xmaxg), np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
+        handles.append((mpt.Patch(hatch = '||', facecolor = 'none', edgecolor = '#848482', linewidth = 1.), gcurve))
 
     if observed:
         for i1, yy in enumerate(yvalues):
@@ -390,7 +393,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     ax.margins(x = 0, y = 0)
 
     # resorting to get a columnwise fill in legend
-    handles = [hh for label in labels for hh in handles if str(label + " ") in str(hh[1] + " ")] if len(limits) > 1 else handles
+    handles = [hh for label in labels + [gcurve] for hh in handles] if len(limits) > 1 else handles
 
     lheight = (ymax2 - ymax1) / (ymax2 - ymin)
     lmargin = 0.06 if len(limits) == 1 else 0.02
