@@ -330,12 +330,14 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         ymax1 = math.ceil(ymax * 2.) / 2.
 
     if '_m' in oname or '_w' in oname:
-        fixed_value = oname.split('_')
+        fixed_value = oname.split('/')[-1]
+        fixed_value = fixed_value.split('_')
+        parity = fixed_value[0]
         fixed_value = [ff for ff in fixed_value if ff.startswith('m') or ff.startswith('w') ][0]
-        fixed_mass = '_m' in fixed_value
+        ismass = '_m' in fixed_value
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
-        max_partial_g = [ah_max_coupling(pah, fixed_value, xx) if fixed_mass else ah_max_coupling(pah, xx, fixed_value / 100.) for xx in xvalues]
+        max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
         #may_partial_g = [gg + 0.25 for gg in max_partial_g]
 
         ax.plot(xvalues, np.array([max_partial_g]), color = '#848482', linestyle = "solid", linewidth = 1.5)
