@@ -307,7 +307,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                             label + " " + labels[ii]))
             ymin = min(ymin, min(yy["exp-2"]))
             ymax = max(ymax, max(yy["exp+2"]))
-            ymax1 = math.ceil(ymax * 2.) / 2.
+            ymax1 = math.ceil(ymax * 4.) / 4.
 
     for ii, yy in enumerate(yvalues):
         if drawband or ii == 0:
@@ -327,7 +327,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
         ymin = min(ymin, min(yy["exp0"]))
         ymax = max(ymax, max(yy["exp0"]))
-        ymax1 = math.ceil(ymax * 2.) / 2.
+        ymax1 = math.ceil(ymax * 4.) / 4.
 
     if '_m' in oname or '_w' in oname:
         fixed_value = oname.split('/')[-1]
@@ -350,7 +350,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         for i1, yy in enumerate(yvalues):
             ymin = min(ymin, min([min(first(oo)) for oo in yy["obs"]]))
             ymax = max(ymax, max([g for oo in yy["obs"] for g, cls in oo if g < ymax or cls > 0.05]))
-            ymax1 = math.ceil(ymax * 2.) / 2.
+            ymax1 = math.ceil(ymax * 4.) / 4.
 
             ydots = np.arange(0., ymax1 + epsilon, 0.005)
             xv, yv = np.meshgrid(xvalues, ydots)
