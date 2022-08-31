@@ -337,6 +337,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         ismass = '_m' in fixed_value
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
+        print(fixed_value)
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
         max_partial_g = [(xx, gg) for xx, gg in zip(xvalues, max_partial_g) if gg < ymax1]
         xmaxg = [xx for xx, gg in max_partial_g]
