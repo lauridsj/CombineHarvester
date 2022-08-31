@@ -20,6 +20,45 @@ import matplotlib.colors as mcl
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
+def ahtt_width_coupling_helper(parity, mah):
+    sqrt2 = math.sqrt(2)
+    pi = math.pi
+    sqrtpi = math.sqrt(pi)
+
+    aew = 1. / 132.50698
+    mZ = 91.188
+    Gf = 1.16639e-5
+    mt = 172.5
+
+    mah2 = mah * mah
+    mt2 = mt * mt
+    mZ2 = mZ *mZ
+    mZ4 = mZ2 * mZ2
+
+    term1 = (aew * pi * mZ2) / (Gf * sqrt2)
+    mW = math.sqrt((0.5 * mZ2) + math.sqrt((0.25 * mZ4) - term1))
+    mW2 = mW * mW
+
+    sw = math.sqrt(1. - (mW2 / mZ2))
+    ee = 2. * math.sqrt(aew) * sqrtpi
+    vev = 2. * mW * sw / ee
+    vev2 = vev * vev
+    term2 = 8. * pi * vev2
+
+    term3 = 0.75 * Gf / (pi * sqrt2)
+
+    beta = math.sqrt(1. - (4. * mt2 / mah2))
+    factor = mah * mt2 * term3 * beta
+    return factor if parity == 'A' else factor * beta * beta if parity == 'H' else 0.
+
+def ahtt_partial_width(parity, mah, gah, relwidth = True):
+    wah = gah * gah * ahtt_width_coupling_helper(parity, mah)
+    return wah / mah if relwidth else wah
+
+def ahtt_max_coupling(parity, mah, wah, relwidth = True):
+    wah = wah * mah if relwidth else wah
+    return math.sqrt(wah / ahtt_width_coupling_helper(parity, mah))
+
 def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     limits = [OrderedDict() for tag in directories]
 
@@ -179,7 +218,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
     return limits
 
-def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, transparent):
+def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, observed, transparent):
     if len(limits) > 6:
         raise RuntimeError("current plotting code is not meant for more than 6 tags. aborting")
 
@@ -290,6 +329,18 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, drawband, observed, tra
         ymax = max(ymax, max(yy["exp0"]))
         ymax1 = math.ceil(ymax * 2.) / 2.
 
+    if '_m' in oname or '_w' in oname:
+        fixed_value = oname.split('_')
+        fixed_value = [ff if ff.startswith('m') or ff.startswith('w') for ff in fixed_value][0]
+        fixed_mass = '_m' in fixed_value
+        fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
+
+        max_partial_g = [ah_max_coupling(pah, fixed_value, xx) if fixed_mass else ah_max_coupling(pah, xx, fixed_value / 100.) for xx in xvalues]
+        #may_partial_g = [gg + 0.25 for gg in max_partial_g]
+
+        ax.plot(xvalues, np.array([max_partial_g]), color = '#848482', linestyle = "solid", linewidth = 1.5)
+        handles.append((mln.Line2D([0], [0], color = '#848482', linestyle = "solid", linewidth = 1.5), gcurve))
+
     if observed:
         for i1, yy in enumerate(yvalues):
             ymin = min(ymin, min([min(first(oo)) for oo in yy["obs"]]))
@@ -394,6 +445,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
                 read_limit(dirs, var1s, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
+                r'$\Gamma_{\mathrm{\mathsf{%s}}} \,>\, \Gamma_{\mathrm{\mathsf{%s t\bar{t}}}}$' % (points[0][0], points[0][0]),
                 drawband, observed, transparent)
 
 if __name__ == '__main__':
