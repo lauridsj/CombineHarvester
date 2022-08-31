@@ -90,15 +90,8 @@ def starting_poi(points, gvalues, fixpoi):
     if all(float(gg) < 0. for gg in gvalues):
         return [[], []]
 
-    setpar = []
-    frzpar = []
-
-    for pp, gg in zip(points, gvl):
-        if float(gg) >= 0.:
-            setpar.append('g_' + pp + '=' + gg)
-
-            if fixpoi:
-                frzpar.append('g_' + pp)
+    setpar = ['g_' + pp + '=' + gg for pp, gg in zip(points, gvalues) if float(gg) >= 0.]
+    frzpar = ['g_' + pp for pp, gg in zip(points, gvalues) if float(gg) >= 0.] if fixpoi else []
 
     return [setpar, frzpar]
 
