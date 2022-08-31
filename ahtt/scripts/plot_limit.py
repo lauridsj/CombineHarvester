@@ -342,13 +342,12 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         xmaxg = [xx for gg, xx in zip(max_partial_g, xvalues) if gg < ymax1]
         may_partial_g = [min(gg + 0.05 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
 
-        if fixed_value == 0.08:
+        if fixed_value == 8.:
             print(xmaxg)
             print(max_partial_g)
 
         ax.fill_between(np.array(xmaxg), np.array(max_partial_g), np.array(may_partial_g), facecolor = 'none', hatch = '||', edgecolor = '#848482', linewidth = 0.)
         ax.plot(np.array(xmaxg), np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
-        handles.append((mpt.Patch(hatch = '||', facecolor = 'none', edgecolor = '#848482', linewidth = 1.), gcurve))
 
     if observed:
         for i1, yy in enumerate(yvalues):
@@ -397,8 +396,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     ax.margins(x = 0, y = 0)
 
     # resorting to get a columnwise fill in legend
-    handles = [hh for label in labels + [gcurve] for hh in handles if str(label + " ") in str(hh[1] + " ") or gcurve in str(hh[1] + " ")] if len(limits) > 1 else handles
-    print(handles)
+    handles = [hh for label in labels for hh in handles if str(label + " ") in str(hh[1] + " ")] if len(limits) > 1 else handles
+    handles.append((mpt.Patch(hatch = '||', facecolor = 'none', edgecolor = '#848482', linewidth = 1.), gcurve))
 
     lheight = (ymax2 - ymax1) / (ymax2 - ymin)
     lmargin = 0.06 if len(limits) == 1 else 0.02
