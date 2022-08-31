@@ -340,6 +340,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
 
         if fixed_value == 8.:
+            print(xvalues)
             print(max_partial_g)
 
         max_partial_g = [gg for gg in max_partial_g if gg < ymax1]
