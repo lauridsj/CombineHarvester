@@ -340,7 +340,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
         max_partial_g = [mm for mm in max_partial_g if mm < ymax1]
         xmaxg = [xx for mm, xx in zip(max_partial_g, xvalues) if mm < ymax1]
-        may_partial_g = [min(gg + 0.02 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
+        may_partial_g = [min(gg + 0.05 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
 
         ax.fill_between(np.array(xmaxg), np.array(max_partial_g), np.array(may_partial_g), facecolor = 'none', hatch = '||', edgecolor = '#848482', linewidth = 0.)
         ax.plot(np.array(xmaxg), np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
