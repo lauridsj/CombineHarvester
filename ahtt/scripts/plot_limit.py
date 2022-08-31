@@ -334,10 +334,9 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         fixed_value = fixed_value.split('_')
         parity = fixed_value[0]
         fixed_value = [ff for ff in fixed_value if ff.startswith('m') or ff.startswith('w') ][0]
-        ismass = '_m' in fixed_value
+        ismass = 'm' in fixed_value
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
-        print(fixed_value)
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
         max_partial_g = [(xx, gg) for xx, gg in zip(xvalues, max_partial_g) if gg < ymax1]
         xmaxg = [xx for xx, gg in max_partial_g]
