@@ -340,7 +340,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
         #may_partial_g = [gg + 0.25 for gg in max_partial_g]
 
-        ax.plot(xvalues, np.array([max_partial_g]), color = '#848482', linestyle = "solid", linewidth = 1.5)
+        ax.plot(xvalues, np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
         handles.append((mln.Line2D([0], [0], color = '#848482', linestyle = "solid", linewidth = 1.5), gcurve))
 
     if observed:
