@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
+import matplotlib.ticker as mtc
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
@@ -410,6 +411,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     #fontprop.set_size(21)
     #legend.set_title(title = "95% CL exclusion", prop = fontprop)
 
+    if ymax2 > 1.75:
+        ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
