@@ -331,7 +331,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
     if '_m' in oname or '_w' in oname:
         fixed_value = oname.split('_')
-        fixed_value = [ff if ff.startswith('m') or ff.startswith('w') for ff in fixed_value][0]
+        fixed_value = [ff for ff in fixed_value if ff.startswith('m') or ff.startswith('w') ][0]
         fixed_mass = '_m' in fixed_value
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
