@@ -338,18 +338,10 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
-
-        if fixed_value == 8.:
-            print(xvalues)
-            print(max_partial_g)
-
-        max_partial_g = [gg for gg in max_partial_g if gg < ymax1]
-        xmaxg = [xx for gg, xx in zip(max_partial_g, xvalues) if gg < ymax1]
+        max_partial_g = [(xx, gg) for xx, gg in zip(xvalues, max_partial_g) if gg < ymax1]
+        xmaxg = [xx for xx, gg in max_partial_g]
+        max_partial_g = [gg for xx, gg in max_partial_g]
         may_partial_g = [min(gg + 0.05 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
-
-        if fixed_value == 8.:
-            print(xmaxg)
-            print(max_partial_g)
 
         ax.fill_between(np.array(xmaxg), np.array(max_partial_g), np.array(may_partial_g), facecolor = 'none', hatch = '||', edgecolor = '#848482', linewidth = 0.)
         ax.plot(np.array(xmaxg), np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
