@@ -393,7 +393,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     ax.margins(x = 0, y = 0)
 
     # resorting to get a columnwise fill in legend
-    handles = [hh for label in labels + [gcurve] for hh in handles] if len(limits) > 1 else handles
+    handles = [hh for label in labels + [gcurve] for hh in handles if str(label + " ") in str(hh[1] + " ") or gcurve in str(hh[1] + " ")] if len(limits) > 1 else handles
 
     lheight = (ymax2 - ymax1) / (ymax2 - ymin)
     lmargin = 0.06 if len(limits) == 1 else 0.02
