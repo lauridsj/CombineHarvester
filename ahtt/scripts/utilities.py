@@ -192,7 +192,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
         syscall("touch {log}".format(log = lname), False)
         syscall('echo "Job execution starts at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
         syscall('{executable} {job_arg} |& tee -a {log}'.format(executable = executable, job_arg = job_arg, log = lname), True)
-        syscall('echo "Job execution ends at {atm}" |& {log}'.format(atm = datetime.now(), log = lname), False)
+        syscall('echo "Job execution ends at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
     else:
         syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {job_cpu} {tmp} {job_dir} --debug'.format(
             csub = condordir + "condorSubmit.sh",

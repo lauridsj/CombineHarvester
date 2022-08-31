@@ -555,6 +555,7 @@ if __name__ == '__main__':
         syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
             dcd = dcdir,
             pnt = args.point,
+            mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg) if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr) if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
