@@ -195,6 +195,16 @@ if __name__ == '__main__':
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
 
+    parser.add_argument("--freeze-mc-stats-zero",
+                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
+                        dest = "frzbb0", action = "store_true", required = False)
+    parser.add_argument("--freeze-mc-stats-post",
+                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
+                        "--freeze-mc-stats-zero takes priority over this option",
+                        dest = "frzbbp", action = "store_true", required = False)
+    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
+                        dest = "frznui", action = "store_true", required = False)
+
     parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in alphas",
                         dest = "propersig", action = "store_true", required = False)
 
@@ -285,7 +295,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {prj} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {exp} {bsd}").format(
+                   "{shp} {mcs} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -303,6 +313,7 @@ if __name__ == '__main__':
             shp = "--use-shape-always" if args.alwaysshape else "",
             mcs = "--no-mc-stats" if not args.mcstat else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
+            frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
             asm = "--unblind" if not args.asimov else "",
             rsd = "--seed " + args.seed if args.seed != "" else "",
             com = "--compress" if rundc else "",
