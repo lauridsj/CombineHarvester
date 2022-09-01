@@ -5,7 +5,7 @@ min_g = 0.
 max_g = 3.
 epsilon = 2.**-17
 axes = {
-    "mass" :    r"m$_{\mathrm{\mathsf{%s}}}$ [GeV]",
+    "mass" :    r"$m_{\mathrm{\mathsf{%s}}}$ [GeV]",
     "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [%% m$_{\mathrm{\mathsf{%s}}}$]",
     "coupling": r"g$_{\mathrm{\mathsf{%s}}}$",
     "dnll":     r"$-2\,\ln\,\dfrac{\mathcal{L}(\mathrm{g}_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",

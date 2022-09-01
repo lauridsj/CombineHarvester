@@ -462,7 +462,7 @@ if __name__ == '__main__':
         syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}{fix}.root".format(
             dcd = dcdir,
             pnt = "__".join(points),
-            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+            gvl = gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
         pass
