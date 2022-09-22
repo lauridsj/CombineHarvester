@@ -162,8 +162,9 @@ if __name__ == '__main__':
     parser.add_argument("--max-dnll", help = "max value of dnll to incude in plot", dest = "max_dnll", type = float, default = 36., required = False)
     parser.add_argument("--best-fit", help = "write the observed best fit points on the plot",
                         dest = "bestfit", action = "store_true", required = False)
-    parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
-                        dest = "transparent", action = "store_true", required = False)
+
+    parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
+                        dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
 
     args = parser.parse_args()

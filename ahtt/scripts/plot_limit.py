@@ -473,8 +473,8 @@ if __name__ == '__main__':
                         default = "", required = False)
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
-    parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
-                        dest = "transparent", action = "store_true", required = False)
+    parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
+                        dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--skip-secondary-bands", help = "do not draw the +-1, 2 sigma bands except for first tag",
                         dest = "drawband", action = "store_false", required = False)
     parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",

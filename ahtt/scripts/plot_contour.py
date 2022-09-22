@@ -181,8 +181,8 @@ if __name__ == '__main__':
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "XXX", required = False)
 
-    parser.add_argument("--transparent-background", help = "make the background transparent instead of white",
-                        dest = "transparent", action = "store_true", required = False)
+    parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
+                        dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
 
     args = parser.parse_args()
