@@ -220,7 +220,9 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+    parser.add_argument("--no-mc-stats",
+                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
+                        "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",

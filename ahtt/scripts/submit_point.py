@@ -39,7 +39,9 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
+    parser.add_argument("--no-mc-stats",
+                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
+                        "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
@@ -75,6 +77,10 @@ if __name__ == '__main__':
 
     parser.add_argument("--impact-n", help = "maximum number of nuisances to run in a single impact job",
                         dest = "nnuisance", default = 25, required = False, type = int)
+    parser.add_argument("--run-mc-stats",
+                        help = "in pull/impact mode, run also over the BB nuisances individually. "
+                        "this option does not affect their treatment in any way (analytical minimization)",
+                        dest = "runbb", action = "store_true", required = False)
 
     parser.add_argument("--freeze-mc-stats-zero",
                         help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
@@ -255,7 +261,7 @@ if __name__ == '__main__':
                     nuisances[group] = copy.deepcopy(ipart)
             syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
-            if args.mcstat:
+            if args.runbb:
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)

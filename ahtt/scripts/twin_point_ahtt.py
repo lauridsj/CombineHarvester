@@ -120,13 +120,15 @@ if __name__ == '__main__':
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
+    parser.add_argument("--no-mc-stats",
+                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
+                        "or don't add the bb-lite analytical minimization option in others",
+                        dest = "mcstat", action = "store_false", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--inject-signal",
                         help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
                         "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
