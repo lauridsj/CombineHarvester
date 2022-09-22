@@ -417,13 +417,13 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
                 ("CMS_TTV_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TTV", 1.3),
             )),
             ("lj" , (
-                ("CMS_EWQCD_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "EWQCD", 1.1),
+                ("CMS_EWQCD_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "EWQCD", 1.5),
             )),
             ("common" , (
                 ("CMS_TQ_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TQ", 1.15),
                 ("CMS_TW_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TW", 1.15),
                 ("CMS_TB_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TB", 1.15),
-                ("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # down/up, down = scale by 1/x and up = x
+                #("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # down/up, down = scale by 1/x and up = x
             ))
         ])
         write_datacard.lnNs["ee"] = write_datacard.lnNs["ll"]
