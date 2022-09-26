@@ -426,13 +426,20 @@ if __name__ == '__main__':
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
-        syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}*".format(
+        group = ""
+        nuisances = ""
+        if args.impactnui != "":
+            group = "_" + args.impactnui.replace(" ", "").split(';')[0]
+            nuisances = args.impactnui.replace(" ", "").split(';')[1]
+
+        syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
             pnt = args.point,
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
+            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
+            grp = group
         ), False, True)
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
@@ -466,12 +473,6 @@ if __name__ == '__main__':
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
-        group = ""
-        nuisances = ""
-        if args.impactnui != "":
-            group = "_" + args.impactnui.replace(" ", "").split(';')[0]
-            nuisances = args.impactnui.replace(" ", "").split(';')[1]
-
         print "\nsingle_point_ahtt :: impact remaining fits"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {stp} {frz}".format(
             dcd = dcdir,
@@ -485,15 +486,6 @@ if __name__ == '__main__':
             stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
-
-        syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}*".format(
-            dcd = dcdir,
-            pnt = args.point,
-            mod = "one-poi" if args.onepoi else "g-scan",
-            gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
-            rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
-        ), False, True)
 
         print "\nsingle_point_ahtt :: collecting impact results"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
