@@ -76,7 +76,7 @@ if __name__ == '__main__':
                         dest = "ichunk", default = "...[--raster-n value]", required = False)
 
     parser.add_argument("--impact-n", help = "maximum number of nuisances to run in a single impact job",
-                        dest = "nnuisance", default = 25, required = False, type = int)
+                        dest = "nnuisance", default = 10, required = False, type = int)
     parser.add_argument("--run-mc-stats",
                         help = "in pull/impact mode, run also over the BB nuisances individually. "
                         "this option does not affect their treatment in any way (analytical minimization)",
