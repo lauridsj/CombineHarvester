@@ -364,7 +364,7 @@ if __name__ == '__main__':
                     jname += '_' + str(idx) if idx != -1 else ''
                     logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
 
-                    if len(logs) > 0:
+                    if not args.runlocal and len(logs) > 0:
                         continue
 
                     fcrundat = args.fcrundat and idx == idxs[0]
@@ -383,7 +383,7 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
-            if len(logs) > 0:
+            if not args.runlocal and len(logs) > 0:
                 continue
 
             if runclean:

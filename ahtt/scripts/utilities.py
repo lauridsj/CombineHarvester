@@ -24,7 +24,7 @@ def syscall(cmd, verbose = True, nothrow = False):
         sys.stdout.flush()
     retval = os.system(cmd)
     if not nothrow and retval != 0:
-        raise RuntimeError("Command failed!")
+        raise RuntimeError("Command failed with exit code {ret}!".format(ret = retval))
 
 def get_point(sigpnt):
     pnt = sigpnt.split('_')

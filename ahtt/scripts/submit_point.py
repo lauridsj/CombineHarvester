@@ -225,7 +225,7 @@ if __name__ == '__main__':
                 jname = job_name.replace("g-scan", "g-scan_{nch}_{idx}".format(nch = "n" + str(args.nchunk), idx = "i" + str(idx)))
                 logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
 
-                if len(logs) > 0:
+                if not args.runlocal and len(logs) > 0:
                     continue
 
                 jarg = job_arg
@@ -277,7 +277,7 @@ if __name__ == '__main__':
                 jname = job_name + "_" + group
                 logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
 
-                if len(logs) > 0:
+                if not args.runlocal and len(logs) > 0:
                     continue
 
                 jarg = job_arg
@@ -288,7 +288,7 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
-            if len(logs) > 0:
+            if not args.runlocal and len(logs) > 0:
                 continue
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
