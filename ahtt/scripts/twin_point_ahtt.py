@@ -206,7 +206,7 @@ if __name__ == '__main__':
     dcdir = args.basedir + "__".join(points) + args.tag + "/"
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
-    poi_range = "--setParameterRanges " + ":".join(["g_" + pp + "=0.,5." for pp in points])
+    poi_range = "--setParameterRanges '" + ":".join(["g_" + pp + "=0.,5." for pp in points]) + "'"
     best_fit_file = ""
 
     gstr = ""

@@ -307,7 +307,7 @@ if __name__ == '__main__':
 
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
-    poi_range = "--setParameterRanges r=0.,5." if args.onepoi else "--setParameterRanges r=0.,2.:g=0.,5."
+    poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
 
     allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
