@@ -168,7 +168,7 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
             counter = counter - 1
 
 def draw_pull(oname, directories, labels, isimpact, onepoi, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
-    pulls = read_pull(directories, isimpact, onepoi, fixg, impactsb)
+    pulls = read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
     expth = []
