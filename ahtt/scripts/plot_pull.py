@@ -20,14 +20,16 @@ from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
 nuisance_per_page = 32
 
-def read_pull(directories, isimpact, onepoi, fixg, impactsb):
+def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for dd in directories]
     for ii, dd in enumerate(directories):
-        impacts = glob.glob("{dd}/{pnt}_impacts_{gvl}_{exp}*.json".format(
+        impacts = glob.glob("{dd}/{pnt}_impacts_{gvl}_{mod}{gvl}{rvl}{fix}*.json".format(
             dd = dd,
             pnt = '_'.join(dd.split('_')[:3]),
-            gvl = "one-poi" if onepoi else "fix-g_" + str(fixg).replace(".", "p"),
-            exp = "sig" if impactsb else "bkg"
+            mod = "one-poi" if onepoi else "g-scan",
+            gvl = "_g_" + str(gvalue).replace(".", "p") if gvalue >= 0. else "",
+            rvl = "_r_" + str(rvalue).replace(".", "p") if rvalue >= 0. and not onepoi else "",
+            fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
         ))
 
         for imp in impacts:
@@ -165,7 +167,7 @@ def plot_pull(oname, labels, isimpact, impactsb, pulls, nuisances, extra, point,
             fig, ax = plt.subplots()
             counter = counter - 1
 
-def draw_pull(oname, directories, labels, isimpact, onepoi, fixg, impactsb, mcstat, transparent, plotformat):
+def draw_pull(oname, directories, labels, isimpact, onepoi, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
     pulls = read_pull(directories, isimpact, onepoi, fixg, impactsb)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
@@ -195,13 +197,20 @@ if __name__ == '__main__':
 
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
-    parser.add_argument("--g-value", help = "g value to use when evaluating pull/impact, if one-poi is not used. defaults to 1",
-                        dest = "fixg", default = 1.0, required = False, type = float)
-    parser.add_argument("--impact-sb", help = "read sb pull/impact fit instead of b",
-                        dest = "impactsb", action = "store_true", required = False)
+    parser.add_argument("--g-value",
+                        help = "g to use when evaluating impacts/fit diagnostics/nll. "
+                        "does NOT freeze the value, unless --fix-poi is also used. "
+                        "note: semantically sets value of 'r' with --one-poi, as despite the name it plays the role of g.",
+                        dest = "setg", default = -1., required = False, type = float)
+    parser.add_argument("--r-value",
+                        help = "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used."
+                        "does NOT freeze the value, unless --fix-poi is also used.",
+                        dest = "setr", default = -1., required = False, type = float)
+    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
+                        dest = "fixpoi", action = "store_true", required = False)
 
-    parser.add_argument("--no-mc-stats", help = "don't consider nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--with-mc-stats", help = "plot also the bb-lite nuisances",
+                        dest = "mcstat", action = "store_true", required = False)
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
@@ -223,5 +232,5 @@ if __name__ == '__main__':
 
     dirs = [args.point + '_' + tag for tag in tags]
     draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.otag,
-              dirs, labels, isimpact, args.onepoi, args.fixg, args.impactsb, args.mcstat, args.transparent, args.fmt)
+              dirs, labels, isimpact, args.onepoi, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
     pass
