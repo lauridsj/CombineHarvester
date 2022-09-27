@@ -261,6 +261,7 @@ if __name__ == '__main__':
     runfc = "fc-scan" in args.mode or "contour" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
+    runprepost = "prepost" in args.mode or "corrmat" in args.mode
     runclean = "clean" in args.mode
 
     if runcompile and (rundc or runfc or runhadd):
@@ -392,7 +393,8 @@ if __name__ == '__main__':
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
 
-            submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
+            job_mem = "8 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
+            submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
                        "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
                        True, (runhadd and len(pairs) < 3) or runcompile or args.runlocal)
 
