@@ -23,7 +23,7 @@ nuisance_per_page = 32
 def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for dd in directories]
     for ii, dd in enumerate(directories):
-        impacts = glob.glob("{dd}/{pnt}_impacts_{gvl}_{mod}{gvl}{rvl}{fix}*.json".format(
+        impacts = glob.glob("{dd}/{pnt}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dd = dd,
             pnt = '_'.join(dd.split('_')[:3]),
             mod = "one-poi" if onepoi else "g-scan",
