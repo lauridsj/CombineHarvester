@@ -18,7 +18,7 @@ from matplotlib.legend_handler import HandlerErrorbar
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 
-nuisance_per_page = 25
+nuisance_per_page = 30
 
 def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for dd in directories]
