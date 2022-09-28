@@ -368,7 +368,7 @@ if __name__ == '__main__':
                     if not args.runlocal and len(logs) > 0:
                         continue
 
-                    fcrundat = args.fcrundat and idx == idxs[0]
+                    fcrundat = args.fcmode != "add" and args.fcrundat and idx == idxs[0]
 
                     jarg = job_arg
                     jarg += " {gvl} {nui} {toy} {dat} {idx}".format(
@@ -393,7 +393,8 @@ if __name__ == '__main__':
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
 
-            job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
+            #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
+            job_mem = ""
             submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
                        "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
                        True, (runhadd and len(pairs) < 3) or runcompile or args.runlocal)
