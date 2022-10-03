@@ -112,20 +112,20 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if '_neg' in process:
             if '_res' in process:
                 if self.verbose:
-                    print 'Scaling', process, 'with negative coupling modifier to the 4'
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier to the 4'
                     print 'WARNING: negative resonance, are you sure this is what you want?'
                 return 'mg4_' + str(idx)
             else:
                 if self.verbose:
-                    print 'Scaling', process, 'with negative coupling modifier squared'
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier squared'
                 return 'mg2_' + str(idx)
         elif '_res' in process:
             if self.verbose:
-                print 'Scaling', process, 'with coupling modifier to the 4'
+                print 'Scaling', process, 'in bin', bin, 'with coupling modifier to the 4'
             return 'g4_' + str(idx)
 
         if self.verbose:
-            print 'Scaling', process, 'with coupling modifier squared'
+            print 'Scaling', process, 'in bin', bin, 'with coupling modifier squared'
         return 'g2_' + str(idx)
 
 multiInterferencePlusFixed = MultiInterferencePlusFixed()
