@@ -15,14 +15,14 @@ from ROOT import TFile, TTree
 
 from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify
 
-def get_fit(dname, points, qexp_eq_m1 = True):
+def get_fit(dname, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
     bf = None
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
-            bf = (getattr(dtree, "g_" + points[0]), getattr(dtree, "g_" + points[1]), dtree.deltaNLL)
+            bf = (getattr(dtree, "g1"), getattr(dtree, "g2"), dtree.deltaNLL)
 
         if bf is not None:
             break
@@ -86,12 +86,12 @@ def sum_up(g1, g2):
 
     return gs
 
-def starting_poi(points, gvalues, fixpoi):
+def starting_poi(gvalues, fixpoi):
     if all(float(gg) < 0. for gg in gvalues):
         return [[], []]
 
-    setpar = ['g_' + pp + '=' + gg for pp, gg in zip(points, gvalues) if float(gg) >= 0.]
-    frzpar = ['g_' + pp for pp, gg in zip(points, gvalues) if float(gg) >= 0.] if fixpoi else []
+    setpar = ['g' + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if float(gg) >= 0.]
+    frzpar = ['g' + str(ii + 1) for ii, gg in enumerate(gvalues) if float(gg) >= 0.] if fixpoi else []
 
     return [setpar, frzpar]
 
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     dcdir = args.basedir + "__".join(points) + args.tag + "/"
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
-    poi_range = "--setParameterRanges '" + ":".join(["g_" + pp + "=0.,5." for pp in points]) + "'"
+    poi_range = "--setParameterRanges '" + ":".join(["g" + str(ii + 1) + "=0.,5." for ii, pp in enumerate(points)]) + "'"
     best_fit_file = ""
 
     gstr = ""
@@ -286,10 +286,10 @@ if __name__ == '__main__':
             raise RuntimeError("in FC scans both g can't be negative!!")
 
         exp_scenario = OrderedDict()
-        exp_scenario["exp-b"]  = "g_" + points[0] + "=0" + ",g_" + points[1] + "=0"
-        exp_scenario["exp-s"]  = "g_" + points[0] + "=1" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-01"] = "g_" + points[0] + "=0" + ",g_" + points[1] + "=1"
-        exp_scenario["exp-10"] = "g_" + points[0] + "=1" + ",g_" + points[1] + "=0"
+        exp_scenario["exp-b"]  = "g1=0,g2=0"
+        exp_scenario["exp-s"]  = "g1=1,g2=1"
+        exp_scenario["exp-01"] = "g1=0,g2=1"
+        exp_scenario["exp-10"] = "g1=1,g2=0"
 
         fit_strategy = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
                                 dcd = dcdir,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
-                                par = "g_" + points[0] + "=" + gvalues[0] + ",g_" + points[1] + "=" + gvalues[1],
+                                par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
                                 stg = fit_strategy(ifit),
                                 asm = "-t -1" if fcexp != "obs" else "",
@@ -318,7 +318,7 @@ if __name__ == '__main__':
                                 wsp = "--saveWorkspace --saveSpecifiedNuis=all" if args.fcnui == "profile" and fcexp == snapexp else ""
                             ))
 
-                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], points, ff) is not None for ff in [True, False]]):
+                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], ff) is not None for ff in [True, False]]):
                         break
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
@@ -347,7 +347,7 @@ if __name__ == '__main__':
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
-                        par = "g_" + points[0] + "=" + gvalues[0] + ",g_" + points[1] + "=" + gvalues[1],
+                        par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                         #nus = "," + ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
                         nus = "",
                         nuf = "",
@@ -396,7 +396,7 @@ if __name__ == '__main__':
             ggrid.sort()
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
-            best_fit = get_fit(best[0], points)
+            best_fit = get_fit(best[0])
 
             grid = OrderedDict()
             grid["points"] = points
@@ -404,13 +404,13 @@ if __name__ == '__main__':
             grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
 
             for bb in best:
-                if best_fit != get_fit(bb, points):
+                if best_fit != get_fit(bb):
                     print '\nWARNING :: incompatible best fit across different g values!! ignoring current, assuming it is due to numerical instability!'
                     print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
-                    print "current result ", bb, ": ", get_fit(bb, points)
+                    print "current result ", bb, ": ", get_fit(bb)
                     print "first result ", best[0], ": ", best_fit
 
-                bf = get_fit(bb, points, False)
+                bf = get_fit(bb, False)
                 if bf is None:
                     raise RuntimeError("failed getting best fit point for file " + bb + ". aborting.")
 
@@ -435,10 +435,10 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add([starting_poi(points, gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]))
+                                          elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]))
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = elementwise_add([starting_poi(points, gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 

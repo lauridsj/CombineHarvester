@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
 
-    parser.add_argument("--g-values", help = "the two values of g to e.g. do the FC grid scan for, comma separated",
+    parser.add_argument("--g-values", help = "the two values of g to e.g. do fit diagnostics for, comma separated",
                         default = "-1., -1.", dest = "gvl", required = False)
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-values",
                         dest = "fixpoi", action = "store_true", required = False)
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
                         dest = "frznui", action = "store_true", required = False)
 
-    parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in alphas",
+    parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in FC scan alphas",
                         dest = "propersig", action = "store_true", required = False)
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)

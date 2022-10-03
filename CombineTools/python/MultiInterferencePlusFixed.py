@@ -7,11 +7,15 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         self.pois    = []
         self.verbose = False
         self.nor = False
+        self.oner = False
         super(MultiInterferencePlusFixed, self).__init__()
 
     def setPhysicsOptions(self, physOptions):
         if len([po for po in physOptions if po.startswith("signal=")]) != 1:
             raise RuntimeError, 'Model expects a signal=s1,s2,...,sN option, provided exactly once'
+
+        if any([po == "no-r" for po in physOption]) and any([po == "one-r" for po in physOption]):
+            raise RuntimeError, "--no-r and --one-r can't be simultaneously provided!"
 
         for po in physOptions[:]:
             if po.startswith("signal="):
@@ -28,46 +32,58 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
     def processPhysicsOptions(self, physOptions):
         processed = []
         physOptions.sort(key = lambda x: x.startswith("no-r"), reverse = True)
+        physOptions.sort(key = lambda x: x.startswith("one-r"), reverse = True)
         physOptions.sort(key = lambda x: x.startswith("verbose"), reverse = True)
         for po in physOptions:
             if po == "verbose":
                 self.verbose = True
-                processed.append(po)
             if po == "no-r":
                 self.nor = True
-                processed.append(po)
+                self.oner = False
+            if po == "one-r":
+                self.nor = False
+                self.oner = True
             if po.startswith("signal="):
                 signals = po.split('=')[1].split(',')
 
                 for ss in signals:
                     self.add_poi_per_signal(ss)
 
-                processed.append(po)
+            processed.append(po)
 
         return processed + super(MultiInterferencePlusFixed, self).processPhysicsOptions(physOptions)
 
     def add_poi_per_signal(self, signal):
         self.signals.append(signal)
-        self.pois.append('g_{ss}'.format(ss = signal))
+        self.pois.append('g{ss}'.format(ss = self.signals.index(signal) + 1))
 
-        if not self.nor:
-            self.pois.append('r_{ss}'.format(ss = signal))
+        if not self.nor and not self.oner:
+            self.pois.append('r{ss}'.format(ss = self.signals.index(signal) + 1))
+        elif self.oner and 'r' not in self.pois:
+            self.pois.append('r')
 
     def doParametersOfInterest(self):
-        for signal in self.signals:
-            self.modelBuilder.doVar('g_{ss}[1,0,5]'.format(ss = signal))
+        r_is_uninitialized = True
+
+        for ii, signal in enumerate(self.signals):
+            self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii + 1))
 
             if self.nor:
-                self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::mg2_{ss}("-@0*@0", g_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::g4_{ss}("@0*@0*@0*@0", g_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::mg4_{ss}("-@0*@0*@0*@0", g_{ss})'.format(ss = signal))
+                self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g{ss})'.format(ss = ii + 1))
+                self.modelBuilder.factory_('expr::mg2_{ss}("-@0*@0", g{ss})'.format(ss = ii + 1))
+                self.modelBuilder.factory_('expr::g4_{ss}("@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
+                self.modelBuilder.factory_('expr::mg4_{ss}("-@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
             else:
-                self.modelBuilder.doVar('r_{ss}[1,0,10]'.format(ss = signal))
-                self.modelBuilder.factory_('expr::g2_{ss}("(@0*@0)*@1", g_{ss}, r_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::mg2_{ss}("(-@0*@0)*@1", g_{ss}, r_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::g4_{ss}("(@0*@0*@0*@0)*@1", g_{ss}, r_{ss})'.format(ss = signal))
-                self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g_{ss}, r_{ss})'.format(ss = signal))
+                if self.oner and r_is_uninitialized:
+                    self.modelBuilder.doVar('r[1,0,10]')
+                    r_is_uninitialized = False
+                else:
+                    self.modelBuilder.doVar('r{ss}[1,0,10]'.format(ss = ii + 1))
+
+                self.modelBuilder.factory_('expr::g2_{ss}("(@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
+                self.modelBuilder.factory_('expr::mg2_{ss}("(-@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
+                self.modelBuilder.factory_('expr::g4_{ss}("(@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
+                self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
 
         self.modelBuilder.doSet('POI', ','.join(self.pois))
 
@@ -78,12 +94,14 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if not self.DC.isSignal[process]:
             return 1
 
-        base = process
-        for sp in self.signal_parts:
-            base = base.replace(sp, "")
-
-        if self.verbose and self.nor:
-            print "INFO: using model version without the fixed r term."
+        base = self.signals.index(signal) + 1
+        if self.verbose:
+            if self.nor:
+                print "INFO: using model version without the r term."
+            elif self.oner:
+                print "INFO: using model version with one common r term for all signals."
+            else:
+                print "INFO: using model version where all signals get their own r term."
 
         if '_neg' in process:
             if '_res' in process:
