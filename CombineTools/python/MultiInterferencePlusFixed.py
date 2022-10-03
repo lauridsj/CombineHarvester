@@ -94,7 +94,11 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if not self.DC.isSignal[process]:
             return 1
 
-        base = self.signals.index(signal) + 1
+        base = process
+        for sp in self.signal_parts:
+            base = base.replace(sp, "")
+        base = self.signals.index(base) + 1
+
         if self.verbose:
             if self.nor:
                 print "INFO: using model version without the r term."
