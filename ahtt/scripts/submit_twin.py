@@ -212,6 +212,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
+    parser.add_argument("--force", help = "force local jobs to run, even if a job log already exists", dest = "forcelocal", action = "store_true", required = False)
 
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
@@ -365,8 +366,9 @@ if __name__ == '__main__':
                     jname += '_' + str(idx) if idx != -1 else ''
                     logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
 
-                    if not args.runlocal and len(logs) > 0:
-                        continue
+                    if not (args.runlocal and args.forcelocal):
+                        if len(logs) > 0:
+                            continue
 
                     fcrundat = args.fcmode != "add" and args.fcrundat and idx == idxs[0]
 
@@ -384,8 +386,9 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
-            if not args.runlocal and len(logs) > 0:
-                continue
+            if not (args.runlocal and args.forcelocal):
+                if len(logs) > 0:
+                    continue
 
             if runclean:
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
@@ -397,7 +400,7 @@ if __name__ == '__main__':
             job_mem = ""
             submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
                        "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
-                       True, (runhadd and len(pairs) < 3) or runcompile or args.runlocal)
+                       True, runcompile or args.runlocal)
 
         if os.path.isfile(agg):
             syscall('condor_submit {agg}'.format(agg = agg), False)

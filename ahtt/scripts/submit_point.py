@@ -106,6 +106,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
+    parser.add_argument("--force", help = "force local jobs to run, even if a job log already exists", dest = "forcelocal", action = "store_true", required = False)
 
     args = parser.parse_args()
     if (args.tag != "" and not args.tag.startswith("_")):
@@ -225,8 +226,9 @@ if __name__ == '__main__':
                 jname = job_name.replace("g-scan", "g-scan_{nch}_{idx}".format(nch = "n" + str(args.nchunk), idx = "i" + str(idx)))
                 logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
 
-                if not args.runlocal and len(logs) > 0:
-                    continue
+                if not (args.runlocal and args.forcelocal):
+                    if len(logs) > 0:
+                        continue
 
                 jarg = job_arg
                 jarg += " {nch} {idx}".format(
@@ -277,8 +279,9 @@ if __name__ == '__main__':
                 jname = job_name + "_" + group
                 logs = glob.glob(pnt + args.tag + "/" + jname + ".o*")
 
-                if not args.runlocal and len(logs) > 0:
-                    continue
+                if not (args.runlocal and args.forcelocal):
+                    if len(logs) > 0:
+                        continue
 
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
@@ -288,8 +291,9 @@ if __name__ == '__main__':
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
-            if not args.runlocal and len(logs) > 0:
-                continue
+            if not (args.runlocal and args.forcelocal):
+                if len(logs) > 0:
+                    continue
 
             submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
                        "." if rundc else "$(readlink -f " + pnt + args.tag + ")", scriptdir + "/single_point_ahtt.py", True, args.runlocal)
