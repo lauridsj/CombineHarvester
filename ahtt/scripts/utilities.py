@@ -245,7 +245,7 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
-    skip = ["r", "g", "g_" + points[0], "g_" + points[1], "deltaNLL", "quantileExpected",
+    skip = ["r", "g", "r1", "r2", "g1", "g2", "deltaNLL", "quantileExpected",
             "limit", "limitErr", "mh", "syst",
             "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
 
