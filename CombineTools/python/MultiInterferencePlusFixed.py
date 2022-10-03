@@ -8,6 +8,8 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         self.verbose = False
         self.nor = False
         self.oner = False
+        self.r_is_uninitialized = True
+        self.printonce = True
         super(MultiInterferencePlusFixed, self).__init__()
 
     def setPhysicsOptions(self, physOptions):
@@ -63,8 +65,6 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
             self.pois.append('r')
 
     def doParametersOfInterest(self):
-        r_is_uninitialized = True
-
         for ii, signal in enumerate(self.signals):
             self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii + 1))
 
@@ -74,9 +74,9 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.modelBuilder.factory_('expr::g4_{ss}("@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
                 self.modelBuilder.factory_('expr::mg4_{ss}("-@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
             else:
-                if self.oner and r_is_uninitialized:
+                if self.oner and self.r_is_uninitialized:
                     self.modelBuilder.doVar('r[1,0,10]')
-                    r_is_uninitialized = False
+                    self.r_is_uninitialized = False
                 else:
                     self.modelBuilder.doVar('r{ss}[1,0,10]'.format(ss = ii + 1))
 
@@ -99,13 +99,15 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
             idx = idx.replace(sp, "")
         idx = self.signals.index(idx) + 1
 
-        if self.verbose:
+        if self.verbose and self.printonce:
             if self.nor:
                 print "INFO: using model version without the r term."
             elif self.oner:
                 print "INFO: using model version with one common r term for all signals."
             else:
                 print "INFO: using model version where all signals get their own r term."
+
+            self.printonce = False
 
         if '_neg' in process:
             if '_res' in process:
