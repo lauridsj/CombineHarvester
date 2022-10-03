@@ -20,7 +20,7 @@ systs='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdam
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --use-pseudodata --year "${years}" --channel "${channels}" --tag "${tag}" --keep ${systs}
 
 #3 run the LO points for the exp-b and data cases
-#3a this submits 10 jobs, indexed 0 - 9, each running 50 toys
+#3a this submits N jobs based on ${idxs}, each running ${ntoy} toys
 #3b indexing can either be 'i1,i2,...,iN' or 'init...final'; with init defaulting to 0 if omitted
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --fc-n-toy "${ntoy}" --fc-idxs "${idxs}" #--unblind
 

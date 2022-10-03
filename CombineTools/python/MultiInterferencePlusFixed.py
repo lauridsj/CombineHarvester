@@ -14,7 +14,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if len([po for po in physOptions if po.startswith("signal=")]) != 1:
             raise RuntimeError, 'Model expects a signal=s1,s2,...,sN option, provided exactly once'
 
-        if any([po == "no-r" for po in physOption]) and any([po == "one-r" for po in physOption]):
+        if any([po == "no-r" for po in physOptions]) and any([po == "one-r" for po in physOptions]):
             raise RuntimeError, "--no-r and --one-r can't be simultaneously provided!"
 
         for po in physOptions[:]:
