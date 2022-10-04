@@ -61,7 +61,12 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     raise RuntimeError("minimum toys insufficient to determine 2 sigma contour!! likely unintended, recheck!!")
 
                 print mintoy
-                gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
+                #gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
+                gts = []
+                for gv in cc["g-grid"].keys():
+                    print cc["g-grid"][gv]
+                    if cc["g-grid"][gv] is not None:
+                        gts.append(tuplize(gv))
                 print gts
                 raise RuntimeError('abort!')
                 effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
