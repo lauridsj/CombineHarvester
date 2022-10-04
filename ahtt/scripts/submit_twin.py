@@ -35,41 +35,33 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 return g_grid
 
             with open(ggrid) as ff:
-                cc = json.load(ff, object_pairs_hook = OrderedDict)
+                contour = json.load(ff, object_pairs_hook = OrderedDict)
 
-            if cc["points"] != pair:
+            if contour["points"] != pair:
                 print "given pair in grid is inconsistent with currently expected pair, skipping..."
-                print "in grid: ", cc["points"]
+                print "in grid: ", contour["points"]
                 print "currently expected: ", pair
                 return g_grid
 
             if gmode == "add":
-                for gv in cc["g-grid"].keys():
-                    if cc["g-grid"][gv] is not None:
+                for gv in contour["g-grid"].keys():
+                    if contour["g-grid"][gv] is not None:
                         gt = tuplize(gv)
                         if gt not in g_grid:
                             g_grid.append(gt)
 
             if gmode == "refine":
                 mintoy = sys.maxsize
-                for gv in cc["g-grid"].keys():
-                    mintoy = min(mintoy, cc["g-grid"][gv]["total"] if cc["g-grid"][gv] is not None else sys.maxsize)
+                for gv in contour["g-grid"].keys():
+                    mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
-                if sum([1 if cc else 0 for cc in cuts]) < 2:
+                if sum([1 if cut else 0 for cut in cuts]) < 2:
                     print "minimum toy count: " + str(mintoy)
                     raise RuntimeError("minimum toys insufficient to determine 2 sigma contour!! likely unintended, recheck!!")
 
-                print mintoy
-                #gts = [tuplize(gv) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
-                gts = []
-                for gv in cc["g-grid"].keys():
-                    print cc["g-grid"][gv]
-                    if cc["g-grid"][gv] is not None:
-                        gts.append(tuplize(gv))
-                print gts
-                raise RuntimeError('abort!')
-                effs = [float(cc["g-grid"][gv]["pass"]) / float(cc["g-grid"][gv]["total"]) for gv in cc["g-grid"].keys() if cc["g-grid"][gv] is not None]
+                gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
+                effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
                 for gt, eff in zip(gts, effs):
                     unary_sqd = lambda pp: sqd(pp[0], gt)
