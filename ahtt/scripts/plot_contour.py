@@ -226,7 +226,7 @@ if __name__ == '__main__':
         contours = args.contour.split(';')
 
     for pair in pairs:
-        pstr = "__".join(pair)
+        pstr = "__".join(pair.split(,))
 
         if args.point != "":
             contour = []
