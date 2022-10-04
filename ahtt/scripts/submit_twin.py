@@ -53,7 +53,9 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
             if gmode == "refine":
                 mintoy = sys.maxsize
                 for gv in cc["g-grid"].keys():
+                    print gv
                     mintoy = min(mintoy, cc["g-grid"][gv]["total"] if cc["g-grid"][gv] is not None else sys.maxsize)
+                    raise RuntimeError('abort!')
 
                 cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cc else 0 for cc in cuts]) < 2:
