@@ -214,7 +214,7 @@ if __name__ == '__main__':
                 pairs = []
                 for aa in alla:
                     for hh in allh:
-                        pairs.append([aa, hh])
+                        pairs.append(aa + "," + hh)
     else:
         contours = args.contour.split(';')
         pairs = [os.path.basename(os.path.dirname(cc)).split(".")[0].split("__") for cc in contours]
@@ -223,9 +223,10 @@ if __name__ == '__main__':
         if not all([pp == pairs[0] for pp in pairs]):
             raise RuntimeError("provided contours are not all of the same pair of points!!")
 
-        pairs = [pairs[0]]
+        pairs = [','.join(pairs[0])]
 
     for pair in pairs:
+        pair = pair.split(,)
         pstr = "__".join(pair)
 
         if args.point != "":
