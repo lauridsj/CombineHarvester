@@ -234,8 +234,10 @@ if __name__ == '__main__':
             tags = [tt if tt.startswith("_") else "_" + tt for tt in tags]
 
             for tag in tags:
+                print(tag)
                 fcexps = tag.split('/')[1].split(',')
                 for fcexp in fcexps:
+                    print(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
                     print(ggg)
