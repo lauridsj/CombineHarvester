@@ -238,6 +238,7 @@ if __name__ == '__main__':
                 for fcexp in fcexps:
                     ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
+                    print(ggg)
                     contour.append(ggg[-1])
         else:
             contour = contours
