@@ -226,7 +226,8 @@ if __name__ == '__main__':
         contours = args.contour.split(';')
 
     for pair in pairs:
-        pstr = "__".join(pair.split(','))
+        pair = pair.split(',')
+        pstr = "__".join(pair)
 
         if args.point != "":
             contour = []
@@ -234,13 +235,10 @@ if __name__ == '__main__':
             tags = [tt if tt.startswith("_") else "_" + tt for tt in tags]
 
             for tag in tags:
-                print(tag)
                 fcexps = tag.split('/')[1].split(',')
                 for fcexp in fcexps:
-                    print(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                     ggg.sort(key = os.path.getmtime)
-                    print(ggg)
                     contour.append(ggg[-1])
         else:
             contour = contours
