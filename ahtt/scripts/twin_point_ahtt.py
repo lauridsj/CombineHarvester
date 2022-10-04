@@ -30,15 +30,15 @@ def get_fit(dname, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
-def read_previous_grid(gpoints, prev_best_fit, gname):
+def read_previous_grid(points, prev_best_fit, gname):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
 
-    if result["points"] == gpoints and result["best_fit_g1_g2_dnll"] == list(prev_best_fit):
+    if result["points"] == points and result["best_fit_g1_g2_dnll"] == list(prev_best_fit):
         return result["g-grid"]
     else:
         print "\ninconsistent previous grid, ignoring the previous grid..."
-        print "previous: ", gpoints, prev_best_fit
+        print "previous: ", points, prev_best_fit
         print "current: ", result["points"], result["best_fit_g1_g2_dnll"]
 
     return OrderedDict()
@@ -387,38 +387,38 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in fcexps:
-            best = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + fcexp))
-            if len(best) == 0:
+            gpoints = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + fcexp))
+            if len(gpoints) == 0:
                 raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
-            best.sort()
+            gpoints.sort()
 
             ggrid = glob.glob("{dcd}{pnt}_fc_scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp))
             ggrid.sort()
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
-            best_fit = get_fit(best[0])
+            best_fit = get_fit(gpoints[0])
 
             grid = OrderedDict()
             grid["points"] = points
             grid["best_fit_g1_g2_dnll"] = best_fit
             grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
 
-            for bb in best:
-                if best_fit != get_fit(bb):
+            for pnt in gpoints:
+                if best_fit != get_fit(pnt):
                     print '\nWARNING :: incompatible best fit across different g values!! ignoring current, assuming it is due to numerical instability!'
                     print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
-                    print "current result ", bb, ": ", get_fit(bb)
-                    print "first result ", best[0], ": ", best_fit
+                    print "current result ", pnt, ": ", get_fit(pnt)
+                    print "first result ", gpoints[0], ": ", best_fit
 
-                bf = get_fit(bb, False)
+                bf = get_fit(pnt, False)
                 if bf is None:
-                    raise RuntimeError("failed getting best fit point for file " + bb + ". aborting.")
+                    raise RuntimeError("failed getting best fit point for file " + pnt + ". aborting.")
 
-                gg = get_toys(bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
+                gg = get_toys(pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
                 gv = stringify((bf[0], bf[1]))
 
                 if args.rmroot and fcexp == fcexps[-1]:
-                    syscall("rm " + bb + " " + bb.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
+                    syscall("rm " + pnt + " " + pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
 
                 if gv in grid["g-grid"]:
                     grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
