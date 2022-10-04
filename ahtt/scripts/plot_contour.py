@@ -226,7 +226,7 @@ if __name__ == '__main__':
         pairs = [','.join(pairs[0])]
 
     for pair in pairs:
-        pair = pair.split(,)
+        pair = pair.split(',')
         pstr = "__".join(pair)
 
         if args.point != "":
