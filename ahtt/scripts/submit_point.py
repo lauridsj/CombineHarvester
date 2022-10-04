@@ -77,6 +77,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--impact-n", help = "maximum number of nuisances to run in a single impact job",
                         dest = "nnuisance", default = 10, required = False, type = int)
+    parser.add_argument("--skip-expth",
+                        help = "in pull/impact mode, skip running over the experimental and theory nuisances",
+                        dest = "runexpth", action = "store_false", required = False)
     parser.add_argument("--run-mc-stats",
                         help = "in pull/impact mode, run also over the BB nuisances individually. "
                         "this option does not affect their treatment in any way (analytical minimization)",
@@ -243,25 +246,26 @@ if __name__ == '__main__':
                 args.nnuisance = 25
 
             nuisances = OrderedDict()
-            syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
-                    "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
-                    "> {dcd}/{nui}".format(
-                        cms = r'${CMSSW_BASE}',
-                        dcd = pnt + args.tag,
-                        ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
-                        nui = "ahtt_nuisance.txt",
-                        awk = r"'{print $1}'"
-                    ))
-            with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
-                nparts = fexp.readlines()
-                nparts = [et.rstrip() for et in nparts]
-                nsplit = (len(nparts) // args.nnuisance) + 1 
-                nparts = chunks(nparts, nsplit)
+            if args.runexpth:
+                syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
+                        "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
+                        "> {dcd}/{nui}".format(
+                            cms = r'${CMSSW_BASE}',
+                            dcd = pnt + args.tag,
+                            ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
+                            nui = "ahtt_nuisance.txt",
+                            awk = r"'{print $1}'"
+                        ))
+                with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
+                    nparts = fexp.readlines()
+                    nparts = [et.rstrip() for et in nparts]
+                    nsplit = (len(nparts) // args.nnuisance) + 1
+                    nparts = chunks(nparts, nsplit)
 
-                for ip, ipart in enumerate(nparts):
-                    group = "expth_{ii}".format(ii = str(ip))
-                    nuisances[group] = copy.deepcopy(ipart)
-            syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
+                    for ip, ipart in enumerate(nparts):
+                        group = "expth_{ii}".format(ii = str(ip))
+                        nuisances[group] = copy.deepcopy(ipart)
+                syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
             if args.runbb:
                 for cc in args.channel.replace(" ", "").split(','):
