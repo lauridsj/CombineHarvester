@@ -425,9 +425,9 @@ if __name__ == '__main__':
                 else:
                     grid["g-grid"][gv] = gg
 
-                grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-                with open("{dcd}{pnt}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp, idx = str(idx)), "w") as jj:
-                    json.dump(grid, jj, indent = 1)
+            grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
+            with open("{dcd}{pnt}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+                json.dump(grid, jj, indent = 1)
 
     if runprepost:
         strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
