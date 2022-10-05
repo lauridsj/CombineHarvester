@@ -160,7 +160,7 @@ def dotty_scan(args):
             ii += 3
             continue
 
-        if (0.025 < result[2] < 0.1):
+        if (0.0125 < result[2] < 0.2):
             ii += 1
         else:
             ii += 2
