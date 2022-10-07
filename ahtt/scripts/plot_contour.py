@@ -157,8 +157,11 @@ if __name__ == '__main__':
                         default = "", required = False)
     parser.add_argument("--contour", help = "the json files containing the contour information, semicolon separated.\n"
                         "two separate syntaxes are possible:\n"
-                        "'latest': t1/s1,s2;t2/s3... expands to <pnt>_<t1>/<pnt>_fc_scan_<s1>.json;<pnt>_<t1>/<pnt>_fc_scan_<s2>.json;<pnt>_<t2>/<pnt>_fc_scan_<s3>.json, "
-                        " where the code will search for the latest indices corresponding to scenario s1 and so on. used if --point is non-empty, and looped over all pairs. \n"
+                        "'tag': t1/s1:i1,s2:i2;t2/s3:i3... expands to (let p being the considered point, and <fc> = fc_scan):"
+                        "<p>_<t1>/<p>_<fc>_<s1>_<i1>.json;<p>_<t1>/<p>_<fc>_<s2>_<i2>.json;<p>_<t2>/<p>_<fc>_<s3>_<i3>.json, "
+                        "where the code will search for index i1 corresponding to scenario s1 and so on."
+                        "if :i1 etc is omitted, the latest index will be picked.\n"
+                        "used if --point is non-empty, and looped over all pairs. \n"
                         "'direct': <json 1>;<json 2>;... used only when --point is empty",
                         default = "", required = True)
 
@@ -237,7 +240,13 @@ if __name__ == '__main__':
             for tag in tags:
                 fcexps = tag.split('/')[1].split(',')
                 for fcexp in fcexps:
-                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
+                    exp = fcexp
+                    idx = "_*"
+                    if ':' in fcexp:
+                        exp = fcexp.split(':')[0]
+                        idx = '_' + fcexp.split(':')[1]
+
+                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + exp + idx + ".json")
                     ggg.sort(key = os.path.getmtime)
                     contour.append(ggg[-1])
         else:
