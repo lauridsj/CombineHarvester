@@ -417,9 +417,10 @@ if __name__ == '__main__':
                 gg = get_toys(pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
                 gv = stringify((bf[0], bf[1]))
 
-                if args.rmroot and fcexp == fcexps[-1]:
-                    # FIXME weird logic for deleting file, to be fixed
-                    syscall("rm " + pnt + " " + pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
+                if args.rmroot:
+                    syscall("rm " + pnt, False, True)
+                    if fcexp == fcexps[-1]:
+                        syscall("rm " + pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
 
                 if gv in grid["g-grid"]:
                     grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
