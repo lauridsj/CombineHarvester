@@ -267,7 +267,7 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: making workspaces"
         syscall("combineTool.py -M T2W -i {dcd} -o workspace_twin-g.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                "--PO verbose --PO 'signal={pnt}' --PO no-r".format(
+                "--PO verbose --PO 'signal={pnt}' --PO no-r --channel-masks".format(
                     dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                     mmm = mstr,
                     pnt = args.point.replace(" ", "")
