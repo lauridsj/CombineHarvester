@@ -9,6 +9,7 @@ import subprocess
 import numpy as np
 import copy
 
+from random import shuffle
 from collections import OrderedDict
 import json
 import math

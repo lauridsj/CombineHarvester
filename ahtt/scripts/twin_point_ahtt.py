@@ -8,7 +8,6 @@ import glob
 import re
 import numpy as np
 
-from random import shuffle
 from collections import OrderedDict
 import json
 
