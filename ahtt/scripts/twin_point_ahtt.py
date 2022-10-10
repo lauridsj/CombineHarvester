@@ -406,7 +406,7 @@ if __name__ == '__main__':
                         #nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist",
-                        nty = "-t " + str(args.ntoy) if not readtoy else "-t " + str(args.ftoy),
+                        nty = "-t " + str(args.ntoy) if not readtoy else "-t " + str(ftoy),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                         byp = "--bypassFrequentistFit --fastScan" if args.fcnui == "profile" else "",
