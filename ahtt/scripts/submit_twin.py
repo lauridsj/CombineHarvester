@@ -408,7 +408,7 @@ if __name__ == '__main__':
                 for ig1, ig2 in gvalues:
                     scan_name = "g1_" + str(ig1) + "_g2_" + str(ig2)
 
-                    for idx in idxs:
+                    for ii, idx in enumerate(idxs):
                         jname = job_name + scan_name
                         jname += '_' + str(idx) if idx != -1 else ''
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
