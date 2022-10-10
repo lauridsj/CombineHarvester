@@ -392,7 +392,7 @@ if __name__ == '__main__':
                 print ggrid
 
                 if args.fcsinglepnt:
-                    gvalues = [gg in args.gvl.replace(" ", "").split(',')]
+                    gvalues = [float(gg) for gg in args.gvl.replace(" ", "").split(',')]
                     gvalues = [tuple(gvalues)]
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
