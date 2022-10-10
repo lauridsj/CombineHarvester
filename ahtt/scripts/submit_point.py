@@ -20,8 +20,10 @@ if __name__ == '__main__':
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2016pre,2016post,2017,2018", required = False)
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
+                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
+                        default = "2016pre,2016post,2017,2018", required = False)
 
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
@@ -43,6 +45,8 @@ if __name__ == '__main__':
                         help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
+                        default = "", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
@@ -175,7 +179,7 @@ if __name__ == '__main__':
         )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {rsd} {com} {bsd}').format(
+                   '{shp} {mcs} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -192,6 +196,7 @@ if __name__ == '__main__':
                        lns = "--lnN-under-threshold" if args.lnNsmall else "",
                        shp = "--use-shape-always" if args.alwaysshape else "",
                        mcs = "--no-mc-stats" if not args.mcstat else "",
+                       msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
                        prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
                        frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
                        asm = "--unblind" if not args.asimov else "",
@@ -270,6 +275,9 @@ if __name__ == '__main__':
             if args.runbb:
                 for cc in args.channel.replace(" ", "").split(','):
                     for yy in args.year.replace(" ", "").split(','):
+                        if cc + "_" + yy in args.mask:
+                            continue
+
                         nbin = get_nbin(pnt + args.tag + "/ahtt_input.root", cc, yy)
                         nsplit = (nbin // args.nnuisance) + 1 
                         nparts = chunks(range(nbin), nsplit)

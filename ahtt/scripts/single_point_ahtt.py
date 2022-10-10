@@ -78,7 +78,7 @@ def get_nll_g_scan(lfile):
     return nll
 
 def single_point_scan(args):
-    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat = args
+    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     epsilon = 2.**-17
@@ -86,7 +86,7 @@ def single_point_scan(args):
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
             "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-            "--singlePoint 1 {stg} {asm} {mcs}".format(
+            "--singlePoint 1 {stg} {asm} {mcs} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 gst = gstr,
@@ -95,7 +95,8 @@ def single_point_scan(args):
                 prg = poi_range,
                 stg = strategy,
                 asm = "-t -1" if asimov else "",
-                mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
+                mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
+                msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
 
     limit = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
@@ -114,7 +115,7 @@ def single_point_scan(args):
         for ii in range(1, nstep + 1):
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
                     "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-                    "--singlePoint 1 {stg} {asm} {mcs}".format(
+                    "--singlePoint 1 {stg} {asm} {mcs} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         gst = gstr + "eps",
@@ -123,7 +124,8 @@ def single_point_scan(args):
                         prg = poi_range,
                         stg = strategy,
                         asm = "-t -1" if asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else ""
+                        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
+                        msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
                     ))
 
             leps = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
@@ -146,7 +148,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat = args
+    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -154,7 +156,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat))
+        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks))
 
         if result is None:
             ii += 3
@@ -201,8 +203,10 @@ if __name__ == '__main__':
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2016pre,2016post,2017,2018", required = False)
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
+                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
+                        default = "2016pre,2016post,2017,2018", required = False)
 
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
@@ -224,6 +228,8 @@ if __name__ == '__main__':
                         help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
+                        default = "", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
@@ -309,6 +315,8 @@ if __name__ == '__main__':
     mstr = str(point[1]).replace(".0", "")
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
+    masks = ["mask_" + mm + "=1" for mm in args.mask.replace(" ", "").split(',')]
+    print "the following channel x year combinations will be masked:", masks
 
     allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
@@ -371,7 +379,7 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {mcs}".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {mcs} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 maxg = max_g,
@@ -379,7 +387,8 @@ if __name__ == '__main__':
                 acc = accuracies,
                 stg = strategy,
                 asm = "--run blind -t -1" if args.asimov else "",
-                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
@@ -404,7 +413,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, strategy, args.asimov, args.mcstat))
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, strategy, args.asimov, args.mcstat, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -453,7 +462,7 @@ if __name__ == '__main__':
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file)])
@@ -469,7 +478,7 @@ if __name__ == '__main__':
             stg = strategy,
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+            stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
@@ -483,7 +492,7 @@ if __name__ == '__main__':
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
-            stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+            stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
         ))
 
@@ -509,7 +518,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -526,7 +535,7 @@ if __name__ == '__main__':
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+                    stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
                     frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
         ))
 
@@ -552,7 +561,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]))
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
@@ -584,7 +593,7 @@ if __name__ == '__main__':
                             gvl = "--points 193 --alignEdges 1",
                             stg = strategy,
                             asm = asimov,
-                            stp = "--setParameters '" + ",".join(setpar + pois) + "'" if len(setpar) + len(pois) > 0 else "",
+                            stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                         ))
@@ -612,7 +621,7 @@ if __name__ == '__main__':
                                 gvl = str(gval),
                                 stg = strategy,
                                 asm = asimov,
-                                stp = "--setParameters '" + ",".join(setpar + pois) + "'" if len(setpar) + len(pois) > 0 else "",
+                                stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                                 frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                                 mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                             ))

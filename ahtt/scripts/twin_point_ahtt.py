@@ -102,8 +102,12 @@ if __name__ == '__main__':
 
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "../input/ll_sig.root", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated", default = "../input/ll_bkg.root", required = False)
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "ll", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "2018", required = False)
+
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
+                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
+                        default = "2016pre,2016post,2017,2018", required = False)
+
     parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
     parser.add_argument("--drop",
                         help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
@@ -124,6 +128,8 @@ if __name__ == '__main__':
                         help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
+                        default = "", required = False)
 
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
@@ -208,6 +214,8 @@ if __name__ == '__main__':
     mstr = str(get_point(points[0])[1]).replace(".0", "")
     poi_range = "--setParameterRanges '" + ":".join(["g" + str(ii + 1) + "=0.,5." for ii, pp in enumerate(points)]) + "'"
     best_fit_file = ""
+    masks = ["mask_" + mm + "=1" for mm in args.mask.replace(" ", "").split(',')]
+    print "the following channel x year combinations will be masked:", masks
 
     gstr = ""
     for ii, gg in enumerate(gvalues):
@@ -305,12 +313,13 @@ if __name__ == '__main__':
 
                 for ifit in ["0", "1", "2"]:
                     syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                            "--fixedPointPOIs '{par}' --setParameters '{exp}' {stg} {asm} {toy} {mcs} {wsp}".format(
+                            "--fixedPointPOIs '{par}' --setParameters '{exp}{msk}' {stg} {asm} {toy} {mcs} {wsp}".format(
                                 dcd = dcdir,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
+                                msk = "," + ",".join(masks) if len(masks) > 0 else "",
                                 stg = fit_strategy(ifit),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
@@ -343,11 +352,12 @@ if __name__ == '__main__':
 
             setpar, frzpar = read_nuisance(snapshot, points, False) if args.fcnui == "profile" else ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
+                    "--fixedPointPOIs '{par}' --setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
+                        msk = "," + ",".join(masks) if len(masks) > 0 else "",
                         #nus = "," + ",".join(setpar) if args.fcnui == "profile" and len(setpar) > 0 else "",
                         nus = "",
                         nuf = "",
@@ -453,7 +463,7 @@ if __name__ == '__main__':
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stp = "--setParameters '" + ",".join(setpar) + "'" if len(setpar) > 0 else "",
+                    stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
                     frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
         ))
 
