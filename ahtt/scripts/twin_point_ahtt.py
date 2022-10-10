@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
             setpar, frzpar = read_nuisance(snapshot, points, False) if args.fcnui == "profile" else ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {nty} {opd} {mcs} {byp}".format(
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {mcs} {byp}".format(
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -406,8 +406,7 @@ if __name__ == '__main__':
                         nuf = "",
                         #nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
-                        toy = "-s -1 --toysFrequentist",
-                        nty = "-t " + str(args.ntoy) if not readtoy else "-t " + str(ftoy),
+                        toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                         byp = "--bypassFrequentistFit --fastScan" if args.fcnui == "profile" else "",
