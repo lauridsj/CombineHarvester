@@ -270,7 +270,7 @@ if __name__ == '__main__':
         args.jobtime = "-t " + args.jobtime
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
-    rungen = "generate" in modes
+    rungen = "generate" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
