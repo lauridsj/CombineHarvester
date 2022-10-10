@@ -386,6 +386,7 @@ if __name__ == '__main__':
             readtoy = args.toyloc.endswith(".root")
             if readtoy:
                 for ftoy in args.toyloc.split("_"):
+                    print ftoy
                     if ftoy.startswith("n"):
                         ftoy = int(ftoy.replace("n", "").replace(".root", ""))
 
