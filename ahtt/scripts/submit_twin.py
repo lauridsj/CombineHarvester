@@ -427,7 +427,7 @@ if __name__ == '__main__':
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
 
-                        if ig1 == 0. and ig2 == 0. and len(toylocs) > 0:
+                        if args.fcsinglepnt and len(toylocs) > 0:
                             jarg += " --toy-location " + toylocs[ii]
 
                         submit_job(agg, jname, jarg, args.jobtime, 1, "",
