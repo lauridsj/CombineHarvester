@@ -389,6 +389,7 @@ if __name__ == '__main__':
                     print ftoy
                     if ftoy.startswith("n"):
                         ftoy = int(ftoy.replace("n", "").replace(".root", ""))
+                        break
 
                 if ftoy < args.ntoy:
                     print "\nWARNING :: file", args.toyloc, "contains less toys than requested in the run!"
