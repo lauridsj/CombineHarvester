@@ -375,7 +375,6 @@ if __name__ == '__main__':
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
         accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1"
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
@@ -385,7 +384,7 @@ if __name__ == '__main__':
                 maxg = max_g,
                 prg = poi_range,
                 acc = accuracies,
-                stg = strategy,
+                stg = fit_strategy("1"),
                 asm = "--run blind -t -1" if args.asimov else "",
                 mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
@@ -457,11 +456,9 @@ if __name__ == '__main__':
         if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
             raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
 
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
-
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
-                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -475,7 +472,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = strategy,
+            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
@@ -488,7 +485,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = strategy,
+            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
@@ -512,12 +509,9 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
 
     if runprepost:
-        # option '--set/freezeParameters' cannot be specified more than once
-        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
-
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
-                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -531,7 +525,7 @@ if __name__ == '__main__':
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
-                    stg = strategy,
+                    stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -556,11 +550,9 @@ if __name__ == '__main__':
 
     if runnll:
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
-        strategy = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy 1 --cminFallbackAlgo Minuit2,Simplex,1 --robustFit 1 --setRobustFitStrategy 1"
-
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
-                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -591,7 +583,7 @@ if __name__ == '__main__':
                             mmm = mstr,
                             prg = poi_range,
                             gvl = "--points 193 --alignEdges 1",
-                            stg = strategy,
+                            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",

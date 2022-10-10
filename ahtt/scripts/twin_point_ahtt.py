@@ -8,6 +8,7 @@ import glob
 import re
 import numpy as np
 
+from random import shuffle
 from collections import OrderedDict
 import json
 
@@ -154,17 +155,21 @@ if __name__ == '__main__':
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-values",
                         dest = "fixpoi", action = "store_true", required = False)
 
+    parser.add_argument("--n-toy", help = "number of toys to throw per point when generating or performing FC scans",
+                        default = 50, dest = "ntoy", required = False, type = int)
+    parser.add_argument("--run-idx", help = "index to append to a given toy generation/FC scan run",
+                        default = -1, dest = "runidx", required = False, type = int)
+    parser.add_argument("--toy-location", help = "directory to dump the toys in mode generate, "
+                        "and file to read them from in mode contour/gof.",
+                        dest = "toyloc", default = "", required = False)
+
     parser.add_argument("--fc-expect", help = "expected scenarios to assume in the FC scan. comma separated.\n"
                         "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
                         default = "exp-b", dest = "fcexp", required = False)
     parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
                         "WARNING: profile mode implementation is incomplete!!",
                         default = "conservative", dest = "fcnui", required = False)
-    parser.add_argument("--fc-n-toy", help = "number of toys to throw per FC grid scan",
-                        default = 50, dest = "fctoy", required = False, type = int)
     parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
-    parser.add_argument("--fc-idx", help = "index to append to FC grid scan",
-                        default = -1, dest = "fcidx", required = False, type = int)
 
     parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
@@ -209,6 +214,7 @@ if __name__ == '__main__':
     modes = args.mode.replace(" ", "").split(',')
     scriptdir = os.path.dirname(os.path.abspath(__file__))
     args.basedir += "" if args.basedir == "" or args.basedir.endswith("/") else "/"
+    args.toyloc += "" if args.toyloc == "" or args.toyloc.endswith("/") or args.toyloc.endswith(".root") else "/"
     dcdir = args.basedir + "__".join(points) + args.tag + "/"
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
@@ -222,7 +228,10 @@ if __name__ == '__main__':
         usc = "_" if ii > 0 else ""
         gstr += usc + "g" + str(ii + 1) + "_" + gvalues[ii] if float(gvalues[ii]) >= 0. else ""
 
-    allmodes = ["datacard", "workspace", "validate", "fc-scan", "contour", "hadd", "merge", "compile", "prepost", "corrmat"]
+    allmodes = ["datacard", "workspace", "validate",
+                "generate", "fc-scan", "contour",
+                "hadd", "merge", "compile",
+                "prepost", "corrmat"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -230,6 +239,7 @@ if __name__ == '__main__':
     # determine what to do with workspace, and do it
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
+    rungen = "generate" in modes
     runfc = "fc-scan" in modes or "contour" in modes
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
@@ -245,6 +255,8 @@ if __name__ == '__main__':
     if not args.fcnui in allnui:
         print "supported nuisance modes:", allnui
         raise RuntimeError("unexpected nuisance mode is given. aborting.")
+    elif args.fcnui == "profile":
+        raise RuntimeError("nuisance mode profile is no longer pursued at the moment, and so is not allowed.")
 
     if not args.asimov:
         fcexps.append("obs")
@@ -289,6 +301,29 @@ if __name__ == '__main__':
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
+    if rungen and args.ntoy > 0:
+        print "\ntwin_point_ahtt :: starting toy generation"
+        syscall("combine -v -1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy} {mcs}".format(
+                    dcd = dcdir + "workspace_twin-g.root",
+                    mmm = mstr,
+                    snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+                    par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
+                    stg = fit_strategy("2"),
+                    toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
+                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                ))
+
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}_toys_{gvl}{fix}{toy}{idx}.root".format(
+            opd = args.toyloc if args.toyloc != "" else dcdir,
+            snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+            pnt = "__".join(points),
+            gvl = gstr.replace(".", "p") if gstr != "" else "",
+            fix = "_fixed" if args.fixpoi and gstr != "" else "",
+            toy = "_n" + str(args.ntoy),
+            idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+            mmm = mstr,
+        ), False)
+
     if runfc:
         if any(float(gg) < 0. for gg in gvalues):
             raise RuntimeError("in FC scans both g can't be negative!!")
@@ -298,8 +333,6 @@ if __name__ == '__main__':
         exp_scenario["exp-s"]  = "g1=1,g2=1"
         exp_scenario["exp-01"] = "g1=0,g2=1"
         exp_scenario["exp-10"] = "g1=1,g2=0"
-
-        fit_strategy = lambda ss: "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = ss)
 
         scan_name = "pnt_g1_" + gvalues[0] + "_g2_" + gvalues[1]
         snapshot = "fc_scan_snap.root"
@@ -312,9 +345,9 @@ if __name__ == '__main__':
                 identifier = "_" + fcexp
 
                 for ifit in ["0", "1", "2"]:
-                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_twin-g.root -m {mmm} -n _{snm} "
-                            "--fixedPointPOIs '{par}' --setParameters '{exp}{msk}' {stg} {asm} {toy} {mcs} {wsp}".format(
-                                dcd = dcdir,
+                    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
+                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {mcs} {wsp}".format(
+                                dcd = dcdir + "workspace_twin-g.root",
                                 mmm = mstr,
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
@@ -346,13 +379,22 @@ if __name__ == '__main__':
                 else:
                     syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-        if args.fctoy > 0:
-            identifier = "_toys_" + str(args.fcidx) if args.fcidx > -1 else "_toys"
+        if args.ntoy > 0:
+            identifier = "_toys_" + str(args.runidx) if args.runidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
+            readtoy = args.toyloc.endswith(".root")
+            if readtoy:
+                for ftoy in args.toyloc.split("_"):
+                    if ftoy.startswith("n"):
+                        ftoy = int(ftoy.replace("n", "").replace(".root", ""))
+
+                if ftoy < args.ntoy:
+                    print "\nWARNING :: file", args.toyloc, "contains less toys than requested in the run!"
+
             setpar, frzpar = read_nuisance(snapshot, points, False) if args.fcnui == "profile" else ([], [])
-            syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _{snm} "
-                    "--fixedPointPOIs '{par}' --setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {mcs} {byp}".format(
+            syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {nty} {opd} {mcs} {byp}".format(
                         dcd = snapshot if args.fcnui == "profile" else dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -363,12 +405,14 @@ if __name__ == '__main__':
                         nuf = "",
                         #nuf = "--freezeParameters '" + ",".join(frzpar) + "'" if args.fcnui == "profile" and len(frzpar) > 0 else "",
                         stg = fit_strategy("0"),
-                        toy = "-s -1 --toysFrequentist -t " + str(args.fctoy),
+                        toy = "-s -1 --toysFrequentist",
+                        nty = "-t " + str(args.ntoy) if not readtoy else "-t " + str(args.ftoy),
+                        opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                         byp = "--bypassFrequentistFit --fastScan" if args.fcnui == "profile" else "",
                     ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}.root {dcd}fc_scan_{snm}.root".format(
                 dcd = dcdir,
                 snm = scan_name + identifier,
                 mmm = mstr,
@@ -442,8 +486,6 @@ if __name__ == '__main__':
                 json.dump(grid, jj, indent = 1)
 
     if runprepost:
-        strategy = "--cminPreScan --cminDefaultMinimizerStrategy 2 --cminFallbackAlgo Minuit2,Simplex,2  --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1"
-
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
                                           args.asimov, args.mcstat, strategy, poi_range,
@@ -459,7 +501,7 @@ if __name__ == '__main__':
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz}".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    stg = strategy,
+                    stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -479,7 +521,6 @@ if __name__ == '__main__':
             gvl = gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
-        pass
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

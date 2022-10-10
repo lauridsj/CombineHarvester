@@ -307,3 +307,6 @@ def elementwise_add(list_of_lists):
             result[rr] += list_of_lists[ll][rr]
 
     return result
+
+def fit_strategy(strat):
+    return "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
