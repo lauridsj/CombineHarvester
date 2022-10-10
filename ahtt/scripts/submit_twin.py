@@ -401,7 +401,7 @@ if __name__ == '__main__':
                 toylocs = []
                 if args.toyloc != "":
                     toylocs = glob.glob("{opd}**/*_toys_*_n*.root".format(opd = args.toyloc))
-                    shuffle(ftoys)
+                    shuffle(toylocs)
                 if len(toylocs) != 0 and len(toylocs) < len(idxs):
                         raise RuntimeError("expecting at least as many toy files as there are run indices!!")
 
