@@ -11,7 +11,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add
+from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy
 
 def get_limit(lfile):
     lfile = TFile.Open(lfile)

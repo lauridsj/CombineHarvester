@@ -14,7 +14,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify
+from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy
 
 def get_fit(dname, qexp_eq_m1 = True):
     dfile = TFile.Open(dname)
