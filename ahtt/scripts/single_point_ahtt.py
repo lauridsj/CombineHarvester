@@ -315,7 +315,8 @@ if __name__ == '__main__':
     mstr = str(point[1]).replace(".0", "")
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
-    masks = ["mask_" + mm + "=1" for mm in args.mask.replace(" ", "").split(',')]
+    masks = [] if args.mask == "" else args.mask.replace(" ", "").split(',')
+    masks = ["mask_" + mm + "=1" for mm in masks]
     print "the following channel x year combinations will be masked:", masks
 
     allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
