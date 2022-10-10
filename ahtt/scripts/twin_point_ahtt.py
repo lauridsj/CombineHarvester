@@ -413,7 +413,7 @@ if __name__ == '__main__':
                         byp = "--bypassFrequentistFit --fastScan" if args.fcnui == "profile" else "",
                     ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}.root {dcd}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
                 dcd = dcdir,
                 snm = scan_name + identifier,
                 mmm = mstr,
