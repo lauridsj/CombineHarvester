@@ -400,13 +400,14 @@ if __name__ == '__main__':
 
                 toylocs = []
                 if args.toyloc != "":
+                    ## FIXME recursive glob doesn't work
                     toylocs = glob.glob("{opd}**/*_toys_*_n*.root".format(opd = args.toyloc))
                     shuffle(toylocs)
                 if len(toylocs) != 0 and len(toylocs) < len(idxs):
                         raise RuntimeError("expecting at least as many toy files as there are run indices!!")
 
                 for ig1, ig2 in gvalues:
-                    scan_name = "g1_" + str(ig1) + "_g2_" + str(ig2)
+                    scan_name = "_g1_" + str(ig1) + "_g2_" + str(ig2)
 
                     for ii, idx in enumerate(idxs):
                         jname = job_name + scan_name
