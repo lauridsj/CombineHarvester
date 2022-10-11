@@ -124,6 +124,7 @@ def get_nbin(fname, channel, year):
     hfile = TFile.Open(fname, "read")
     hfile.cd(channel + "_" + year)
     keys = gDirectory.GetListOfKeys()
+    print keys[0]
     histogram = keys[0].ReadObj()
     nbin = histogram.GetNbinsX()
     hfile.Close()
