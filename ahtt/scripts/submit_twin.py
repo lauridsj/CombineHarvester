@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 import os
 import sys
 import glob
-import subprocess
 import numpy as np
 import copy
 
@@ -14,7 +13,7 @@ from collections import OrderedDict
 import json
 import math
 
-from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize
+from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob
 
 sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
@@ -400,8 +399,7 @@ if __name__ == '__main__':
 
                 toylocs = []
                 if args.toyloc != "":
-                    ## FIXME recursive glob doesn't work
-                    toylocs = glob.glob("{opd}**/*_toys_*_n*.root".format(opd = args.toyloc))
+                    toylocs = recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
                     shuffle(toylocs)
                 if len(toylocs) != 0 and len(toylocs) < len(idxs):
                         raise RuntimeError("expecting at least as many toy files as there are run indices!!")

@@ -5,8 +5,8 @@
 import os
 import sys
 import math
+import fnmatch
 
-import glob
 from datetime import datetime
 from collections import OrderedDict
 
@@ -310,3 +310,13 @@ def elementwise_add(list_of_lists):
 
 def fit_strategy(strat):
     return "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+
+
+
+def recursive_glob(base_directory, pattern):
+    # https://stackoverflow.com/a/2186639
+    results = []
+    for base, dirs, files in os.walk(base_directory):
+        goodfiles = fnmatch.filter(files, pattern)
+        results.extend(os.path.join(base, f) for f in goodfiles)
+    return results

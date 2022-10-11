@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# draw the model-independent limit on gAH plot
+# draw the nuisance pull/impact plot
 # requires matplotlib > 3.3 e.g. source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_100 x86_64-centos7-gcc10-opt
 
 from argparse import ArgumentParser
