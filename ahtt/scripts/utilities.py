@@ -124,10 +124,11 @@ def get_nbin(fname, channel, year):
     hfile = TFile.Open(fname, "read")
     hfile.cd(channel + "_" + year)
     keys = gDirectory.GetListOfKeys()
-    histogram = keys[0].ReadObject()
-    nbin = histogram.GetNbinsX()
-    hfile.Close()
-    return nbin
+    for key in keys:
+        histogram = key.ReadObj()
+        nbin = histogram.GetNbinsX()
+        hfile.Close()
+        return nbin
 
 def chunks(lst, npart):
     if npart > math.ceil(float(len(lst)) / 2) or npart < 1:
