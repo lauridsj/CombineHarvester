@@ -122,9 +122,7 @@ def project(histogram, rule):
 
 def get_nbin(fname, channel, year):
     hfile = TFile.Open(fname, "read")
-    gDirectory.cd(channel + "_" + year)
-    keys = gDirectory.GetListOfKeys()
-    histogram = keys[0].ReadObj()
+    histogram = hfile.Get(channel + "_" + year + "/TT")
     nbin = histogram.GetNbinsX()
     hfile.Close()
     return nbin
