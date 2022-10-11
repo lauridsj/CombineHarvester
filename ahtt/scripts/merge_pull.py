@@ -10,7 +10,7 @@ from collections import OrderedDict
 import json
 
 def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi):
-    for ii, dd in enumerate(directories):
+    for dd in directories:
         pulls = OrderedDict()
         impacts = glob.glob("{dd}/{pnt}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dd = dd,
@@ -21,7 +21,8 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi):
             fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
         ))
 
-        for imp in impacts:
+        for ii, imp in enumerate(impacts):
+            print("merge_pull :: opening file " + imp)
             with open(imp) as ff:
                 result = json.load(ff)
 
