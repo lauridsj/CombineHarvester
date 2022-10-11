@@ -9,7 +9,7 @@ import glob
 from collections import OrderedDict
 import json
 
-def read_pull(directories, onepoi, gvalue, rvalue, fixpoi):
+def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi):
     for ii, dd in enumerate(directories):
         pulls = OrderedDict()
         impacts = glob.glob("{dd}/{pnt}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
@@ -69,4 +69,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     tags = args.itag.replace(" ", "").split(';')
     dirs = [args.point + '_' + tag for tag in tags]
-    merge_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi)
+    dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi)
