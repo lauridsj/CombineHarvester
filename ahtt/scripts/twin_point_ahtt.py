@@ -313,11 +313,11 @@ if __name__ == '__main__':
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                 ))
 
-        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}_toys_{gvl}{fix}{toy}{idx}.root".format(
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}_toys{gvl}{fix}{toy}{idx}.root".format(
             opd = args.toyloc if args.toyloc != "" else dcdir,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             pnt = "__".join(points),
-            gvl = gstr.replace(".", "p") if gstr != "" else "",
+            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
             toy = "_n" + str(args.ntoy),
             idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
@@ -515,10 +515,10 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{gvl}{fix}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics{gvl}{fix}.root".format(
             dcd = dcdir,
             pnt = "__".join(points),
-            gvl = gstr.replace(".", "p") if gstr != "" else "",
+            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
 
