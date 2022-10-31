@@ -369,7 +369,7 @@ def make_pseudodata(ofile, cpn, sigpnt = None, seed = None):
         ofile.cd(category)
         dd.Write()
 
-def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag):
+def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rateparam, tag):
     # to note nuisances that need special handling
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(write_datacard, "lnNs"):
@@ -423,7 +423,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
                 ("CMS_TQ_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TQ", 1.15),
                 ("CMS_TW_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TW", 1.15),
                 ("CMS_TB_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TB", 1.15),
-                #("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # down/up, down = scale by 1/x and up = x
+                ("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (1.065, 1.056)), # down/up, down = scale by 1/x and up = x
             ))
         ])
         write_datacard.lnNs["ee"] = write_datacard.lnNs["ll"]
@@ -440,6 +440,9 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
     years = tuple(sorted(years))
     point = get_point(sigpnt[0])
     mstr = str(point[1])
+
+    if rateparam != "":
+        rateparam = rateparam.replace(" ", "").split(',')
 
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
@@ -469,7 +472,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
                             continue
 
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
-                        cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
+                        if rp == "" or all(["CMS_{rp}_norm_13TeV".format(rp == rp) != lnN[0] for rp in rateparam]):
+                            cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -484,6 +488,12 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, tag)
         for tt in txts:
             with open(tt, 'a') as txt:
                 txt.write("\n* autoMCStats 0.\n")
+
+    if rateparam != "":
+        for tt in txts:
+            with open(tt, 'a') as txt:
+                for rp in rateparam:
+                    txt.write("\nCMS_{rp}_norm_13TeV rateParam * * 1\n".format(rp == rp))
 
     if len(categories) > 1:
         os.chdir(sstr + tag)
@@ -522,6 +532,13 @@ if __name__ == '__main__':
                         help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--float-rate",
+                        help = "comma separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        "the implementation assumes a single rate parameter across all channels.\n"
+                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
+                        "relevant only in the datacard step.",
+                        dest = "rateparam", default = "", required = False)
+
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
                         "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
@@ -602,4 +619,4 @@ if __name__ == '__main__':
         make_pseudodata(output, cpn, injects, args.seed if args.seed != 0 else None)
     output.Close()
 
-    write_datacard(oname, cpn, years, points, injects, drops, keeps, args.mcstat, args.tag)
+    write_datacard(oname, cpn, years, points, injects, drops, keeps, args.mcstat, args.rateparam, args.tag)

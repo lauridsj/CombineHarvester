@@ -143,6 +143,12 @@ if __name__ == '__main__':
                         help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--float-rate",
+                        help = "comma separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        "the implementation assumes a single rate parameter across all channels.\n"
+                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
+                        "relevant only in the datacard step.",
+                        dest = "rateparam", default = "", required = False)
     parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
                         default = "", required = False)
 
@@ -311,7 +317,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {exp} {bsd}").format(
+                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -328,6 +334,7 @@ if __name__ == '__main__':
             lns = "--lnN-under-threshold" if args.lnNsmall else "",
             shp = "--use-shape-always" if args.alwaysshape else "",
             mcs = "--no-mc-stats" if not args.mcstat else "",
+            rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
             msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",

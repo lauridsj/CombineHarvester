@@ -228,6 +228,12 @@ if __name__ == '__main__':
                         help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--float-rate",
+                        help = "comma separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        "the implementation assumes a single rate parameter across all channels.\n"
+                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
+                        "relevant only in the datacard step.",
+                        dest = "rateparam", default = "", required = False)
     parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
                         default = "", required = False)
 
@@ -335,7 +341,7 @@ if __name__ == '__main__':
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
         syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {prj} {rsd}".format(
+                "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {rsd}".format(
                     scr = scriptdir,
                     sig = args.signal,
                     bkg = args.background,
@@ -352,6 +358,7 @@ if __name__ == '__main__':
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
                     shp = "--use-shape-always" if args.alwaysshape else "",
                     mcs = "--no-mc-stats" if not args.mcstat else "",
+                    rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
                     prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
                     rsd = "--seed " + args.seed if args.seed != "" else ""
                 ))
