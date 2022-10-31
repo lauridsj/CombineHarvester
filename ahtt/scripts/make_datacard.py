@@ -493,7 +493,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         for tt in txts:
             with open(tt, 'a') as txt:
                 for rp in rateparam:
-                    txt.write("\nCMS_{rp}_norm_13TeV rateParam * * 1\n".format(rp == rp))
+                    txt.write("\nCMS_{rp}_norm_13TeV rateParam * * 1\n".format(rp = rp))
 
     if len(categories) > 1:
         os.chdir(sstr + tag)
