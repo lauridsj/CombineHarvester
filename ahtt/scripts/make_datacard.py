@@ -472,7 +472,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                             continue
 
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
-                        if rp == "" or all(["CMS_{rp}_norm_13TeV".format(rp == rp) != lnN[0] for rp in rateparam]):
+                        if rateparam == "" or all(["CMS_{rp}_norm_13TeV".format(rp == rp) != lnN[0] for rp in rateparam]):
                             cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
