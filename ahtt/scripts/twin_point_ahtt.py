@@ -129,7 +129,8 @@ if __name__ == '__main__':
                         "or don't add the bb-lite analytical minimization option in others",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--float-rate",
-                        help = "comma separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
                         "the implementation assumes a single rate parameter across all channels.\n"
                         "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
                         "relevant only in the datacard step.",

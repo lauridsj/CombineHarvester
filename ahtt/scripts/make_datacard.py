@@ -442,7 +442,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     mstr = str(point[1])
 
     if rateparam != "":
-        rateparam = rateparam.replace(" ", "").split(',')
+        rateparam = rateparam.replace(" ", "").split(';')
 
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
@@ -493,7 +493,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         for tt in txts:
             with open(tt, 'a') as txt:
                 for rp in rateparam:
-                    txt.write("\nCMS_{rp}_norm_13TeV rateParam * {rp} 1\n".format(rp = rp))
+                    rpp = rp.split(':')
+                    txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + ', '.join(rpp[1].split(',')) + ']' if len(rpp) > 1 else "[0, 2]"))
 
     if len(categories) > 1:
         os.chdir(sstr + tag)
@@ -533,7 +534,8 @@ if __name__ == '__main__':
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--float-rate",
-                        help = "comma separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
+                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
                         "the implementation assumes a single rate parameter across all channels.\n"
                         "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
                         "relevant only in the datacard step.",
