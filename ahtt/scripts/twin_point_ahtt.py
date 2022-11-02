@@ -190,6 +190,10 @@ if __name__ == '__main__':
     parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
                         dest = "frznui", action = "store_true", required = False)
 
+    parser.add_argument("--extra-option",
+                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
+                        dest = "extopt", default = "", required = False)
+
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
@@ -497,7 +501,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
                                           args.asimov, args.mcstat, strategy, poi_range,
-                                          elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]))
+                                          elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -506,7 +510,7 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_twin-g.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
                     dcd = dcdir,
                     mmm = mstr,
                     stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
@@ -515,6 +519,7 @@ if __name__ == '__main__':
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
                     frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                    ext = args.extopt
         ))
 
         syscall("rm *_th1x_*.png", False, True)

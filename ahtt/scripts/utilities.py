@@ -221,12 +221,12 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
                 name = 'conSub_' + job_name + '.txt',
                 agg = job_agg), False)
 
-def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze, masks = []):
+def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     setpar = set_freeze[0]
     frzpar = set_freeze[1]
 
-    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stp} {frz} {stg} {prg} {asm} {mcs} {wsp}".format(
+    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stp} {frz} {stg} {prg} {asm} {mcs} {wsp} {ext}".format(
         dcd = dcdir + card,
         bff = fname,
         stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
@@ -235,8 +235,8 @@ def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_f
         prg = poi_range,
         asm = "-t -1" if asimov else "",
         mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
-        #wsp = "--saveWorkspace --saveSpecifiedNuis=all"
-        wsp = "--saveSpecifiedNuis=all"
+        wsp = "--saveSpecifiedNuis=all",
+        ext = extopt
     ))
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)

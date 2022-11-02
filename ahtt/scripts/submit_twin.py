@@ -225,6 +225,10 @@ if __name__ == '__main__':
     parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
                         dest = "frznui", action = "store_true", required = False)
 
+    parser.add_argument("--extra-option",
+                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
+                        dest = "extopt", default = "", required = False)
+
     parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in FC scan alphas",
                         dest = "propersig", action = "store_true", required = False)
 
@@ -318,7 +322,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {exp} {bsd}").format(
+                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -346,6 +350,7 @@ if __name__ == '__main__':
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = "--g-values '" + args.gvl + "'" if not runfc and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
             fix = "--fix-poi" if args.fixpoi and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
+            ext = "'" + args.extopt + "'" if args.extopt != "" else "",
             exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )

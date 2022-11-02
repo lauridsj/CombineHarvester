@@ -294,6 +294,10 @@ if __name__ == '__main__':
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
                         dest = "fixpoi", action = "store_true", required = False)
 
+    parser.add_argument("--extra-option",
+                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
+                        dest = "extopt", default = "", required = False)
+
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
     parser.add_argument("--base-directory",
                         help = "in non-datacard modes, this is the location where datacard is searched for, and output written to",
@@ -468,7 +472,7 @@ if __name__ == '__main__':
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file)])
@@ -476,7 +480,7 @@ if __name__ == '__main__':
         frzpar = set_freeze[1]
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {stp} {frz}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -485,11 +489,12 @@ if __name__ == '__main__':
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+            ext = args.extopt
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {stp} {frz}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {stp} {frz} {ext}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -499,7 +504,8 @@ if __name__ == '__main__':
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
             stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+            ext = args.extopt
         ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
@@ -521,7 +527,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -530,7 +536,7 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
@@ -540,6 +546,7 @@ if __name__ == '__main__':
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
                     frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                    ext = args.extopt
         ))
 
         syscall("rm *_th1x_*.png", False, True)
@@ -562,7 +569,7 @@ if __name__ == '__main__':
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
                                           args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), "", masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)

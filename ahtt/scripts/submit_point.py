@@ -117,6 +117,10 @@ if __name__ == '__main__':
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
                         dest = "fixpoi", action = "store_true", required = False)
 
+    parser.add_argument("--extra-option",
+                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
+                        dest = "extopt", default = "", required = False)
+
     parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
     parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
     parser.add_argument("--force", help = "force local jobs to run, even if a job log already exists", dest = "forcelocal", action = "store_true", required = False)
@@ -185,7 +189,7 @@ if __name__ == '__main__':
         )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {rsd} {com} {bsd}').format(
+                   '{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -211,6 +215,7 @@ if __name__ == '__main__':
                        gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
                        rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
                        fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
+                       ext = "'" + args.extopt + "'" if args.extopt != "" else "",
                        rsd = "--seed " + args.seed if args.seed != "" else "",
                        com = "--compress" if rundc else "",
                        bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
