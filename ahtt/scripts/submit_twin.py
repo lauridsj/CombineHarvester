@@ -350,7 +350,7 @@ if __name__ == '__main__':
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = "--g-values '" + args.gvl + "'" if not runfc and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
             fix = "--fix-poi" if args.fixpoi and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
-            ext = "'" + args.extopt + "'" if args.extopt != "" else "",
+            ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
             exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
