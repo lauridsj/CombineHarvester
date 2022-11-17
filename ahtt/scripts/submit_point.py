@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year '2016pre,2016post,2017,2018' --channel 'ee,em,mm,e3j,e4pj,m3j,m4pj' --tag lx --keep 'eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm' --mode ${imode}; done
+# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}" --mode "${imode}"; done
+# get the shell vars from run_fc
 
 from argparse import ArgumentParser
 import os

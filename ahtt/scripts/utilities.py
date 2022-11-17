@@ -154,9 +154,9 @@ def input_bkg(background, channels):
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33_pdfpca.root")
+        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pca.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_pdfpca.root")
+        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rate_mtuX_pca.root")
 
     return ','.join(backgrounds)
 

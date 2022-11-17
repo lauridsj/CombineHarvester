@@ -72,48 +72,57 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     # 'regular' nuisances are those that are uncorrelated between years with a scaling of 1
     if not hasattr(read_category_process_nuisance, "specials"):
         read_category_process_nuisance.specials = OrderedDict([
-            ("QCDscale_MEFac_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_MERen_AH",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MEFac_AH",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_AH",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("QCDscale_ISR_AH",           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_FSR_AH",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_ISR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("QCDscale_MEFac_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_MERen_TT",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("EWK_yukawa",                (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("EWK_scheme",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("EWK_yukawa",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("EWK_scheme",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_PDF_alphaS",            (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_PDF_hessian",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_PDF_alphaS",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_PDF_hessian",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("QCDscale_ISR_TT",           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_FSR_TT",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_ISR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("hdamp_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("tmass_TT",                  (("2016pre", "2016post", "2017", "2018"), 1. / 6.)),
+            ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 6.)),
 
-            ("CMS_UEtune_13TeV",          (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_ColorRec_13TeV",        (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_UEtune_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CR_ERD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CR_QCD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_pileup",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_pileup",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_eff_e_reco",            (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_e_id",              (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_trigger_e",         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_e_reco",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_e_id",                       (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_trigger_e",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_eff_m_reco",            (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_m_id_syst",         (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_m_iso_syst",        (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_trigger_m_syst",    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_m_reco",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_m_id_syst",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_m_iso_syst",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_trigger_m_syst",             (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_eff_b_13TeV",           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_fake_b_13TeV",          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_fake_b_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_JEC_13TeV_Absolute",    (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_JEC_13TeV_BBEC1",       (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_JEC_13TeV_FlavorQCD",   (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_JEC_13TeV_RelativeBal", (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_JEC",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_Pileup",             (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_Type3",              (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("CMS_JEC_13TeV_Absolute",             (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_JEC_13TeV_BBEC1",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_JEC_13TeV_FlavorQCD",            (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_JEC_13TeV_FlavorPureBottom",     (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_JEC_13TeV_FlavorQCDOnNonBottom", (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_JEC_13TeV_RelativeBal",          (("2016pre", "2016post", "2017", "2018"), 1.)),
         ])
 
         for ipdf in range(100):
@@ -256,8 +265,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 drop_nuisance = False
                 if keeps is not None:
                     drop_nuisance = not any([dn in nn2 for dn in keeps])
-                elif drops is not None:
-                    drop_nuisance = drops == ['*'] or any([dn in nn2 for dn in drops])
+                if drops is not None:
+                    drop_nuisance = drop_nuisance or drops == ['*'] or any([dn in nn2 for dn in drops])
 
                 if not drop_nuisance and not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
@@ -388,28 +397,28 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 ("lumi_13TeV", ("2017pre",), "all", 1.012),
             )),
             (("2016post", "2016pre"), (
-                ("lumi_13TeV_2016pre",   ("2016pre",), "all", 1.01),
-                ("lumi_13TeV_2016post",  ("2016post",), "all", 1.01),
-                ("lumi_13TeV",           ("2016pre", "2016post"), "all", 1.006),
+                ("lumi_13TeV_16pre",      ("2016pre",), "all", 1.01),
+                ("lumi_13TeV_16post",     ("2016post",), "all", 1.01),
+                ("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
             )),
             (("2017", "2018"), (
-                ("lumi_13TeV_2017",      ("2017",), "all", 1.02),
-                ("lumi_13TeV_2018",      ("2018",), "all", 1.015),
-                ("lumi_13TeV_2017_2018", ("2017",), "all", 1.006),
-                ("lumi_13TeV_2017_2018", ("2018",), "all", 1.002),
-                ("lumi_13TeV",           ("2017",), "all", 1.009),
-                ("lumi_13TeV",           ("2018",), "all", 1.02),
+                ("lumi_13TeV_17",         ("2017",), "all", 1.02),
+                ("lumi_13TeV_18",         ("2018",), "all", 1.015),
+                ("lumi_13TeV_1718",       ("2017",), "all", 1.006),
+                ("lumi_13TeV_1718",       ("2018",), "all", 1.002),
+                ("lumi_13TeV_correlated", ("2017",), "all", 1.009),
+                ("lumi_13TeV_correlated", ("2018",), "all", 1.02),
             )),
             (("2016post", "2016pre", "2017", "2018"), (
-                ("lumi_13TeV_2016pre",   ("2016pre",), "all", 1.01),
-                ("lumi_13TeV_2016post",  ("2016post",), "all", 1.01),
-                ("lumi_13TeV_2017",      ("2017",), "all", 1.02),
-                ("lumi_13TeV_2018",      ("2018",), "all", 1.015),
-                ("lumi_13TeV_2017_2018", ("2017",), "all", 1.006),
-                ("lumi_13TeV_2017_2018", ("2018",), "all", 1.002),
-                ("lumi_13TeV",           ("2016pre", "2016post"), "all", 1.006),
-                ("lumi_13TeV",           ("2017",), "all", 1.009),
-                ("lumi_13TeV",           ("2018",), "all", 1.02),
+                ("lumi_13TeV_16pre",      ("2016pre",), "all", 1.01),
+                ("lumi_13TeV_16post",     ("2016post",), "all", 1.01),
+                ("lumi_13TeV_17",         ("2017",), "all", 1.02),
+                ("lumi_13TeV_18",         ("2018",), "all", 1.015),
+                ("lumi_13TeV_1718",       ("2017",), "all", 1.006),
+                ("lumi_13TeV_1718",       ("2018",), "all", 1.002),
+                ("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
+                ("lumi_13TeV_correlated", ("2017",), "all", 1.009),
+                ("lumi_13TeV_correlated", ("2018",), "all", 1.02),
             )),
             ("ll" , (
                 ("CMS_DY_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "DY", 1.05),
@@ -466,7 +475,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                         if not any([dn in lnN[0] for dn in keeps]):
                             print("make_datacard :: nuisance " + lnN[0] + " has been dropped")
                             continue
-                    elif drops is not None:
+                    if drops is not None:
                         if drops == ['*'] or any([dn in lnN[0] for dn in drops]):
                             print("make_datacard :: nuisance " + lnN[0] + " has been dropped")
                             continue
@@ -517,7 +526,7 @@ if __name__ == '__main__':
                         help = "comma separated list of nuisances to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
                         default = "", required = False)
     parser.add_argument("--keep",
-                        help = "comma separated list of nuisances to be kept. same syntax as --drop. implies everything else is dropped",
+                        help = "comma separated list of nuisances to be kept. same syntax as --drop",
                         default = "", required = False)
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
                         default = 0.005, required = False, type = float)
@@ -570,8 +579,6 @@ if __name__ == '__main__':
     keeps = sorted(args.keep.replace(" ", "").split(','))
     if keeps == [""]:
         keeps = None
-    if keeps is not None:
-        drops = ['*']
 
     injects = sorted(args.injectsignal.replace(" ", "").split(','))
     if injects == [""]:
