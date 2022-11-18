@@ -425,8 +425,29 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 ("CMS_VV_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "VV", 1.3),
                 ("CMS_TTV_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TTV", 1.3),
             )),
-            ("lj" , (
-                ("CMS_EWQCD_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "EWQCD", 1.5),
+            ("e3j" , (
+                ("CMS_EWQCD_e3j_norm_13TeV_2016pre",  ("2016pre",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e3j_norm_13TeV_2016post", ("2016post",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e3j_norm_13TeV_2017",     ("2017",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e3j_norm_13TeV_2018",     ("2018",), "EWQCD", 1.5),
+            )),
+            ("e4pj" , (
+                ("CMS_EWQCD_e4pj_norm_13TeV_2016pre",  ("2016pre",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e4pj_norm_13TeV_2016post", ("2016post",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e4pj_norm_13TeV_2017",     ("2017",), "EWQCD", 1.5),
+                ("CMS_EWQCD_e4pj_norm_13TeV_2018",     ("2018",), "EWQCD", 1.5),
+            )),
+            ("m3j" , (
+                ("CMS_EWQCD_m3j_norm_13TeV_2016pre",  ("2016pre",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m3j_norm_13TeV_2016post", ("2016post",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m3j_norm_13TeV_2017",     ("2017",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m3j_norm_13TeV_2018",     ("2018",), "EWQCD", 1.5),
+            )),
+            ("m4pj" , (
+                ("CMS_EWQCD_m4pj_norm_13TeV_2016pre",  ("2016pre",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m4pj_norm_13TeV_2016post", ("2016post",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m4pj_norm_13TeV_2017",     ("2017",), "EWQCD", 1.5),
+                ("CMS_EWQCD_m4pj_norm_13TeV_2018",     ("2018",), "EWQCD", 1.5),
             )),
             ("common" , (
                 ("CMS_TQ_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TQ", 1.15),
@@ -438,11 +459,6 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         write_datacard.lnNs["ee"] = write_datacard.lnNs["ll"]
         write_datacard.lnNs["em"] = write_datacard.lnNs["ll"]
         write_datacard.lnNs["mm"] = write_datacard.lnNs["ll"]
-
-        write_datacard.lnNs["m3j"]  = write_datacard.lnNs["lj"]
-        write_datacard.lnNs["m4pj"] = write_datacard.lnNs["lj"]
-        write_datacard.lnNs["e3j"]  = write_datacard.lnNs["lj"]
-        write_datacard.lnNs["e4pj"] = write_datacard.lnNs["lj"]
 
     cb = ch.CombineHarvester()
     categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
