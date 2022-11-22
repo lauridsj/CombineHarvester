@@ -500,7 +500,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, args.mcstat, strategy, poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp

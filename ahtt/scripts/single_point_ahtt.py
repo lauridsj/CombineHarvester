@@ -425,7 +425,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, strategy, args.asimov, args.mcstat, masks))
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy("1"), args.asimov, args.mcstat, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -628,7 +628,7 @@ if __name__ == '__main__':
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
                                 prg = poi_range,
                                 gvl = str(gval),
-                                stg = strategy,
+                                stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
                                 asm = asimov,
                                 stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                                 frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
