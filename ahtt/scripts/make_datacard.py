@@ -21,6 +21,7 @@ from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
 from utilities import syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
@@ -466,9 +467,6 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     point = get_point(sigpnt[0])
     mstr = str(point[1])
 
-    if rateparam != "":
-        rateparam = rateparam.replace(" ", "").split(';')
-
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
         ii = iicc[0]
@@ -497,7 +495,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                             continue
 
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
-                        if rateparam == "" or all(["CMS_{rp}_norm_13TeV".format(rp = rp) != lnN[0] for rp in rateparam]):
+                        if rateparam is None or all(["CMS_{rp}_norm_13TeV".format(rp = rp) != lnN[0] for rp in rateparam]):
                             cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -514,7 +512,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
             with open(tt, 'a') as txt:
                 txt.write("\n* autoMCStats 0.\n")
 
-    if rateparam != "":
+    if rateparam is not None:
         for tt in txts:
             with open(tt, 'a') as txt:
                 for rp in rateparam:
@@ -529,23 +527,34 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         ))
         os.chdir("..")
 
+
+    points = sorted(args.point)
+    drops = sorted(args.drop)
+    keeps = sorted(args.keep)
+    injects = sorted(args.injectsignal)
+
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--signal", help = "signal filenames, comma separated", default = "", required = True)
-    parser.add_argument("--background", help = "data/background filenames, comma separated", default = "", required = True)
-    parser.add_argument("--point", help = "signal points to make datacard of. comma separated", default = "", required = True)
+    parser.add_argument("--signal", help = "signal filenames, comma separated", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--background", help = "data/background filenames, comma separated", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--point", help = "signal points to make datacard of. comma separated", required = True, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated", default = "", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated", default = "", required = False)
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
+    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated",
+                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated",
+                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+
+    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False, type = prepend_if_not_empty)
+
     parser.add_argument("--drop",
                         help = "comma separated list of nuisances to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--keep",
                         help = "comma separated list of nuisances to be kept. same syntax as --drop",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False, type = float)
+                        default = 0.005, required = False, type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
     parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
@@ -554,17 +563,20 @@ if __name__ == '__main__':
                         dest = "alwaysshape", action = "store_true", required = False)
     parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
                         dest = "pseudodata", action = "store_true", required = False)
+
     parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "inject", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
                         dest = "mcstat", action = "store_false", required = False)
+
     parser.add_argument("--float-rate",
                         help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
                         "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
                         "the implementation assumes a single rate parameter across all channels.\n"
                         "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
                         "relevant only in the datacard step.",
-                        dest = "rateparam", default = "", required = False)
+                        dest = "rateparam", default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
@@ -575,73 +587,53 @@ if __name__ == '__main__':
                         "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
                         "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
                         "indices are zero-based, and spaces are ignored.",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), ':' ))
     parser.add_argument("--seed",
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = -1, required = False, type = int)
     args = parser.parse_args()
-    if (args.tag != "" and not args.tag.startswith("_")):
-        args.tag = "_" + args.tag
-
-    signals = args.signal.replace(" ", "").split(',')
-    backgrounds = args.background.replace(" ", "").split(',')
-
-    points = sorted(args.point.replace(" ", "").split(','))
-    channels = args.channel.replace(" ", "").split(',')
-    years = args.year.replace(" ", "").split(',')
-    drops = sorted(args.drop.replace(" ", "").split(','))
-    if drops == [""]:
-        drops = None
-    keeps = sorted(args.keep.replace(" ", "").split(','))
-    if keeps == [""]:
-        keeps = None
-
-    injects = sorted(args.injectsignal.replace(" ", "").split(','))
-    if injects == [""]:
-        injects = None
 
     allyears = ["2016pre", "2016post", "2017", "2018"]
-    if not all([yy in allyears for yy in years]):
+    if not all([yy in allyears for yy in args.year]):
         print "supported years:", allyears
         raise RuntimeError("unexpected year is given. aborting.")
 
     allchannels = ["ee", "em", "mm", "ll", "ej", "e3j", "e4pj", "mj", "m3j", "m4pj", "lj"]
-    if not all([cc in allchannels for cc in channels]):
+    if not all([cc in allchannels for cc in args.channel]):
         print "supported channels:", allchannels
         raise RuntimeError("unexpected channel is given. aborting.")
 
-    projection = args.projection.replace(" ", "").split(':') if args.projection != "" else []
-    if not all([len(pp.split(';')) == 3 for pp in projection]):
+    if not all([len(pp.split(';')) == 3 for pp in args.projection]):
         raise RuntimeError("unexpected projection instruction syntax. aborting")
-    prjchan = [pp.split(';')[0].split(',') for pp in projection]
-    prjrule = [pp.split(';')[1:] for pp in projection]
+    prjchan = [pp.split(';')[0].split(',') for pp in args.projection]
+    prjrule = [pp.split(';')[1:] for pp in args.projection]
 
-    if injects is not None:
+    if args.inject is not None:
         args.pseudodata = True
 
     oname = "{cwd}/tmp.root".format(cwd = os.getcwd())
     output = TFile(oname, "recreate")
     cpn = OrderedDict()
-    for yy in years:
-        for cc in channels:
+    for yy in args.year:
+        for cc in args.channel:
             prule = ""
             for pchan in prjchan:
                 if cc in pchan:
                     prule = prjrule[prjchan.index(pchan)]
 
-            read_category_process_nuisance(output, signals, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
-                                           points, args.kfactor)
-            if injects is not None and points != injects:
-                remaining = list(set(injects).difference(points))
+            read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                           args.point, args.kfactor)
+            if args.inject is not None and args.point != args.inject:
+                remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
-                    read_category_process_nuisance(output, signals, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                    read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
 
-            read_category_process_nuisance(output, backgrounds, cc, yy, cpn, args.pseudodata, drops, keeps, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+            read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"
-        make_pseudodata(output, cpn, injects, args.seed if args.seed != 0 else None)
+        make_pseudodata(output, cpn, args.inject, args.seed if args.seed != 0 else None)
     output.Close()
 
-    write_datacard(oname, cpn, years, points, injects, drops, keeps, args.mcstat, args.rateparam, args.tag)
+    write_datacard(oname, cpn, args.year, args.point, args.inject, args.drop, args.keep, args.mcstat, args.rateparam, args.tag)

@@ -12,6 +12,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy
+from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def get_limit(lfile):
     lfile = TFile.Open(lfile)
@@ -197,9 +198,8 @@ def starting_poi(onepoi, gvalue, rvalue, fixpoi):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False)
-
+    # purely forwarded arguments - to be kept as string unless they are simple flags, the final script takes care of any complex conversions
+    # make_datacard.py
     parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
     parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
 
@@ -208,26 +208,21 @@ if __name__ == '__main__':
     parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
                         default = "2016pre,2016post,2017,2018", required = False)
 
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
-    parser.add_argument("--drop",
-                        help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
+    parser.add_argument("--drop", help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
                         default = "", required = False)
-    parser.add_argument("--keep",
-                        help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
+    parser.add_argument("--keep", help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
                         default = "", required = False)
+
     parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
                         dest = "kfactor", action = "store_true", required = False)
 
     parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False, type = float)
+                        default = "", required = False)
     parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
                         dest = "lnNsmall", action = "store_true", required = False)
     parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
                         dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--no-mc-stats",
-                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
-                        "or don't add the bb-lite analytical minimization option in others",
-                        dest = "mcstat", action = "store_false", required = False)
+
     parser.add_argument("--float-rate",
                         help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
                         "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
@@ -235,13 +230,10 @@ if __name__ == '__main__':
                         "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
                         "relevant only in the datacard step.",
                         dest = "rateparam", default = "", required = False)
-    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
-                        default = "", required = False)
 
-    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
-                        dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
+                        help = "signal points to inject into the pseudodata, comma separated", dest = "inject", default = "", required = False)
+
     parser.add_argument("--projection",
                         help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
                         "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
@@ -257,20 +249,31 @@ if __name__ == '__main__':
                         help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
                         default = "", required = False)
 
+    # arguments are used here and also forwarded - conversions ought to be kept simple resulting in either string or flag
+    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False, type = prepend_underscore_if_not_empty)
+    parser.add_argument("--no-mc-stats",
+                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
+                        "or don't add the bb-lite analytical minimization option in others",
+                        dest = "mcstat", action = "store_false", required = False)
+
+    # argments that are used only in this script - go to town with its conversion
+    parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
+    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+
+    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+
     parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
     parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
 
     parser.add_argument("--raster-n", help = "number of chunks to split the g raster limit scan into",
-                        dest = "nchunk", default = 6, required = False, type = int)
+                        dest = "nchunk", default = 6, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--raster-i", help = "which chunk to process, in doing the raster scan",
-                        dest = "ichunk", default = 0, required = False, type = int)
+                        dest = "ichunk", default = 0, required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
-    #parser.add_argument("--impact-sb", help = "do sb pull/impact fit instead of b. "
-    #                    "also used in prepost/corrmat/nll for the scenario to consider when finding best fit for freezing nuisances",
-    #                    dest = "impactsb", action = "store_true", required = False)
     parser.add_argument("--impact-nuisances", help = "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, "
                         "and n1,n2,...,nN are the nuisances belonging to that group",
-                        dest = "impactnui", default = "", required = False)
+                        dest = "impactnui", default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     parser.add_argument("--freeze-mc-stats-zero",
                         help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
@@ -286,11 +289,11 @@ if __name__ == '__main__':
                         help = "g to use when evaluating impacts/fit diagnostics/nll. "
                         "does NOT freeze the value, unless --fix-poi is also used. "
                         "note: semantically sets value of 'r' with --one-poi, as despite the name it plays the role of g.",
-                        dest = "setg", default = -1., required = False, type = float)
+                        dest = "setg", default = -1., required = False, type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--r-value",
                         help = "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used."
                         "does NOT freeze the value, unless --fix-poi is also used.",
-                        dest = "setr", default = -1., required = False, type = float)
+                        dest = "setr", default = -1., required = False, type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
                         dest = "fixpoi", action = "store_true", required = False)
 
@@ -301,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
     parser.add_argument("--base-directory",
                         help = "in non-datacard modes, this is the location where datacard is searched for, and output written to",
-                        dest = "basedir", default = "", required = False)
+                        dest = "basedir", default = "", required = False, type = append_if_not_empty)
 
     args = parser.parse_args()
     print "single_point_ahtt :: called with the following arguments"
@@ -311,24 +314,16 @@ if __name__ == '__main__':
     print "\n"
     sys.stdout.flush()
 
-    if (args.tag != "" and not args.tag.startswith("_")):
-        args.tag = "_" + args.tag
-
-    if args.injectsignal != "":
-        args.pseudodata = True
-
-    modes = args.mode.replace(" ", "").split(',')
+    modes = args.mode
     scriptdir = os.path.dirname(os.path.abspath(__file__))
-    args.basedir += "" if args.basedir == "" or args.basedir.endswith("/") else "/"
     dcdir = args.basedir + args.point + args.tag + "/"
 
     point = get_point(args.point)
     mstr = str(point[1]).replace(".0", "")
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
-    masks = [] if args.mask == "" else args.mask.replace(" ", "").split(',')
-    masks = ["mask_" + mm + "=1" for mm in masks]
-    print "the following channel x year combinations will be masked:", masks
+    masks = ["mask_" + mm + "=1" for mm in args.mask]
+    print "the following channel x year combinations will be masked:", args.mask
 
     allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
@@ -353,13 +348,13 @@ if __name__ == '__main__':
                     pnt = args.point,
                     ch = args.channel,
                     yr = args.year,
-                    psd = "--use-pseudodata" if args.pseudodata else "",
-                    inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
+                    psd = "--use-pseudodata" if args.asimov else "",
+                    inj = "--inject-signal " + args.inject if args.inject != "" else "",
                     tag = "--tag " + args.tag if args.tag != "" else "",
                     drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                     kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
                     kfc = "--sushi-kfactor" if args.kfactor else "",
-                    thr = "--threshold " + str(args.threshold) if args.threshold != 0.005 else "",
+                    thr = "--threshold " + args.threshold if args.threshold != "" else "",
                     lns = "--lnN-under-threshold" if args.lnNsmall else "",
                     shp = "--use-shape-always" if args.alwaysshape else "",
                     mcs = "--no-mc-stats" if not args.mcstat else "",
@@ -449,9 +444,9 @@ if __name__ == '__main__':
     if runpull:
         group = ""
         nuisances = ""
-        if args.impactnui != "":
-            group = "_" + args.impactnui.replace(" ", "").split(';')[0]
-            nuisances = args.impactnui.replace(" ", "").split(';')[1]
+        if args.impactnui is not None:
+            group = "_" + args.impactnui[0]
+            nuisances = args.impactnui[1]
 
         syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
@@ -502,7 +497,7 @@ if __name__ == '__main__':
             stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            nui = "--named '" + nuisances + "'" if args.impactnui != "" else "",
+            nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
             stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
             ext = args.extopt
