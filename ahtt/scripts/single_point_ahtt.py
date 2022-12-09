@@ -11,8 +11,10 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy
-from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy, make_datacard_with_args
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from argumentative import common_point, common_common, common_combine, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D
+from hilfemir import combine_help_messages
 
 def get_limit(lfile):
     lfile = TFile.Open(lfile)
@@ -198,113 +200,17 @@ def starting_poi(onepoi, gvalue, rvalue, fixpoi):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    # purely forwarded arguments - to be kept as string unless they are simple flags, the final script takes care of any complex conversions
-    # make_datacard.py
-    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
+    common_point(parser)
+    common_common(parser)
+    common_fit_pure(parser)
+    common_fit(parser)
+    make_datacard_pure(parser)
+    make_datacard_forwarded(parser)
+    common_1D(parser)
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
-                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
-                        default = "2016pre,2016post,2017,2018", required = False)
-
-    parser.add_argument("--drop", help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
-                        default = "", required = False)
-    parser.add_argument("--keep", help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
-                        default = "", required = False)
-
-    parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
-                        dest = "kfactor", action = "store_true", required = False)
-
-    parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = "", required = False)
-    parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
-                        dest = "lnNsmall", action = "store_true", required = False)
-    parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
-                        dest = "alwaysshape", action = "store_true", required = False)
-
-    parser.add_argument("--float-rate",
-                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
-                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
-                        "the implementation assumes a single rate parameter across all channels.\n"
-                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
-                        "relevant only in the datacard step.",
-                        dest = "rateparam", default = "", required = False)
-
-    parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "inject", default = "", required = False)
-
-    parser.add_argument("--projection",
-                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
-                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
-                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
-                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
-                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
-                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
-                        "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
-                        default = "", required = False)
-
-    parser.add_argument("--seed",
-                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
-                        default = "", required = False)
-
-    # arguments are used here and also forwarded - conversions ought to be kept simple resulting in either string or flag
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False, type = prepend_underscore_if_not_empty)
-    parser.add_argument("--no-mc-stats",
-                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
-                        "or don't add the bb-lite analytical minimization option in others",
-                        dest = "mcstat", action = "store_false", required = False)
-
-    # argments that are used only in this script - go to town with its conversion
-    parser.add_argument("--point", help = "desired signal point to run on", default = "", required = True)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
-
-    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
-                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
-
-    parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
-    parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
-
-    parser.add_argument("--raster-n", help = "number of chunks to split the g raster limit scan into",
-                        dest = "nchunk", default = 6, required = False, type = lambda s: int(remove_spaces_quotes(s)))
-    parser.add_argument("--raster-i", help = "which chunk to process, in doing the raster scan",
-                        dest = "ichunk", default = 0, required = False, type = lambda s: int(remove_spaces_quotes(s)))
-
-    parser.add_argument("--impact-nuisances", help = "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, "
-                        "and n1,n2,...,nN are the nuisances belonging to that group",
-                        dest = "impactnui", default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
-
-    parser.add_argument("--freeze-mc-stats-zero",
-                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
-                        dest = "frzbb0", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-post",
-                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "
-                        "--freeze-mc-stats-zero takes priority over this option",
-                        dest = "frzbbp", action = "store_true", required = False)
-    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values.",
-                        dest = "frznui", action = "store_true", required = False)
-
-    parser.add_argument("--g-value",
-                        help = "g to use when evaluating impacts/fit diagnostics/nll. "
-                        "does NOT freeze the value, unless --fix-poi is also used. "
-                        "note: semantically sets value of 'r' with --one-poi, as despite the name it plays the role of g.",
-                        dest = "setg", default = -1., required = False, type = lambda s: float(remove_spaces_quotes(s)))
-    parser.add_argument("--r-value",
-                        help = "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used."
-                        "does NOT freeze the value, unless --fix-poi is also used.",
-                        dest = "setr", default = -1., required = False, type = lambda s: float(remove_spaces_quotes(s)))
-    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
-                        dest = "fixpoi", action = "store_true", required = False)
-
-    parser.add_argument("--extra-option",
-                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
-                        dest = "extopt", default = "", required = False)
-
-    parser.add_argument("--compress", help = "compress output into a tar file", dest = "compress", action = "store_true", required = False)
-    parser.add_argument("--base-directory",
-                        help = "in non-datacard modes, this is the location where datacard is searched for, and output written to",
-                        dest = "basedir", default = "", required = False, type = append_if_not_empty)
+    parser.add_argument("--raster-i", help = combine_help_messages["--raster-i"], dest = "ichunk", default = 0, required = False, type = lambda s: int(remove_spaces_quotes(s)))
+    parser.add_argument("--impact-nuisances", help = combine_help_messages["--impact-nuisances"], dest = "impactnui", default = "", required = False,
+                        type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     args = parser.parse_args()
     print "single_point_ahtt :: called with the following arguments"
@@ -314,11 +220,14 @@ if __name__ == '__main__':
     print "\n"
     sys.stdout.flush()
 
+    if len(args.point) != 1:
+        raise RuntimeError("this script is to be used with exactly one A/H point!")
+
     modes = args.mode
     scriptdir = os.path.dirname(os.path.abspath(__file__))
-    dcdir = args.basedir + args.point + args.tag + "/"
+    dcdir = args.basedir + args.point[0] + args.tag + "/"
 
-    point = get_point(args.point)
+    point = get_point(args.point[0])
     mstr = str(point[1]).replace(".0", "")
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
@@ -340,28 +249,7 @@ if __name__ == '__main__':
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
-        syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-                "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {rsd}".format(
-                    scr = scriptdir,
-                    sig = args.signal,
-                    bkg = args.background,
-                    pnt = args.point,
-                    ch = args.channel,
-                    yr = args.year,
-                    psd = "--use-pseudodata" if args.asimov else "",
-                    inj = "--inject-signal " + args.inject if args.inject != "" else "",
-                    tag = "--tag " + args.tag if args.tag != "" else "",
-                    drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
-                    kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-                    kfc = "--sushi-kfactor" if args.kfactor else "",
-                    thr = "--threshold " + args.threshold if args.threshold != "" else "",
-                    lns = "--lnN-under-threshold" if args.lnNsmall else "",
-                    shp = "--use-shape-always" if args.alwaysshape else "",
-                    mcs = "--no-mc-stats" if not args.mcstat else "",
-                    rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
-                    prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
-                    rsd = "--seed " + args.seed if args.seed != "" else ""
-                ))
+        make_datacard_with_args(scriptdir, args)
 
         print "\nsingle_point_ahtt :: making workspaces"
         for onepoi in [True, False]:
@@ -376,7 +264,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: validating datacard"
         syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}_validate.json --printLevel 3 {dcd}{crd}".format(
             dcd = dcdir,
-            pnt = args.point,
+            pnt = args.point[0],
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
@@ -385,7 +273,7 @@ if __name__ == '__main__':
         accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
 
         if args.onepoi:
-            syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point), False, True)
+            syscall("rm {dcd}{pnt}_limits_one-poi.root {dcd}{pnt}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point[0]), False, True)
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {mcs} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
@@ -403,7 +291,7 @@ if __name__ == '__main__':
                     "rm higgsCombine_limit.AsymptoticLimits.mH*.root".format(
                         dcd = dcdir,
                         mmm = mstr,
-                        pnt = args.point
+                        pnt = args.point[0]
                     ))
         else:
             if args.nchunk < 0:
@@ -413,7 +301,7 @@ if __name__ == '__main__':
 
             syscall("rm {dcd}{pnt}_limits_g-scan_{nch}_{idx}.root {dcd}{pnt}_limits_g-scan_{nch}_{idx}.json ".format(
                 dcd = dcdir,
-                pnt = args.point,
+                pnt = args.point[0],
                 nch = "n" + str(args.nchunk),
                 idx = "i" + str(args.ichunk)), False, True)
             syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
@@ -434,11 +322,11 @@ if __name__ == '__main__':
             syscall("hadd {dcd}{pnt}_limits_g-scan_{nch}_{idx}.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                         dcd = dcdir,
-                        pnt = args.point,
+                        pnt = args.point[0],
                         nch = "n" + str(args.nchunk),
                         idx = "i" + str(args.ichunk)
                     ))
-            with open("{dcd}{pnt}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, pnt = args.point, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
+            with open("{dcd}{pnt}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, pnt = args.point[0], nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
@@ -450,7 +338,7 @@ if __name__ == '__main__':
 
         syscall("rm {dcd}{pnt}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
-            pnt = args.point,
+            pnt = args.point[0],
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
@@ -465,12 +353,12 @@ if __name__ == '__main__':
             raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
 
         if args.frzbbp:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
                                           args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), args.extopt, masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, False, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -508,7 +396,7 @@ if __name__ == '__main__':
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            pnt = args.point,
+            pnt = args.point[0],
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
@@ -521,12 +409,12 @@ if __name__ == '__main__':
 
     if runprepost:
         if args.frzbbp or args.frznui:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
                                           args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), args.extopt, masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -553,7 +441,7 @@ if __name__ == '__main__':
 
         syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
             dcd = dcdir,
-            pnt = args.point,
+            pnt = args.point[0],
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
@@ -563,12 +451,12 @@ if __name__ == '__main__':
     if runnll:
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         if args.frzbbp or args.frznui:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point,
+            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
                                           args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point, args.frzbb0)]), "", masks)
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), "", masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
-        set_freeze = starting_nuisance(args.point, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
+        set_freeze = starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -577,7 +465,7 @@ if __name__ == '__main__':
         scenarii = ['exp-b', 'exp-s', 'obs']
         nlls = OrderedDict()
 
-        syscall("rm {dcd}{pnt}_nll_one-poi.root {dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), False, True)
+        syscall("rm {dcd}{pnt}_nll_one-poi.root {dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point[0], mod = "one-poi" if args.onepoi else "g-scan"), False, True)
 
         for sce in scenarii:
             asimov = "-t -1" if sce != "obs" else ""
@@ -605,13 +493,13 @@ if __name__ == '__main__':
                 syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}_nll_{sce}_one-poi.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point
+                    pnt = args.point[0]
                 ), False)
 
                 nlls[sce] = get_nll_one_poi("{dcd}{pnt}_nll_{sce}_one-poi.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point
+                    pnt = args.point[0]
                 ))
             else:
                 for gval in gvalues:
@@ -634,18 +522,18 @@ if __name__ == '__main__':
                         "rm higgsCombine_nll_fix-g*.root".format(
                             dcd = dcdir,
                             sce = sce,
-                            pnt = args.point
+                            pnt = args.point[0]
                         ))
 
                 nlls[sce] = get_nll_g_scan("{dcd}{pnt}_nll_{sce}_g-scan.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point
+                    pnt = args.point[0]
                 ))
 
         syscall("rm combine_logger.out", False, True)
 
-        with open("{dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
+        with open("{dcd}{pnt}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point[0], mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)
 
     if args.compress:

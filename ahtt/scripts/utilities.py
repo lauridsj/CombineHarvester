@@ -311,8 +311,6 @@ def elementwise_add(list_of_lists):
 def fit_strategy(strat):
     return "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
 
-
-
 def recursive_glob(base_directory, pattern):
     # https://stackoverflow.com/a/2186639
     results = []
@@ -320,3 +318,27 @@ def recursive_glob(base_directory, pattern):
         goodfiles = fnmatch.filter(files, pattern)
         results.extend(os.path.join(base, f) for f in goodfiles)
     return results
+
+def make_datacard_with_args(scriptdir, args):
+    syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
+            "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {rsd}".format(
+                scr = scriptdir,
+                pnt = ','.join(args.point),
+                sig = args.signal,
+                bkg = args.background,
+                ch = args.channel,
+                yr = args.year,
+                psd = "--use-pseudodata" if args.asimov else "",
+                inj = "--inject-signal " + args.inject if args.inject != "" else "",
+                tag = "--tag " + args.tag if args.tag != "" else "",
+                drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
+                kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
+                kfc = "--sushi-kfactor" if args.kfactor else "",
+                thr = "--threshold " + args.threshold if args.threshold != "" else "",
+                lns = "--lnN-under-threshold" if args.lnNsmall else "",
+                shp = "--use-shape-always" if args.alwaysshape else "",
+                mcs = "--no-mc-stats" if not args.mcstat else "",
+                rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
+                prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
+                rsd = "--seed " + args.seed if args.seed != "" else ""
+            ))

@@ -22,6 +22,8 @@ import CombineHarvester.CombineTools.ch as ch
 
 from utilities import syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from argumentative import common_point, common_common, make_datacard_pure
+from hilfemir import combine_help_messages
 
 kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
@@ -280,22 +282,23 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     #if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
                     #    # the last condition is to remove wildly asymmetric variations in signal
                     #    # where the stats is so bad both smoother and flat cant model anything reliably
-                    #    keepvalue = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
+                    #    keep_value = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
 
                     # test: use flat if smooth is worse than...
                     #if not (chi2s[0] < 50. and chi2s[1] < 50.):
-                    #    keepvalue = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
-                    #    keepvalue = keepvalue and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
-                    #    keepvalue = keepvalue and chi2s[4] / chi2s[5] < 0.
+                    #    keep_value = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
+                    #    keep_value = keep_value and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
+                    #    keep_value = keep_value and chi2s[4] / chi2s[5] < 0.
 
                     # test: use flat if smooth isnt better in both cases
                     if chi2s[2] < chi2s[0] or chi2s[3] < chi2s[1]:
-                        keepvalue = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
-                        keepvalue = keepvalue and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
-                        keepvalue = keepvalue and chi2s[4] / chi2s[5] < 0.
+                        above_threshold = lnNsmall or (abs(chi2s[4]) > threshold and abs(chi2s[5]) > threshold)
+                        threshold_is_sensible = (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
+                        two_sided = chi2s[4] / chi2s[5] < 0.
+                        keep_value = above_threshold and threshold_is_sensible and two_sided
 
-                        scaleu = chi2s[4] if keepvalue else 0.
-                        scaled = chi2s[5] if keepvalue else 0.
+                        scaleu = chi2s[4] if keep_value else 0.
+                        scaled = chi2s[5] if keep_value else 0.
 
                         flat_reldev_wrt_nominal(hu, ifile.Get(idir + '/' + pp), scaleu)
                         flat_reldev_wrt_nominal(hd, ifile.Get(idir + '/' + pp), scaled)
@@ -464,8 +467,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     cb = ch.CombineHarvester()
     categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
     years = tuple(sorted(years))
-    point = get_point(sigpnt[0])
-    mstr = str(point[1])
+    mstr = str( get_point(sigpnt[0])[1] )
 
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
@@ -527,70 +529,36 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         ))
         os.chdir("..")
 
-
-    points = sorted(args.point)
-    drops = sorted(args.drop)
-    keeps = sorted(args.keep)
-    injects = sorted(args.injectsignal)
-
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--signal", help = "signal filenames, comma separated", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
-    parser.add_argument("--background", help = "data/background filenames, comma separated", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
-    parser.add_argument("--point", help = "signal points to make datacard of. comma separated", required = True, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+    common_point(parser)
+    common_common(parser)
+    make_datacard_pure(parser)
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. comma separated",
-                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. comma separated",
-                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--signal", help = combine_help_messages["--signal"], default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--background", help = combine_help_messages["--background"], default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
 
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--channel", help = combine_help_messages["--channel"], default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--year", help = combine_help_messages["--year"], default = "2016pre,2016post,2017,2018", required = False,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
 
-    parser.add_argument("--drop",
-                        help = "comma separated list of nuisances to be dropped. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop everything",
-                        default = "", required = False, type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
-    parser.add_argument("--keep",
-                        help = "comma separated list of nuisances to be kept. same syntax as --drop",
-                        default = "", required = False, type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
-
-    parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False, type = lambda s: float(remove_spaces_quotes(s)))
-    parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
-                        dest = "kfactor", action = "store_true", required = False)
-    parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
-                        dest = "lnNsmall", action = "store_true", required = False)
-    parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
-                        dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
-                        dest = "pseudodata", action = "store_true", required = False)
-
-    parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "inject", default = "", required = False,
+    parser.add_argument("--drop", help = combine_help_messages["--drop"], default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
-    parser.add_argument("--no-mc-stats", help = "don't add nuisances due to limited mc stats (barlow-beeston lite)",
-                        dest = "mcstat", action = "store_false", required = False)
+    parser.add_argument("--keep", help = combine_help_messages["--keep"], default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
-    parser.add_argument("--float-rate",
-                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
-                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
-                        "the implementation assumes a single rate parameter across all channels.\n"
-                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
-                        "relevant only in the datacard step.",
-                        dest = "rateparam", default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
+    parser.add_argument("--threshold", help = combine_help_messages["--threshold"], default = 0.005, required = False, type = lambda s: float(remove_spaces_quotes(s)))
+    parser.add_argument("--float-rate", help = combine_help_messages["--float-rate"], dest = "rateparam", default = "", required = False,
+                        type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
-    parser.add_argument("--projection",
-                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
-                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
-                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
-                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
-                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
-                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
-                        "indices are zero-based, and spaces are ignored.",
-                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), ':' ))
-    parser.add_argument("--seed",
-                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
-                        default = -1, required = False, type = int)
+    parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+
+    parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
+                        type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), ':' ))
+
+    parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     args = parser.parse_args()
 
     allyears = ["2016pre", "2016post", "2017", "2018"]

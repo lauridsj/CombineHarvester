@@ -14,6 +14,9 @@ import json
 import math
 
 from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit
+from hilfemir import combine_help_messages, submit_help_messages
 
 sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
@@ -106,142 +109,32 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point",
-                        help = "desired pairs of signal points to run on, comma (between points) and semicolon (between pairs) separated\n"
-                        "another syntax is: m1,m2,...,mN;w1,w2,...,wN;m1,m2,...,mN;w1,w2,...,wN, where:\n"
-                        "the first mass and width strings refer to the A grid, and the second to the H grid.\n"
-                        "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
-                        "e.g. m400,m450;w5p0;m600,m750;w10p0 expands to A_m400_w5p0,H_m600_w10p0;A_m450_w5p0,H_m600_w10p0;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w10p0",
-                        default = "", required = True)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
+    common_common(parser)
+    common_fit_pure(parser)
+    common_fit_forwarded(parser)
+    make_datacard_pure(parser)
+    make_datacard_forwarded(parser)
+    common_2D(parser)
+    common_submit(parser)
 
-    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
+    parser.add_argument("--point", help = submit_help_messages["--point"], default = "", required = True,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
-                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
-                        default = "2016pre,2016post,2017,2018", required = False)
+    parser.add_argument("--run-idxs", help = submit_help_messages["--run-idxs"], default = "-1", dest = "runidxs", required = False, type = remove_spaces_quotes)
+    parser.add_argument("--fc-single-point", help = submit_help_messages["--fc-single-point"], dest = "fcsinglepnt", action = "store_true", required = False)
+    parser.add_argument("--fc-mode", help = submit_help_messages["--fc-mode"], default = "", dest = "fcmode", required = False, type = remove_spaces_quotes)
 
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
-    parser.add_argument("--drop",
-                        help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
-                        default = "", required = False)
-    parser.add_argument("--keep",
-                        help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
-                        default = "", required = False)
-    parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
-                        dest = "kfactor", action = "store_true", required = False)
+    parser.add_argument("--fc-g-grid", help = submit_help_messages["--fc-g-grid"], default = "", dest = "fcgrid", required = False,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
+    parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
+                        type = lambda s: float(remove_spaces_quotes(s)))
 
-    parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False, type = float)
-    parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
-                        dest = "lnNsmall", action = "store_true", required = False)
-    parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
-                        dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--no-mc-stats",
-                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
-                        "or don't add the bb-lite analytical minimization option in others",
-                        dest = "mcstat", action = "store_false", required = False)
-    parser.add_argument("--float-rate",
-                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
-                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
-                        "the implementation assumes a single rate parameter across all channels.\n"
-                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
-                        "relevant only in the datacard step.",
-                        dest = "rateparam", default = "", required = False)
-    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
-                        default = "", required = False)
-
-    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
-                        dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--projection",
-                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
-                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
-                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
-                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
-                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
-                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
-                        "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
-                        default = "", required = False)
-
-    parser.add_argument("--seed",
-                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
-                        default = "", required = False)
-
-    parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
-    #parser.add_argument("--no-r", help = "use physics model without r accompanying g", dest = "nor", action = "store_true", required = False)
-
-    parser.add_argument("--g-values", help = "the two values of g to e.g. do fit diagnostics for, comma separated",
-                        default = "-1., -1.", dest = "gvl", required = False)
-    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-values",
-                        dest = "fixpoi", action = "store_true", required = False)
-
-    parser.add_argument("--n-toy", help = "number of toys to throw per point when generating or performing FC scans",
-                        default = 50, dest = "ntoy", required = False, type = int)
-    parser.add_argument("--run-idxs", help = "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
-                        "where the comma separated version is plainly the list of indices to be given to --run-idx, if --n-toy > 0\n"
-                        "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
-                        "mixing of both syntaxes are not allowed.",
-                        default = "-1", dest = "runidxs", required = False)
-    parser.add_argument("--toy-location", help = "directory to dump the toys in mode generate, "
-                        "and file to read them from in mode contour (only for g1 = g2 = 0) or gof.\n"
-                        "comma separated when reading multiple files, and must be as long as --run-idxs.",
-                        dest = "toyloc", default = "", required = False)
-
-    parser.add_argument("--fc-g-grid", help = "comma (between files) and semicolon (between pairs) separated json files generated by compile mode to read points from",
-                        default = "", dest = "fcgrid", required = False)
-    parser.add_argument("--fc-mode",
-                        help = "what to do with the grid read from --fc-g-grid, can be 'add' for submitting more toys of the same points,\n"
-                        "or 'refine', for refining the contour that can be drawn using the grid",
-                        default = "", dest = "fcmode", required = False)
-    parser.add_argument("--fc-single-point", help = "run FC scan only on a single point given by --g-values",
-                        dest = "fcsinglepnt", action = "store_true", required = False)
-
-    parser.add_argument("--fc-expect", help = "expected scenarios to assume in the FC scan. comma separated.\n"
-                        "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
-                        default = "exp-b", dest = "fcexp", required = False)
-    parser.add_argument("--fc-nuisance-mode", help = "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
-                        "WARNING: profile mode implementation is incomplete!!",
-                        default = "conservative", dest = "fcnui", required = False)
-    parser.add_argument("--fc-skip-data", help = "skip running on data/asimov", dest = "fcrundat", action = "store_false", required = False)
-
-    parser.add_argument("--fc-initial-distance", help = "initial distance between g grid points for FC scans",
-                        default = 0.5, dest = "fcinit", required = False, type = float)
-
-    parser.add_argument("--delete-root", help = "delete root files after compiling", dest = "rmroot", action = "store_true", required = False)
-    parser.add_argument("--ignore-previous", help = "ignore previous grid when compiling", dest = "ignoreprev", action = "store_true", required = False)
-
-    parser.add_argument("--freeze-mc-stats-zero",
-                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to zero",
-                        dest = "frzbb0", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-post",
-                        help = "only in the prepost/corrmat mode, freeze mc stats nuisances to the postfit values. "
-                        "--freeze-mc-stats-zero takes priority over this option",
-                        dest = "frzbbp", action = "store_true", required = False)
-    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat mode, freeze all nuisances to the postfit values.",
-                        dest = "frznui", action = "store_true", required = False)
-
-    parser.add_argument("--extra-option",
-                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
-                        dest = "extopt", default = "", required = False)
-
-    parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in FC scan alphas",
-                        dest = "propersig", action = "store_true", required = False)
-
-    parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
-    parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
-    parser.add_argument("--force", help = "force local jobs to run, even if a job log already exists", dest = "forcelocal", action = "store_true", required = False)
+    parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
     args = parser.parse_args()
-    if (args.tag != "" and not args.tag.startswith("_")):
-        args.tag = "_" + args.tag
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    pairs = args.point.replace(" ", "").split(';')
+    pairs = args.point
 
     # handle the case of gridding pairs
     if len(pairs) == 4:
@@ -263,8 +156,8 @@ if __name__ == '__main__':
                     pairs.append(aa + "," + hh)
 
     ggrids = None
-    if args.fcgrid != "" and args.fcmode != "":
-        ggrids = args.fcgrid.replace(" ", "").split(';')
+    if args.fcgrid != [""] and args.fcmode != "":
+        ggrids = args.fcgrid
     else:
         ggrids = ["" for pair in pairs]
 
@@ -273,12 +166,6 @@ if __name__ == '__main__':
             raise RuntimeError("there needs to be as many json file groups as there are pairs")
     else:
         ggrids = ["" for pair in pairs]
-
-    if args.injectsignal != "":
-        args.pseudodata = True
-
-    if args.jobtime != "":
-        args.jobtime = "-t " + args.jobtime
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     rungen = "generate" in args.mode
@@ -290,6 +177,9 @@ if __name__ == '__main__':
 
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
+
+    if (runfc or runcompile) and not args.asimov and "obs" not in args.fcexp:
+        args.fcexp.append("obs")
 
     for pair, ggrid in zip(pairs, ggrids):
         # generate an aggregate submission file name
@@ -320,6 +210,8 @@ if __name__ == '__main__':
             else:
                 continue
 
+        valid_g = any(float(gg) >= 0. for gg in args.gvalues)
+
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
                    "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {exp} {bsd}").format(
@@ -348,10 +240,10 @@ if __name__ == '__main__':
             com = "--compress" if rundc else "",
             rmr = "--delete-root" if args.rmroot else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
-            gvl = "--g-values '" + args.gvl + "'" if not runfc and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
-            fix = "--fix-poi" if args.fixpoi and any(float(gg) >= 0. for gg in args.gvl.replace(" ", "").split(',')) else "",
+            gvl = "--g-values '" + args.gvalues + "'" if valid_g and not runfc else "",
+            fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
-            exp = "--fc-expect " + args.fcexp if runfc or runcompile else "",
+            exp = "--fc-expect " + ','.join(args.fcexp) if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
@@ -361,12 +253,12 @@ if __name__ == '__main__':
                 if "," in args.runidxs and "..." in args.runidxs:
                     raise RuntimeError("it is said that mixing syntaxes is not allowed smh.")
                 elif "," in args.runidxs:
-                    idxs = [int(ii) for ii in args.runidxs.replace(" ", "").split(",")]
+                    idxs = [int(ii) for ii in tokenize_to_list(args.runidxs)]
                 elif "..." in args.runidxs:
-                    idxs = args.runidxs.replace(" ", "").split("...")
+                    idxs = tokenize_to_list(args.runidxs, '...' )
                     idxs = range(int(idxs[0]), int(idxs[1])) if idxs[0] != "" else range(int(idxs[1]))
                 else:
-                    idxs = [int(args.runidxs.replace(" ", ""))]
+                    idxs = [int(args.runidxs)]
             else:
                 idxs = [-1]
 
@@ -393,11 +285,7 @@ if __name__ == '__main__':
             if runfc:
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"
-                    fcexps = args.fcexp.replace(" ", "").split(',')
-                    if not args.asimov:
-                        fcexps.append("obs")
-
-                    for fcexp in fcexps:
+                    for fcexp in args.fcexp:
                         ggg = glob.glob(pstr + args.tag + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
                         ggg.sort(key = os.path.getmtime)
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
@@ -405,17 +293,16 @@ if __name__ == '__main__':
                 print ggrid
 
                 if args.fcsinglepnt:
-                    gvalues = [float(gg) for gg in args.gvl.replace(" ", "").split(',')]
-                    gvalues = [tuple(gvalues)]
+                    gvalues = [tuple([float(gg) for gg in args.gvalues])]
+
+                    toylocs = []
+                    if args.toyloc != "":
+                        toylocs = recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
+                        shuffle(toylocs)
+                        if len(toylocs) < len(idxs):
+                            raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
-
-                toylocs = []
-                if args.toyloc != "":
-                    toylocs = recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
-                    shuffle(toylocs)
-                if len(toylocs) != 0 and len(toylocs) < len(idxs):
-                        raise RuntimeError("expecting at least as many toy files as there are run indices!!")
 
                 for ig1, ig2 in gvalues:
                     scan_name = "_g1_" + str(ig1) + "_g2_" + str(ig2)

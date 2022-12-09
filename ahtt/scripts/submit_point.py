@@ -11,131 +11,34 @@ import copy
 from collections import OrderedDict
 
 from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin, input_bkg, input_sig
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
+from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = "desired signal point to run, comma separated", default = "", required = False)
-    parser.add_argument("--mode", help = "combine mode to run, comma separated", default = "datacard,validate", required = False)
+    common_point(parser)
+    common_common(parser)
+    common_fit_pure(parser)
+    common_fit_forwarded(parser)
+    make_datacard_pure(parser)
+    make_datacard_forwarded(parser)
+    common_1D(parser)
+    common_submit(parser)
 
-    parser.add_argument("--signal", help = "signal filenames. comma separated", default = "", required = False)
-    parser.add_argument("--background", help = "data/background filenames. comma separated", default = "", required = False)
-
-    parser.add_argument("--channel", help = "final state channels considered in the analysis. datacard only. comma separated",
-                        default = "ee,em,mm,e3j,e4pj,m3j,m4pj", required = False)
-    parser.add_argument("--year", help = "analysis year determining the correlation model to assume. datacard only. comma separated",
-                        default = "2016pre,2016post,2017,2018", required = False)
-
-    parser.add_argument("--tag", help = "extra tag to be put on datacard names", default = "", required = False)
-    parser.add_argument("--drop",
-                        help = "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
-                        default = "", required = False)
-    parser.add_argument("--keep",
-                        help = "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
-                        default = "", required = False)
-    parser.add_argument("--sushi-kfactor", help = "apply nnlo kfactors computing using sushi on A/H signals",
-                        dest = "kfactor", action = "store_true", required = False)
-
-    parser.add_argument("--threshold", help = "threshold under which nuisances that are better fit by a flat line are dropped/assigned as lnN",
-                        default = 0.005, required = False, type = float)
-    parser.add_argument("--lnN-under-threshold", help = "assign as lnN nuisances as considered by --threshold",
-                        dest = "lnNsmall", action = "store_true", required = False)
-    parser.add_argument("--use-shape-always", help = "use lowess-smoothened shapes even if the flat fit chi2 is better",
-                        dest = "alwaysshape", action = "store_true", required = False)
-    parser.add_argument("--no-mc-stats",
-                        help = "don't add nuisances due to limited mc stats (barlow-beeston lite) in datacard mode, "
-                        "or don't add the bb-lite analytical minimization option in others",
-                        dest = "mcstat", action = "store_false", required = False)
-    parser.add_argument("--float-rate",
-                        help = "semicolon separated list of processes to make the rate floating for, using combine's rateParam directive.\n"
-                        "syntax: proc1:min1,max1;proc2:min2,max2; ... procN:minN,maxN. min and max can be omitted, they default to 0,2.\n"
-                        "the implementation assumes a single rate parameter across all channels.\n"
-                        "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
-                        "relevant only in the datacard step.",
-                        dest = "rateparam", default = "", required = False)
-    parser.add_argument("--mask", help = "channel_year combinations to be masked in statistical analysis commands. comma separated",
-                        default = "", required = False)
-
-    parser.add_argument("--use-pseudodata", help = "don't read the data from file, instead construct pseudodata using poisson-varied sum of backgrounds",
-                        dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--inject-signal",
-                        help = "signal points to inject into the pseudodata, comma separated", dest = "injectsignal", default = "", required = False)
-    parser.add_argument("--projection",
-                        help = "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
-                        "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
-                        "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
-                        "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
-                        "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
-                        "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-                        "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
-                        "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
-                        default = "", required = False)
-
-    parser.add_argument("--seed",
-                        help = "random seed to be used for pseudodata generation. give 0 to read from machine, and negative values to use no rng",
-                        default = "", required = False)
-
-    parser.add_argument("--unblind", help = "use data when fitting", dest = "asimov", action = "store_false", required = False)
-    parser.add_argument("--one-poi", help = "use physics model with only g as poi", dest = "onepoi", action = "store_true", required = False)
-
-    parser.add_argument("--raster-n", help = "number of chunks to split the g raster limit scan into",
-                        dest = "nchunk", default = 6, required = False, type = int)
-    parser.add_argument("--raster-i", help = "which chunks to process, in doing the raster scan.\n"
-                        "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
-                        "where the comma separated version is plainly the list of indices to be given to --raster-i, if --raster-n > 0\n"
-                        "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
-                        "mixing of both syntaxes are not allowed.",
-                        dest = "ichunk", default = "...[--raster-n value]", required = False)
-
-    parser.add_argument("--impact-n", help = "maximum number of nuisances to run in a single impact job",
-                        dest = "nnuisance", default = 10, required = False, type = int)
-    parser.add_argument("--skip-expth",
-                        help = "in pull/impact mode, skip running over the experimental and theory nuisances",
-                        dest = "runexpth", action = "store_false", required = False)
-    parser.add_argument("--run-mc-stats",
-                        help = "in pull/impact mode, run also over the BB nuisances individually. "
-                        "this option does not affect their treatment in any way (analytical minimization)",
-                        dest = "runbb", action = "store_true", required = False)
-
-    parser.add_argument("--freeze-mc-stats-zero",
-                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
-                        dest = "frzbb0", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-post",
-                        help = "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "
-                        "--freeze-mc-stats-zero takes priority over this option",
-                        dest = "frzbbp", action = "store_true", required = False)
-    parser.add_argument("--freeze-nuisance-post", help = "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values.",
-                        dest = "frznui", action = "store_true", required = False)
-
-    parser.add_argument("--g-value",
-                        help = "g to use when evaluating impacts/fit diagnostics/nll. "
-                        "does NOT freeze the value, unless --fix-poi is also used. "
-                        "note: semantically sets value of 'r' with --one-poi, as despite the name it plays the role of g.",
-                        dest = "setg", default = -1., required = False, type = float)
-    parser.add_argument("--r-value",
-                        help = "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used."
-                        "does NOT freeze the value, unless --fix-poi is also used.",
-                        dest = "setr", default = -1., required = False, type = float)
-    parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
-                        dest = "fixpoi", action = "store_true", required = False)
-
-    parser.add_argument("--extra-option",
-                        help = "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere.",
-                        dest = "extopt", default = "", required = False)
-
-    parser.add_argument("--job-time", help = "time to assign to each job", default = "", dest = "jobtime", required = False)
-    parser.add_argument("--local", help = "run jobs locally, do not submit to HTC", dest = "runlocal", action = "store_true", required = False)
-    parser.add_argument("--force", help = "force local jobs to run, even if a job log already exists", dest = "forcelocal", action = "store_true", required = False)
+    parser.add_argument("--raster-i", help = submit_help_messages["--raster-i"], dest = "ichunk", default = "...[--raster-n value]", required = False)
+    parser.add_argument("--impact-n", help = submit_help_messages["--impact-n"], dest = "nnuisance", default = 10, required = False, type = lambda s: int(remove_spaces_quotes(s)))
+    parser.add_argument("--skip-expth", help = submit_help_messages["--skip-expth"], dest = "runexpth", action = "store_false", required = False)
+    parser.add_argument("--run-mc-stats", help = submit_help_messages["--run-mc-stats"], dest = "runbb", action = "store_true", required = False)
 
     args = parser.parse_args()
-    if (args.tag != "" and not args.tag.startswith("_")):
-        args.tag = "_" + args.tag
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
     parities = ("A", "H")
     masses = tuple(["m365", "m380"] + ["m" + str(mm) for mm in range(400, 1001, 25)])
     widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     points = []
-    keep_point = args.point.replace(" ", "").split(',')
+    keep_point = args.point
 
     for parity in parities:
         for mass in masses:
@@ -144,12 +47,6 @@ if __name__ == '__main__':
 
                 if args.point == "" or any([kk in pnt for kk in keep_point]):
                     points.append(pnt)
-
-    if args.injectsignal != "":
-        args.pseudodata = True
-
-    if args.jobtime != "":
-        args.jobtime = "-t " + args.jobtime
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     runlimit = "limit" in args.mode
@@ -195,11 +92,11 @@ if __name__ == '__main__':
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
                        psd = "--use-pseudodata" if args.pseudodata else "",
-                       inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
+                       inj = "--inject-signal " + args.inject if args.inject != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
                        drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                        kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-                       sig = "--signal " + input_sig(args.signal, pnt, args.injectsignal, args.channel, args.year),
+                       sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year),
                        bkg = "--background " + input_bkg(args.background, args.channel),
                        cha = "--channel " + args.channel,
                        yyy = "--year " + args.year,
