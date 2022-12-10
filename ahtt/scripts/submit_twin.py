@@ -213,12 +213,11 @@ if __name__ == '__main__':
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
         job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
-        job_arg = ("--point {pnt} --mode {mmm} {sus} {psd} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
+        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
                    "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
-            psd = "--add-pseudodata" if args.asimov else "",
             inj = "--inject-signal " + args.inject if args.inject != "" else "",
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
