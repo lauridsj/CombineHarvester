@@ -53,6 +53,7 @@ combine_help_messages = {
     "--freeze-nuisance-post": "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values. "
     "--freeze-mc-stats-zero takes priority over this option",
     "--extra-option": "extra options to be passed to combine when running pull/impact/prepost/corrmat modes. irrelevant elsewhere",
+    "--output-tag": "a tag that is appended to the fit output files. equals --tag by default",
 
     "--one-poi": "use physics model with only g as poi",
     "--g-value": "g to use when evaluating impacts/fit diagnostics/nll. give negative values to leave floating",

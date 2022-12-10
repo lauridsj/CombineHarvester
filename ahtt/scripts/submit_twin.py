@@ -181,6 +181,9 @@ if __name__ == '__main__':
     if (runfc or runcompile) and not args.asimov and "obs" not in args.fcexp:
         args.fcexp.append("obs")
 
+    if args.otag == "":
+        args.otag = args.tag
+
     for pair, ggrid in zip(pairs, ggrids):
         # generate an aggregate submission file name
         agg = aggregate_submit()
@@ -212,9 +215,9 @@ if __name__ == '__main__':
 
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
-        job_name = "twin_point_" + pstr + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
+        job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {exp} {bsd}").format(
+                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -242,6 +245,7 @@ if __name__ == '__main__':
             gvl = "--g-values '" + args.gvalues + "'" if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
+            otg = "--output-tag " + args.otag if args.otag != "" else "",
             exp = "--fc-expect " + ','.join(args.fcexp) if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
@@ -285,7 +289,7 @@ if __name__ == '__main__':
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"
                     for fcexp in args.fcexp:
-                        ggg = glob.glob(pstr + args.tag + "/" + pstr + "_fc_scan_" + fcexp + "_*.json")
+                        ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc_scan_" + fcexp + "_*.json")
                         ggg.sort(key = os.path.getmtime)
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
                 print "using the following grids:"

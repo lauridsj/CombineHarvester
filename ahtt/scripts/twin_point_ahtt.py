@@ -160,6 +160,9 @@ if __name__ == '__main__':
         print "supported expected scenario:", allexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
+    if args.otag == "":
+        args.otag = args.tag
+
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         make_datacard_with_args(scriptdir, args)
@@ -169,7 +172,7 @@ if __name__ == '__main__':
                 "--PO verbose --PO 'signal={pnt}' --PO no-r --channel-masks".format(
                     dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                     mmm = mstr,
-                    pnt = args.point
+                    pnt = ",".join(points)
                 ))
 
     if runvalid:
@@ -192,10 +195,11 @@ if __name__ == '__main__':
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                 ))
 
-        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}_toys{gvl}{fix}{toy}{idx}.root".format(
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
             opd = args.toyloc if args.toyloc != "" else dcdir,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             pnt = "__".join(points),
+            tag = args.otag,
             gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
             toy = "_n" + str(args.ntoy),
@@ -243,10 +247,12 @@ if __name__ == '__main__':
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
                 if args.fcrundat:
-                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
+                        dcd = dcdir,
+                        pnt = "__".join(points),
+                        tag = args.otag,
                         snm = scan_name + identifier,
-                        mmm = mstr,
-                        dcd = dcdir), False)
+                        mmm = mstr), False)
                 else:
                     syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
@@ -281,19 +287,21 @@ if __name__ == '__main__':
                         byp = "--bypassFrequentistFit --fastScan" if False else "",
                     ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
                 dcd = dcdir,
+                pnt = "__".join(points),
+                tag = args.otag,
                 snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
 
     if runhadd:
-        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+        idxs = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
 
         if len(idxs) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
 
-            toys = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+            toys = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
             toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
 
             for toy in toys:
@@ -301,20 +309,20 @@ if __name__ == '__main__':
                 syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if runcompile:
-        toys = glob.glob("{dcd}fc_scan_*_toys.root".format(dcd = dcdir))
-        idxs = glob.glob("{dcd}fc_scan_*_toys_*.root".format(dcd = dcdir))
+        toys = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        idxs = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
         if len(toys) == 0 or len(idxs) > 0:
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            gpoints = glob.glob("{dcd}fc_scan_*{exp}.root".format(dcd = dcdir, exp = "_" + fcexp))
+            gpoints = glob.glob("{dcd}{pnt}{tag}fc_scan_*{exp}.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
             if len(gpoints) == 0:
                 raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
             gpoints.sort()
 
-            ggrid = glob.glob("{dcd}{pnt}_fc_scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp))
+            ggrid = glob.glob("{dcd}{pnt}{tag}_fc_scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
             ggrid.sort()
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
@@ -350,7 +358,7 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
             grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-            with open("{dcd}{pnt}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+            with open("{dcd}{pnt}{tag}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
                 json.dump(grid, jj, indent = 1)
 
     if runprepost:
@@ -384,12 +392,16 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}_fitdiagnostics{gvl}{fix}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}{tag}_fitdiagnostics{gvl}{fix}.root".format(
             dcd = dcdir,
             pnt = "__".join(points),
+            tag = args.otag,
             gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
+
+    if not os.path.isfile(best_fit_file):
+        syscall("rm {bff}".format(bff = best_fit_file), False, True)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

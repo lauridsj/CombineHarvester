@@ -52,6 +52,9 @@ if __name__ == '__main__':
     runlimit = "limit" in args.mode
     runpull = "pull" in args.mode or "impact" in args.mode
 
+    if args.otag == "":
+        args.otag = args.tag
+
     # generate an aggregate submission file name
     agg = aggregate_submit()
 
@@ -78,7 +81,7 @@ if __name__ == '__main__':
             else:
                 continue
 
-        job_name = "single_point_" + pnt + args.tag + "_" + "_".join(args.mode.replace(" ", "").split(","))
+        job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
         job_name += "{mod}{gvl}{rvl}{fix}".format(
             mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
             gvl = "_g_" + str(args.setg).replace('.', 'p') if args.setg >= 0. else "",
@@ -87,7 +90,7 @@ if __name__ == '__main__':
         )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {rsd} {com} {bsd}').format(
+                   '{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -113,6 +116,7 @@ if __name__ == '__main__':
                        rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
                        fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
                        ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
+                       otg = "--output-tag " + args.otag if args.otag != "" else "",
                        rsd = "--seed " + args.seed if args.seed != "" else "",
                        com = "--compress" if rundc else "",
                        bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
