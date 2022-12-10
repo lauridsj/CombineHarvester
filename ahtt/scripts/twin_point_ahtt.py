@@ -169,7 +169,7 @@ if __name__ == '__main__':
                 "--PO verbose --PO 'signal={pnt}' --PO no-r --channel-masks".format(
                     dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                     mmm = mstr,
-                    pnt = args.point.replace(" ", "")
+                    pnt = args.point
                 ))
 
     if runvalid:
