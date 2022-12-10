@@ -13,7 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategyy, make_datacard_with_args
+from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy, make_datacard_with_args
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_combine, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D
 from hilfemir import combine_help_messages
