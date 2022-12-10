@@ -100,7 +100,7 @@ if __name__ == '__main__':
                        bkg = "--background " + input_bkg(args.background, args.channel),
                        cha = "--channel " + args.channel,
                        yyy = "--year " + args.year,
-                       thr = "--threshold " + str(args.threshold),
+                       thr = "--threshold " + args.threshold if args.threshold != "" else "",
                        lns = "--lnN-under-threshold" if args.lnNsmall else "",
                        shp = "--use-shape-always" if args.alwaysshape else "",
                        mcs = "--no-mc-stats" if not args.mcstat else "",
