@@ -11,6 +11,7 @@
 # note: at this stage this is a mere convention, and is not enforced at code level
 # the main goal is to minimize duplication, rather than getting the categorization watertight
 
+from utilities import update_mask
 from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from hilfemir import combine_help_messages, submit_help_messages
 
@@ -50,7 +51,7 @@ def common_fit(parser):
     parser.add_argument("--mode", help = combine_help_messages["--mode"], default = "datacard", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
     parser.add_argument("--base-directory", help = combine_help_messages["--base-directory"], dest = "basedir", default = "", required = False, type = append_if_not_empty)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
-                        type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+                        type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
     return parser
 
 def common_1D(parser):

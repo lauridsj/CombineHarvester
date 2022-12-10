@@ -352,3 +352,37 @@ def make_datacard_with_args(scriptdir, args):
                 prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
                 rsd = "--seed " + args.seed if args.seed != "" else ""
             ))
+
+def update_mask(masks):
+    new_masks = []
+    for mask in masks:
+        channel, year = mask.split(_)
+        if channel == "ll":
+            channels = ["ee", "em", "mm"]
+        elif channel == "sf":
+            channels = ["ee", "mm"]
+        elif channel == "lj":
+            channels = ["e3j", "e4pj", "m3j", "m4pj"]
+        elif channel == "l3j":
+            channels = ["e3j", "m3j"]
+        elif channel == "l4pj":
+            channels = ["e4pj", "m4pj"]
+        elif channel == "ej":
+            channels = ["e3j", "e4pj"]
+        elif channel == "mj":
+            channels = ["m3j", "m4pj"]
+        else:
+            channels = [channel]
+
+        if year == "all" or year == "run2":
+            years = ["2016pre", "2016post", "2017", "2018"]
+        elif year == "2016":
+            years = ["2016pre", "2016post"]
+        else:
+            years = [year]
+
+        for cc in channels:
+            for yy in years:
+                new_mask.append(cc + "_" + yy)
+
+    return list(set(new_masks))
