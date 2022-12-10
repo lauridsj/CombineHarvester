@@ -383,6 +383,6 @@ def update_mask(masks):
 
         for cc in channels:
             for yy in years:
-                new_mask.append(cc + "_" + yy)
+                new_masks.append(cc + "_" + yy)
 
     return list(set(new_masks))
