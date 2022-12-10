@@ -218,7 +218,7 @@ if __name__ == '__main__':
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
-            psd = "--use-pseudodata" if args.pseudodata else "",
+            psd = "--add-pseudodata" if args.asimov else "",
             inj = "--inject-signal " + args.injectsignal if args.injectsignal != "" else "",
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",

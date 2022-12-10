@@ -338,7 +338,7 @@ def make_datacard_with_args(scriptdir, args):
                 bkg = args.background,
                 ch = args.channel,
                 yr = args.year,
-                psd = "--use-pseudodata" if args.asimov else "",
+                psd = "--add-pseudodata" if args.asimov else "",
                 inj = "--inject-signal " + args.inject if args.inject != "" else "",
                 tag = "--tag " + args.tag if args.tag != "" else "",
                 drp = "--drop '" + args.drop + "'" if args.drop != "" else "",

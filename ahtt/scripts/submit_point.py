@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # submits single_point_ahtt jobs
-# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --use-pseudodata --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}" --mode "${imode}"; done
+# for imode in 'datacard,validate'; do ./../scripts/submit_point.py --sushi-kfactor --lnN-under-threshold --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}" --mode "${imode}"; done
 # get the shell vars from run_fc
 
 from argparse import ArgumentParser
@@ -91,7 +91,7 @@ if __name__ == '__main__':
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
-                       psd = "--use-pseudodata" if args.pseudodata else "",
+                       psd = "--add-pseudodata" if args.asimov else "",
                        inj = "--inject-signal " + args.inject if args.inject != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
                        drp = "--drop '" + args.drop + "'" if args.drop != "" else "",

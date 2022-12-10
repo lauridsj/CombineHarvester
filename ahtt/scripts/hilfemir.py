@@ -12,6 +12,7 @@ combine_help_messages = {
     "--year": "analysis year determining the correlation model to assume. relevant only in make_datacard. comma separated",
 
     "--sushi-kfactor": "apply nnlo kfactors computing using sushi on A/H signals",
+    "--add-pseudodata": "add pseudodata into the template files for combine, using the sum of backgrounds, instead of using real data",
     "--inject-signal": "comma-separated list of signal points to inject into the pseudodata",
 
     "--drop": "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",

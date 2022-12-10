@@ -557,6 +557,7 @@ if __name__ == '__main__':
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
                         type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), ':' ))
 
+    parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     args = parser.parse_args()
 
