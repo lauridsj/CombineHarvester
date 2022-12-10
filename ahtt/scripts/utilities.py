@@ -6,6 +6,7 @@ import os
 import sys
 import math
 import fnmatch
+import platform
 
 from datetime import datetime
 from collections import OrderedDict
@@ -16,7 +17,17 @@ TH1.SetDefaultSumw2(True)
 
 min_g = 0.
 max_g = 3.
-condordir = '/nfs/dust/cms/user/afiqaize/cms/sft/condor/'
+
+def input_storage_base_directory():
+    if "desy" in platform.node():
+        return "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/"
+    if "cern" in platform.node():
+        return "/eos/cms/store/user/afiqaize/"
+
+    raise NotImplementedError("unknown cluster! can't provide a default input storage base!")
+input_base = input_storage_base_directory()
+condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else input_base + "randomThings/misc/condor"
+kfactor_file_name = input_base + "ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -154,9 +165,9 @@ def input_bkg(background, channels):
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pca.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        backgrounds.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_bkg_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/templates_lj_bkg_rate_mtuX_pca.root")
 
     return ','.join(backgrounds)
 
@@ -168,20 +179,19 @@ def input_sig(signal, points, injects, channels, years):
     signals = []
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
         if "2016pre" in years:
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016pre.root")
+            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2016pre.root")
         if "2016post" in years:
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2016post.root")
+            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2016post.root")
         if "2017" in years:
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2017.root")
+            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2017.root")
         if "2018" in years:
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/templates_lj_sig_2018.root")
+            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2018.root")
 
+    widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        if any([im in points or im in injects for im in ["_m3", "_m1000"]]):
-            signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33_m3xx_and_m1000.root")
-        for im in ["_m4", "_m5", "_m6", "_m7", "_m8", "_m9"]:
-            if im in points or im in injects:
-                signals.append("/nfs/dust/cms/group/exotica-desy/HeavyHiggs/templates_ULFR2/sig_ll_3D-33" + im + "xx.root")
+        for iw in widths:
+            if iw in points or iw in injects:
+                signals.append(input_base + "templates_ULFR2/sig_ll_3D-33" + iw + "xx.root")
 
     return ','.join(signals)
 

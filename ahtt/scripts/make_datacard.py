@@ -20,12 +20,11 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilities import syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
+from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
 
-kfactor_file_name = "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
 def get_kfactor(sigpnt):
     kfile = TFile.Open(kfactor_file_name, "read")
