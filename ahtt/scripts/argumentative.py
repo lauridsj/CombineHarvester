@@ -38,7 +38,7 @@ def common_fit_pure(parser):
     parser.add_argument("--freeze-nuisance-post", help = combine_help_messages["--freeze-nuisance-post"], dest = "frznui", action = "store_true", required = False)
 
     parser.add_argument("--extra-option", help = combine_help_messages["--extra-option"], dest = "extopt", default = "", required = False)
-    parser.add_argument("--output-tag", help = combine_help_messages["--output-tag"], dest = "otag", default = "", required = False)
+    parser.add_argument("--output-tag", help = combine_help_messages["--output-tag"], dest = "otag", default = "", required = False, type = prepend_if_not_empty)
     return parser
 
 def common_fit_forwarded(parser):

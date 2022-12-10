@@ -356,7 +356,7 @@ def make_datacard_with_args(scriptdir, args):
 def update_mask(masks):
     new_masks = []
     for mask in masks:
-        channel, year = mask.split(_)
+        channel, year = mask.split("_")
         if channel == "ll":
             channels = ["ee", "em", "mm"]
         elif channel == "sf":

@@ -464,8 +464,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--function", help = "plot limit as a function of?", default = "mass",
                         choices = ["natural", "mass", "width"], required = False)
-    parser.add_argument("--itag", help = "input directory tags to search, semicolon separated", default = "", required = False)
-    parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
+    parser.add_argument("--tag", help = "input directory tags to search, semicolon separated", dest = "itag", default = "", required = False)
+    parser.add_argument("--output-tag", help = "alternate tags attached to output files, semicolon separated matched t --tag", dest = "otag", default = "", required = False)
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
     parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False)
     parser.add_argument("--drop",
@@ -482,13 +483,17 @@ if __name__ == '__main__':
     parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
 
     args = parser.parse_args()
-    if (args.otag != "" and not args.otag.startswith("_")):
-        args.otag = "_" + args.otag
+    if (args.ptag != "" and not args.ptag.startswith("_")):
+        args.ptag = "_" + args.ptag
 
     if (args.fmt != "" and not args.fmt.startswith(".")):
         args.fmt = "." + args.fmt
 
     tags = args.itag.replace(" ", "").split(';')
+    otags = args.itag.replace(" ", "").split(';')
+    if len(otags) != len(tags):
+        otags = [tag for tag in tags]
+
     labels = args.label.split(';')
 
     if len(tags) != len(labels):
@@ -497,6 +502,8 @@ if __name__ == '__main__':
     drops = args.drop.replace(" ", "").split(',') if args.drop != "" else []
     adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
     hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
+    print(adir)
+    raise("nanana FIXME otag impl")
 
     apnt = [[get_point(pnt) for pnt in tag] for tag in adir]
     hpnt = [[get_point(pnt) for pnt in tag] for tag in hdir]
@@ -520,20 +527,20 @@ if __name__ == '__main__':
 
     if args.function == "natural":
         if len(apnt) > 0:
-            draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+            draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
                          apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
         if len(hpnt) > 0:
-            draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
+            draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
                          hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
                           "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
-                                                                       tag = args.otag, fmt = args.fmt),
+                                                                       tag = args.ptag, fmt = args.fmt),
                           apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
                           "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
-                                                                       tag = args.otag, fmt = args.fmt),
+                                                                       tag = args.ptag, fmt = args.fmt),
                           hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
     pass
