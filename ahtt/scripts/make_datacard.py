@@ -277,24 +277,17 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     scaleu = 1.
                     scaled = 1.
 
-                    # original curation: if flat better than smooth...
-                    #if chi2s[2] < chi2s[0] and chi2s[3] < chi2s[1]:
-                    #    # the last condition is to remove wildly asymmetric variations in signal
-                    #    # where the stats is so bad both smoother and flat cant model anything reliably
-                    #    keep_value = (abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold or lnNsmall) and (1. > abs(chi2s[4]) > 1e-4 and 1. > abs(chi2s[5]) > 1e-4)
+                    hn = ifile.Get(idir + '/' + pp)
+                    up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
+                    down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
+                    two_sided_smooth = up_norm_rdev / down_norm_rdev < 0.
 
-                    # test: use flat if smooth is worse than...
-                    #if not (chi2s[0] < 50. and chi2s[1] < 50.):
-                    #    keep_value = lnNsmall or abs(chi2s[4]) > threshold or abs(chi2s[5]) > threshold
-                    #    keep_value = keep_value and (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
-                    #    keep_value = keep_value and chi2s[4] / chi2s[5] < 0.
-
-                    # test: use flat if smooth isnt better in both cases
-                    if chi2s[2] < chi2s[0] or chi2s[3] < chi2s[1]:
+                    # use smooth if it is two-sided and its chi2 is better than flat in both up and down
+                    if not two_sided_smooth or chi2s[2] < chi2s[0] or chi2s[3] < chi2s[1]:
                         above_threshold = lnNsmall or (abs(chi2s[4]) > threshold and abs(chi2s[5]) > threshold)
                         threshold_is_sensible = (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
-                        two_sided = chi2s[4] / chi2s[5] < 0.
-                        keep_value = above_threshold and threshold_is_sensible and two_sided
+                        two_sided_flat = chi2s[4] / chi2s[5] < 0.
+                        keep_value = above_threshold and threshold_is_sensible and two_sided_flat
 
                         scaleu = chi2s[4] if keep_value else 0.
                         scaled = chi2s[5] if keep_value else 0.
