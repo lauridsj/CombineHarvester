@@ -23,6 +23,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def read_contour(cfiles):
     contours = [OrderedDict() for cf in cfiles]
@@ -154,21 +155,22 @@ if __name__ == '__main__':
                         "the first mass and width strings refer to the A grid, and the second to the H grid.\n"
                         "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
                         "e.g. m400,m450;w5p0;m750;w2p5,w10p0 expands to A_m400_w5p0,H_m750_w2p5;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w2p5;A_m450_w5p0,H_m750_w10p0",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--contour", help = "the json files containing the contour information, semicolon separated.\n"
                         "two separate syntaxes are possible:\n"
-                        "'tag': t1/s1:i1,s2:i2;t2/s3:i3... expands to (let p being the considered point, and <fc> = fc_scan):"
-                        "<p>_<t1>/<p>_<fc>_<s1>_<i1>.json;<p>_<t1>/<p>_<fc>_<s2>_<i2>.json;<p>_<t2>/<p>_<fc>_<s3>_<i3>.json, "
-                        "where the code will search for index i1 corresponding to scenario s1 and so on."
+                        "'tag': t1/s1:o1:i1,s2:o2:i2;t2/s3:o3:i3... expands to (let p being the considered point, and <fc> = fc_scan):"
+                        "<p>_<t1>/<p>_<o1>_<fc>_<s1>_<i1>.json;<p>_<t1>/<p>_<o2>_<fc>_<s2>_<i2>.json;<p>_<t2>/<p>_<o3>_<fc>_<s3>_<i3>.json, "
+                        "where the code will search for output tag o1 and index i1 corresponding to scenario s1 and so on."
+                        "if :o1 etc is omitted, they default to o1 = t1, ..., oN = tN.\n"
                         "if :i1 etc is omitted, the latest index will be picked.\n"
                         "used if --point is non-empty, and looped over all pairs. \n"
                         "'direct': <json 1>;<json 2>;... used only when --point is empty",
-                        default = "", required = True)
+                        default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
-    parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
-    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
-    parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = 2, type = int, required = False)
-    parser.add_argument("--label", help = "labels to attach on plot for each json input, semicolon separated", default = "", required = False)
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
+    parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "2", required = False, type = lambda s: int(remove_spaces_quotes(s)))
+    parser.add_argument("--label", help = "labels to attach on plot for each json input, semicolon separated", default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
 
     parser.add_argument("--draw-scatter", help = "draw the scatter points used to build the contours",
                         dest = "scatter", action = "store_true", required = False)
@@ -186,19 +188,10 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
-
-    args = parser.parse_args()
-    if (args.otag != "" and not args.otag.startswith("_")):
-        args.otag = "_" + args.otag
-
-    if (args.fmt != "" and not args.fmt.startswith(".")):
-        args.fmt = "." + args.fmt
-
-    labels = args.label.split(';')
+    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 
     if args.point != "":
-        pairs = args.point.replace(" ", "").split(';')
+        pairs = args.point
 
         # handle the case of gridding pairs
         if len(pairs) == 4:
@@ -219,7 +212,7 @@ if __name__ == '__main__':
                     for hh in allh:
                         pairs.append(aa + "," + hh)
     else:
-        contours = args.contour.split(';')
+        contours = args.contour
         pairs = [os.path.basename(os.path.dirname(cc)).split(".")[0].split("__") for cc in contours]
         pairs = [[pp[0], "_".join(pp[1].split("_")[:3])] for pp in pairs]
 
@@ -234,29 +227,30 @@ if __name__ == '__main__':
 
         if args.point != "":
             contour = []
-            tags = args.contour.replace(" ", "").split(';')
-            tags = [tt if tt.startswith("_") else "_" + tt for tt in tags]
+            tags = [prepend_if_not_empty(tt) for tt in args.contour]
 
             for tag in tags:
                 fcexps = tag.split('/')[1].split(',')
                 for fcexp in fcexps:
                     exp = fcexp
+                    otg = tag.split('/')[0]
                     idx = "_*"
                     if ':' in fcexp:
                         exp = fcexp.split(':')[0]
-                        idx = '_' + fcexp.split(':')[1]
+                        otg = '_' + fcexp.split(':')[1]
+                        idx = '_' + fcexp.split(':')[2] if len(fcexp.split(':')) > 2 else idx
 
-                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + "_fc_scan_" + exp + idx + ".json")
+                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + otg + "_fc_scan_" + exp + idx + ".json")
                     ggg.sort(key = os.path.getmtime)
                     contour.append(ggg[-1])
         else:
             contour = contours
 
-        if len(contour) != len(labels):
+        if len(contour) != len(args.label):
             raise RuntimeError("there aren't as many input contours as there are labels. aborting")
 
         print("drawing contours for pair: ", pair)
         print("using the following contours: ", contour)
-        draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.otag, fmt = args.fmt), pair, contour, labels,
+        draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.ptag, fmt = args.fmt), pair, contour, args.label,
                      args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
         print()

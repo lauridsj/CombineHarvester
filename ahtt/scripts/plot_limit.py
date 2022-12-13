@@ -20,6 +20,7 @@ import matplotlib.colors as mcl
 import matplotlib.ticker as mtc
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def ahtt_width_coupling_helper(parity, mah):
     sqrt2 = math.sqrt(2)
@@ -63,8 +64,8 @@ def ahtt_max_coupling(parity, mah, wah, relwidth = True):
 def read_limit(directories, xvalues, onepoi, dump_spline, odir):
     limits = [OrderedDict() for tag in directories]
 
-    for tt, tag in enumerate(directories):
-        for jj, dd in enumerate(tag):
+    for tt, directory, tag in enumerate(directories):
+        for jj, dcd in enumerate(directory):
             #print(dd)
             limit = OrderedDict([
                 ("exp-2", []),
@@ -84,14 +85,14 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
             ])
 
             if onepoi:
-                with open("{dd}/{pnt}_limits_one-poi.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]))) as ff:
+                with open("{dcd}/{pnt}_{tag}_limits_one-poi.json".format(dcd = dcd, pnt = '_'.join(dcd.split('_')[:3]), tag = tag)) as ff:
                     result = json.load(ff)
 
                     for mm, lmt in result.items():
                         for quantile, g in lmt.items():
                             limit[quantile].append([g, max_g])
             else:
-                chunks = glob.glob("{dd}/{pnt}_limits_g-scan_n*_i*.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3])))
+                chunks = glob.glob("{dcd}/{pnt}_{tag}_limits_g-scan_n*_i*.json".format(dcd = dcd, pnt = '_'.join(dcd.split('_')[:3]), tag = tag))
                 chunks.sort()
                 for nn in chunks:
                     with open(nn) as ff:
@@ -165,7 +166,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         factor = 2.**9 if smin[1] > 0.05 else -2.**9
 
                         while residual > abs_tolerance and crossing < max_g and crossing > min_g:
-                            #if "m750" in dd and "w21p0" in dd and quantile == "exp+2":
+                            #if "m750" in dcd and "w21p0" in dcd and quantile == "exp+2":
                             #    print(crossing, residual, factor, vmin, smin)
 
                             if need_checking or abs(factor) < min_factor:
@@ -186,7 +187,7 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                             residual = abs(spline(crossing) - 0.05)
 
                         if need_checking:
-                            print("in " + dd + ", quantile " + quantile + ", achieved cls residual is " +
+                            print("in " + dcd + ", quantile " + quantile + ", achieved cls residual is " +
                                   str(residual) + " at g = " + str(crossing))
                             print("g and cls values used to build the spline:")
                             print(g)
@@ -201,13 +202,13 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
 
                             ax.plot(g, spline(g), 'g', lw = 3)
                             fig.tight_layout()
-                            fig.savefig("{dd}/{pnt}_spline_{qua}.png".format(dd = odir, pnt = '_'.join(dd.split('_')[:3]), qua = qstr), transparent = True)
+                            fig.savefig("{dcd}/{pnt}_{tag}_spline_{qua}.png".format(dcd = odir, tag = tag, pnt = '_'.join(dcd.split('_')[:3]), qua = qstr), transparent = True)
                             fig.clf()
 
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
 
                     else:
-                        print("in " + dd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
+                        print("in " + dcd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
                         print(g)
                         print(cls)
                         print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
@@ -445,7 +446,7 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
     for vv in var2s:
         print("running", draw_variable.settings[var1]["var2"], vv)
         var1s = [pnt[draw_variable.settings[var1]["iv1"]] for pnt in points if pnt[draw_variable.settings[var1]["iv2"]] == vv]
-        dirs = [[dd for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
+        dirs = [[dd[0] for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
 
         if len(var1s) < 2 or not all([len(dd) == len(var1s) for dd in dirs]):
             print(draw_variable.settings[var1]["var2"] + str(vv) + " has too few " + var1 + ", or inconsistent input. skipping")
@@ -464,14 +465,14 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--function", help = "plot limit as a function of?", default = "mass",
                         choices = ["natural", "mass", "width"], required = False)
-    parser.add_argument("--tag", help = "input directory tags to search, semicolon separated", dest = "itag", default = "", required = False)
-    parser.add_argument("--output-tag", help = "alternate tags attached to output files, semicolon separated matched t --tag", dest = "otag", default = "", required = False)
-    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False)
-    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
-    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False)
+    parser.add_argument("--tag", help = "input tag-output-tag pairs to search. the pairs are semicolon separated, and tags colon-separated, "
+                        "so e.g. when there are 2 tags: 't1:o1;t2:o2...", dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
+    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
     parser.add_argument("--drop",
                         help = "comma separated list of points to be dropped. 'XX, YY' means all points containing XX or YY are dropped.",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
@@ -480,39 +481,29 @@ if __name__ == '__main__':
                         dest = "drawband", action = "store_false", required = False)
     parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",
                         dest = "dump_spline", action = "store_true", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
+    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 
     args = parser.parse_args()
-    if (args.ptag != "" and not args.ptag.startswith("_")):
-        args.ptag = "_" + args.ptag
-
-    if (args.fmt != "" and not args.fmt.startswith(".")):
-        args.fmt = "." + args.fmt
-
-    tags = args.itag.replace(" ", "").split(';')
-    otags = args.itag.replace(" ", "").split(';')
-    if len(otags) != len(tags):
-        otags = [tag for tag in tags]
-
-    labels = args.label.split(';')
-
-    if len(tags) != len(labels):
+    if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    drops = args.drop.replace(" ", "").split(',') if args.drop != "" else []
-    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
-    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag)) if len(drops) == 0 or not any([dd in pnt for dd in drops])] for tag in tags]
-    print(adir)
-    raise("nanana FIXME otag impl")
+    adir = [[
+        [pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])],
+        tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]
+    ] for tag in args.itag]
+    hdir = [[
+        [pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])],
+        tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]
+    ] for tag in args.itag]
 
-    apnt = [[get_point(pnt) for pnt in tag] for tag in adir]
-    hpnt = [[get_point(pnt) for pnt in tag] for tag in hdir]
+    apnt = [[get_point(pnt) for pnt in tag[0]] for tag in adir]
+    hpnt = [[get_point(pnt) for pnt in tag[0]] for tag in hdir]
 
     if not all([pnt == apnt[0]] for pnt in apnt):
-        raise RuntimeError("A signal points are not the same between tags. aborting")
+        raise RuntimeError("A signal points are not the same between args.itag. aborting")
 
     if not all([pnt == hpnt[0]] for pnt in hpnt):
-        raise RuntimeError("H signal points are not the same between tags. aborting")
+        raise RuntimeError("H signal points are not the same between args.itag. aborting")
 
     # keep only the points of the first tag, as they're all the same
     apnt = apnt[0]
@@ -528,19 +519,19 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         apnt, adir, labels, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         apnt, adir, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         hpnt, hdir, labels, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         hpnt, hdir, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
                           "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          apnt, adir, labels, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          apnt, adir, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
                           "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          hpnt, hdir, labels, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          hpnt, hdir, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
     pass

@@ -19,11 +19,12 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def read_nll(directories, onepoi, max_g):
     nlls = [OrderedDict() for dd in directories]
-    for ii, dd in enumerate(directories):
-        with open("{dd}/{pnt}_nll_{mod}.json".format(dd = dd, pnt = '_'.join(dd.split('_')[:3]), mod = "one-poi" if onepoi else "g-scan")) as ff:
+    for ii, directory, tag in enumerate(directories):
+        with open("{dcd}/{pnt}_{tag}_nll_{mod}.json".format(dcd = directory, tag = tag, pnt = '_'.join(directory.split('_')[:3]), mod = "one-poi" if onepoi else "g-scan")) as ff:
             result = json.load(ff)
 
         obs_r = sys.float_info.max
@@ -149,15 +150,16 @@ def draw_nll(oname, directories, labels, onepoi, smooth, kinks, max_g, max_dnll,
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = "signal point to plot the pulls of", default = "", required = True)
-    parser.add_argument("--itag", help = "input directory tags to plot pulls of, semicolon separated", default = "", required = False)
-    parser.add_argument("--otag", help = "extra tag to append to plot names", default = "", required = False)
-    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
-    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "XXX", required = False)
+    parser.add_argument("--point", help = "signal point to plot the pulls of", default = "", required = True, type = remove_spaces_quotes)
+    parser.add_argument("--tag", help = "input tag-output-tag pairs to search. the pairs are semicolon separated, and tags colon-separated, "
+                        "so e.g. when there are 2 tags: 't1:o1;t2:o2...", dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
+    parser.add_argument("--label", help = "labels to attach on plot for each input tags, semicolon separated", default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--smooth", help = "use spline to smooth kinks up. kinks are given in --kinks", action = "store_true", required = False)
     parser.add_argument("--kinks", help = "comma separated list of g values to be used by --smooth. every 2 values are treated as min and max of kink range",
-                        default = "", required = False)
+                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
     parser.add_argument("--max-g", help = "max value of g to incude in plot", dest = "max_g", type = float, default = 3., required = False)
     parser.add_argument("--max-dnll", help = "max value of dnll to incude in plot", dest = "max_dnll", type = float, default = 36., required = False)
     parser.add_argument("--best-fit", help = "write the observed best fit points on the plot",
@@ -165,32 +167,20 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = "png", dest = "fmt", required = False)
+    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 
     args = parser.parse_args()
-    if (args.otag != "" and not args.otag.startswith("_")):
-        args.otag = "_" + args.otag
-
-    if (args.fmt != "" and not args.fmt.startswith(".")):
-        args.fmt = "." + args.fmt
-
-    tags = args.itag.replace(" ", "").split(';')
-    labels = args.label.split(';')
-
-    if len(tags) != len(labels):
+    if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    kinks = None
-    if args.kinks != "":
-        kinks = args.kinks.split(',')
-
-        if len(kinks) % 2 == 1:
+    if args.kinks is not None:
+        if len(args.kinks) % 2 == 1:
             raise RuntimeError("kinks given don't correspond to list of minmaxes. aborting!")
 
-        kinks = [[kinks[ii], kinks[ii + 1]] for ii in range(len(kinks) - 1)]
+        args.kinks = [[kinks[ii], kinks[ii + 1]] for ii in range(len(args.kinks) - 1)]
 
-    dirs = [args.point + '_' + tag for tag in tags]
-    draw_nll("{ooo}/{pnt}_nll_{mod}{tag}{fmt}".format(ooo = args.odir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan", tag = args.otag, fmt = args.fmt),
-             dirs, labels, args.onepoi, args.smooth, kinks, args.max_g, args.max_dnll, args.bestfit, args.transparent, args.fmt)
+    dirs = [[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
+    draw_nll("{ooo}/{pnt}_nll_{mod}{tag}{fmt}".format(ooo = args.odir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
+             dirs, args.label, args.onepoi, args.smooth, args.kinks, args.max_g, args.max_dnll, args.bestfit, args.transparent, args.fmt)
 
     pass
