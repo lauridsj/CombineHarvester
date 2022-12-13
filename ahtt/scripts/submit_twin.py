@@ -322,7 +322,7 @@ if __name__ == '__main__':
                         fcrundat = args.fcmode != "add" and args.fcrundat and idx == idxs[0]
 
                         jarg = job_arg
-                        jarg += " {gvl} {nui} {toy} {dat} {idx}".format(
+                        jarg += " {gvl} {toy} {dat} {idx}".format(
                             gvl = "--g-values '" + str(ig1) + "," + str(ig2) + "'",
                             toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 else "",
                             dat = "--fc-skip-data " if not fcrundat else "",
@@ -342,11 +342,11 @@ if __name__ == '__main__':
                     continue
 
             if runclean:
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_fc-scan_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_compile.o*.*' | xargs rm".format(dcd = pstr + args.tag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_fc-scan_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_compile.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
 
             #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
             job_mem = ""
