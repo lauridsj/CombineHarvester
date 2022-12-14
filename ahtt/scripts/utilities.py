@@ -28,6 +28,9 @@ def input_storage_base_directory():
 input_base = input_storage_base_directory()
 condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else input_base + "randomThings/misc/condor/"
 kfactor_file_name = input_base + "ahtt_kfactor_sushi/ulkfactor_final_220129.root"
+condorsub = condordir + "condorSubmit.sh"
+condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
+condorrun = condordir + "condorRun.sh" if "desy" in input_base else condordir + "condorRun_lxpCombine.sh"
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -165,7 +168,7 @@ def input_bkg(background, channels):
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append(input_base + "templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pval_pca.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
         backgrounds.append(input_base + "templates_ULFR2/templates_lj_bkg_rate_mtuX_pca.root")
 
@@ -210,9 +213,9 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
         syscall('echo "Job execution ends at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
     else:
         syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {job_cpu} {tmp} {job_dir} --debug'.format(
-            csub = condordir + "condorSubmit.sh",
-            cpar = condordir + "condorParam.txt",
-            crun = condordir + "condorRun.sh",
+            csub = condorsub,
+            cpar = condorpar,
+            crun = condorrun,
             name = job_name,
             executable = executable,
             job_arg = job_arg,
