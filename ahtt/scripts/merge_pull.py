@@ -72,5 +72,5 @@ if __name__ == '__main__':
                         dest = "fixpoi", action = "store_true", required = False)
 
     args = parser.parse_args()
-    dirs = [[[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
+    dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
     dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi)
