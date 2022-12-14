@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
         args.kinks = [[kinks[ii], kinks[ii + 1]] for ii in range(len(args.kinks) - 1)]
 
-    dirs = [[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
+    dirs = [[[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
     draw_nll("{ooo}/{pnt}_nll_{mod}{tag}{fmt}".format(ooo = args.odir, pnt = args.point, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
              dirs, args.label, args.onepoi, args.smooth, args.kinks, args.max_g, args.max_dnll, args.bestfit, args.transparent, args.fmt)
 

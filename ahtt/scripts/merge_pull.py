@@ -57,7 +57,6 @@ if __name__ == '__main__':
     parser.add_argument("--point", help = "signal point to plot the pulls of", default = "", required = True, type = remove_spaces_quotes)
     parser.add_argument("--tag", help = "input tag-output-tag pairs to search. the pairs are semicolon separated, and tags colon-separated, "
                         "so e.g. when there are 2 tags: 't1:o1;t2:o2...", dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
-    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
     parser.add_argument("--g-value",
@@ -73,5 +72,5 @@ if __name__ == '__main__':
                         dest = "fixpoi", action = "store_true", required = False)
 
     args = parser.parse_args()
-    dirs = [[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
+    dirs = [[[args.point + '_' + tag.split(':')[0]], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
     dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi)
