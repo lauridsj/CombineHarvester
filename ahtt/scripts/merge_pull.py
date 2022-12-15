@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # merge the pull jsons for use by HIG-style plotImpacts.py
+# find . -type f -name '*impact*all.json' | xargs -I % sh -c 'fname="$(basename %)"; plotImpacts.py -i % -o "impact/${fname//.json/}"'
 
 from argparse import ArgumentParser
 import os
