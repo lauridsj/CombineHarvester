@@ -393,8 +393,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 ("lumi_13TeV", ("2017pre",), "all", 1.012),
             )),
             (("2016post", "2016pre"), (
-                ("lumi_13TeV_16pre",      ("2016pre",), "all", 1.01),
-                ("lumi_13TeV_16post",     ("2016post",), "all", 1.01),
+                ("lumi_13TeV_16",      ("2016pre", "2016post"), "all", 1.01),
                 ("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
             )),
             (("2017", "2018"), (
@@ -406,8 +405,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 ("lumi_13TeV_correlated", ("2018",), "all", 1.02),
             )),
             (("2016post", "2016pre", "2017", "2018"), (
-                ("lumi_13TeV_16pre",      ("2016pre",), "all", 1.01),
-                ("lumi_13TeV_16post",     ("2016post",), "all", 1.01),
+                ("lumi_13TeV_16",         ("2016pre", "2016post"), "all", 1.01),
                 ("lumi_13TeV_17",         ("2017",), "all", 1.02),
                 ("lumi_13TeV_18",         ("2018",), "all", 1.015),
                 ("lumi_13TeV_1718",       ("2017",), "all", 1.006),
@@ -415,6 +413,22 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 ("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
                 ("lumi_13TeV_correlated", ("2017",), "all", 1.009),
                 ("lumi_13TeV_correlated", ("2018",), "all", 1.02),
+
+                # foR reFErENCe oNlY
+                #("lumi_13TeV_16",                     ("2016pre", "2016post"), "all", 1.01),
+                #("lumi_13TeV_17",                     ("2017",), "all", 1.02),
+                #("lumi_13TeV_18",                     ("2018",), "all", 1.015),
+                #("lumi_13TeV_BeamCurrentCalibration", ("2016pre", "2016post"), "all", 1.002),
+                #("lumi_13TeV_BeamCurrentCalibration", ("2017",), "all", 1.003),
+                #("lumi_13TeV_BeamCurrentCalibration", ("2018",), "all", 1.002),
+                #("lumi_13TeV_BeamBeamEffect",         ("2017",), "all", 1.006),
+                #("lumi_13TeV_BeamBeamEffect",         ("2018",), "all", 1.002),
+                #("lumi_13TeV_GhostSatellite",         ("2016pre", "2016post", "2017", "2018"), "all", 1.001),
+                #("lumi_13TeV_LengthScale",            ("2016pre", "2016post", "2017"), "all", 1.003),
+                #("lumi_13TeV_LengthScale",            ("2018",), "all", 1.002),
+                #("lumi_13TeV_XYFactorization",        ("2016pre", "2016post"), "all", 1.005),
+                #("lumi_13TeV_XYFactorization",        ("2017",), "all", 1.008),
+                #("lumi_13TeV_XYFactorization",        ("2018",), "all", 1.02),
             )),
             ("ll" , (
                 ("CMS_DY_norm_13TeV",  ("2016pre", "2016post", "2017", "2018"), "DY", 1.05),
