@@ -12,6 +12,7 @@ from random import shuffle
 from collections import OrderedDict
 import json
 import math
+from datetime import datetime
 
 from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -225,8 +226,8 @@ if __name__ == '__main__':
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
-            sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year),
-            bkg = "--background " + input_bkg(args.background, args.channel),
+            sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year) if rundc else "",
+            bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
             cha = "--channel " + args.channel,
             yyy = "--year " + args.year,
             thr = "--threshold " + args.threshold if args.threshold != "" else "",
@@ -279,7 +280,7 @@ if __name__ == '__main__':
                     jarg += " {toy} {idx} {opd}".format(
                         toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 else "",
                         idx = "--run-idx " + str(idx) if idx > -1 else "",
-                        opd = "--toy-location '" + os.path.abspath(args.toyloc) + "'" if args.toyloc != "" else ""
+                        opd = "--toy-location " + os.path.abspath(args.toyloc) if args.toyloc != "" else ""
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
@@ -299,11 +300,14 @@ if __name__ == '__main__':
                     gvalues = [tuple([float(gg) for gg in args.gvalues])]
 
                     toylocs = []
-                    if args.toyloc != "":
+                    if args.toyloc != "" and not args.savetoy:
                         toylocs = recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
                         shuffle(toylocs)
                         if len(toylocs) < len(idxs):
                             raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
+                    elif args.savetoy:
+                        toylocs = [args.toyloc for idx in idxs]
+
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
 
@@ -331,6 +335,8 @@ if __name__ == '__main__':
 
                         if args.fcsinglepnt and len(toylocs) > 0:
                             jarg += " --toy-location " + toylocs[ii]
+                            if args.savetoy:
+                                jarg += " --save-toy"
 
                         submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                    "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)

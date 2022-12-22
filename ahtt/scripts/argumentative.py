@@ -68,6 +68,7 @@ def common_2D(parser):
     parser.add_argument("--n-toy", help = combine_help_messages["--n-toy"], default = 50, dest = "ntoy", required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--toy-location", help = combine_help_messages["--toy-location"], dest = "toyloc", default = "", required = False,
                         type = lambda s: s if s == "" or s.endswith("/") or s.endswith(".root") else s + "/")
+    parser.add_argument("--save-toy", help = combine_help_messages["--save-toy"], dest = "savetoy", action = "store_true", required = False)
 
     parser.add_argument("--fc-expect", help = combine_help_messages["--fc-expect"], default = "exp-b", dest = "fcexp", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))

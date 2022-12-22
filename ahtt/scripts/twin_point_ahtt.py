@@ -139,7 +139,7 @@ if __name__ == '__main__':
         gstr += usc + "g" + str(ii + 1) + "_" + gvalues[ii] if float(gvalues[ii]) >= 0. else ""
 
     allmodes = ["datacard", "workspace", "validate",
-                "generate", "fc-scan", "contour",
+                "generate", "gof", "fc-scan", "contour",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat"]
     if (not all([mm in allmodes for mm in modes])):
@@ -150,6 +150,7 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     rungen = "generate" in modes
+    rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
@@ -183,6 +184,14 @@ if __name__ == '__main__':
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
+    if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
+        if args.toyloc == "":
+            # no toy location is given, dump the toys in some directory under datacard directory
+            # in gof/fc, files are actually just copied off the files already generated, but this is probably easier to move off to some central storage
+            timestamp_dir = os.path.join(dcdir, "toys_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f'))
+            os.makedirs(timestamp_dir)
+            args.toyloc = os.path.abspath(timestamp_dir) + "/"
+
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
         syscall("combine -v -1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy} {mcs}".format(
@@ -196,7 +205,7 @@ if __name__ == '__main__':
                 ))
 
         syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
-            opd = args.toyloc if args.toyloc != "" else dcdir,
+            opd = args.toyloc,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             pnt = "__".join(points),
             tag = args.otag,
@@ -206,6 +215,46 @@ if __name__ == '__main__':
             idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             mmm = mstr,
         ), False)
+
+    if rungof or runfc:
+        readtoy = args.toyloc.endswith(".root") and not args.savetoy
+        if readtoy:
+            for ftoy in reversed(args.toyloc.split("_")):
+                if ftoy.startswith("n"):
+                    ftoy = int(ftoy.replace("n", "").replace(".root", ""))
+                    break
+
+            if ftoy < args.ntoy:
+                print "\nWARNING :: file", args.toyloc, "contains less toys than requested in the run!"
+
+    if rungof:
+        if args.asimov:
+            raise RuntimeError("mode gof is meaningless for asimov dataset!!")
+
+        print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
+        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {mcs}".format(
+            dcd = dcdir + "workspace_twin-g.root",
+            mmm = mstr,
+            snm = "gof-saturated-data",
+            stg = fit_strategy("2"),
+            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+        ))
+
+        print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - toy fits"
+        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {mcs} {svt}".format(
+            dcd = dcdir + "workspace_twin-g.root",
+            mmm = mstr,
+            snm = "gof-saturated-toys",
+            stg = fit_strategy("2"),
+            toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
+            opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
+            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+            svt = "--saveToys" if args.savetoy else ""
+        ))
+
+        print "\ntwin_point_ahtt :: goodness of fit - collecting results"
+        # FIXME continue
+        pass
 
     if runfc:
         if any(float(gg) < 0. for gg in gvalues):
@@ -260,19 +309,9 @@ if __name__ == '__main__':
             identifier = "_toys_" + str(args.runidx) if args.runidx > -1 else "_toys"
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
-            readtoy = args.toyloc.endswith(".root")
-            if readtoy:
-                for ftoy in args.toyloc.split("_"):
-                    if ftoy.startswith("n"):
-                        ftoy = int(ftoy.replace("n", "").replace(".root", ""))
-                        break
-
-                if ftoy < args.ntoy:
-                    print "\nWARNING :: file", args.toyloc, "contains less toys than requested in the run!"
-
             setpar, frzpar = ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {mcs} {byp}".format(
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {mcs} {byp} {svt}".format(
                         dcd = dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -285,6 +324,7 @@ if __name__ == '__main__':
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                         byp = "--bypassFrequentistFit --fastScan" if False else "",
+                        svt = "--saveToys" if args.savetoy else ""
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
@@ -294,6 +334,19 @@ if __name__ == '__main__':
                 snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
+
+            if args.savetoy:
+                syscall("cp {dcd}{pnt}{tag}fc_scan_{snm}.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
+                    opd = args.toyloc,
+                    snm = scan_name + identifier,
+                    pnt = "__".join(points),
+                    tag = args.otag,
+                    gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+                    fix = "_fixed" if args.fixpoi and gstr != "" else "",
+                    toy = "_n" + str(args.ntoy),
+                    idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+                    mmm = mstr,
+                ), False)
 
     if runhadd:
         idxs = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))

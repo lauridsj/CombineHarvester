@@ -65,7 +65,9 @@ combine_help_messages = {
     "--g-values": "the two values of g to e.g. do the FC grid scan for, comma separated. give g1 and/or g2 < 0 means to keep them floating",
     "--n-toy": "number of toys to throw per point when generating or performing FC scans",
     "--run-idx": "index to append to a given toy generation/FC scan run",
-    "--toy-location": "directory to dump the toys in mode generate, and file to read them from in mode contour/gof",
+    "--toy-location": "directory to dump the toys in mode generate/contour/gof (with --save-toy), and file to read them from in mode contour/gof (without --save-toy)",
+    "--save-toy": "in mode contour/gof, will generate toys and save them in --toy-location, instead of reading from it.\n"
+    "if --toy-location is not given, it defaults to a randomly generated directory within --base-directory.",
 
     "--fc-expect": "expected scenarios to assume in the FC scan. comma separated.\n"
     "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
