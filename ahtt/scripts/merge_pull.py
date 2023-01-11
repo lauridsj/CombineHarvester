@@ -34,7 +34,7 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                     result = json.load(ff)
 
                 if len(nuisances) > 0:
-                    result["params"] = [param for param in result["params"] if nuisance in param["name"] for nuisance in nuisances]
+                    result["params"] = [param for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
 
                 if ii == 0:
                     pulls["POIs"] = result["POIs"]
@@ -68,9 +68,9 @@ if __name__ == '__main__':
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
     parser.add_argument("--nuisances", help = "comma-separated list of nuisances to consider. greedy matching: XX,YY means any nuisances containing "
-                        "either XX or YY in the name is included."
-                        dest = "nuisance", default = "", required = False, type = lambda s: lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
-    parser.add_argument("--impact-tag", help = "tag to attach to the merged impact json file"
+                        "either XX or YY in the name is included.",
+                        dest = "nuisance", default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--impact-tag", help = "tag to attach to the merged impact json file",
                         dest = "otag", default = "all", required = False)
 
     parser.add_argument("--g-value",
