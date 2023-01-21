@@ -170,7 +170,7 @@ def input_bkg(background, channels):
     if any(cc in channels for cc in ["ee", "em", "mm"]):
         backgrounds.append(input_base + "templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pval_pca.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        backgrounds.append(input_base + "templates_ULFR2/templates_lj_bkg_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/templates_lj_bkg_rate_mtuX_smoothpdf_pca.root")
 
     return ','.join(backgrounds)
 
