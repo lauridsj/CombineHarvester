@@ -93,7 +93,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 6.)),
+            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 6.)), # gaussian 0.5 GeV
+            #("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat 3 GeV
 
             ("CMS_UEtune_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_ERD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -493,7 +494,12 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
 
         for process, nuisances in cpn[cc].items():
             for nuisance in nuisances:
-                cb.cp().process([process]).AddSyst(cb, nuisance[0], "shape", ch.SystMap("bin_id")([ii], nuisance[1]))
+                if isinstance(nuisance[1], float) or isinstance(nuisance[1], int):
+                    cb.cp().process([process]).AddSyst(cb, nuisance[0], "shape", ch.SystMap("bin_id")([ii], nuisance[1]))
+                elif isinstance(nuisance[1], tuple):
+                    cb.cp().process([process]).AddSyst(cb, nuisance[0], nuisance[1][0], ch.SystMap("bin_id")([ii], nuisance[1][1]))
+                else:
+                    print("make_datacard :: unknown handling for nuisance " + nuisance[0] + ", skipping")
 
             for ll in [write_datacard.lnNs[years], write_datacard.lnNs[channel], write_datacard.lnNs["common"]]:
                 for lnN in ll:
