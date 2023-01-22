@@ -246,7 +246,7 @@ def set_parameter(set_freeze, extopt = "", masks = []):
         while option in extopt:
             iopt = extopt.index(option)
             parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
-            extopt.pop(iset)
+            extopt.pop(iopt)
             if option == '--setParameters':
                 setpar += parameters
             elif option == '--freezeParameters':
