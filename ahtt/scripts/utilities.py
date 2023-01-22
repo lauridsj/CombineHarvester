@@ -237,9 +237,9 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
 
 # problem is, setparameters and freezeparameters may appear only once
 # so --extra-option is not usable to study shifting them up if we set g etc
-def set_parameter(set_freeze, extopt = "", masks = []):
-    setpar = set_freeze[0]
-    frzpar = set_freeze[1]
+def set_parameter(set_freeze, extopt, masks):
+    setpar = list(set_freeze[0])
+    frzpar = list(set_freeze[1])
 
     extopt = [] if extopt == "" else extopt.split(' ')
     for option in ['--setParameters', '--freezeParameters']:
