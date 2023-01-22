@@ -13,7 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy, make_datacard_with_args
+from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy, make_datacard_with_args, set_parameter
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D
 from hilfemir import combine_help_messages
@@ -422,21 +422,17 @@ if __name__ == '__main__':
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
-        setpar = set_freeze[0]
-        frzpar = set_freeze[1]
 
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_twin-g.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {prm}".format(
                     dcd = dcdir,
                     mmm = mstr,
                     stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-                    frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                    ext = args.extopt
+                    prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
         syscall("rm *_th1x_*.png", False, True)

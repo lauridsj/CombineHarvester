@@ -407,7 +407,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
             )),
             (("2016post", "2016pre", "2017", "2018"), (
                 # single scheme
-                ("lumi_13TeV_correlated",         ("2016pre", "2016post", "2017", "2018"), "all", 1.016),
+                ("lumi_13TeV",         ("2016pre", "2016post", "2017", "2018"), "all", 1.016),
 
                 # minimal scheme
                 #("lumi_13TeV_16",         ("2016pre", "2016post"), "all", 1.01),

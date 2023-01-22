@@ -10,6 +10,7 @@ import platform
 
 from datetime import datetime
 from collections import OrderedDict
+from desalinator import remove_spaces_quotes, tokenize_to_list
 
 from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
@@ -234,22 +235,41 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
                 name = 'conSub_' + job_name + '.txt',
                 agg = job_agg), False)
 
-def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze, extopt = "", masks = []):
-    fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+# problem is, setparameters and freezeparameters may appear only once
+# so --extra-option is not usable to study shifting them up if we set g etc
+def set_parameter(set_freeze, extopt = "", masks = []):
     setpar = set_freeze[0]
     frzpar = set_freeze[1]
 
-    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stp} {frz} {stg} {prg} {asm} {mcs} {wsp} {ext}".format(
-        dcd = dcdir + card,
-        bff = fname,
+    extopt = [] if extopt == "" else extopt.split(' ')
+    for option in ['--setParameters', '--freezeParameters']:
+        while option in extopt:
+            iopt = vowels.index(option)
+            parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
+            extopt.pop(iset)
+            if option == '--setParameters':
+                setpar += parameters
+            elif option == '--freezeParameters':
+                frzpar += parameters
+
+    return '{stp} {frz} {ext}'.format(
         stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
         frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+        ext = ' '.join(extopt)
+    )
+
+def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze, extopt = "", masks = []):
+    fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {mcs} {wsp} {prm}".format(
+        dcd = dcdir + card,
+        bff = fname,
         stg = strategy,
         prg = poi_range,
         asm = "-t -1" if asimov else "",
         mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
         wsp = "--saveSpecifiedNuis=all",
-        ext = extopt
+        prm = set_parameter(set_freeze, extopt, masks)
     ))
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)

@@ -11,7 +11,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy, make_datacard_with_args
+from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy, make_datacard_with_args, set_parameter
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D
 from hilfemir import combine_help_messages
@@ -367,11 +367,9 @@ if __name__ == '__main__':
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
-        setpar = set_freeze[0]
-        frzpar = set_freeze[1]
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {prm}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -379,13 +377,11 @@ if __name__ == '__main__':
             stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-            stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-            ext = args.extopt
+            prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {stp} {frz} {ext}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {prm}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -394,13 +390,11 @@ if __name__ == '__main__':
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
-            stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-            ext = args.extopt
+            prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {ext}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -409,8 +403,7 @@ if __name__ == '__main__':
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-            grp = group,
-            ext = args.extopt
+            grp = group
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
@@ -424,12 +417,10 @@ if __name__ == '__main__':
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
-        setpar = set_freeze[0]
-        frzpar = set_freeze[1]
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {stp} {frz} {ext}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {prm}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
@@ -437,9 +428,7 @@ if __name__ == '__main__':
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
-                    stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
-                    frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                    ext = args.extopt
+                    prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
         syscall("rm *_th1x_*.png", False, True)
