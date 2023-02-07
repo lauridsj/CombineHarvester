@@ -59,7 +59,7 @@ def get_lo_ratio(sigpnt, channel):
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 original_nominal = {}
-def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, replace, drops, keeps, alwaysshape, threshold, lnNsmall,
+def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
