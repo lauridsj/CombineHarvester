@@ -354,7 +354,7 @@ def recursive_glob(base_directory, pattern):
 
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-            "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {rsd}".format(
+            "{psd} {inj} {rep} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {rsd}".format(
                 scr = scriptdir,
                 pnt = ','.join(args.point),
                 sig = args.signal,
@@ -363,6 +363,7 @@ def make_datacard_with_args(scriptdir, args):
                 yr = args.year,
                 psd = "--add-pseudodata" if args.asimov else "",
                 inj = "--inject-signal " + args.inject if args.inject != "" else "",
+                rep = "--replace-nominal " + args.replace if args.replace != "" else "",
                 tag = "--tag " + args.tag if args.tag != "" else "",
                 drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                 kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
