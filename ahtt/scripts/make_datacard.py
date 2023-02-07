@@ -561,7 +561,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
-    #syscall("rm {ooo}".format(ooo = oname), False, True)
+    syscall("rm {ooo}".format(ooo = oname), False, True)
 
     writer = ch.CardWriter("$TAG/$ANALYSIS_$BIN.txt", "$TAG/$ANALYSIS_input.root")
     sstr = "__".join(sorted(sigpnt))

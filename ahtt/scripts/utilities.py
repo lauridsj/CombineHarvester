@@ -139,7 +139,7 @@ def add_scaled_nuisance(varied, nominal, original, factor):
     added = varied.Clone("xxxmutatedxxx")
     added.Add(original, -1.)
     if factor != 1.:
-        scale(factor)
+        scale(added, factor)
     added.Add(nominal)
     return added
 
