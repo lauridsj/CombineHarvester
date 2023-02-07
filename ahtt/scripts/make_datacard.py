@@ -294,10 +294,27 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
                 drop_nuisance = False
+                skip_nuisance = False
                 if keeps is not None:
                     drop_nuisance = not any([dn in nn2 for dn in keeps])
                 if drops is not None:
                     drop_nuisance = drop_nuisance or drops == ['*'] or any([dn in nn2 for dn in drops])
+
+                if drop_nuisance:
+                    if replaces is None:
+                        skip_nuisance = True
+                    else:
+                        for rn in replaces:
+                            if len(nds) > 1 and rn.split(':')[0] == nn2:
+                                skip_nuisance = False
+                                break
+                            else:
+                                skip_nuisance = True
+
+                if skip_nuisance:
+                    nuisance.pop()
+                    print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
+                    continue
 
                 if not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
