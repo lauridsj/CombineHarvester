@@ -93,7 +93,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 6.)), # gaussian 0.5 GeV
+            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 3.)), # gaussian 1 GeV
             #("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat 3 GeV
 
             ("CMS_UEtune_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -115,10 +115,24 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("CMS_fake_b_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("CMS_eff_b_13TeV_JEC",                (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_b_13TeV_Pileup",             (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_b_13TeV_Type3",              (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_eff_b_13TeV",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_eff_b_13TeV_JEC",                      (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_eff_b_13TeV_Pileup",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_eff_b_13TeV_Type3",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_GluonSplitting",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_BottomFragmentation",      (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_BottomTemplateCorrection", (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_CharmFragmentation",       (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_CharmTemplateCorrection",  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_CharmToMuonBR",            (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_LightCharmRatio",          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_VzeroParticles",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_MuonRelativePt",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_MuonPt",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_MuonDeltaR",               (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_AwayJetTag",               (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_JPCorrection",             (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_LifetimeOthers",           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_eff_b_13TeV",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_JEC_13TeV_Absolute",             (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_BBEC1",                (("2016pre", "2016post", "2017", "2018"), 1.)),
