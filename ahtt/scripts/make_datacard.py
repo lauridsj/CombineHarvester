@@ -20,7 +20,7 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project
+from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project, add_scaled_nuisance
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
@@ -57,9 +57,9 @@ def get_lo_ratio(sigpnt, channel):
     # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
 
-# FIXME partial shape correlations not yet implemented, meaning not clear yet
-# current assumption is some specific list is fully correlated, others fully uncorrelated
-def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, drops, keeps, alwaysshape, threshold, lnNsmall,
+# assumption is some specific list is fully correlated, others fully uncorrelated
+original_nominal = {}
+def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, replace, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
@@ -190,6 +190,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     zero_out(hn)
                     hn.Write()
 
+                    if replaces is not None:
+                        if odir not in original_nominal:
+                            original_nominal[odir] = {}
+                        if kname not in original_nominal[odir]:
+                            original_nominal[odir][kname] = hn.Clone(kname + '_original_no_bootleg_frfr')
+                            original_nominal[odir][kname].SetDirectory(0)
+
         ifile.Close()
         ifile = None
 
@@ -233,6 +240,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 ofile.cd(odir)
                 hn.Write()
+
+                if replaces is not None:
+                    if odir not in original_nominal:
+                        original_nominal[odir] = {}
+                    if pnt not in original_nominal[odir]:
+                        original_nominal[odir][pnt] = hn.Clone(pnt + '_original_no_bootleg_frfr')
+                        original_nominal[odir][pnt].SetDirectory(0)
 
             ifile.Close()
             ifile = None
@@ -285,7 +299,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if drops is not None:
                     drop_nuisance = drop_nuisance or drops == ['*'] or any([dn in nn2 for dn in drops])
 
-                if not drop_nuisance and not alwaysshape and hc is not None:
+                if not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
 
@@ -312,13 +326,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                         if scaleu == 0. and scaled == 0.:
                             drop_nuisance = True
-                        else:
-                            print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
-                if drop_nuisance:
-                    nuisance.pop()
-                    print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
-                    continue
+                        if not drop_nuisance:
+                            print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
                 if not sigpnt == None:
                     # rescale varied LO to nominal
@@ -337,7 +347,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         # FIXME if instead the varied LO is desired, comment the loratios scaling above
                         # FIXME and use 0 instead of idxu/idxp for kfactors
 
-                ofile.cd(odir)
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
 
@@ -348,6 +357,26 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     zero_out(hu)
                     zero_out(hd)
 
+                if replaces is not None:
+                    for rn in replaces:
+                        nds = rn.split(':') # name direction scale
+
+                        if len(nds) > 1 and nds[0] == nn2:
+                            hn = ofile.Get(odir + '/' + pp)
+                            ho = original_nominal[odir][pp]
+                            hv = hu if nds[1].lower() == "up" else hd
+
+                            hr = add_scaled_nuisance(hv, hn, ho, 1. if len(nds) < 3 else float(nds[2]))
+                            hr.SetName(pp)
+                            ofile.cd(odir)
+                            hr.Write()
+
+                if drop_nuisance:
+                    nuisance.pop()
+                    print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
+                    continue
+
+                ofile.cd(odir)
                 hu.Write()
                 hd.Write()
 
@@ -588,7 +617,7 @@ if __name__ == '__main__':
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
 
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
-                        type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), ':' ))
+                        type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
 
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
@@ -622,15 +651,18 @@ if __name__ == '__main__':
                 if cc in pchan:
                     prule = prjrule[prjchan.index(pchan)]
 
-            read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+            read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
+                                           args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            args.point, args.kfactor)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
-                    read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                    read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
+                                                   args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
 
-            read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+            read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
+                                           args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"

@@ -14,9 +14,11 @@ combine_help_messages = {
     "--sushi-kfactor": "apply nnlo kfactors computing using sushi on A/H signals",
     "--add-pseudodata": "add pseudodata into the template files for combine, using the sum of backgrounds, instead of using real data",
     "--inject-signal": "comma-separated list of signal points to inject into the pseudodata",
-    "--replace-nominal": "the name of a nuisance where, if a process has one with this name, its nominal template of this process is replaced by that of the nuisance.\n"
-    "Up or Down must be specified exactly e.g. tmass_3GeV_TTUp. Accepts a second argument separated by a colon, where the second argument must be a number.\n"
-    "tmass_3GeV_TTUp:0.5 means assigning half the difference between the tmass_3GeV_TTUp and the original nominal template as nominal, binwise linearly interpolated.",
+    "--replace-nominal": "comma-separated names of nuisances where, if a process has them, its nominal template of is replaced by that of the nuisances.\n"
+    "Up or Down must be specified after a colon e.g. tmass_3GeV_TT:Up. Accepts a third value after another colon, which must be a number that defaults to 1.\n"
+    "tmass_3GeV_TT:Up:0.5 means assigning half the difference between the tmass_3GeV_TTUp and the original nominal template as nominal, binwise linearly interpolated."
+    "tmass_3GeV_TT:Up:0.37,QCDScale_MERen_TT:Down:0.73,... means adding the interpolated differences of all these templates wrt original nominal to the latter, "
+    "and assigning the resulting template as nominal.",
 
     "--drop": "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
     "--keep": "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",

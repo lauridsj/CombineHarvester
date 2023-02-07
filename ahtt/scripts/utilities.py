@@ -135,6 +135,14 @@ def project(histogram, rule):
 
     return hist
 
+def add_scaled_nuisance(varied, nominal, original, scale):
+    added = varied.Clone("xxxmutatedxxx")
+    added.Add(original, -1.)
+    if scale != 1.:
+        added.Scale(scale)
+    added.Add(nominal)
+    return added
+
 def get_nbin(fname, channel, year):
     hfile = TFile.Open(fname, "read")
     hfile.cd(channel + "_" + year)
