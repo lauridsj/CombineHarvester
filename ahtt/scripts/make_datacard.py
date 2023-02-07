@@ -392,7 +392,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     for pp, nn in zip(processes, nuisances):
         cpn[odir][pp[0]] = nn
 
-def make_pseudodata(ofile, cpn, sigpnt = None, seed = None):
+def make_pseudodata(ofile, cpn, replaces, sigpnt = None, seed = None):
     if seed is None or seed >= 0:
         rng.seed(seed)
 
@@ -409,6 +409,15 @@ def make_pseudodata(ofile, cpn, sigpnt = None, seed = None):
                     dd = hh.Clone("data_obs")
                 else:
                     dd.Add(hh)
+
+            # fixme this block here reverts the nominal templates back to what it was
+            # after adding the nuisance-shifted one to the pseudodata
+            # the assumption here is that the shifting only makes sense for pseudodata
+            # as otherwise the shifted model becomes the baseline, which is fitted away
+            if replaces is not None:
+                ho = original_nominal[category][pp].Clone(pp)
+                ofile.cd(category)
+                ho.Write()
 
         for ii in range(1, dd.GetNbinsX() + 1):
             content = rng.poisson(dd.GetBinContent(ii)) if seed is not None and seed >= 0 else round(dd.GetBinContent(ii))
@@ -666,7 +675,7 @@ if __name__ == '__main__':
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"
-        make_pseudodata(output, cpn, args.inject, args.seed if args.seed != 0 else None)
+        make_pseudodata(output, cpn, args.replace, args.inject, args.seed if args.seed != 0 else None)
     output.Close()
 
     write_datacard(oname, cpn, args.year, args.point, args.inject, args.drop, args.keep, args.mcstat, args.rateparam, args.tag)
