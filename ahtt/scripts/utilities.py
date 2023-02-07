@@ -135,11 +135,11 @@ def project(histogram, rule):
 
     return hist
 
-def add_scaled_nuisance(varied, nominal, original, scale):
+def add_scaled_nuisance(varied, nominal, original, factor):
     added = varied.Clone("xxxmutatedxxx")
     added.Add(original, -1.)
-    if scale != 1.:
-        added.Scale(scale)
+    if factor != 1.:
+        scale(factor)
     added.Add(nominal)
     return added
 
