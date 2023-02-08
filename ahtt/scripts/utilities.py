@@ -342,7 +342,7 @@ def elementwise_add(list_of_lists):
     if len(list_of_lists) < 1 or any(len(ll) < 1 or len(ll) != len(list_of_lists[0]) for ll in list_of_lists):
         raise RuntimeError("this method assumes that the argument is a list of lists of nonzero equal lengths!!!")
 
-    result = list_of_lists[0]
+    result = list(list_of_lists[0])
     for ll in range(1, len(list_of_lists)):
         for rr in range(len(result)):
             result[rr] += list_of_lists[ll][rr]
