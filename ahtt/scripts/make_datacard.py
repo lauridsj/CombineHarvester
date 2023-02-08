@@ -59,7 +59,7 @@ def get_lo_ratio(sigpnt, channel):
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 original_nominal = {}
-def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
+def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
@@ -190,7 +190,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     zero_out(hn)
                     hn.Write()
 
-                    if replaces is not None:
+                    if chops is not None or replaces is not None:
                         if odir not in original_nominal:
                             original_nominal[odir] = {}
                         if kname not in original_nominal[odir]:
@@ -241,7 +241,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 ofile.cd(odir)
                 hn.Write()
 
-                if replaces is not None:
+                if chops is not None or replaces is not None:
                     if odir not in original_nominal:
                         original_nominal[odir] = {}
                     if pnt not in original_nominal[odir]:
@@ -376,7 +376,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 if replaces is not None:
                     for rn in replaces:
-                        nds = rn.split(':') # name direction scale
+                        nds = tokenize_to_list(rn, ':') # name direction scale
 
                         if len(nds) > 1 and nds[0] == nn2:
                             hn = ofile.Get(odir + '/' + pp)
@@ -393,9 +393,49 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
                     continue
 
-                ofile.cd(odir)
-                hu.Write()
-                hd.Write()
+                if chops is not None and any([nn2 == tokenize_to_list(chop, ';')[0] for chop in chops]):
+                    prechop_name, prechop_scale = nuisance.pop()
+
+                    for chop in chops:
+                        nsci = tokenize_to_list(chop, ';') # nuisance subgroup channel index
+
+                        if nsci[0] == nn2 and len(nsci) > 1:
+                            for ichop in range(1, len(nsci)):
+                                sci = tokenize_to_list(nsci[ichop], '|')
+                                if channel in tokenize_to_list(sci[1]):
+                                    nn3 = nn2 + "_" + sci[0]
+                                    nuisance.append((nn3, prechop_scale))
+
+                                    ho = original_nominal[odir][pp]
+                                    huc = hu.Clone("tochopup")
+                                    huc = hu.Clone("tochopdown")
+
+                                    # FIXME to be implemented/tested
+                                    ibins = sci[2]
+                                    huc.Manipulate()
+                                    hdc.Manipulate()
+
+                                    huc.SetName(hu.GetName().replace(nn2, nn3))
+                                    hdc.SetName(hd.GetName().replace(nn2, nn3))
+
+                                    ofile.cd(odir)
+                                    huc.Write()
+                                    hdc.Write()
+
+                    brr =
+                    "nuisance;subgroup a|c0a,c1a,...,ca|[index set a];subgroup b|c0b,c1b,...,cb|[index set b];...\n"
+                    "where nuisance refers to the original nuisance parameter names (after including _year where relevant),\n"
+                    "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
+                    "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
+                    "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
+                    "index set can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
+                    "where the comma separated version is plainly the list of bin indices and\n"
+                    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
+                    "mixing of both syntaxes is not allowed.\n"
+                else:
+                    ofile.cd(odir)
+                    hu.Write()
+                    hd.Write()
 
         nuisances.append(nuisance)
         ifile.Close()
@@ -603,7 +643,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         for tt in txts:
             with open(tt, 'a') as txt:
                 for rp in rateparam:
-                    rpp = rp.split(':')
+                    rpp = tokenize_to_list(rp, ':')
                     txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
 
     if len(categories) > 1:
@@ -639,11 +679,15 @@ if __name__ == '__main__':
 
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
-    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "replace", default = "", required = False,
-                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
                         type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+
+    parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
+
+    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "replace", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
@@ -659,7 +703,7 @@ if __name__ == '__main__':
         print "supported channels:", allchannels
         raise RuntimeError("unexpected channel is given. aborting.")
 
-    if not all([len(pp.split(';')) == 3 for pp in args.projection]):
+    if not all([len(tokenize_to_list(pp, ';')) == 3 for pp in args.projection]):
         raise RuntimeError("unexpected projection instruction syntax. aborting")
     prjchan = [pp.split(';')[0].split(',') for pp in args.projection]
     prjrule = [pp.split(';')[1:] for pp in args.projection]
@@ -678,17 +722,17 @@ if __name__ == '__main__':
                     prule = prjrule[prjchan.index(pchan)]
 
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                           args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                           args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            args.point, args.kfactor)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                                   args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                                   args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
 
             read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
-                                           args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+                                           args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"

@@ -14,11 +14,6 @@ combine_help_messages = {
     "--sushi-kfactor": "apply nnlo kfactors computing using sushi on A/H signals",
     "--add-pseudodata": "add pseudodata into the template files for combine, using the sum of backgrounds, instead of using real data",
     "--inject-signal": "comma-separated list of signal points to inject into the pseudodata",
-    "--replace-nominal": "comma-separated names of nuisances where, if a process has them, the nuisance template is used to create the pseudodata instead of nominal.\n"
-    "Up or Down must be specified after a colon e.g. tmass_3GeV_TT:Up. Accepts a third value after another colon, which must be a number that defaults to 1.\n"
-    "tmass_3GeV_TT:Up:0.5 means adding half the difference between the tmass_3GeV_TTUp and the nominal template, binwise linearly interpolated."
-    "tmass_3GeV_TT:Up:0.37,QCDScale_MERen_TT:Down:0.73,... means adding the interpolated differences of all these templates wrt original nominal to the latter, "
-    "and assigning the resulting template as the nominal template to be added to the pseudodata.",
 
     "--drop": "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
     "--keep": "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
@@ -35,6 +30,13 @@ combine_help_messages = {
     "it also automatically replaces the now-redundant CMS_[process]_norm_13TeV nuisances.\n"
     "relevant only in the datacard step.",
 
+    "--replace-nominal": "comma-separated names of nuisances where, if a process has them, the nuisance template is used to create the pseudodata instead of nominal.\n"
+    "Up or Down must be specified after a colon e.g. tmass_3GeV_TT:Up. Accepts a third value after another colon, which must be a number that defaults to 1.\n"
+    "tmass_3GeV_TT:Up:0.5 means adding half the difference between the tmass_3GeV_TTUp and the nominal template, binwise linearly interpolated."
+    "tmass_3GeV_TT:Up:0.37,QCDScale_MERen_TT:Down:0.73,... means adding the interpolated differences of all these templates wrt original nominal to the latter, "
+    "and assigning the resulting template as the nominal template to be added to the pseudodata.\n"
+    "p/s: does NOT support adding chopped up nuisances for the moment.",
+
     "--projection":
     "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
     "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
@@ -44,6 +46,24 @@ combine_help_messages = {
     "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
     "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
     "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
+
+    "--chop-up":
+    "please do not use this option. if you ever find yourself needing to, the author/developer sends his sincere condolences.\n"
+    "this option is used to chop up nuisance parameters into different uncorrelated pieces of nuisance parameters "
+    "based on whatever notions of fit degrees of freedom that one dreams up. the syntax is as follows:\n"
+    "[instruction 0]:[instruction 1]:...:[instruction n] for n nuisance parameters, with each instruction being of the form\n"
+    "nuisance;subgroup a|c0a,c1a,...,ca|[index set a];subgroup b|c0b,c1b,...,cb|[index set b];...\n"
+    "where nuisance refers to the original nuisance parameter names (after including _year where relevant),\n"
+    "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
+    "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
+    "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
+    "index set can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
+    "where the comma separated version is plainly the list of bin indices and\n"
+    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
+    "mixing of both syntaxes is not allowed.\n"
+    "for each nuisance/channel/subgroup, the first applicable rule (even if nonsensical) is applied.\n"
+    "still reading? then the plea to not use this option is likely futile. go ahead.\n"
+    "while we use it, let us lament the violation of first principles that led to the birth of this option.",
 
     "--mode": "comma-separated list of combine modes to run",
     "--compress": "compress output into a tar file",
@@ -108,7 +128,7 @@ submit_help_messages = {
     "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
     "e.g. m400,m450;w5p0;m600,m750;w10p0 expands to A_m400_w5p0,H_m600_w10p0;A_m450_w5p0,H_m600_w10p0;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w10p0",
 
-    "--run-idxs": "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
+    "--run-idxs": "can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
     "where the comma separated version is plainly the list of indices to be given to --run-idx, if --n-toy > 0\n"
     "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
     "mixing of both syntaxes is not allowed.",

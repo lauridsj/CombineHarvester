@@ -99,7 +99,8 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--threshold", help = combine_help_messages["--threshold"], default = "", required = False)
     parser.add_argument("--float-rate", help = combine_help_messages["--float-rate"], dest = "rateparam", default = "", required = False)
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False)
-    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "replace", default = "", required = False)
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False)
+    parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False)
+    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "replace", default = "", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = "", required = False)
     return parser

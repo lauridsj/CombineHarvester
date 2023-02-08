@@ -217,13 +217,12 @@ if __name__ == '__main__':
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
-        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {rep} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
+        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
+                   "{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
             inj = "--inject-signal " + args.inject if args.inject != "" else "",
-            rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
             tag = "--tag " + args.tag if args.tag != "" else "",
             drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
             kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
@@ -238,6 +237,8 @@ if __name__ == '__main__':
             rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
             msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
+            cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
+            rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
             frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
             asm = "--unblind" if not args.asimov else "",
             rsd = "--seed " + args.seed if args.seed != "" else "",

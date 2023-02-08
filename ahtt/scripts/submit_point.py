@@ -89,13 +89,12 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
 
-        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {rep} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
+        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
+                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
                        inj = "--inject-signal " + args.inject if args.inject != "" else "",
-                       rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
                        drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                        kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
@@ -110,6 +109,8 @@ if __name__ == '__main__':
                        rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
                        msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
                        prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
+                       cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
+                       rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
                        frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
                        asm = "--unblind" if not args.asimov else "",
                        one = "--one-poi" if args.onepoi else "",
