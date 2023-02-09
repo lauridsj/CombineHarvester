@@ -116,8 +116,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("CMS_fake_b_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            #("CMS_eff_b_13TeV_JEC",                      (("2016pre", "2016post", "2017", "2018"), 1.)),
-            #("CMS_eff_b_13TeV_Pileup",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_JEC",                      (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("CMS_eff_b_13TeV_Pileup",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("CMS_eff_b_13TeV_Type3",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_b_13TeV_GluonSplitting",           (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_eff_b_13TeV_BottomFragmentation",      (("2016pre", "2016post", "2017", "2018"), 1.)),
