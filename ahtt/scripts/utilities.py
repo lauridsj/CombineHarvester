@@ -448,7 +448,7 @@ def index_list(index_string, baseline = 0):
     for istr in index_string:
         if ".." in istr:
             ilst = tokenize_to_list(istr, '..' )
-            idxs += range(int(ilst[0]), int(ilst[1])) if idxs[0] != "" else range(baseline, int(ilst[1]))
+            idxs += range(int(ilst[0]), int(ilst[1])) if ilst[0] != "" else range(baseline, int(ilst[1]))
         else:
             idxs.append(int(istr))
 
