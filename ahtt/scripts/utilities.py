@@ -143,6 +143,15 @@ def add_scaled_nuisance(varied, nominal, original, factor):
     added.Add(nominal)
     return added
 
+def chop_up(varied, nominal, indices):
+    chopped = varied.Clone("xxxchoppedxxx")
+    for ii in range(1, chopped.GetNbinsX() + 1):
+        content = varied.GetBinContent(ii) if ii in indices else nominal.GetBinContent(ii)
+        error = varied.GetBinError(ii) if ii in indices else nominal.GetBinError(ii)
+        chopped.SetBinContent(ii, content)
+        chopped.SetBinError(ii, error)
+    return chopped
+
 def get_nbin(fname, channel, year):
     hfile = TFile.Open(fname, "read")
     hfile.cd(channel + "_" + year)
@@ -419,3 +428,28 @@ def update_mask(masks):
                 new_masks.append(cc + "_" + yy)
 
     return list(set(new_masks))
+
+def index_list(index_string, baseline = 0):
+    """
+    builds a list of indices from an index string, to be used in some options
+    index_string can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative
+    where the comma separated integers are plainly the single indices and
+    the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be the baseline (0 by default)
+    the returned list of indices is sorted, with duplicates removed
+    returns empty list if syntax is not followed
+    """
+
+    if not all([ii in "0123456789" for ii in index_string.replace("...", "").replace(",", "")]):
+        return []
+
+    index_string = tokenize_to_list(index_string)
+    idxs = []
+
+    for istr in index_string:
+        if "..." in istr:
+            ilst = tokenize_to_list(istr, '...' )
+            idxs += range(int(ilst[0]), int(ilst[1])) if idxs[0] != "" else range(baseline, int(ilst[1]))
+        else:
+            idxs.append(int(istr))
+
+    return list(set(idxs))

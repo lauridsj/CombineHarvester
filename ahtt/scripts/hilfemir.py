@@ -57,11 +57,11 @@ combine_help_messages = {
     "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
     "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
     "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
-    "index set can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
-    "where the comma separated version is plainly the list of bin indices and\n"
+    "index set can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative\n"
+    "where the comma separated integers are plainly the single indices and\n"
     "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
-    "mixing of both syntaxes is not allowed.\n"
     "for each nuisance/channel/subgroup, the first applicable rule (even if nonsensical) is applied.\n"
+    "this option does NOT support chopping up lnN nuisances\n"
     "still reading? then the plea to not use this option is likely futile. go ahead.\n"
     "while we use it, let us lament the violation of first principles that led to the birth of this option.",
 
@@ -128,10 +128,10 @@ submit_help_messages = {
     "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
     "e.g. m400,m450;w5p0;m600,m750;w10p0 expands to A_m400_w5p0,H_m600_w10p0;A_m450_w5p0,H_m600_w10p0;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w10p0",
 
-    "--run-idxs": "can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
-    "where the comma separated version is plainly the list of indices to be given to --run-idx, if --n-toy > 0\n"
-    "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
-    "mixing of both syntaxes is not allowed.",
+    "--run-idxs": "can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative\n"
+    "where the comma separated integers are plainly the single indices to be given to --run-idx and\n"
+    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
+    "relevant only if --n-toy > 0",
 
     "--fc-mode": "what to do with the grid read from --fc-g-grid, can be 'add' for submitting more toys of the same points,\n"
     "or 'refine', for refining the contour that can be drawn using the grid",

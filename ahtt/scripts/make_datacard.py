@@ -20,7 +20,8 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out, project, add_scaled_nuisance
+from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out
+from utilities import project, add_scaled_nuisance, index_list, chop_up
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
@@ -402,18 +403,14 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         if nsci[0] == nn2 and len(nsci) > 1:
                             for ichop in range(1, len(nsci)):
                                 sci = tokenize_to_list(nsci[ichop], '|')
-                                if channel in tokenize_to_list(sci[1]):
+                                if len(sci) == 3 and channel in tokenize_to_list(sci[1]):
                                     nn3 = nn2 + "_" + sci[0]
                                     nuisance.append((nn3, prechop_scale))
 
+                                    ibins = index_list(sci[2], 1)
                                     ho = original_nominal[odir][pp]
-                                    huc = hu.Clone("tochopup")
-                                    huc = hu.Clone("tochopdown")
-
-                                    # FIXME to be implemented/tested
-                                    ibins = sci[2]
-                                    huc.Manipulate()
-                                    hdc.Manipulate()
+                                    huc = chop_up(hu, ho, ibins)
+                                    hdc = chop_up(hd, ho, ibins)
 
                                     huc.SetName(hu.GetName().replace(nn2, nn3))
                                     hdc.SetName(hd.GetName().replace(nn2, nn3))
@@ -421,17 +418,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                                     ofile.cd(odir)
                                     huc.Write()
                                     hdc.Write()
-
-                    brr =
-                    "nuisance;subgroup a|c0a,c1a,...,ca|[index set a];subgroup b|c0b,c1b,...,cb|[index set b];...\n"
-                    "where nuisance refers to the original nuisance parameter names (after including _year where relevant),\n"
-                    "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
-                    "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
-                    "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
-                    "index set can be one or more comma separated non-negative integers, or of the form A...B where A < B and A, B non-negative\n"
-                    "where the comma separated version is plainly the list of bin indices and\n"
-                    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
-                    "mixing of both syntaxes is not allowed.\n"
                 else:
                     ofile.cd(odir)
                     hu.Write()

@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob
+from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -254,17 +254,8 @@ if __name__ == '__main__':
         )
 
         if rungen or runfc:
-            idxs = []
             if args.ntoy > 0:
-                if "," in args.runidxs and "..." in args.runidxs:
-                    raise RuntimeError("it is said that mixing syntaxes is not allowed smh.")
-                elif "," in args.runidxs:
-                    idxs = [int(ii) for ii in tokenize_to_list(args.runidxs)]
-                elif "..." in args.runidxs:
-                    idxs = tokenize_to_list(args.runidxs, '...' )
-                    idxs = range(int(idxs[0]), int(idxs[1])) if idxs[0] != "" else range(int(idxs[1]))
-                else:
-                    idxs = [int(args.runidxs)]
+                idxs = index_list(args.runidxs)
             else:
                 idxs = [-1]
 
