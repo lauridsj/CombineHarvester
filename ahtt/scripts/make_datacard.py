@@ -394,13 +394,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " has been dropped")
                     continue
 
-                if chops is not None and any([nn2 == tokenize_to_list(chop, ';')[0] for chop in chops]):
+                if chops is not None and any([nn2 in tokenize_to_list(tokenize_to_list(chop, ';')[0]) for chop in chops]):
                     prechop_name, prechop_scale = nuisance.pop()
 
                     for chop in chops:
                         nsci = tokenize_to_list(chop, ';') # nuisance subgroup channel index
 
-                        if nsci[0] == nn2 and len(nsci) > 1:
+                        if nn2 in tokenize_to_list(nsci[0]) and len(nsci) > 1:
                             for ichop in range(1, len(nsci)):
                                 sci = tokenize_to_list(nsci[ichop], '|')
                                 if len(sci) == 3 and channel in tokenize_to_list(sci[1]):
