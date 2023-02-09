@@ -390,8 +390,8 @@ def make_datacard_with_args(scriptdir, args):
                 mcs = "--no-mc-stats" if not args.mcstat else "",
                 rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
                 prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
-                cho = "--chop-up " + args.chop if args.chop != "" else "",
-                rep = "--replace-nominal " + args.replace if args.replace != "" else "",
+                cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
+                rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
                 rsd = "--seed " + args.seed if args.seed != "" else ""
             ))
 
@@ -432,22 +432,22 @@ def update_mask(masks):
 def index_list(index_string, baseline = 0):
     """
     builds a list of indices from an index string, to be used in some options
-    index_string can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative
+    index_string can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative
     where the comma separated integers are plainly the single indices and
-    the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be the baseline (0 by default)
+    the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be the baseline (0 by default)
     the returned list of indices is sorted, with duplicates removed
     returns empty list if syntax is not followed
     """
 
-    if not all([ii in "0123456789" for ii in index_string.replace("...", "").replace(",", "")]):
+    if not all([ii in "0123456789" for ii in index_string.replace("..", "").replace(",", "")]):
         return []
 
     index_string = tokenize_to_list(index_string)
     idxs = []
 
     for istr in index_string:
-        if "..." in istr:
-            ilst = tokenize_to_list(istr, '...' )
+        if ".." in istr:
+            ilst = tokenize_to_list(istr, '..' )
             idxs += range(int(ilst[0]), int(ilst[1])) if idxs[0] != "" else range(baseline, int(ilst[1]))
         else:
             idxs.append(int(istr))

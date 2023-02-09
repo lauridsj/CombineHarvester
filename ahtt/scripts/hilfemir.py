@@ -57,9 +57,9 @@ combine_help_messages = {
     "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
     "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
     "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
-    "index set can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative\n"
+    "index set can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative\n"
     "where the comma separated integers are plainly the single indices and\n"
-    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
+    "the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
     "for each nuisance/channel/subgroup, the first applicable rule (even if nonsensical) is applied.\n"
     "this option does NOT support chopping up lnN nuisances\n"
     "still reading? then the plea to not use this option is likely futile. go ahead.\n"
@@ -109,10 +109,9 @@ combine_help_messages = {
 # or for options that occur only in submit scripts
 submit_help_messages = {
     "--raster-i": "which chunks to process, in doing the raster scan.\n"
-    "can be one or more comma separated non-negative integers, or something of the form A...B where A < B and A, B non-negative\n"
-    "where the comma separated version is plainly the list of indices to be given to --raster-i, if --raster-n > 0\n"
-    "and the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
-    "mixing of both syntaxes are not allowed.",
+    "can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative\n"
+    "where the comma separated integers are plainly the single indices and\n"
+    "the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0",
 
     "--impact-n": "maximum number of nuisances to run in a single impact job",
     "--skip-expth": "in pull/impact mode, skip running over the experimental and theory nuisances",
@@ -128,10 +127,10 @@ submit_help_messages = {
     "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
     "e.g. m400,m450;w5p0;m600,m750;w10p0 expands to A_m400_w5p0,H_m600_w10p0;A_m450_w5p0,H_m600_w10p0;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w10p0",
 
-    "--run-idxs": "can be a mixture of comma separated non-negative integers, or the form A...B where A < B and A, B non-negative\n"
-    "where the comma separated integers are plainly the single indices to be given to --run-idx and\n"
-    "the A...B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n"
-    "relevant only if --n-toy > 0",
+    "--run-idxs": "indices to be given to --run-idx, relevant only if --n-toy > 0\n"
+    "can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative\n"
+    "where the comma separated integers are plainly the single indices and\n"
+    "the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0\n",
 
     "--fc-mode": "what to do with the grid read from --fc-g-grid, can be 'add' for submitting more toys of the same points,\n"
     "or 'refine', for refining the contour that can be drawn using the grid",

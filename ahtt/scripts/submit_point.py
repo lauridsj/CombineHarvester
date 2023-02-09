@@ -10,7 +10,7 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin, input_bkg, input_sig
+from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin, input_bkg, input_sig, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     common_1D(parser)
     common_submit(parser)
 
-    parser.add_argument("--raster-i", help = submit_help_messages["--raster-i"], dest = "ichunk", default = "...[--raster-n value]", required = False)
+    parser.add_argument("--raster-i", help = submit_help_messages["--raster-i"], dest = "ichunk", default = "..[--raster-n value]", required = False)
     parser.add_argument("--impact-n", help = submit_help_messages["--impact-n"], dest = "nnuisance", default = 10, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--skip-expth", help = submit_help_messages["--skip-expth"], dest = "runexpth", action = "store_false", required = False)
     parser.add_argument("--run-mc-stats", help = submit_help_messages["--run-mc-stats"], dest = "runbb", action = "store_true", required = False)
@@ -128,20 +128,11 @@ if __name__ == '__main__':
             if args.nchunk < 0:
                 args.nchunk = 6
 
-            if args.ichunk == "...[--raster-n value]":
-                args.ichunk = "..." + str(args.nchunk)
+            if args.ichunk == "..[--raster-n value]":
+                args.ichunk = ".." + str(args.nchunk)
 
-            idxs = []
             if args.nchunk > 1:
-                if "," in args.ichunk and "..." in args.ichunk:
-                    raise RuntimeError("it is said that mixing syntaxes is not allowed smh.")
-                elif "," in args.ichunk:
-                    idxs = [int(ii) for ii in args.ichunk.replace(" ", "").split(",")]
-                elif "..." in args.ichunk:
-                    idxs = args.ichunk.replace(" ", "").split("...")
-                    idxs = range(int(idxs[0]), int(idxs[1])) if idxs[0] != "" else range(int(idxs[1]))
-                else:
-                    idxs = [int(args.ichunk.replace(" ", ""))]
+                idxs = index_list(args.ichunk)
             else:
                 idxs = [0]
 
