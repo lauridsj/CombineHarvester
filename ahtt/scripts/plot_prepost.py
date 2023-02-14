@@ -13,11 +13,16 @@ import matplotlib.pyplot as plt  # noqa:E402
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
 
+import ROOT
+from ROOT import TFile
+
+from desalinator import tokenize_to_list, remove_spaces_quotes
 
 parser = ArgumentParser()
-parser.add_argument("inputfile")
-parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff")
-parser.add_argument("--log", action = "store_true")
+parser.add_argument("--ifile", help = "input file", default = "", required = True)
+parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", required = False)
+parser.add_argument("--log", action = "store_true", required = False)
+parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 args = parser.parse_args()
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -64,7 +69,7 @@ binnings = {
 }
 ratiolabels = {
     "b": "Data / SM",
-    "s": "Data / SM+signal",
+    "s": "Data / SM + {signal}",
 }
 lumis = {
     "2016pre": "19.5",
@@ -94,27 +99,23 @@ datastyle = dict(
 )
 
 
-def get_g_values(filename, signals):
-    name = os.path.splitext(filename)[0] + ".txt"
-    if not os.path.exists(name):
-        return {k: None for k in signals.keys()}
-    with open(name) as f:
-        lines = f.readlines()
-    lines = [line.split() for line in lines]
-    ret = {}
-    for line in lines:
-        if len(line) != 6:
-            continue
-        for signal in signals.keys():
-            widthstr = str(float(signal[2])).replace(".", "p")
-            if line[0] == f"g_{signal[0]}_m{signal[1]}_w{widthstr}":
-                ret[signal] = float(line[2])
-                break
-    for signal, value in ret.items():
-        if value % 1 == 0:
-            ret[signal] = int(value)
-    return ret
+def get_g_values(fname, signals):
+    twing = len(signals) == 2
+    onepoi = "one-poi" in filename
 
+    if not twing and not onepoi:
+        raise NotImplementedError()
+
+    ffile = TFile.Open(fname, "read")
+    fres = ffile.Get("fit_s")
+
+    if onepoi:
+        return {signals.keys()[0] = fres.floatParsFinal().getRealValue('r')}
+    else:
+        return {
+            signals.keys()[0] = fres.floatParsFinal().getRealValue('g1'),
+            signals.keys()[1] = fres.floatParsFinal().getRealValue('g2')
+        }
 
 def plot_eventperbin(ax, bins, centers, smhists, data, log):
     total = None
@@ -153,7 +154,7 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log):
         ax.set_yscale("log")
 
 
-def plot_ratio(ax, bins, centers, data, total, fit):
+def plot_ratio(ax, bins, centers, data, total, signals, fit):
     ax.errorbar(
         centers,
         data[0] / total.values(),
@@ -173,8 +174,10 @@ def plot_ratio(ax, bins, centers, data, total, fit):
         ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.5, color = "black")
     ax.set_ylim(0.75, 1.25)
-    ax.set_ylabel(ratiolabels[fit])
-
+    signal1 = signals.keys()[0]
+    ax.set_ylabel(ratiolabels[fit].format(
+        signal = "A + H" if len(signals) == 2 and sorted([signals.keys()[0][0], signals.keys()[1][0]]) == ["A", "H"] else f"{signal1[0]}({signal1[1]}, {signal1[2]}%)"
+    ))
 
 def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
     total = None
@@ -251,7 +254,7 @@ def plot(
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
-        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, fit)
+        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, signals, fit)
     elif args.lower == "diff":
         plot_diff(ax2, bins, centers, (datavalues, datahist_errors), smhists, signals, gvalues, fit)
     else:
@@ -286,7 +289,9 @@ def plot(
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    fig.savefig(f"postfit_{channel}_{year}_{fit}.pdf", transparent = True)
+    sstr = [ss.GetName().replace("_res", "").replace("_pos", "").replace("_neg", "") for ss in signals.values()]
+    sstr = "__".join(sstr)
+    fig.savefig(f"{args.odir}/{sstr}_postfit_{channel.replace('$\\ell$', 'l').replace('+', 'p')}_{year}_{fit}.pdf", transparent = True)
 
 
 def sum_kwargs(channel, year, *summands):
@@ -306,7 +311,7 @@ signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 
 year_summed = {}
 has_plot = False
-with uproot.open(args.inputfile) as f:
+with uproot.open(args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
@@ -342,7 +347,7 @@ with uproot.open(args.inputfile) as f:
                     signals[(match.group(1), mass, width)] += hist
                 else:
                     signals[(match.group(1), mass, width)] = hist
-        gvalues = get_g_values(args.inputfile, signals)
+        gvalues = get_g_values(args.ifile, signals)
         if len(signals) > 1:
             total = None
             for hist in signals.values():
@@ -384,6 +389,7 @@ with uproot.open(args.inputfile) as f:
             year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
         else:
             year_summed[(channel, fit)] = kwargs
+
 plot(
     **sum_kwargs(
         r"$\ell\ell$",
@@ -410,5 +416,19 @@ plot(
         r"mj",
         "Run 2",
         *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
+    )
+)
+plot(
+    **sum_kwargs(
+        r"$\ell$3j",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
+    )
+)
+plot(
+    **sum_kwargs(
+        r"$\ell$4+j",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
     )
 )
