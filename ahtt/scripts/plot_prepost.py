@@ -290,7 +290,8 @@ def plot(
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    sstr = [ss.GetName().replace("_res", "").replace("_pos", "").replace("_neg", "") for ss in signals.values()]
+    sstr = [ss for ss in signals.keys()]
+    sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
     sstr = "__".join(sstr)
     cstr = channel.replace('$\\ell$', 'l').replace('+', 'p')
     fig.savefig(f"{args.odir}/{sstr}_postfit_{cstr}_{year}_{fit}.pdf", transparent = True)
