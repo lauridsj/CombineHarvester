@@ -292,7 +292,7 @@ def plot(
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    sstr = [ss for ss in signals.keys()]
+    sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
