@@ -252,7 +252,8 @@ def plot(
         centers,
         log):
 
-    print(smhists)
+    if len(smhists) == 0:
+        return
 
     fig, (ax0, ax1, ax2) = plt.subplots(
         nrows = 3,
@@ -411,41 +412,41 @@ plot(
     **sum_kwargs(
         r"$\ell\ell$",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
+        *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"] if (channel, "s") in year_summed)
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$j",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"] if (channel, "s") in year_summed)
     )
 )
 plot(
     **sum_kwargs(
         r"ej",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"] if (channel, "s") in year_summed)
     )
 )
 plot(
     **sum_kwargs(
         r"mj",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
+        *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"] if (channel, "s") in year_summed)
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$3j",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
+        *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"] if (channel, "s") in year_summed)
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$4+j",
         "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"] if (channel, "s") in year_summed)
     )
 )
