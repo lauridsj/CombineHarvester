@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 # original script by jonas ruebenach (desy) @ https://gitlab.cern.ch/jrubenac/ahtt_scripts/-/blob/a1020072d17d6813b55fc6f0c3a382538b542f3e/plot_post_fit.py
 # environment: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_102 x86_64-centos7-gcc11-opt
+# needs mpl >= 3.6.2
+# updating mpl: python3 -m pip install matplotlib --upgrade
+# actually using it: export PYTHONPATH=`python3 -c 'import site; print(site.getusersitepackages())'`:$PYTHONPATH
 
 import os
 from itertools import product
 import re
 from argparse import ArgumentParser
 import numpy as np
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
+plt.rcParams['axes.xmargin'] = 0
+
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
 
@@ -282,7 +288,6 @@ def plot(
             ticks.append(first_ax_width * i + first_ax_width * j)
     ax2.set_xticks(ticks)
     ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
-    ax2.set_xmargin(0)
     ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.02, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", edgecolor = "black", framealpha = 1)
     ax1.set_xlabel("")
     ax2.set_xlabel(list(binning.keys())[0])
