@@ -108,13 +108,14 @@ def get_g_values(fname, signals):
 
     ffile = TFile.Open(fname, "read")
     fres = ffile.Get("fit_s")
+    signals = list(signals.keys())
 
     if onepoi:
-        return {signals.keys()[0]: fres.floatParsFinal().getRealValue('r')}
+        return {signals[0]: fres.floatParsFinal().getRealValue('r')}
     else:
         return {
-            signals.keys()[0]: fres.floatParsFinal().getRealValue('g1'),
-            signals.keys()[1]: fres.floatParsFinal().getRealValue('g2')
+            signals[0]: fres.floatParsFinal().getRealValue('g1'),
+            signals[1]: fres.floatParsFinal().getRealValue('g2')
         }
 
 def plot_eventperbin(ax, bins, centers, smhists, data, log):
