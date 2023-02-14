@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# original script by jonas ruebenach (desy) @ https://gitlab.cern.ch/jrubenac/ahtt_scripts/-/blob/a1020072d17d6813b55fc6f0c3a382538b542f3e/plot_post_fit.py
 
 import os
 from itertools import product
