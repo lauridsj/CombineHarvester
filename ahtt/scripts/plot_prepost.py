@@ -417,6 +417,6 @@ batches = {
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
 for cltx, channels in batches.items():
-    has_channel = all([(channel, "s") in year_summed for channel in channels]
+    has_channel = all([(channel, "s") in year_summed for channel in channels])
     if has_channel:
         plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, "s")] for channel in channels)))
