@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # original script by jonas ruebenach (desy) @ https://gitlab.cern.ch/jrubenac/ahtt_scripts/-/blob/a1020072d17d6813b55fc6f0c3a382538b542f3e/plot_post_fit.py
 # environment: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_102 x86_64-centos7-gcc11-opt
-# needs mpl >= 3.6.2
 # updating mpl: python3 -m pip install matplotlib --upgrade
 # actually using it: export PYTHONPATH=`python3 -c 'import site; print(site.getusersitepackages())'`:$PYTHONPATH
 
