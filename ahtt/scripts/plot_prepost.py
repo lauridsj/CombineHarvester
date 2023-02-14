@@ -174,9 +174,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
         ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.5, color = "black")
     ax.set_ylim(0.75, 1.25)
-    signal1 = signals.keys()[0]
+    signals = list(signals.keys())
     ax.set_ylabel(ratiolabels[fit].format(
-        signal = "A + H" if len(signals) == 2 and sorted([signals.keys()[0][0], signals.keys()[1][0]]) == ["A", "H"] else f"{signal1[0]}({signal1[1]}, {signal1[2]}%)"
+        signal = "A + H" if len(signals) == 2 and sorted([signals[0][0], signals[1][0]]) == ["A", "H"] else f"{signals[0][0]}({signals[0][1]}, {signals[0][2]}%)"
     ))
 
 def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
