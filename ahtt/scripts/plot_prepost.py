@@ -32,6 +32,7 @@ parser.add_argument("--plot-tag", help = "extra tag to append to plot names", de
                     default = "", required = False, type = prepend_if_not_empty)
 args = parser.parse_args()
 
+
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
 years = ["2016pre", "2016post", "2017", "2018"]
 fits = ["s", "b"]
@@ -251,6 +252,8 @@ def plot(
         centers,
         log):
 
+    print(smhists)
+
     fig, (ax0, ax1, ax2) = plt.subplots(
         nrows = 3,
         sharex = True,
@@ -302,6 +305,7 @@ def plot(
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
     ystr = year.replace(" ", "").lower()
     fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{ystr}{args.ptag}.pdf", transparent = True)
+    fig.clf()
 
 
 def sum_kwargs(channel, year, *summands):
@@ -334,6 +338,9 @@ with uproot.open(args.ifile) as f:
         bins = (np.cumsum(binwidths)[None] + (np.arange(num_extrabins) * first_ax_width)[:, None]).flatten()
         bins = np.r_[0, bins]
         centers = (bins[1:] + bins[:-1]) / 2
+
+        if f"shapes_fit_{fit}/{channel}_{year}" not in f:
+            continue
 
         directory = f[f"shapes_fit_{fit}/{channel}_{year}"]
         smhists = {}
@@ -400,50 +407,45 @@ with uproot.open(args.ifile) as f:
         else:
             year_summed[(channel, fit)] = kwargs
 
-# FIXME hackery: need to properly detect what plots are there
-if "lx" in args.ifile or "ll" in args.ifile:
-    plot(
-        **sum_kwargs(
-            r"$\ell\ell$",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
-        )
+plot(
+    **sum_kwargs(
+        r"$\ell\ell$",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
     )
-if "lx" in args.ifile or "lj" in args.ifile:
-    plot(
-        **sum_kwargs(
-            r"$\ell$j",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
-        )
+)
+plot(
+    **sum_kwargs(
+        r"$\ell$j",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
     )
-    plot(
-        **sum_kwargs(
-            r"ej",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
-        )
+)
+plot(
+    **sum_kwargs(
+        r"ej",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
     )
-    plot(
-        **sum_kwargs(
-            r"mj",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
-        )
+)
+plot(
+    **sum_kwargs(
+        r"mj",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
     )
-if "lx" in args.ifile or "l3j" in args.ifile:
-    plot(
-        **sum_kwargs(
-            r"$\ell$3j",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
-        )
+)
+plot(
+    **sum_kwargs(
+        r"$\ell$3j",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
     )
-if "lx" in args.ifile or "l4pj" in args.ifile:
-    plot(
-        **sum_kwargs(
-            r"$\ell$4+j",
-            "Run 2",
-            *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
-        )
+)
+plot(
+    **sum_kwargs(
+        r"$\ell$4+j",
+        "Run 2",
+        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
     )
+)
