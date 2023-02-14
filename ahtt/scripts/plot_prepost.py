@@ -101,7 +101,7 @@ datastyle = dict(
 
 def get_g_values(fname, signals):
     twing = len(signals) == 2
-    onepoi = "one-poi" in filename
+    onepoi = "one-poi" in fname
 
     if not twing and not onepoi:
         raise NotImplementedError()
