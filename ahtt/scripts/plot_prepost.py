@@ -16,13 +16,15 @@ import mplhep as hep  # noqa:E402
 import ROOT
 from ROOT import TFile
 
-from desalinator import tokenize_to_list, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file", default = "", required = True)
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
+parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
+                    default = "", required = False, type = prepend_if_not_empty)
 args = parser.parse_args()
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -76,7 +78,7 @@ lumis = {
     "2016post": "16.8",
     "2017": "41.5",
     "2018": "59.9",
-    "Run 2": "138",
+    "run2": "138",
 }
 
 hatchstyle = dict(
@@ -294,7 +296,7 @@ def plot(
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
-    fig.savefig(f"{args.odir}/{sstr}_postfit_{cstr}_{year}_{fit}.pdf", transparent = True)
+    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{year}{args.ptag}.pdf", transparent = True)
 
 
 def sum_kwargs(channel, year, *summands):
@@ -389,49 +391,49 @@ with uproot.open(args.ifile) as f:
 
         if (channel, fit) in year_summed:
             this_year = year_summed[(channel, fit)]
-            year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
+            year_summed[(channel, fit)] = sum_kwargs(channel, "run2", kwargs, this_year)
         else:
             year_summed[(channel, fit)] = kwargs
 
 plot(
     **sum_kwargs(
         r"$\ell\ell$",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$j",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"ej",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"mj",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$3j",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$4+j",
-        "Run 2",
+        "run2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
     )
 )
