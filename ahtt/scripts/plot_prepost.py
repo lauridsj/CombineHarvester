@@ -400,45 +400,50 @@ with uproot.open(args.ifile) as f:
         else:
             year_summed[(channel, fit)] = kwargs
 
-plot(
-    **sum_kwargs(
-        r"$\ell\ell$",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
+# FIXME hackery: need to properly detect what plots are there
+if "lx" in args.ifile or "ll" in args.ifile:
+    plot(
+        **sum_kwargs(
+            r"$\ell\ell$",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
+        )
     )
-)
-plot(
-    **sum_kwargs(
-        r"$\ell$j",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
+if "lx" in args.ifile or "lj" in args.ifile:
+    plot(
+        **sum_kwargs(
+            r"$\ell$j",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
+        )
     )
-)
-plot(
-    **sum_kwargs(
-        r"ej",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
+    plot(
+        **sum_kwargs(
+            r"ej",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
+        )
     )
-)
-plot(
-    **sum_kwargs(
-        r"mj",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
+    plot(
+        **sum_kwargs(
+            r"mj",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
+        )
     )
-)
-plot(
-    **sum_kwargs(
-        r"$\ell$3j",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
+if "lx" in args.ifile or "l3j" in args.ifile:
+    plot(
+        **sum_kwargs(
+            r"$\ell$3j",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
+        )
     )
-)
-plot(
-    **sum_kwargs(
-        r"$\ell$4+j",
-        "Run 2",
-        *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
+if "lx" in args.ifile or "l4pj" in args.ifile:
+    plot(
+        **sum_kwargs(
+            r"$\ell$4+j",
+            "Run 2",
+            *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
+        )
     )
-)
