@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # original script by jonas ruebenach (desy) @ https://gitlab.cern.ch/jrubenac/ahtt_scripts/-/blob/a1020072d17d6813b55fc6f0c3a382538b542f3e/plot_post_fit.py
+# environment: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_102 x86_64-centos7-gcc11-opt
 
 import os
 from itertools import product
@@ -15,8 +16,8 @@ import mplhep as hep  # noqa:E402
 
 parser = ArgumentParser()
 parser.add_argument("inputfile")
-parser.add_argument("--lower", choices=["ratio", "diff"], default="diff")
-parser.add_argument("--log", action="store_true")
+parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff")
+parser.add_argument("--log", action = "store_true")
 args = parser.parse_args()
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -74,22 +75,22 @@ lumis = {
 }
 
 hatchstyle = dict(
-    hatch="///",
-    facecolor="none",
-    edgecolor="black",
-    linewidth=0,
+    hatch = "///",
+    facecolor = "none",
+    edgecolor = "black",
+    linewidth = 0,
 )
 hatchstyle = dict(
-    color="black",
-    alpha=0.3,
-    linewidth=0,
+    color = "black",
+    alpha = 0.3,
+    linewidth = 0,
 )
 datastyle = dict(
-    marker="o",
-    markersize=2,
-    elinewidth=0.6,
-    linestyle="none",
-    color="black"
+    marker = "o",
+    markersize = 2,
+    elinewidth = 0.6,
+    linestyle = "none",
+    color = "black"
 )
 
 
@@ -126,25 +127,25 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log):
     colors = [sm_colors[k] for k in smhists.keys()]
     hep.histplot(
         [hist.values() / width for hist in smhists.values()],
-        bins=bins,
-        ax=ax,
-        stack=True,
-        histtype="fill",
-        label=smhists.keys(),
-        color=colors
+        bins = bins,
+        ax = ax,
+        stack = True,
+        histtype = "fill",
+        label = smhists.keys(),
+        color = colors
     )
     ax.fill_between(
         total.axes[0].centers,
         (total.values() + total.variances() ** .5) / width,
         (total.values() - total.variances() ** .5) / width,
-        step="mid",
-        label="Post-fit uncertainty",
+        step = "mid",
+        label = "Post-fit uncertainty",
         **hatchstyle)
     ax.errorbar(
         centers,
         data[0] / width,
-        yerr=data[1] / width,
-        label="Data",
+        yerr = data[1] / width,
+        label = "Data",
         **datastyle
     )
     ax.set_ylabel("<Events / GeV>")
@@ -165,12 +166,12 @@ def plot_ratio(ax, bins, centers, data, total, fit):
         bins,
         np.r_[err_up[0], err_up],
         np.r_[err_down[0], err_down],
-        step="pre",
+        step = "pre",
         **hatchstyle
     )
     for pos in [0.8, 0.9, 1.1, 1.2]:
-        ax.axhline(y=pos, linestyle=":", linewidth=0.5, color="black")
-    ax.axhline(y=1, linestyle="--", linewidth=0.5, color="black")
+        ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
+    ax.axhline(y = 1, linestyle = "--", linewidth = 0.5, color = "black")
     ax.set_ylim(0.75, 1.25)
     ax.set_ylabel(ratiolabels[fit])
 
@@ -194,7 +195,7 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
         bins,
         np.r_[err[0], err] / np.r_[width[0], width],
         - np.r_[err[0], err] / np.r_[width[0], width],
-        step="pre",
+        step = "pre",
         **hatchstyle
     )
     for key, signal in signals.items():
@@ -204,20 +205,20 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
         else:
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
         if key in gvalues and gvalues[key] is not None:
-            signal_label += f", $g_{{\\mathrm{{{symbol}}}}}={gvalues[key]}$"
+            signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
         hep.histplot(
             signal.values() / width,
-            bins=bins,
-            yerr=np.zeros(len(signal.axes[0])),
-            ax=ax,
-            histtype="step",
-            color=signal_colors[symbol],
-            linewidth=1.25,
-            label=signal_label,
-            zorder=signal_zorder[symbol]
+            bins = bins,
+            yerr = np.zeros(len(signal.axes[0])),
+            ax = ax,
+            histtype = "step",
+            color = signal_colors[symbol],
+            linewidth = 1.25,
+            label = signal_label,
+            zorder = signal_zorder[symbol]
         )
     ax.set_ylabel("<(Data - SM) / GeV>")
-    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.03, 1, 0.2), borderaxespad=0, ncol=5, mode="expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.03, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
 def plot(
@@ -240,10 +241,10 @@ def plot(
         log):
 
     fig, (ax0, ax1, ax2) = plt.subplots(
-        nrows=3,
-        sharex=True,
-        gridspec_kw={"height_ratios": [0.001, 2.5, 1]},
-        figsize=(10.5, 5.5)
+        nrows = 3,
+        sharex = True,
+        gridspec_kw = {"height_ratios": [0.001, 2.5, 1]},
+        figsize = (10.5, 5.5)
     )
     ax0.set_axis_off()
     plot_eventperbin(ax1, bins, centers, smhists, (datavalues, datahist_errors), log)
@@ -256,8 +257,8 @@ def plot(
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
-        ax1.axvline(x=pos, linestyle="--", linewidth=0.5, color="gray")
-        ax2.axvline(x=pos, linestyle="--", linewidth=0.5, color="gray")
+        ax1.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
+        ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
     if log:
         ax1.set_ylim(ax1.get_ylim()[0], ax1.transData.inverted().transform(ax1.transAxes.transform([0, 1.1]))[1])
     else:
@@ -266,7 +267,7 @@ def plot(
         for i in range(num_extrabins):
             edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
             text = r"{} $\leq$ {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-            ax1.text(1 / num_extrabins * (i + 0.5), 0.955 - j * 0.06, text, horizontalalignment="center", fontsize="small", transform=ax1.transAxes)
+            ax1.text(1 / num_extrabins * (i + 0.5), 0.955 - j * 0.06, text, horizontalalignment = "center", fontsize = "small", transform = ax1.transAxes)
     ax1.minorticks_on()
     ax2.minorticks_on()
     ticks = []
@@ -276,16 +277,16 @@ def plot(
     ax2.set_xticks(ticks)
     ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
     ax2.set_xmargin(0)
-    ax1.legend(loc="lower left", bbox_to_anchor=(0, 1.02, 1, 0.2), borderaxespad=0, ncol=5, mode="expand", edgecolor="black", framealpha=1)
+    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.02, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", edgecolor = "black", framealpha = 1)
     ax1.set_xlabel("")
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
-    hep.cms.label(ax=ax0, llabel="Work in progress", lumi=lumis[year], loc=0, year=year, fontsize=13)
-    fig.subplots_adjust(hspace=0.27, left=0.075, right=1-0.025, top=1-0.075)
+    hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 13)
+    fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1-0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    fig.savefig(f"postfit_{channel}_{year}_{fit}.pdf", transparent=True)
+    fig.savefig(f"postfit_{channel}_{year}_{fit}.pdf", transparent = True)
 
 
 def sum_kwargs(channel, year, *summands):
