@@ -78,7 +78,7 @@ lumis = {
     "2016post": "16.8",
     "2017": "41.5",
     "2018": "59.9",
-    "run2": "138",
+    "Run 2": "138",
 }
 
 hatchstyle = dict(
@@ -296,7 +296,8 @@ def plot(
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
-    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{year}{args.ptag}.pdf", transparent = True)
+    ystr = year.replace(" ", "").lower()
+    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{ystr}{args.ptag}.pdf", transparent = True)
 
 
 def sum_kwargs(channel, year, *summands):
@@ -391,49 +392,49 @@ with uproot.open(args.ifile) as f:
 
         if (channel, fit) in year_summed:
             this_year = year_summed[(channel, fit)]
-            year_summed[(channel, fit)] = sum_kwargs(channel, "run2", kwargs, this_year)
+            year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
         else:
             year_summed[(channel, fit)] = kwargs
 
 plot(
     **sum_kwargs(
         r"$\ell\ell$",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["ee", "em", "mm"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$j",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj", "e3j", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"ej",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "e3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"mj",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["m4pj", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$3j",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["e3j", "m3j"])
     )
 )
 plot(
     **sum_kwargs(
         r"$\ell$4+j",
-        "run2",
+        "Run 2",
         *(year_summed[(channel, "s")] for channel in ["e4pj", "m4pj"])
     )
 )
