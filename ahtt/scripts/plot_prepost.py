@@ -291,7 +291,8 @@ def plot(
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     sstr = [ss.GetName().replace("_res", "").replace("_pos", "").replace("_neg", "") for ss in signals.values()]
     sstr = "__".join(sstr)
-    fig.savefig(f"{args.odir}/{sstr}_postfit_{channel.replace('$\\ell$', 'l').replace('+', 'p')}_{year}_{fit}.pdf", transparent = True)
+    cstr = channel.replace('$\\ell$', 'l').replace('+', 'p')
+    fig.savefig(f"{args.odir}/{sstr}_postfit_{cstr}_{year}_{fit}.pdf", transparent = True)
 
 
 def sum_kwargs(channel, year, *summands):
