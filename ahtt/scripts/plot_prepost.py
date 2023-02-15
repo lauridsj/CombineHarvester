@@ -30,6 +30,7 @@ parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
                     default = "", required = False, type = prepend_if_not_empty)
+parser.add_argument("--each", help = "plot also each channel x year combination", action = "store_true", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
 
@@ -120,11 +121,11 @@ def get_g_values(fname, signals):
     signals = list(signals.keys())
 
     if onepoi:
-        return {signals[0]: fres.floatParsFinal().getRealValue('r')}
+        return {signals[0]: round(fres.floatParsFinal().getRealValue('r'), 2)}
     else:
         return {
-            signals[0]: fres.floatParsFinal().getRealValue('g1'),
-            signals[1]: fres.floatParsFinal().getRealValue('g2')
+            signals[0]: round(fres.floatParsFinal().getRealValue('g1'), 2),
+            signals[1]: round(fres.floatParsFinal().getRealValue('g2'), 2)
         }
 
 def plot_eventperbin(ax, bins, centers, smhists, data, log):
@@ -326,7 +327,6 @@ def sum_kwargs(channel, year, *summands):
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 
 year_summed = {}
-has_plot = False
 with uproot.open(args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
         for binning_channels, binning in binnings.items():
@@ -399,9 +399,8 @@ with uproot.open(args.ifile) as f:
             "log": args.log
         }
 
-        if not has_plot:
+        if args.each:
             plot(**kwargs)
-        has_plot = True
 
         if (channel, fit) in year_summed:
             this_year = year_summed[(channel, fit)]
