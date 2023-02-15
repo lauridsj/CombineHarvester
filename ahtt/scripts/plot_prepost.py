@@ -306,7 +306,7 @@ def plot(
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
     ystr = year.replace(" ", "").lower()
-    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{ystr}{args.ptag}{args.fmt}", transparent = True)
+    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_postfit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True)
     fig.clf()
 
 
