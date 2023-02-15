@@ -30,6 +30,7 @@ parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
                     default = "", required = False, type = prepend_if_not_empty)
+parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
 
 
@@ -305,7 +306,7 @@ def plot(
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
     ystr = year.replace(" ", "").lower()
-    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{ystr}{args.ptag}.pdf", transparent = True)
+    fig.savefig(f"{args.odir}/{sstr}_postfit_{fit}_{cstr}_{ystr}{args.ptag}{args.fmt}", transparent = True)
     fig.clf()
 
 
