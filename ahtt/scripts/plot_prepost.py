@@ -308,7 +308,7 @@ def plot(
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     fig.set_figwidth(12.8)
     fig.set_dpi(300)
-    extent = None if args.plotupper else ax2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    extent = None if args.plotupper else ax2.get_ticklabel_extent().transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
