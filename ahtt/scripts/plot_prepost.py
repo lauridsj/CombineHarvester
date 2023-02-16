@@ -110,16 +110,12 @@ datastyle = dict(
 )
 
 
-def get_g_values(fname, signals, fit):
+def get_g_values(fname, signals):
     twing = len(signals) == 2
     onepoi = "one-poi" in fname
 
     if not twing and not onepoi:
         raise NotImplementedError()
-
-    signals = list(signals.keys())
-    if fit != "s":
-        return {signals[0]: None}
 
     ffile = TFile.Open(fname, "read")
     fres = ffile.Get("fit_s")
@@ -222,7 +218,7 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
             signal_label = "A + H"
         else:
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
-        if key in gvalues and gvalues[key] is not None:
+        if fit == "s" and key in gvalues and gvalues[key] is not None:
             signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
         hep.histplot(
             signal.values() / width,
@@ -375,7 +371,7 @@ with uproot.open(args.ifile) as f:
                     signals[(match.group(1), mass, width)] += hist
                 else:
                     signals[(match.group(1), mass, width)] = hist
-        gvalues = get_g_values(args.ifile, signals, fit)
+        gvalues = get_g_values(args.ifile, signals)
         if len(signals) > 1:
             total = None
             for hist in signals.values():
