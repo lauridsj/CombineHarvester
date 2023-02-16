@@ -32,7 +32,8 @@ parser.add_argument("--odir", help = "output directory to dump plots in", defaul
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
                     default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--each", help = "plot also each channel x year combination", action = "store_true", required = False)
-parser.add_argument("--only-lower", help = "dont plot the top panel", dest = "plotupper", action = "store_false", required = False)
+parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet",
+                    dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
 
@@ -316,7 +317,7 @@ def plot(
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
     hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 13)
-    fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1-0.025, top = 1 - 0.075)
+    fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
