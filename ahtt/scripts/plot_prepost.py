@@ -14,6 +14,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
+from matplotlib.transforms import Bbox
 
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
@@ -128,6 +129,19 @@ def get_g_values(fname, signals):
             signals[0]: round(fres.floatParsFinal().getRealValue('g1'), 2),
             signals[1]: round(fres.floatParsFinal().getRealValue('g2'), 2)
         }
+
+
+def full_extent(ax, pad = 0.0):
+    """
+    get the full extent of an axes, including axes labels, tick labels, and titles.
+    credits: https://stackoverflow.com/a/14720600
+    """
+    # for text objects, we need to draw the figure first, otherwise the extents are undefined
+    ax.figure.canvas.draw()
+    items = ax.get_xticklabels() + ax.get_yticklabels() 
+    items += [ax, ax.title]
+    bbox = Bbox.union([item.get_window_extent() for item in items])
+    return bbox.expanded(1.0 + pad, 1.0 + pad)
 
 def plot_eventperbin(ax, bins, centers, smhists, data, log):
     total = None
@@ -308,7 +322,7 @@ def plot(
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     fig.set_figwidth(12.8)
     fig.set_dpi(300)
-    extent = None if args.plotupper else ax2.get_ticklabel_extent().transformed(fig.dpi_scale_trans.inverted())
+    extent = None if args.plotupper else Bbox.union(full_extent(ax2)).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
