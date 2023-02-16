@@ -61,10 +61,10 @@ def ahtt_max_coupling(parity, mah, wah, relwidth = True):
     wah = wah * mah if relwidth else wah
     return math.sqrt(wah / ahtt_width_coupling_helper(parity, mah))
 
-def read_limit(directories, xvalues, onepoi, dump_spline, odir):
+def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
     limits = [OrderedDict() for tag in directories]
 
-    for tt, directory, tag in enumerate(directories):
+    for tt, directory in enumerate(directories):
         for jj, dcd in enumerate(directory):
             #print(dd)
             limit = OrderedDict([
@@ -85,14 +85,20 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
             ])
 
             if onepoi:
-                with open("{dcd}/{pnt}_{tag}_limits_one-poi.json".format(dcd = dcd, pnt = '_'.join(dcd.split('_')[:3]), tag = tag)) as ff:
+                with open("{dcd}/{pnt}_{tag}_limits_one-poi.json".format(
+                        dcd = dcd,
+                        pnt = '_'.join(dcd.split('_')[:3]),
+                        tag = otags[tt])) as ff:
                     result = json.load(ff)
 
                     for mm, lmt in result.items():
                         for quantile, g in lmt.items():
                             limit[quantile].append([g, max_g])
             else:
-                chunks = glob.glob("{dcd}/{pnt}_{tag}_limits_g-scan_n*_i*.json".format(dcd = dcd, pnt = '_'.join(dcd.split('_')[:3]), tag = tag))
+                chunks = glob.glob("{dcd}/{pnt}_{tag}_limits_g-scan_n*_i*.json".format(
+                    dcd = dcd,
+                    pnt = '_'.join(dcd.split('_')[:3]),
+                    tag = otags[tt]))
                 chunks.sort()
                 for nn in chunks:
                     with open(nn) as ff:
@@ -166,9 +172,6 @@ def read_limit(directories, xvalues, onepoi, dump_spline, odir):
                         factor = 2.**9 if smin[1] > 0.05 else -2.**9
 
                         while residual > abs_tolerance and crossing < max_g and crossing > min_g:
-                            #if "m750" in dcd and "w21p0" in dcd and quantile == "exp+2":
-                            #    print(crossing, residual, factor, vmin, smin)
-
                             if need_checking or abs(factor) < min_factor:
                                 break
 
@@ -434,7 +437,7 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawb
 
     draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, transparent)
 
-def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
+def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
             ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
@@ -444,18 +447,18 @@ def draw_variable(var1, oname, points, directories, labels, yaxis, onepoi, drawb
     var2s = set([pnt[draw_variable.settings[var1]["iv2"]] for pnt in points])
 
     for vv in var2s:
-        print("running", draw_variable.settings[var1]["var2"], vv)
+        print(f"running {draw_variable.settings[var1]['var2']} {vv}")
         var1s = [pnt[draw_variable.settings[var1]["iv1"]] for pnt in points if pnt[draw_variable.settings[var1]["iv2"]] == vv]
-        dirs = [[dd[0] for dd, pnt in zip(tag, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for tag in directories]
+        dirs = [[dd for dd, pnt in zip(directory, points) if pnt[draw_variable.settings[var1]["iv2"]] == vv] for directory in directories]
 
         if len(var1s) < 2 or not all([len(dd) == len(var1s) for dd in dirs]):
-            print(draw_variable.settings[var1]["var2"] + str(vv) + " has too few " + var1 + ", or inconsistent input. skipping")
+            print(f"{draw_variable.settings[var1]['var2']} {vv} has too few {var1}, or inconsistent input. skipping")
             continue
 
         axislabel = points[0][0] if var1 == "mass" else (points[0][0], points[0][0])
         legendtext = (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv)
         draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))),
-                read_limit(dirs, var1s, onepoi, dump_spline, os.path.dirname(oname)),
+                read_limit(dirs, otags, var1s, onepoi, dump_spline, os.path.dirname(oname)),
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
                 r'$\Gamma_{\mathrm{\mathsf{%s} t\bar{t}}} \,>\, \Gamma_{\mathrm{\mathsf{%s}}}$' % (points[0][0], points[0][0]),
@@ -487,17 +490,12 @@ if __name__ == '__main__':
     if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    adir = [[
-        [pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])],
-        tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]
-    ] for tag in args.itag]
-    hdir = [[
-        [pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])],
-        tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]
-    ] for tag in args.itag]
+    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    otags = [tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
 
-    apnt = [[get_point(pnt) for pnt in tag[0]] for tag in adir]
-    hpnt = [[get_point(pnt) for pnt in tag[0]] for tag in hdir]
+    apnt = [[get_point(pnt) for pnt in directory] for directory in adir]
+    hpnt = [[get_point(pnt) for pnt in directory] for directory in hdir]
 
     if not all([pnt == apnt[0]] for pnt in apnt):
         raise RuntimeError("A signal points are not the same between args.itag. aborting")
@@ -519,19 +517,19 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         apnt, adir, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         hpnt, hdir, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
                           "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          apnt, adir, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          apnt, adir, otags, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
                           "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          hpnt, hdir, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          hpnt, hdir, otags, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
     pass
