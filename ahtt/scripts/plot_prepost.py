@@ -31,13 +31,14 @@ parser.add_argument("--odir", help = "output directory to dump plots in", defaul
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
                     default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--each", help = "plot also each channel x year combination", action = "store_true", required = False)
+parser.add_argument("--only-lower", help = "dont plot the top panel", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
 
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
 years = ["2016pre", "2016post", "2017", "2018"]
-fits = ["s", "b"]
+fits = ["s", "b", "p"]
 sm_procs = {
     "TTV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
     "VV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
@@ -302,14 +303,17 @@ def plot(
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
+    fig.set_figwidth(12.8)
+    fig.set_dpi(300)
+    extent = None if args.plotupper else ax2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
     sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
     sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
     sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
     ystr = year.replace(" ", "").lower()
-    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_postfit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True)
+    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True, bbox_inches = extent)
     fig.clf()
-
 
 def sum_kwargs(channel, year, *summands):
     ret = summands[0].copy()
@@ -341,10 +345,12 @@ with uproot.open(args.ifile) as f:
         bins = np.r_[0, bins]
         centers = (bins[1:] + bins[:-1]) / 2
 
-        if f"shapes_fit_{fit}/{channel}_{year}" not in f:
+        dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
+
+        if dname not in f:
             continue
 
-        directory = f[f"shapes_fit_{fit}/{channel}_{year}"]
+        directory = f[dname]
         smhists = {}
         for proc, label in sm_procs.items():
             if proc not in directory:
@@ -411,12 +417,13 @@ with uproot.open(args.ifile) as f:
 batches = {
     r"$\ell\ell$": ["ee", "em", "mm"],
     r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
-    r"ej":         ["e4pj", "e3j"],
-    r"mj":         ["e4pj", "m3j"],
+    #r"ej":         ["e4pj", "e3j"],
+    #r"mj":         ["e4pj", "m3j"],
     r"$\ell$3j":   ["e3j", "m3j"],
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
 for cltx, channels in batches.items():
-    has_channel = all([(channel, "s") in year_summed for channel in channels])
-    if has_channel:
-        plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, "s")] for channel in channels)))
+    for fit in fits:
+        has_channel = all([(channel, fit) in year_summed for channel in channels])
+        if has_channel:
+            plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels)))
