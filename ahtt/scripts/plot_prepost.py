@@ -219,8 +219,11 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
             signal_label = "A + H"
         else:
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
-        if fit == "s" and key in gvalues and gvalues[key] is not None:
-            signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+        if key in gvalues and gvalues[key] is not None:
+            if fit == "s":
+                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+            elif fit == "b":
+                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = 0$"
         hep.histplot(
             signal.values() / width,
             bins = bins,
