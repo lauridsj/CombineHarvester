@@ -372,7 +372,7 @@ with uproot.open(args.ifile) as f:
                     signals[(match.group(1), mass, width)] += hist
                 else:
                     signals[(match.group(1), mass, width)] = hist
-        gvalues = get_g_values(args.ifile, signals)
+        gvalues = get_g_values(args.ifile, signals) if fit == "s" else None
         if len(signals) > 1:
             total = None
             for hist in signals.values():
