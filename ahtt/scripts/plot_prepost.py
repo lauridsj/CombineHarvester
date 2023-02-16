@@ -110,16 +110,19 @@ datastyle = dict(
 )
 
 
-def get_g_values(fname, signals):
+def get_g_values(fname, signals, fit):
     twing = len(signals) == 2
     onepoi = "one-poi" in fname
 
     if not twing and not onepoi:
         raise NotImplementedError()
 
+    signals = list(signals.keys())
+    if fit != "s":
+        return {signals[0]: None}
+
     ffile = TFile.Open(fname, "read")
     fres = ffile.Get("fit_s")
-    signals = list(signals.keys())
 
     if onepoi:
         return {signals[0]: round(fres.floatParsFinal().getRealValue('r'), 2)}
@@ -372,7 +375,7 @@ with uproot.open(args.ifile) as f:
                     signals[(match.group(1), mass, width)] += hist
                 else:
                     signals[(match.group(1), mass, width)] = hist
-        gvalues = get_g_values(args.ifile, signals) if fit == "s" else None
+        gvalues = get_g_values(args.ifile, signals, fit)
         if len(signals) > 1:
             total = None
             for hist in signals.values():
