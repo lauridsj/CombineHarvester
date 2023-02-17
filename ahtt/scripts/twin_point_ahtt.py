@@ -199,7 +199,7 @@ if __name__ == '__main__':
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                     par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                    stg = fit_strategy("2"),
+                    stg = fit_strategy("0"),
                     toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
                 ))
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-data",
-            stg = fit_strategy("2"),
+            stg = fit_strategy("0"),
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
         ))
 
@@ -245,7 +245,7 @@ if __name__ == '__main__':
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-toys",
-            stg = fit_strategy("2"),
+            stg = fit_strategy("0"),
             toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
             opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
