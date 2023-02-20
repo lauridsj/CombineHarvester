@@ -101,7 +101,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("CR_ERD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_QCD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_pileup",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
