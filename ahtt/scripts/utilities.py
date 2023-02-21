@@ -27,7 +27,7 @@ def input_storage_base_directory():
 
     raise NotImplementedError("unknown cluster! can't provide a default input storage base!")
 input_base = input_storage_base_directory()
-condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else input_base + "randomThings/misc/condor/"
+condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
 kfactor_file_name = input_base + "ahtt_kfactor_sushi/ulkfactor_final_220129.root"
 condorsub = condordir + "condorSubmit.sh"
 condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
