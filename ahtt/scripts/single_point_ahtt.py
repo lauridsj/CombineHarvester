@@ -81,7 +81,7 @@ def get_nll_g_scan(lfile):
     return nll
 
 def single_point_scan(args):
-    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks = args
+    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     epsilon = 2.**-17
@@ -89,7 +89,7 @@ def single_point_scan(args):
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
             "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-            "--singlePoint 1 {stg} {asm} {mcs} {msk}".format(
+            "--singlePoint 1 {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 gst = gstr,
@@ -98,7 +98,6 @@ def single_point_scan(args):
                 prg = poi_range,
                 stg = strategy,
                 asm = "-t -1" if asimov else "",
-                mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
 
@@ -118,7 +117,7 @@ def single_point_scan(args):
         for ii in range(1, nstep + 1):
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
                     "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-                    "--singlePoint 1 {stg} {asm} {mcs} {msk}".format(
+                    "--singlePoint 1 {stg} {asm} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         gst = gstr + "eps",
@@ -127,7 +126,6 @@ def single_point_scan(args):
                         prg = poi_range,
                         stg = strategy,
                         asm = "-t -1" if asimov else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
                         msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
                     ))
 
@@ -151,7 +149,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks = args
+    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -159,7 +157,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, mcstat, masks))
+        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, masks))
 
         if result is None:
             ii += 3
@@ -278,7 +276,7 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{pnt}{tag}_limits_one-poi.root {dcd}{pnt}{tag}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {mcs} {msk}".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 maxg = max_g,
@@ -286,7 +284,6 @@ if __name__ == '__main__':
                 acc = accuracies,
                 stg = fit_strategy("1"),
                 asm = "--run blind -t -1" if args.asimov else "",
-                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
 
@@ -314,7 +311,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy("1"), args.asimov, args.mcstat, masks))
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy("1"), args.asimov, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -362,33 +359,30 @@ if __name__ == '__main__':
 
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("1", True), poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
-
-        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+                                          args.asimov, fit_strategy("1", True), poi_range,
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
+                                          args.extopt, masks)
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {mcs} {prm}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
             stg = fit_strategy("1", True),
             asm = "-t -1" if args.asimov else "",
-            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {mcs} {nui} {prm}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
             stg = fit_strategy("1", True),
             asm = "-t -1" if args.asimov else "",
-            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
             prm = set_parameter(set_freeze, args.extopt, masks)
         ))
@@ -412,22 +406,20 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("2", True) + " --robustHesse 1", poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
-
-        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+                                          args.asimov, fit_strategy("2", True) + " --robustHesse 1", poi_range,
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
+                                          args.extopt, masks)
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {prm}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 
@@ -451,10 +443,9 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("1", True), poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), "", masks)
-
-        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
+                                          args.asimov, fit_strategy("1", True), poi_range,
+                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
+                                          "", masks)
         set_freeze = starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
@@ -477,7 +468,7 @@ if __name__ == '__main__':
 
             if args.onepoi:
                 syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll {prg} {gvl} "
-                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {mcs}".format(
+                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz}".format(
                             dcd = dcdir,
                             mmm = mstr,
                             prg = poi_range,
@@ -485,8 +476,7 @@ if __name__ == '__main__':
                             stg = fit_strategy("1", True),
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
                         ))
 
                 syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}{tag}_nll_{sce}_one-poi.root".format(
@@ -506,7 +496,7 @@ if __name__ == '__main__':
                 for gval in gvalues:
                     gstr = str(round(gval, 3)).replace('.', 'p')
                     syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {prg} "
-                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {mcs}".format(
+                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz}".format(
                                 dcd = dcdir,
                                 mmm = mstr,
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
@@ -515,8 +505,7 @@ if __name__ == '__main__':
                                 stg = fit_strategy("1", True),
                                 asm = asimov,
                                 stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
+                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
                             ))
 
                 syscall("hadd {dcd}{pnt}{tag}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "

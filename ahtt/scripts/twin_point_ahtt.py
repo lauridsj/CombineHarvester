@@ -194,14 +194,13 @@ if __name__ == '__main__':
 
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
-        syscall("combine -v -1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy} {mcs}".format(
+        syscall("combine -v -1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
                     dcd = dcdir + "workspace_twin-g.root",
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                     par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                     stg = fit_strategy("0"),
-                    toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+                    toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
                 ))
 
         syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
@@ -232,23 +231,21 @@ if __name__ == '__main__':
             raise RuntimeError("mode gof is meaningless for asimov dataset!!")
 
         print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
-        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {mcs}".format(
+        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg}".format(
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-data",
-            stg = fit_strategy("0"),
-            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else ""
+            stg = fit_strategy("0")
         ))
 
         print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - toy fits"
-        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {mcs} {svt}".format(
+        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt}".format(
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-toys",
             stg = fit_strategy("0"),
             toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
             opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
-            mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             svt = "--saveToys" if args.savetoy else ""
         ))
 
@@ -276,7 +273,7 @@ if __name__ == '__main__':
 
                 for ifit in ["0", "1", "2"]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {mcs} {wsp}".format(
+                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {wsp}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
                                 mmm = mstr,
                                 snm = scan_name + identifier,
@@ -286,7 +283,6 @@ if __name__ == '__main__':
                                 stg = fit_strategy(ifit),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
-                                mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                                 wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
 
@@ -295,15 +291,12 @@ if __name__ == '__main__':
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-                if args.fcrundat:
-                    syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
-                        dcd = dcdir,
-                        pnt = "__".join(points),
-                        tag = args.otag,
-                        snm = scan_name + identifier,
-                        mmm = mstr), False)
-                else:
-                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
+                syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
+                    dcd = dcdir,
+                    pnt = "__".join(points),
+                    tag = args.otag,
+                    snm = scan_name + identifier,
+                    mmm = mstr), False)
 
         if args.ntoy > 0:
             identifier = "_toys_" + str(args.runidx) if args.runidx > -1 else "_toys"
@@ -311,7 +304,7 @@ if __name__ == '__main__':
 
             setpar, frzpar = ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {mcs} {byp} {svt}".format(
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {byp} {svt}".format(
                         dcd = dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -322,7 +315,6 @@ if __name__ == '__main__':
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
-                        mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                         byp = "--bypassFrequentistFit --fastScan" if False else "",
                         svt = "--saveToys" if args.savetoy else ""
                     ))
@@ -417,21 +409,18 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, args.mcstat, fit_strategy("2", True) + " --robustHesse 1", poi_range,
+                                          args.asimov, fit_strategy("2", True) + " --robustHesse 1", poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
-
-        args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
 
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_twin-g.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {prm}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
                     dcd = dcdir,
                     mmm = mstr,
                     stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
-                    mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
                     prm = set_parameter(set_freeze, args.extopt, masks)
         ))
 

@@ -275,17 +275,16 @@ def set_parameter(set_freeze, extopt, masks):
         ext = ' '.join(extopt)
     )
 
-def make_best_fit(dcdir, card, point, asimov, mcstat, strategy, poi_range, set_freeze, extopt = "", masks = []):
+def make_best_fit(dcdir, card, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {mcs} {wsp} {prm}".format(
+    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm}".format(
         dcd = dcdir + card,
         bff = fname,
         stg = strategy,
         prg = poi_range,
         asm = "-t -1" if asimov else "",
-        mcs = "--X-rtd MINIMIZER_analytic" if mcstat else "",
-        wsp = "--saveSpecifiedNuis=all",
+        wsp = "--saveWorkspace --saveSpecifiedNuis=all",
         prm = set_parameter(set_freeze, extopt, masks)
     ))
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
