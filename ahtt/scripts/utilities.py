@@ -358,8 +358,11 @@ def elementwise_add(list_of_lists):
 
     return result
 
-def fit_strategy(strat):
-    return "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+def fit_strategy(strat, robust = False):
+    fstr = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+    if robust:
+        fstr += " --robustFit 1 --setRobustFitStrategy {ss}".format(ss = strat)
+    return fstr
 
 def recursive_glob(base_directory, pattern):
     # https://stackoverflow.com/a/2186639

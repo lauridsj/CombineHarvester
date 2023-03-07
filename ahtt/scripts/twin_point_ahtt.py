@@ -417,7 +417,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("2", True) + " --robustHesse 1", poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -428,7 +428,7 @@ if __name__ == '__main__':
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {mcs} {prm}".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
+                    stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",

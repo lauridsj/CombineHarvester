@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("1", True), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -374,7 +374,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
+            stg = fit_strategy("1", True),
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             prm = set_parameter(set_freeze, args.extopt, masks)
@@ -386,7 +386,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
+            stg = fit_strategy("1", True),
             asm = "-t -1" if args.asimov else "",
             mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1", poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("2", True) + " --robustHesse 1", poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), args.extopt, masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -424,7 +424,7 @@ if __name__ == '__main__':
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
-                    stg = fit_strategy("2") + " --robustFit 1 --setRobustFitStrategy 2 --robustHesse 1",
+                    stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     mcs = "--X-rtd MINIMIZER_analytic" if args.mcstat else "",
@@ -451,7 +451,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, args.mcstat, fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1", poi_range,
+                                          args.asimov, args.mcstat, fit_strategy("1", True), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]), "", masks)
 
         args.mcstat = args.mcstat or args.frzbb0 or args.frzbbp
@@ -482,7 +482,7 @@ if __name__ == '__main__':
                             mmm = mstr,
                             prg = poi_range,
                             gvl = "--points 193 --alignEdges 1",
-                            stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
+                            stg = fit_strategy("1", True),
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
@@ -512,7 +512,7 @@ if __name__ == '__main__':
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
                                 prg = poi_range,
                                 gvl = str(gval),
-                                stg = fit_strategy("1") + " --robustFit 1 --setRobustFitStrategy 1",
+                                stg = fit_strategy("1", True),
                                 asm = asimov,
                                 stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                                 frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
