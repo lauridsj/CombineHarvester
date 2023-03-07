@@ -10,7 +10,7 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin, input_bkg, input_sig, index_list
+from utilities import syscall, submit_job, aggregate_submit, chunks, get_nbin, input_base, input_bkg, input_sig, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -57,6 +57,10 @@ if __name__ == '__main__':
 
     # generate an aggregate submission file name
     agg = aggregate_submit()
+
+    # in lxplus the file return output also gives an unneeded dir
+    if "desy" not in input_base:
+        syscall("rm -r mjf-{user}".format(user = os.environ.get('USER')), False, True)
 
     for pnt in points:
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):

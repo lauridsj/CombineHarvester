@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilities import syscall, submit_job, aggregate_submit, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
+from utilities import syscall, submit_job, aggregate_submit, input_base, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -184,6 +184,10 @@ if __name__ == '__main__':
 
     if args.otag == "":
         args.otag = args.tag
+
+    # in lxplus the file return output also gives an unneeded dir
+    if "desy" not in input_base:
+        syscall("rm -r mjf-{user}".format(user = os.environ.get('USER')), False, True)
 
     for pair, ggrid in zip(pairs, ggrids):
         # generate an aggregate submission file name
