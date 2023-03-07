@@ -271,7 +271,7 @@ if __name__ == '__main__':
             for fcexp in args.fcexp:
                 identifier = "_" + fcexp
 
-                for ifit in ["0", "1", "2"]:
+                for istrat, irobust in [(istrat, irobust) for istrat in ["0", "1", "2"] for irobust in [False, True]]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "--setParameters '{exp}{msk}' {stg} {asm} {toy} {wsp}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
                                 msk = "," + ",".join(masks) if len(masks) > 0 else "",
-                                stg = fit_strategy(ifit),
+                                stg = fit_strategy(istrat, irobust),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
                                 wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
