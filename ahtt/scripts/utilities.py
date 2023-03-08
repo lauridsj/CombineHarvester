@@ -186,9 +186,9 @@ def input_bkg(background, channels):
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append(input_base + "templates_ULFR2/bkg_ll_3D-33_rate_mtuX_pval_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/ll_1onN/bkg_ll_3D-33_rate_mtuX_pval_pca.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        backgrounds.append(input_base + "templates_ULFR2/templates_lj_bkg_rate_mtuX_smoothpdf_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/lj_smoothpdf/templates_lj_bkg_rate_mtuX_smoothpdf_pca.root")
 
     return ','.join(backgrounds)
 
@@ -200,19 +200,20 @@ def input_sig(signal, points, injects, channels, years):
     signals = []
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
         if "2016pre" in years:
-            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2016pre.root")
+            signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/lj_smoothpdf/templates_lj_sig_2016pre.root")
         if "2016post" in years:
-            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2016post.root")
+            signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/lj_smoothpdf/templates_lj_sig_2016post.root")
         if "2017" in years:
-            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2017.root")
+            signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/lj_smoothpdf/templates_lj_sig_2017.root")
         if "2018" in years:
-            signals.append(input_base + "templates_ULFR2/templates_lj_sig_2018.root")
+            signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/lj_smoothpdf/templates_lj_sig_2018.root")
 
     widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     if any(cc in channels for cc in ["ee", "em", "mm"]):
         for iw in widths:
             if iw in points or iw in injects:
-                signals.append(input_base + "templates_ULFR2/sig_ll_3D-33" + iw + "xx.root")
+                signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/ll_1onN/sig_templates_3D-33_m400_w5p0_m800_w5p0_pval.root")
+                #signals.append(input_base + "templates_ULFR2/lj_smoothpdf__ll_1onN_230120/ll_1onN/sig_ll_3D-33" + iw + "xx.root")
 
     return ','.join(signals)
 
