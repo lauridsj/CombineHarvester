@@ -287,7 +287,7 @@ if __name__ == '__main__':
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"
                     for fcexp in args.fcexp:
-                        ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc_scan_" + fcexp + "_*.json")
+                        ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc-scan_" + fcexp + "_*.json")
                         ggg.sort(key = os.path.getmtime)
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
                 print "using the following grids:"

@@ -291,7 +291,7 @@ if __name__ == '__main__':
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-                syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
+                syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
                     dcd = dcdir,
                     pnt = "__".join(points),
                     tag = args.otag,
@@ -319,7 +319,7 @@ if __name__ == '__main__':
                         svt = "--saveToys" if args.savetoy else ""
                     ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}fc_scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
                 dcd = dcdir,
                 pnt = "__".join(points),
                 tag = args.otag,
@@ -328,7 +328,7 @@ if __name__ == '__main__':
             ), False)
 
             if args.savetoy:
-                syscall("cp {dcd}{pnt}{tag}fc_scan_{snm}.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
+                syscall("cp {dcd}{pnt}{tag}_fc-scan_{snm}.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
                     opd = args.toyloc,
                     snm = scan_name + identifier,
                     pnt = "__".join(points),
@@ -341,12 +341,12 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        idxs = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        idxs = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
 
         if len(idxs) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
 
-            toys = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+            toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
             toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
 
             for toy in toys:
@@ -354,20 +354,20 @@ if __name__ == '__main__':
                 syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
 
     if runcompile:
-        toys = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
-        idxs = glob.glob("{dcd}{pnt}{tag}fc_scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        idxs = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
         if len(toys) == 0 or len(idxs) > 0:
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            gpoints = glob.glob("{dcd}{pnt}{tag}fc_scan_*{exp}.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
+            gpoints = glob.glob("{dcd}{pnt}{tag}_fc-scan_*{exp}.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
             if len(gpoints) == 0:
                 raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
             gpoints.sort()
 
-            ggrid = glob.glob("{dcd}{pnt}{tag}_fc_scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
+            ggrid = glob.glob("{dcd}{pnt}{tag}_fc-scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
             ggrid.sort()
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
@@ -403,7 +403,7 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
             grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-            with open("{dcd}{pnt}{tag}_fc_scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+            with open("{dcd}{pnt}{tag}_fc-scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
                 json.dump(grid, jj, indent = 1)
 
     if runprepost:

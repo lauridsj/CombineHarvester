@@ -158,7 +158,7 @@ if __name__ == '__main__':
                         default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--contour", help = "the json files containing the contour information, semicolon separated.\n"
                         "two separate syntaxes are possible:\n"
-                        "'tag': t1/s1:o1:i1,s2:o2:i2;t2/s3:o3:i3... expands to (let p being the considered point, and <fc> = fc_scan):"
+                        "'tag': t1/s1:o1:i1,s2:o2:i2;t2/s3:o3:i3... expands to (let p being the considered point, and <fc> = fc-scan):"
                         "<p>_<t1>/<p>_<o1>_<fc>_<s1>_<i1>.json;<p>_<t1>/<p>_<o2>_<fc>_<s2>_<i2>.json;<p>_<t2>/<p>_<o3>_<fc>_<s3>_<i3>.json, "
                         "where the code will search for output tag o1 and index i1 corresponding to scenario s1 and so on."
                         "if :o1 etc is omitted, they default to o1 = t1, ..., oN = tN.\n"
@@ -240,7 +240,7 @@ if __name__ == '__main__':
                         otg = '_' + fcexp.split(':')[1]
                         idx = '_' + fcexp.split(':')[2] if len(fcexp.split(':')) > 2 else idx
 
-                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + otg + "_fc_scan_" + exp + idx + ".json")
+                    ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + otg + "_fc-scan_" + exp + idx + ".json")
                     ggg.sort(key = os.path.getmtime)
                     contour.append(ggg[-1])
         else:
