@@ -259,7 +259,7 @@ if __name__ == '__main__':
 
         if rungen or runfc:
             if args.ntoy > 0:
-                idxs = index_list(args.runidxs)
+                idxs = [-1] + index_list(args.runidxs)
             else:
                 idxs = [-1]
 
@@ -320,17 +320,18 @@ if __name__ == '__main__':
                             if len(logs) > 0:
                                 continue
 
-                        fcrundat = args.fcmode != "add" and args.fcrundat and idx == idxs[0]
+                        firstjob = idx == idxs[0]
+                        fcrundat = args.fcmode != "add" and args.fcrundat and firstjob
 
                         jarg = job_arg
                         jarg += " {gvl} {toy} {dat} {idx}".format(
                             gvl = "--g-values '" + str(ig1) + "," + str(ig2) + "'",
-                            toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 else "",
+                            toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "",
                             dat = "--fc-skip-data " if not fcrundat else "",
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
 
-                        if args.fcsinglepnt and len(toylocs) > 0:
+                        if args.fcsinglepnt and len(toylocs) > 0 and not firstjob:
                             jarg += " --toy-location " + toylocs[ii]
                             if args.savetoy:
                                 jarg += " --save-toy"
