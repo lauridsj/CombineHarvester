@@ -2,6 +2,11 @@
 # the recipe is based on the latest results (02/08/2022)
 # the recipe is fully sequential, whenever jobs are submitted wait until it finishes!!
 
+#0 some preliminary stuff - needed every time
+#0a this gets the condor_check command which helps telling which jobs dont complete
+source /nfs/dust/cms/user/afiqaize/cms/sft/condor/condorUtil.sh # at desy naf
+source /afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/condorUtil.sh # at cern lxplus
+
 #1 list down the pairs to run on, and a few other variables
 #1a default settings here are what has been found to have good job efficiency (DESY default HTC slot) for the combined fits
 #1b i.e. 50 toys/job and 20 jobs per point
@@ -24,24 +29,30 @@ drops='TT_norm'
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}"
 
 #3 run the (0, 0) point, which can use shared toys
-#3a only relevant if shared toys have been made - otherwise skip to #4
+#3a only relevant if shared toys have been made - otherwise skip to #5
 #3b this submits N jobs based on ${idxs}, each running ${ntoy} toys
 #3c indexing can either be 'i1,i2,...,iN' or 'init...final'; with init defaulting to 0 if omitted
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --g-values '0.0,0.0' --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-single-point --toy-location <directory of shared toys>  #--unblind
 
-#4 run the remaining LO points
+#4 check if the jobs ran fine and delete the faulty logs
+#4a if this command outputs anything on the screen, repeat the previous step you were running immediately
+#4b alternatively always repeat the previous step regardless, and proceed only when it submits no jobs
+#4c this step is useful after every step that submits HTC jobs
+condor_check . | tee /dev/tty | xargs rm
+
+#5 run the remaining LO points
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" #--unblind
 
-#5 merge the toy files
+#6 merge the toy files
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag "${tag}"
 
-#6 compile the available statistics - the non-shared toys are deleted, but all the relevant numbers we have gotten already
+#7 compile the available statistics - the non-shared toys are deleted, but all the relevant numbers we have gotten already
 ./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root #--unblind
 
-#7 only if extra toys are needed rerun #4 and #5 when done
-#7a if you don't use --delete-root in #5, make sure the --fc-idxs are different!
+#8 only if extra toys are needed
+#8a if you don't use --delete-root in #6, make sure the --run-idxs are different!
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add #--unblind
 
-#8 if enough toys are made for each point, refine the grid
-#8a always do #5 and #6 every time after #7 and #8
+#9 if enough toys are made for each point, refine the grid
+#9a always do #6 and #7 every time after #8 and #9
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode refine #--unblind
