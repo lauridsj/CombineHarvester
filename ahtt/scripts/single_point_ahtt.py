@@ -370,7 +370,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("1", True),
+            stg = fit_strategy("0", True),
             asm = "-t -1" if args.asimov else "",
             prm = set_parameter(set_freeze, args.extopt, masks)
         ))
@@ -381,7 +381,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("1", True),
+            stg = fit_strategy("0", True),
             asm = "-t -1" if args.asimov else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
             prm = set_parameter(set_freeze, args.extopt, masks)
