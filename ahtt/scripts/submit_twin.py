@@ -326,7 +326,7 @@ if __name__ == '__main__':
                         jarg = job_arg
                         jarg += " {gvl} {toy} {dat} {idx}".format(
                             gvl = "--g-values '" + str(ig1) + "," + str(ig2) + "'",
-                            toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "",
+                            toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
                             dat = "--fc-skip-data " if not fcrundat else "",
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
