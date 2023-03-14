@@ -350,7 +350,7 @@ if __name__ == '__main__':
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_fc-scan_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
                 syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_compile.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
+                syscall("find {dcd} -type f -name 'twin_point_{dcd}_*compile.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
 
             #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
             job_mem = ""

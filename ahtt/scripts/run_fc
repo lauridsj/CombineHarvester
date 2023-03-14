@@ -47,7 +47,7 @@ condor_check . | tee /dev/tty | xargs rm
 ./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag "${tag}"
 
 #7 compile the available statistics - the non-shared toys are deleted, but all the relevant numbers we have gotten already
-./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root #--unblind
+./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root --local --force #--unblind
 
 #8 only if extra toys are needed
 #8a if you don't use --delete-root in #6, make sure the --run-idxs are different!
