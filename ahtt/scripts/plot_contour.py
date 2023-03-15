@@ -189,6 +189,7 @@ if __name__ == '__main__':
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    args = parser.parse_args()
 
     if args.point != "":
         pairs = args.point
