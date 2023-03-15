@@ -167,7 +167,7 @@ if __name__ == '__main__':
                         "'direct': <json 1>;<json 2>;... used only when --point is empty",
                         default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
-    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", default = "", dest = "ptag", required = False, type = prepend_if_not_empty)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "2", required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--label", help = "labels to attach on plot for each json input, semicolon separated", default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
