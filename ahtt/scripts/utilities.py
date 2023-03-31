@@ -61,7 +61,10 @@ def flat_reldev_wrt_nominal(varied, nominal, offset):
         nn = nominal.GetBinContent(ii)
         varied.SetBinContent(ii, nn * (1. + offset))
 
-def scale(histogram, factor):
+def scale(histogram, factor, epsilon = 1e-3):
+    if abs(factor - 1.) < epsilon:
+        return
+
     for ii in range(1, histogram.GetNbinsX() + 1):
         histogram.SetBinContent(ii, histogram.GetBinContent(ii) * factor)
         histogram.SetBinError(ii, histogram.GetBinError(ii) * abs(factor))
@@ -143,8 +146,7 @@ def project(histogram, rule):
 def add_scaled_nuisance(varied, nominal, original, factor):
     added = varied.Clone("xxxmutatedxxx")
     added.Add(original, -1.)
-    if factor != 1.:
-        scale(added, factor)
+    scale(added, factor)
     added.Add(nominal)
     return added
 
@@ -167,6 +169,10 @@ def get_nbin(fname, channel, year):
     return nbin
 
 def chunks(lst, npart):
+    '''
+    split a list of length nlst into npart chunks of length ~nlst / npart
+    FIXME: seems to not work very well when setting --impact-n < 3, which relies this method
+    '''
     if npart > math.ceil(float(len(lst)) / 2) or npart < 1:
         print 'chunks called with a invalid npart. setting it to 2.'
         npart = 2
