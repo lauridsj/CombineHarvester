@@ -3,6 +3,8 @@
 # environment: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_102 x86_64-centos7-gcc11-opt
 # updating mpl: python3 -m pip install matplotlib --upgrade
 # actually using it: export PYTHONPATH=`python3 -c 'import site; print(site.getusersitepackages())'`:$PYTHONPATH
+# FIXME: summed up templates across years not yet fully correct: check out https://cms-analysis.github.io/CombineHarvester/post-fit-shapes-ws.html
+# more info: https://cms-analysis.github.io/CombineHarvester/post-fit-shapes-ws.html
 
 import os
 from itertools import product
