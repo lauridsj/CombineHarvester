@@ -27,8 +27,8 @@ from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
 
 scale_choices = ["nominal", "uF_up", "uF_down", "uR_up", "uR_down"]
-def get_kfactor(sigpnt):
-    kfile = TFile.Open(kfactor_file_name, "read")
+def get_kfactor(sigpnt, mtop):
+    kfile = TFile.Open(kfactor_file_name[mtop], "read")
     khist = [
         (kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst),
          kfile.Get(sigpnt[0] + "_int_sushi_nnlo_mg5_lo_kfactor_pdf_325500_" + syst))
@@ -39,8 +39,8 @@ def get_kfactor(sigpnt):
 
     return kvals
 
-def get_lo_ratio(sigpnt, channel):
-    kfile = TFile.Open(kfactor_file_name, "read")
+def get_lo_ratio(sigpnt, channel, mtop):
+    kfile = TFile.Open(kfactor_file_name[mtop], "read")
     xhist = [
         (kfile.Get(sigpnt[0] + "_res_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xsec_" + channel),
          kfile.Get(sigpnt[0] + "_int_mg5_pdf_325500_scale_dyn_0p5mtt_" + syst + "_xabs_" + channel),
@@ -81,6 +81,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_ISR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("tmass_AH",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -94,14 +96,15 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), 1. / 3.)), # gaussian 1 GeV
-            #("tmass_3GeV_TT",                      (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat 3 GeV
 
             ("CMS_UEtune_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_ERD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_QCD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("tmass_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)), # gaussian prior
+            #("tmass_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
             ("CMS_pileup",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -204,7 +207,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     else:
         for sig in sigpnt:
             if kfactor:
-                kfactors = get_kfactor(get_point(sig))
+                kfactors = {mtop: get_kfactor(get_point(sig), mtop) for mtop in [171, 172, 173]}
 
             fname = ""
             for iname in inames:
@@ -230,9 +233,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 if kfactor and kfactors is not None:
                     if ss == "_res":
-                        scale(hn, kfactors[0][0])
+                        scale(hn, kfactors[172][0][0])
                     else:
-                        scale(hn, kfactors[0][1])
+                        scale(hn, kfactors[172][0][1])
 
                 if "_neg" in ss:
                     scale(hn, -1.)
@@ -256,9 +259,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     for pp, ff in processes:
         if not sigpnt == None:
             sig = "_".join(pp.split("_")[:-1])
-            loratios = get_lo_ratio(get_point(sig), "ll") if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj")
+            loratios = {mtop: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
             if kfactor:
-                kfactors = get_kfactor(get_point(sig))
+                kfactors = {mtop: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
 
         ifile = TFile.Open(ff, "read")
         ifile.cd(idir)
@@ -274,7 +277,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if nn1 in read_category_process_nuisance.specials:
                     nn2 = nn1 if (year in read_category_process_nuisance.specials[nn1][0] or year in nn1) else nn1 + '_' + year
 
-                    if "QCDscale_ME" in nn2 and "_AH" in nn2:
+                    # split all A/H QCDscale variations (uX, I/FSR) into uncorrelated NPs for res and int
+                    if "QCDscale_" in nn2 and "_AH" in nn2:
                         nn2 = nn2 + "_res" if "_res" in pp else nn2 + "_int"
                 else:
                     nn2 = nn1 if year in nn1 else nn1 + '_' + year
@@ -283,10 +287,32 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     for c1, c2 in read_category_process_nuisance.aliases.items():
                         nn2 = nn2.replace(c2, c1)
 
-                nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]) if nn1 in read_category_process_nuisance.specials else (nn2, 1.))
-
+                # obtain the actual templates
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
+
+                # extra messing around for tmass
+                # also set the keys determining which kfactor to be read
+                if "tmass" in nn2:
+                    # for SM, scale the deviation down from 3 GeV to 1 GeV
+                    paajsn
+
+                    # for A/H we use the apply the SM relative deviation onto A/H nominal
+                    # note: need to revert the normalization effect induced by SM mt varied xsec
+                    # consider promoting such a use-shape-from-dominant-bkg option to other NPs, specified using CL opt?
+                    jkasndk
+
+                    # remove process tag - correlating the NP A/H and SM
+                    nn2 = nn2.replace("_TT", "").replace("_AH", "")
+                    mtu = 173
+                    mtn = 172
+                    mtd = 171
+                else:
+                    mtu = 172
+                    mtn = 172
+                    mtd = 172
+
+                nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]) if nn1 in read_category_process_nuisance.specials else (nn2, 1.))
 
                 if projection_rule != "":
                     hu = project(hu, projection_rule)
@@ -349,20 +375,24 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                             print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
                 if not sigpnt == None:
-                    # rescale varied LO to nominal
+                    # rescale uX varied LO to nominal
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
                     idxd = 2 if "_MEFac_" in nn2 else 4 if "_MERen_" in nn2 else 0
                     idxp = 0 if "_res" in pp else 1 if "_pos" in pp else 2
-                    scale(hu, 1. / loratios[idxu][idxp])
-                    scale(hd, 1. / loratios[idxd][idxp])
+                    scale(hu, 1. / loratios[mtn][idxu][idxp])
+                    scale(hd, 1. / loratios[mtn][idxd][idxp])
+
+                    # also rescale the tmass variation (normalized to mt = 172) to its proper mt varied rate
+                    scale(hu, loratios[mtu][idxu][idxp] / loratios[mtn][idxu][idxp])
+                    scale(hd, loratios[mtd][idxu][idxp] / loratios[mtn][idxd][idxp])
 
                     if kfactor and kfactors is not None:
                         # and then to varied NNLO
                         idxp = 0 if "_res" in pp else 1
-                        scale(hu, kfactors[idxu][idxp])
-                        scale(hd, kfactors[idxd][idxp])
+                        scale(hu, kfactors[mtu][idxu][idxp])
+                        scale(hd, kfactors[mtd][idxd][idxp])
 
-                        # FIXME if instead the varied LO is desired, comment the loratios scaling above
+                        # FIXME if instead the varied LO is desired, comment the loratios uX scaling above
                         # FIXME and use 0 instead of idxu/idxp for kfactors
 
                 hu.SetName(hu.GetName().replace(nn1, nn2))
