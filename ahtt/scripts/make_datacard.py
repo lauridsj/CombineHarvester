@@ -295,12 +295,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 # also set the keys determining which kfactor to be read
                 if "tmass" in nn2:
                     # for SM, scale the deviation down from 3 GeV to 1 GeV
-                    paajsn
-
-                    # for A/H we use the apply the SM relative deviation onto A/H nominal
-                    # note: need to revert the normalization effect induced by SM mt varied xsec
-                    # consider promoting such a use-shape-from-dominant-bkg option to other NPs, specified using CL opt?
-                    jkasndk
+                    if "_TT" in nn2:
+                        ho = original_nominal[odir][pp]
+                        hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
+                        hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
 
                     # remove process tag - correlating the NP A/H and SM
                     nn2 = nn2.replace("_TT", "").replace("_AH", "")
@@ -313,6 +311,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     mtd = 172
 
                 nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]) if nn1 in read_category_process_nuisance.specials else (nn2, 1.))
+
+                # for A/H we use the apply the SM relative deviation onto A/H nominal
+                # note: need to revert the normalization effect induced by SM mt varied xsec
+                # consider promoting such a use-shape-from-dominant-bkg option to other NPs, specified using CL opt?
+                #jkasndk
 
                 if projection_rule != "":
                     hu = project(hu, projection_rule)
@@ -392,7 +395,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         scale(hu, kfactors[mtu][idxu][idxp])
                         scale(hd, kfactors[mtd][idxd][idxp])
 
-                        # FIXME if instead the varied LO is desired, comment the loratios uX scaling above
+                        # FIXME if instead the uX varied LO xsec is desired, comment the loratios uX scaling above
                         # FIXME and use 0 instead of idxu/idxp for kfactors
 
                 hu.SetName(hu.GetName().replace(nn1, nn2))
