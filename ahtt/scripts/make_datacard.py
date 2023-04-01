@@ -58,8 +58,11 @@ def get_lo_ratio(sigpnt, channel, mtop):
     # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
 
-# assumption is some specific list is fully correlated, others fully uncorrelated
+# save the original nominal templates before manipulations (but after kfactors for signal)
+# to be used in some manipulations later
 original_nominal = {}
+
+# assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
                                    projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
@@ -194,12 +197,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     zero_out(hn)
                     hn.Write()
 
-                    if chops is not None or replaces is not None:
-                        if odir not in original_nominal:
-                            original_nominal[odir] = {}
-                        if kname not in original_nominal[odir]:
-                            original_nominal[odir][kname] = hn.Clone(kname + '_original_no_bootleg_frfr')
-                            original_nominal[odir][kname].SetDirectory(0)
+                    if odir not in original_nominal:
+                        original_nominal[odir] = {}
+                    if kname not in original_nominal[odir]:
+                        original_nominal[odir][kname] = hn.Clone(kname + '_original_no_bootleg_frfr')
+                        original_nominal[odir][kname].SetDirectory(0)
 
         ifile.Close()
         ifile = None
@@ -245,12 +247,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 ofile.cd(odir)
                 hn.Write()
 
-                if chops is not None or replaces is not None:
-                    if odir not in original_nominal:
-                        original_nominal[odir] = {}
-                    if pnt not in original_nominal[odir]:
-                        original_nominal[odir][pnt] = hn.Clone(pnt + '_original_no_bootleg_frfr')
-                        original_nominal[odir][pnt].SetDirectory(0)
+                if odir not in original_nominal:
+                    original_nominal[odir] = {}
+                if pnt not in original_nominal[odir]:
+                    original_nominal[odir][pnt] = hn.Clone(pnt + '_original_no_bootleg_frfr')
+                    original_nominal[odir][pnt].SetDirectory(0)
 
             ifile.Close()
             ifile = None
