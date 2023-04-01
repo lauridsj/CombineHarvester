@@ -207,7 +207,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     else:
         for sig in sigpnt:
             if kfactor:
-                kfactors = {mtop: get_kfactor(get_point(sig), mtop) for mtop in [171, 172, 173]}
+                kfactors = {mt: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
 
             fname = ""
             for iname in inames:
@@ -259,9 +259,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     for pp, ff in processes:
         if not sigpnt == None:
             sig = "_".join(pp.split("_")[:-1])
-            loratios = {mtop: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
+            loratios = {mt: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
             if kfactor:
-                kfactors = {mtop: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
+                kfactors = {mt: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
 
         ifile = TFile.Open(ff, "read")
         ifile.cd(idir)
