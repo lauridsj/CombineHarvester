@@ -388,10 +388,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     # rescale uX varied LO to nominal - as the rate effect is accounted for in the kfactor
                     # also rescale mt variation (normalized to mt = 172 in the ME weights) to its proper LO rate
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
+                    idxn = 0
                     idxd = 2 if "_MEFac_" in nn2 else 4 if "_MERen_" in nn2 else 0
                     idxp = 0 if "_res" in pp else 1 if "_pos" in pp else 2
-                    scale(hu, loratios[mtu][idxu][idxp] / loratios[mtn][idxu][idxp])
-                    scale(hd, loratios[mtd][idxd][idxp] / loratios[mtn][idxd][idxp])
+                    scale(hu, loratios[mtu][idxn][idxp] / loratios[mtn][idxu][idxp])
+                    scale(hd, loratios[mtd][idxn][idxp] / loratios[mtn][idxd][idxp])
 
                     if kfactor and kfactors is not None:
                         # and then to varied NNLO
