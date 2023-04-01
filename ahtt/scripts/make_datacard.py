@@ -297,9 +297,15 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if "tmass" in nn2:
                     # for SM, scale the deviation down from 3 GeV to 1 GeV
                     if "_TT" in nn2:
+                        nu = hu.GetName()
+                        nd = hd.GetName()
+
                         ho = original_nominal[odir][pp]
                         hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
+
+                        hu.SetName(nu)
+                        hd.SetName(nd)
 
                     # remove process tag - correlating the NP A/H and SM
                     nn2 = nn2.replace("_TT", "").replace("_AH", "")
