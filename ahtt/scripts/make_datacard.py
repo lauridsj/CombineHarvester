@@ -21,7 +21,7 @@ from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
 from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out
-from utilities import project, add_scaled_nuisance, index_list, chop_up
+from utilities import project, add_scaled_nuisance, apply_relative_nuisance, index_list, chop_up
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
@@ -260,8 +260,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     for pp, ff in processes:
         if not sigpnt == None:
             sig = "_".join(pp.split("_")[:-1])
-            loratios = {mt: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
             if kfactor:
+                loratios = {mt: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
                 kfactors = {mt: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
 
         ifile = TFile.Open(ff, "read")
@@ -288,21 +288,61 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     for c1, c2 in read_category_process_nuisance.aliases.items():
                         nn2 = nn2.replace(c2, c1)
 
-                # obtain the actual templates
+                # obtain the actual up/down/chi2 templates
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
+                hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
+
+                # project (ie integrate along some axes) if so requested
+                if projection_rule != "":
+                    hu = project(hu, projection_rule)
+                    hd = project(hd, projection_rule)
 
                 # extra messing around for tmass
                 # also set the keys determining which kfactor to be read
                 if "tmass" in nn2:
+                    # original template names to be used later
+                    nu = hu.GetName()
+                    nd = hd.GetName()
+
                     # for SM, scale the deviation down from 3 GeV to 1 GeV
                     if "_TT" in nn2:
-                        nu = hu.GetName()
-                        nd = hd.GetName()
-
                         ho = original_nominal[odir][pp]
                         hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
+
+                        hu.SetName(nu)
+                        hd.SetName(nd)
+
+                    # for A/H, apply the SM relative deviation onto A/H nominal
+                    if "_AH" in nn2:
+                        hc = None
+                        hah = original_nominal[odir][pp]
+                        hsm = original_nominal[odir]["TT"]
+
+                        # get the SM shapes
+                        hu = ofile.Get(odir + "/TT_tmassUp")
+                        hd = ofile.Get(odir + "/TT_tmassDown")
+
+                        # revert the 1/3 scaling on SM template
+                        hu = add_scaled_nuisance(hu, hsm, hsm, 3.)
+                        hd = add_scaled_nuisance(hd, hsm, hsm, 3.)
+
+                        # revert the normalization effect induced by SM mt varied xsec (hardcoded for now)
+                        # this is so that only the acceptance and shape effects are retained
+                        # NOTE: this assumes the rate_mtuX scheme, comment out in shape_mtuX!
+                        scale(hu, 833.942 / 768.846)
+                        scale(hd, 833.942 / 905.650)
+
+                        # obtain the reldev wrt sm nominal, and apply it to A/H nominal
+                        hu = apply_relative_nuisance(hu, hsm, hah)
+                        hd = apply_relative_nuisance(hd, hsm, hah)
+
+                        # revert the effect of nominal kfactor if needed
+                        if kfactor and kfactors is not None:
+                            idxp = 0 if "_res" in pp else 1
+                            scale(hu, 1. / kfactors[172][0][idxp])
+                            scale(hd, 1. / kfactors[172][0][idxp])
 
                         hu.SetName(nu)
                         hd.SetName(nd)
@@ -318,17 +358,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     mtd = 172
 
                 nuisance.append((nn2, read_category_process_nuisance.specials[nn1][1]) if nn1 in read_category_process_nuisance.specials else (nn2, 1.))
-
-                # for A/H we use the apply the SM relative deviation onto A/H nominal
-                # note: need to revert the normalization effect induced by SM mt varied xsec
-                # consider promoting such a use-shape-from-dominant-bkg option to other NPs, specified using CL opt?
-                #jkasndk
-
-                if projection_rule != "":
-                    hu = project(hu, projection_rule)
-                    hd = project(hd, projection_rule)
-
-                hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
                 drop_nuisance = False
                 skip_nuisance = False
@@ -384,7 +413,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         if not drop_nuisance:
                             print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
-                if not sigpnt == None:
+                if not sigpnt == None and kfactor and kfactors is not None:
                     # rescale uX varied LO to nominal - as the rate effect is accounted for in the kfactor
                     # also rescale mt variation (normalized to mt = 172 in the ME weights) to its proper LO rate
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
@@ -394,14 +423,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     scale(hu, loratios[mtu][idxn][idxp] / loratios[mtn][idxu][idxp])
                     scale(hd, loratios[mtd][idxn][idxp] / loratios[mtn][idxd][idxp])
 
-                    if kfactor and kfactors is not None:
-                        # and then to varied NNLO
-                        idxp = 0 if "_res" in pp else 1
-                        scale(hu, kfactors[mtu][idxu][idxp])
-                        scale(hd, kfactors[mtd][idxd][idxp])
+                    # and then to varied NNLO
+                    idxp = 0 if "_res" in pp else 1
+                    scale(hu, kfactors[mtu][idxu][idxp])
+                    scale(hd, kfactors[mtd][idxd][idxp])
 
-                        # FIXME if instead the uX varied LO xsec is desired, comment the loratios uX scaling above
-                        # FIXME and use 0 instead of idxu/idxp for kfactors
+                    # NOTE if instead the uX varied LO xsec is desired, comment the loratios uX scaling above
+                    # NOTE and use 0 instead of idxu/idxp for kfactors
 
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
@@ -710,7 +738,7 @@ if __name__ == '__main__':
     parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
 
-    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "replace", default = "", required = False,
+    parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "repnom", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
@@ -746,21 +774,21 @@ if __name__ == '__main__':
                     prule = prjrule[prjchan.index(pchan)]
 
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            args.point, args.kfactor)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                                   args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                                   args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
 
             read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.replace, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"
-        make_pseudodata(output, cpn, args.replace, args.inject, args.seed if args.seed != 0 else None)
+        make_pseudodata(output, cpn, args.repnom, args.inject, args.seed if args.seed != 0 else None)
     output.Close()
 
     write_datacard(oname, cpn, args.year, args.point, args.inject, args.drop, args.keep, args.mcstat, args.rateparam, args.tag)
