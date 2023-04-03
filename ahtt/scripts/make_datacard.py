@@ -318,21 +318,27 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if "_AH" in nn2:
                         hc = None
                         hah = original_nominal[odir][pp]
+                        if "_neg" in pp:
+                            scale(hah, -1.)
+
                         hsm = original_nominal[odir]["TT"]
 
                         # get the SM shapes
                         hu = ofile.Get(odir + "/TT_tmassUp")
                         hd = ofile.Get(odir + "/TT_tmassDown")
 
-                        # revert the 1/3 scaling on SM template
-                        hu = add_scaled_nuisance(hu, hsm, hsm, 3.)
-                        hd = add_scaled_nuisance(hd, hsm, hsm, 3.)
-
-                        # revert the normalization effect induced by SM mt varied xsec (hardcoded for now)
+                        # revert the normalization effect induced by SM mt varied xsec (+-3 GeV divided by 3, hardcoded for now)
                         # this is so that only the acceptance and shape effects are retained
                         # NOTE: this assumes the rate_mtuX scheme, comment out in shape_mtuX!
-                        scale(hu, 833.942 / 768.846)
-                        scale(hd, 833.942 / 905.650)
+                        xsu = 768.846
+                        xsn = 833.942
+                        xsd = 905.650
+
+                        dxu = (((xsu / xsn) - 1.) / 3.) + 1.
+                        dxd = (((xsd / xsn) - 1.) / 3.) + 1.
+
+                        scale(hu, dxu)
+                        scale(hd, dxd)
 
                         # obtain the reldev wrt sm nominal, and apply it to A/H nominal
                         hu = apply_relative_nuisance(hu, hsm, hah)
