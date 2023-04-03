@@ -32,8 +32,8 @@ combine_help_messages = {
 
     "--replace-nominal": "comma-separated names of nuisances where, if a process has them, the nuisance template is used to create the pseudodata instead of nominal.\n"
     "Up or Down must be specified after a colon e.g. tmass_3GeV_TT:Up. Accepts a third value after another colon, which must be a number that defaults to 1.\n"
-    "tmass_3GeV_TT:Up:0.5 means adding half the difference between the tmass_3GeV_TTUp and the nominal template, binwise linearly interpolated."
-    "tmass_3GeV_TT:Up:0.37,QCDScale_MERen_TT:Down:0.73,... means adding the interpolated differences of all these templates wrt original nominal to the latter, "
+    "tmass:Up:0.5 means adding half the difference between the tmassUp and the nominal template, binwise linearly interpolated."
+    "tmass:Up:0.37,QCDScale_MERen_TT:Down:0.73,... means adding the interpolated differences of all these templates wrt original nominal to the latter, "
     "and assigning the resulting template as the nominal template to be added to the pseudodata.\n"
     "p/s: does NOT support adding chopped up nuisances for the moment.",
 
@@ -56,7 +56,7 @@ combine_help_messages = {
     "where nuisances is a comma-separated list of nuisance parameter names (after including _year where relevant),\n"
     "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
     "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
-    "and index set refers to bin indices (per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
+    "and index set refers to bin indices (1-based per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
     "index set can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative\n"
     "where the comma separated integers are plainly the single indices and\n"
     "the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 1\n"
