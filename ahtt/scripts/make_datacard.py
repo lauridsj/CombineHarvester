@@ -773,6 +773,9 @@ if __name__ == '__main__':
                 if cc in pchan:
                     prule = prjrule[prjchan.index(pchan)]
 
+            read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
                                            args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                            args.point, args.kfactor)
@@ -782,9 +785,6 @@ if __name__ == '__main__':
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
                                                    args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
                                                    remaining, args.kfactor)
-
-            read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"
