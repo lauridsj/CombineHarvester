@@ -144,11 +144,19 @@ def project(histogram, rule):
     return hist
 
 def add_scaled_nuisance(varied, nominal, original, factor):
-    added = varied.Clone("xxxmutatedxxx")
+    added = varied.Clone("xxxaddscalexxx")
     added.Add(original, -1.)
     scale(added, factor)
     added.Add(nominal)
     return added
+
+def apply_relative_nuisance(varied, nominal, target):
+    applied = varied.Clone("xxxapplyreldevxxx")
+    applied.Add(nominal, -1.)
+    applied.Divide(nominal)
+    applied.Multiply(target)
+    applied.Add(target)
+    return applied
 
 def chop_up(varied, nominal, indices):
     chopped = varied.Clone("xxxchoppedxxx")
@@ -396,7 +404,7 @@ def make_datacard_with_args(scriptdir, args):
                 rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
                 prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
                 cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
-                rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
+                rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
                 rsd = "--seed " + args.seed if args.seed != "" else ""
             ))
 
