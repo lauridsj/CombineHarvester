@@ -114,7 +114,7 @@ if __name__ == '__main__':
                        msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
                        prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
                        cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
-                       rep = "--replace-nominal '" + args.replace + "'" if args.replace != "" else "",
+                       rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
                        frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
                        asm = "--unblind" if not args.asimov else "",
                        one = "--one-poi" if args.onepoi else "",
