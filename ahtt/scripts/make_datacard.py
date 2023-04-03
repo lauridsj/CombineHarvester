@@ -653,7 +653,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
         cc = iicc[1]
 
         sigs = [pp for pp in cpn[cc].keys() if any([ss in pp for ss in sigpnt])]
-        bkgs = [pp for pp in cpn[cc].keys() if not any([ss in pp for ss in sigpnt]) and (injsig == None or not any([ss in pp for ss in injsig]))]
+        bkgs = [pp for pp in cpn[cc].keys() if pp != "data_obs" and not any([ss in pp for ss in sigpnt]) and (injsig == None or not any([ss in pp for ss in injsig]))]
         cb.AddProcesses([''], ["ahtt"], ["13TeV"], [""], sigs, [iicc], True)
         cb.AddProcesses(['*'], ["ahtt"], ["13TeV"], [""], bkgs, [iicc], False)
 
