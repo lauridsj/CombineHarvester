@@ -56,6 +56,9 @@ def stringify(gtuple):
 def tuplize(gstring):
     return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
 
+def right_now():
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
+
 def flat_reldev_wrt_nominal(varied, nominal, offset):
     for ii in range(1, nominal.GetNbinsX() + 1):
         nn = nominal.GetBinContent(ii)
@@ -124,7 +127,7 @@ def project(histogram, rule):
     tgt_nbin1 = reduce(lambda a, b: a * b, tgt_nbinn, 1)
 
     hname = histogram.GetName()
-    histogram.SetName(hname + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    histogram.SetName(hname + "_" + right_now())
 
     hist = TH1D(hname, histogram.GetTitle(), tgt_nbin1, 0., tgt_nbin1)
     for is1 in range(src_nbin1):
@@ -144,14 +147,14 @@ def project(histogram, rule):
     return hist
 
 def add_scaled_nuisance(varied, nominal, original, factor):
-    added = varied.Clone("xxxaddscalexxx")
+    added = varied.Clone(varied.GetName() + "_" + right_now())
     added.Add(original, -1.)
     scale(added, factor)
     added.Add(nominal)
     return added
 
 def apply_relative_nuisance(varied, nominal, target):
-    applied = varied.Clone("xxxapplyreldevxxx")
+    applied = varied.Clone(varied.GetName() + "_" + right_now())
     applied.Add(nominal, -1.)
     applied.Divide(nominal)
     applied.Multiply(target)
@@ -159,7 +162,7 @@ def apply_relative_nuisance(varied, nominal, target):
     return applied
 
 def chop_up(varied, nominal, indices):
-    chopped = varied.Clone("xxxchoppedxxx")
+    chopped = varied.Clone(varied.GetName() + "_" + right_now())
     for ii in range(1, chopped.GetNbinsX() + 1):
         content = varied.GetBinContent(ii) if ii in indices else nominal.GetBinContent(ii)
         error = varied.GetBinError(ii) if ii in indices else nominal.GetBinError(ii)
@@ -190,7 +193,7 @@ def original_nominal_impl(hist = None, directory = None, process = None):
                 original_nominal_impl.content[directory][process] = hist.Clone(hist.GetName() + "_original_no_bootleg_frfr")
                 original_nominal_impl.content[directory][process].SetDirectory(0)
         else:
-            hname = original_nominal_impl.content[directory][process].GetName().replace("_original_no_bootleg_frfr", "_") + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            hname = original_nominal_impl.content[directory][process].GetName().replace("_original_no_bootleg_frfr", "_") + right_now()
             return original_nominal_impl.content[directory][process].Clone(hname)
 
     return None
@@ -253,7 +256,7 @@ def input_sig(signal, points, injects, channels, years):
     return ','.join(signals)
 
 def aggregate_submit():
-    return 'conSub_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
+    return 'conSub_' + right_now() + '.txt'
 
 def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
     if not hasattr(submit_job, "firstprint"):
@@ -312,7 +315,7 @@ def set_parameter(set_freeze, extopt, masks):
     )
 
 def make_best_fit(dcdir, card, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
-    fname = point + "_best_fit_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    fname = point + "_best_fit_" + right_now()
 
     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm}".format(
         dcd = dcdir + card,

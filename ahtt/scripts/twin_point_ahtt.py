@@ -13,7 +13,8 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy, make_datacard_with_args, set_parameter
+from utilities import syscall, get_point, right_now
+from utilities import read_nuisance, max_g, make_best_fit, starting_nuisance, elementwise_add, stringify, fit_strategy, make_datacard_with_args, set_parameter
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D
 from hilfemir import combine_help_messages
@@ -188,7 +189,7 @@ if __name__ == '__main__':
         if args.toyloc == "":
             # no toy location is given, dump the toys in some directory under datacard directory
             # in gof/fc, files are actually just copied off the files already generated, but this is probably easier to move off to some central storage
-            timestamp_dir = os.path.join(dcdir, "toys_" + datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f'))
+            timestamp_dir = os.path.join(dcdir, "toys_" + right_now())
             os.makedirs(timestamp_dir)
             args.toyloc = os.path.abspath(timestamp_dir) + "/"
 
