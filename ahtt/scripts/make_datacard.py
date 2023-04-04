@@ -301,9 +301,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
 
-                        hu.SetName(nu)
-                        hd.SetName(nd)
-
                     # for A/H, apply the SM relative deviation onto A/H nominal
                     if "_AH" in nn2:
                         hc = None
@@ -341,8 +338,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                             scale(hu, 1. / kfactors[172][0][idxp])
                             scale(hd, 1. / kfactors[172][0][idxp])
 
-                        hu.SetName(nu)
-                        hd.SetName(nd)
+                    hu.SetName(nu)
+                    hd.SetName(nd)
 
                     # remove process tag - correlating the NP A/H and SM
                     nn2 = nn2.replace("_TT", "").replace("_AH", "")
