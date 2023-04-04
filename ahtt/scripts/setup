@@ -1,5 +1,5 @@
 export SCRAM_ARCH=slc7_amd64_gcc700
-module use -a /afs/desy.de/group/cms/modulefiles && module load cmssw
+module use -a /afs/desy.de/group/cms/modulefiles && module load cmssw # only for DESY NAF
 cmsrel CMSSW_10_2_13
 cd CMSSW_10_2_13/src
 cmsenv
