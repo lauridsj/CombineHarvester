@@ -317,18 +317,19 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         hu = ofile.Get(odir + "/TT_tmassUp")
                         hd = ofile.Get(odir + "/TT_tmassDown")
 
-                        # revert the normalization effect induced by SM mt varied xsec (+-3 GeV divided by 3, hardcoded for now)
+                        # first undo the 1/3 scaling above
+                        hu = add_scaled_nuisance(hu, hsm, hsm, 3.)
+                        hd = add_scaled_nuisance(hd, hsm, hsm, 3.)
+
+                        # then revert the normalization effect induced by SM mt varied xsec (+-3 GeV, hardcoded for now)
                         # this is so that only the acceptance and shape effects are retained
                         # NOTE: this assumes the rate_mtuX scheme, comment out in shape_mtuX!
                         xsu = 768.846
                         xsn = 833.942
                         xsd = 905.650
 
-                        dxu = (((xsn / xsu) - 1.) / 3.) + 1.
-                        dxd = (((xsn / xsd) - 1.) / 3.) + 1.
-
-                        scale(hu, dxu)
-                        scale(hd, dxd)
+                        scale(hu, xsn / xsu)
+                        scale(hd, xsn / xsd)
 
                         # obtain the reldev wrt sm nominal, and apply it to A/H nominal
                         hu = apply_relative_nuisance(hu, hsm, hah)
