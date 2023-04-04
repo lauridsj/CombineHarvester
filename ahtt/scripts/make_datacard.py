@@ -241,7 +241,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 ofile.cd(odir)
                 hn.Write()
 
-                add_original_nominal(hn, odir, kname)
+                add_original_nominal(hn, odir, pnt)
 
             ifile.Close()
             ifile = None
