@@ -334,8 +334,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         xsn = 833.942
                         xsd = 905.650
 
-                        dxu = (((xsu / xsn) - 1.) / 3.) + 1.
-                        dxd = (((xsd / xsn) - 1.) / 3.) + 1.
+                        dxu = (((xsn / xsu) - 1.) / 3.) + 1.
+                        dxd = (((xsn / xsd) - 1.) / 3.) + 1.
 
                         scale(hu, dxu)
                         scale(hd, dxd)
