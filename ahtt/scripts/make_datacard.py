@@ -22,6 +22,8 @@ import CombineHarvester.CombineTools.ch as ch
 
 from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out
 from utilities import project, add_scaled_nuisance, apply_relative_nuisance, index_list, chop_up
+from utilities import add_original_nominal, read_original_nominal
+
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure
 from hilfemir import combine_help_messages
@@ -57,10 +59,6 @@ def get_lo_ratio(sigpnt, channel, mtop):
 
     # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
-
-# save the original nominal templates before manipulations (but after kfactors for signal)
-# to be used in some manipulations later
-original_nominal = {}
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
@@ -197,11 +195,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     zero_out(hn)
                     hn.Write()
 
-                    if odir not in original_nominal:
-                        original_nominal[odir] = {}
-                    if kname not in original_nominal[odir]:
-                        original_nominal[odir][kname] = hn.Clone(kname + '_original_no_bootleg_frfr')
-                        original_nominal[odir][kname].SetDirectory(0)
+                    add_original_nominal(hn, odir, kname)
 
         ifile.Close()
         ifile = None
@@ -247,11 +241,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 ofile.cd(odir)
                 hn.Write()
 
-                if odir not in original_nominal:
-                    original_nominal[odir] = {}
-                if pnt not in original_nominal[odir]:
-                    original_nominal[odir][pnt] = hn.Clone(pnt + '_original_no_bootleg_frfr')
-                    original_nominal[odir][pnt].SetDirectory(0)
+                add_original_nominal(hn, odir, kname)
 
             ifile.Close()
             ifile = None
@@ -307,7 +297,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                     # for SM, scale the deviation down from 3 GeV to 1 GeV
                     if "_TT" in nn2:
-                        ho = original_nominal[odir][pp]
+                        ho = read_original_nominal(odir, pp)
                         hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
 
@@ -317,11 +307,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     # for A/H, apply the SM relative deviation onto A/H nominal
                     if "_AH" in nn2:
                         hc = None
-                        hah = original_nominal[odir][pp]
+                        hah = read_original_nominal(odir, pp)
                         if "_neg" in pp:
                             scale(hah, -1.)
 
-                        hsm = original_nominal[odir]["TT"]
+                        hsm = read_original_nominal(odir, "TT")
 
                         # get the SM shapes
                         hu = ofile.Get(odir + "/TT_tmassUp")
@@ -453,7 +443,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                         if len(nds) > 1 and nds[0] == nn2:
                             hn = ofile.Get(odir + '/' + pp)
-                            ho = original_nominal[odir][pp]
+                            ho = read_original_nominal(odir, pp)
                             hv = hu if nds[1].lower() == "up" else hd
 
                             hr = add_scaled_nuisance(hv, hn, ho, 1. if len(nds) < 3 else float(nds[2]))
@@ -480,7 +470,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                                     nuisance.append((nn3, prechop_scale))
 
                                     ibins = index_list(sci[2], 1)
-                                    ho = original_nominal[odir][pp]
+                                    ho = read_original_nominal(odir, pp)
                                     huc = chop_up(hu, ho, ibins)
                                     hdc = chop_up(hd, ho, ibins)
 
@@ -530,7 +520,8 @@ def make_pseudodata(ofile, cpn, replaces, sigpnt = None, seed = None):
             # the assumption here is that the shifting only makes sense for pseudodata
             # as otherwise the shifted model becomes the baseline, which is fitted away
             if replaces is not None:
-                ho = original_nominal[category][pp].Clone(pp)
+                ho = read_original_nominal(odir, pp)
+                ho.SetName(pp)
                 ofile.cd(category)
                 ho.Write()
 

@@ -176,6 +176,31 @@ def get_nbin(fname, channel, year):
     hfile.Close()
     return nbin
 
+def original_nominal_impl(hist = None, directory = None, process = None):
+    # for saving the original nominal templates before manipulations (but after kfactors for signal)
+    # to be used in some manipulations later
+    if not hasattr(original_nominal_impl, "content"):
+        original_nominal_impl.content = {}
+
+    if directory is not None and process is not None:
+        if hist is not None:
+            if directory not in original_nominal_impl.content:
+                original_nominal_impl.content[directory] = {}
+            if process not in original_nominal_impl.content[directory]:
+                original_nominal_impl.content[directory][process] = hist.Clone(hist.GetName() + "_original_no_bootleg_frfr")
+                original_nominal_impl.content[directory][process].SetDirectory(0)
+        else:
+            hname = original_nominal_impl.content[directory][process].GetName().replace("_original_no_bootleg_frfr", "_") + datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            return original_nominal_impl.content[directory][process].Clone(hname)
+
+    return None
+
+def add_original_nominal(hist, directory, process):
+    return original_nominal_impl(hist, directory, process)
+
+def read_original_nominal(directory, process):
+    return original_nominal_impl(None, directory, process)
+
 def chunks(lst, npart):
     '''
     split a list of length nlst into npart chunks of length ~nlst / npart
