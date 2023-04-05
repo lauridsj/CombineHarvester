@@ -141,7 +141,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("CMS_JEC_13TeV_Absolute",             (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_BBEC1",                (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("CMS_JEC_13TeV_FlavorQCD",            (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("CMS_JEC_13TeV_FlavorQCD",            (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_FlavorPureBottom",     (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_FlavorQCDOnNonBottom", (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_JEC_13TeV_RelativeBal",          (("2016pre", "2016post", "2017", "2018"), 1.)),
