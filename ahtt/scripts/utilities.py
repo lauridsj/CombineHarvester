@@ -290,7 +290,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             # accounting shenanigans
             afiq_at_lxplus = "desy" not in input_base and os.getlogin() == 'afiqaize'
             if afiq_at_lxplus:
-                syscall("sed -i '/queue/i +AccountingGroup = group_u_CMST3.all' {agg}".format(agg = job_agg), False)
+                syscall("sed -i '/queue/i +AccountingGroup = \"group_u_CMST3.all\"' {agg}".format(agg = job_agg), False) # or group_u_CMS.u_zh.users
         else:
             syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
                 name = 'conSub_' + job_name + '.txt',
