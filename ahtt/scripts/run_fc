@@ -19,11 +19,11 @@ pairs='m400,m1000;w5p0;m400,m1000;w5p0'
 tag='lx'
 channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
 years='2016pre,2016post,2017,2018'
-ntoy='35'
-idxs='..15'
+ntoy='25'
+idxs='..40'
 exps='exp-b,exp-s,exp-01,exp-10'
 keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_'
-drops='TT_norm'
+drops='Type3,TT_norm'
 
 #2 make the datacard
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}"
