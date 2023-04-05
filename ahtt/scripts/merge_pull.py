@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # merge the pull jsons for use by HIG-style plotImpacts.py
-# find . -type f -name '*impact*all.json' | xargs -I % sh -c 'fname="$(basename %)"; plotImpacts.py -i % -o "impact/${fname//.json/}"'
+# find . -type f -name '*impact*all.json' | xargs -I % sh -c 'fname="$(basename %)"; echo ${fname}; plotImpacts.py -i % -o "impact/${fname//.json/}"; echo;'
 # find . -type f -name '*all.pdf' | xargs -I % bash -c 'fname="%"; inkscape --export-filename=${fname//.pdf/}.png --export-dpi=300 ${fname} --pdf-page=1' # doesnt work at NAF
 
 from argparse import ArgumentParser
