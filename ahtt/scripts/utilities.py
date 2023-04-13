@@ -299,6 +299,25 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
                 agg = job_agg), False)
         submit_job.firstjob = False
 
+def problematic_datacard_log(logfile):
+    if not hasattr(problematic_datacard_log, "problems"):
+        problematic_datacard_log.problems = [
+            r"'up/down templates vary the yield in the same direction'",
+            r"'up/down templates are identical'",
+            r"'At least one of the up/down systematic uncertainty templates is empty'",
+            r"'Empty process'",
+            r"'Bins of the template empty in background'",
+        ]
+
+    with open(logfile) as lf:
+        for line in lf:
+            for problem in problematic_datacard_log.problems:
+                if problem in line and 'no warnings' not in line:
+                    lf.close()
+                    return True
+        lf.close()
+    return False
+
 # problem is, setparameters and freezeparameters may appear only once
 # so --extra-option is not usable to study shifting them up if we set g etc
 def set_parameter(set_freeze, extopt, masks):
