@@ -157,7 +157,7 @@ if __name__ == '__main__':
                     pairs.append(aa + "," + hh)
 
     ggrids = None
-    if args.fcgrid != [""] and args.fcmode != "":
+    if args.fcgrid != [] and args.fcmode != "":
         ggrids = args.fcgrid
     else:
         ggrids = ["" for pair in pairs]
