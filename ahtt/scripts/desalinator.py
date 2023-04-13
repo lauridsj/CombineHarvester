@@ -12,14 +12,10 @@ def remove_spaces_quotes(string):
     return remove_quotes( remove_spaces(string) )
 
 def tokenize_to_list(string, token = ','):
-    return string.split(token)
+    return [] if string == "" else string.split(token)
 
 def prepend_if_not_empty(string, token = "_"):
-    if string != "" and not string.startswith(token):
-        return token + string
-    return string
+    return token + string if string != "" and not string.startswith(token) else string
 
 def append_if_not_empty(string, token = "/"):
-    if string != "" and not string.endswith(token):
-        return string + token
-    return string
+    return string + token if string != "" and not string.endswith(token) else string
