@@ -16,6 +16,8 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
+from numpy import random as rng
+
 min_g = 0.
 max_g = 3.
 
@@ -259,8 +261,8 @@ def aggregate_submit():
     return 'conSub_' + right_now() + '.txt'
 
 def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
-    if not hasattr(submit_job, "firstprint"):
-        submit_job.firstprint = True
+    if not hasattr(submit_job, "firstjob"):
+        submit_job.firstjob = True
 
     if runlocal:
         lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
@@ -281,20 +283,21 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             job_mem = "-m " + job_mem if job_mem != "" else "",
             tmp = "--run-in-tmp" if runtmp else "",
             job_dir = "-l " + job_dir
-        ), submit_job.firstprint)
-        submit_job.firstprint = False
+        ), submit_job.firstjob)
 
         if not os.path.isfile(job_agg):
             syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = job_agg), False)
 
             # accounting shenanigans
-            afiq_at_lxplus = "desy" not in input_base and os.getlogin() == 'afiqaize'
+            afiq_at_lxplus = "desy" not in input_base and os.getlogin() == 'afiqaize' and submit_job.firstjob
             if afiq_at_lxplus:
-                syscall("sed -i '/queue/i +AccountingGroup = \"group_u_CMST3.all\"' {agg}".format(agg = job_agg), False) # or group_u_CMS.u_zh.users
+                grp = 'group_u_CMST3.all' if rng.binomial(1, 0.5) else 'group_u_CMS.u_zh.users'
+                syscall("sed -i '/queue/i +AccountingGroup = \"{grp}\"' {agg}".format(grp = grp, agg = job_agg), False)
         else:
             syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
                 name = 'conSub_' + job_name + '.txt',
                 agg = job_agg), False)
+        submit_job.firstjob = False
 
 # problem is, setparameters and freezeparameters may appear only once
 # so --extra-option is not usable to study shifting them up if we set g etc
