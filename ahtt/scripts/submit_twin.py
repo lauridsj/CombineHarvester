@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilities import syscall, submit_job, aggregate_submit, input_base, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
+from utilities import syscall, submit_job, aggregate_submit, flush_jobs, input_base, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -281,7 +281,7 @@ if __name__ == '__main__':
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                               "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
+                               "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
 
             if runfc:
                 if args.fcmode != "" and ggrid == "":
@@ -337,7 +337,7 @@ if __name__ == '__main__':
                                 jarg += " --save-toy"
 
                         submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                                   "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
+                                   "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
@@ -355,9 +355,7 @@ if __name__ == '__main__':
             #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
             job_mem = ""
             submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
-                       "." if rundc else "$(readlink -f " + pstr + args.tag + ")", scriptdir + "/twin_point_ahtt.py",
+                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, runcompile or args.runlocal)
 
-        if os.path.isfile(agg):
-            syscall('condor_submit {agg}'.format(agg = agg), False)
-            syscall('rm {agg}'.format(agg = agg), False)
+        flush_jobs(agg)

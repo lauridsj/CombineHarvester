@@ -19,13 +19,20 @@ TH1.SetDefaultSumw2(True)
 min_g = 0.
 max_g = 3.
 
+cluster = None
+if "desy" in platform.node():
+    cluster = "naf"
+elif "cern" in platform.node():
+    cluster = "lxplus"
+else:
+    raise NotImplementedError("unknown cluster! can't provide a default input storage base!")
+
 def input_storage_base_directory():
-    if "desy" in platform.node():
+    if cluster == "naf":
         return "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/"
-    if "cern" in platform.node():
+    if cluster == "lxplus":
         return "/eos/cms/store/user/afiqaize/"
 
-    raise NotImplementedError("unknown cluster! can't provide a default input storage base!")
 input_base = input_storage_base_directory()
 condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
 condorsub = condordir + "condorSubmit.sh"
@@ -37,6 +44,63 @@ kfactor_file_name = {
     172: input_base + "ahtt_kfactor_sushi/ulkfactor_final_220129.root",
     173: input_base + "ahtt_kfactor_sushi/ulkfactor_final_mt173p5_230329.root"
 }
+
+def make_submission_script_header():
+
+    script = "Job_Proc_ID = $(Process) + 1 \n"
+    script += "executable = {htcdir}condorRun.sh\n".format(htcdir=condordir)
+    script += "notification = error\n"
+    script += 'requirements = (OpSysAndVer == "CentOS7")\n'
+
+    if cluster == "naf":
+        script += "universe = vanilla\n"
+        script += "getenv = true\n"
+        script += 'environment = "LD_LIB_PATH={ldpath} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(ldpath=os.getenv('LD_LIBRARY_PATH'))
+
+    elif cluster == "lxplus":
+        script += 'environment = "cmssw_base={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw=os.getenv('CMSSW_BASE'))
+
+    script += "\n"
+
+    return script
+    
+def make_submission_script_single(name, directory, executable, arguments, cpus=None, runtime=None, memory=None, runtmp=False):
+    
+    script = """
+batch_name = {name}
+output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
+error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
+arguments = {executable} {args}
+"""
+
+    script = script.format(name=name, directory=directory,
+        executable=executable, args=' '.join(arguments.split()))
+    
+    if cpus is not None and cpus != "" and cpus > 1:
+        script += "request_cpus = {cpus}\n".format(cpus=cpus)
+
+    if memory is not None and memory != "":
+        script += "RequestMemory = {memory}\n".format(memory=memory)
+    
+    if runtime is not None and runtime != "":
+        script += "+RequestRuntime = {runtime}\n".format(runtime=runtime)
+
+    if runtmp or cluster == "lxplus":
+        script += "should_transfer_files = YES\n"
+        script += "when_to_transfer_output = ON_EXIT_OR_EVICT\n"
+    else:
+        script += "initialdir = {cwd}\n".format(cwd=os.getcwd())
+
+    if cluster == "lxplus":
+        script += 'transfer_output_files = tmp/\n'
+        script += '+MaxRuntime = {runtime}\n'.format(runtime=runtime)
+
+        # Afiq's Special Treatment
+        if os.getlogin() == 'afiqaize':
+            script += '+AccountingGroup = "group_u_CMST3.all"\n'
+
+    script += "queue\n\n"
+    return script
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -255,12 +319,23 @@ def input_sig(signal, points, injects, channels, years):
 
     return ','.join(signals)
 
+# Array to store all buffered submission scripts
+current_submissions = []
+max_jobs_per_submit = 4000
+
 def aggregate_submit():
     return 'conSub_' + right_now() + '.txt'
 
 def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
+    global current_submissions
     if not hasattr(submit_job, "firstprint"):
         submit_job.firstprint = True
+
+    # figure out symlinks (similar to $(readlink))
+    job_dir = os.path.realpath(job_dir)
+
+    # for some reason this is given with the "-t" already in the python argument. workaround here for compability
+    job_time = job_time.split("-t ")[1] if "-t " in job_time else job_time
 
     if runlocal:
         lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
@@ -269,32 +344,45 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
         syscall('{executable} {job_arg} |& tee -a {log}'.format(executable = executable, job_arg = job_arg, log = lname), True)
         syscall('echo "Job execution ends at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
     else:
-        syscall('{csub} -s {cpar} -w {crun} -n {name} -e {executable} -a "{job_arg}" {job_time} {job_cpu} {tmp} {job_dir} --debug'.format(
-            csub = condorsub,
-            cpar = condorpar,
-            crun = condorrun,
+
+        sub_script = make_submission_script_single(
             name = job_name,
+            directory = job_dir,
             executable = executable,
-            job_arg = job_arg,
-            job_time = job_time,
-            job_cpu = "-p " + str(job_cpu) if job_cpu > 1 else "",
-            job_mem = "-m " + job_mem if job_mem != "" else "",
-            tmp = "--run-in-tmp" if runtmp else "",
-            job_dir = "-l " + job_dir
-        ), submit_job.firstprint)
-        submit_job.firstprint = False
+            arguments = job_arg,
+            cpus = job_cpu,
+            runtime = job_time,
+            memory = job_mem,
+            runtmp = runtmp
+        )
 
-        if not os.path.isfile(job_agg):
-            syscall('cp {name} {agg} && rm {name}'.format(name = 'conSub_' + job_name + '.txt', agg = job_agg), False)
+        if submit_job.firstprint:
+            print("Submission script:")
+            print(sub_script)
+            sys.stdout.flush()
+            submit_job.firstprint = False
 
-            # accounting shenanigans
-            afiq_at_lxplus = "desy" not in input_base and os.getlogin() == 'afiqaize'
-            if afiq_at_lxplus:
-                syscall("sed -i '/queue/i +AccountingGroup = \"group_u_CMST3.all\"' {agg}".format(agg = job_agg), False) # or group_u_CMS.u_zh.users
-        else:
-            syscall("echo >> {agg} && grep -F -x -v -f {agg} {name} >> {agg} && echo 'queue' >> {agg} && rm {name}".format(
-                name = 'conSub_' + job_name + '.txt',
-                agg = job_agg), False)
+        current_submissions.append(sub_script)
+
+        if len(current_submissions) >= max_jobs_per_submit:
+            flush_jobs(job_agg)
+
+def flush_jobs(job_agg):
+    global current_submissions
+    if len(current_submissions) > 0:
+        print("Submitting {njobs} jobs".format(njobs=len(current_submissions)))
+        header = make_submission_script_header()
+        script = header + "\n" + "\n".join(current_submissions)
+        with open(job_agg, "w") as f:
+            f.write(script)
+
+        syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
+        os.remove(job_agg)
+
+        current_submissions = []
+    else:
+        print("Nothing to submit.")
+        
 
 # problem is, setparameters and freezeparameters may appear only once
 # so --extra-option is not usable to study shifting them up if we set g etc
