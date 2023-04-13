@@ -76,7 +76,8 @@ if __name__ == '__main__':
             logs = glob.glob("single_point_" + pnt + args.tag + "_*.o*")
             for ll in logs:
                 if 'validate' in ll and problematic_datacard_log(ll):
-                    print(f"WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log() in utilities.py!!!\n\n\n", flush = True)
+                    print(f"WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log() in utilities.py!!!")
+                    print("\n\n\n", flush = True)
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
         if rundc and os.path.isdir(pnt + args.tag):
