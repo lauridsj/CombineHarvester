@@ -48,7 +48,7 @@ kfactor_file_name = {
 def make_submission_script_header():
 
     script = "Job_Proc_ID = $(Process) + 1 \n"
-    script += "executable = {htcdir}condorRun.sh\n".format(htcdir=condordir)
+    script += "executable = {htcdir}{script}\n".format(htcdir=condordir, script=condorrun)
     script += "notification = error\n"
     script += 'requirements = (OpSysAndVer == "CentOS7")\n'
 
