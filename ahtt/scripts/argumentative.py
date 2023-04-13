@@ -24,8 +24,8 @@ def common_common(parser):
     parser.add_argument("--tag", help = combine_help_messages["--tag"], default = "", required = False, type = prepend_if_not_empty)
     return parser
 
-def common_point(parser):
-    parser.add_argument("--point", help = combine_help_messages["--point"], required = True, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+def common_point(parser, required = True):
+    parser.add_argument("--point", help = combine_help_messages["--point"], default = "", required = required, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
     return parser
 
 def common_fit_pure(parser):

@@ -17,7 +17,7 @@ from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    common_point(parser)
+    common_point(parser, False)
     common_common(parser)
     common_fit_pure(parser)
     common_fit_forwarded(parser)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
             for width in widths:
                 pnt = "_".join([parity, mass, width])
 
-                if args.point == "" or any([kk in pnt for kk in keep_point]):
+                if keep_point == [] or any([kk in pnt for kk in keep_point]):
                     points.append(pnt)
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
