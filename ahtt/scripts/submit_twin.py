@@ -209,9 +209,7 @@ if __name__ == '__main__':
             logs = glob.glob("twin_point_" + pstr + args.tag + "_*.o*")
             for ll in logs:
                 if 'validate' in ll and problematic_datacard_log(ll):
-                    print(f"WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log() in utilities.py!!!")
-                    print("\n\n\n", flush = True)
-
+                    print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log() in utilities.py!!!\n\n\n".format(pstr = pstr), flush = True)
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pstr + args.tag))
 
         if rundc and os.path.isdir(pstr + args.tag):
