@@ -379,8 +379,8 @@ def flush_jobs(job_agg):
         with open(job_agg, "w") as f:
             f.write(script)
 
-        #syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
-        #os.remove(job_agg)
+        syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
+        os.remove(job_agg)
 
         current_submissions = []
     else:
