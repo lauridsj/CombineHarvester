@@ -16,6 +16,8 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
+from numpy import random as rng
+
 min_g = 0.
 max_g = 3.
 
@@ -60,6 +62,11 @@ def make_submission_script_header():
     elif cluster == "lxplus":
         script += 'environment = "cmssw_base={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw=os.getenv('CMSSW_BASE'))
 
+        # Afiq's Special Treatment
+        if os.getlogin() == 'afiqaize':
+            grp = 'group_u_CMST3.all' if rng.binomial(1, 0.5) else 'group_u_CMS.u_zh.users'
+            script += '+AccountingGroup = "{grp}"\n'.format(grp=grp)
+
     script += "\n"
 
     return script
@@ -93,11 +100,7 @@ arguments = {executable} {args}
 
     if cluster == "lxplus":
         script += 'transfer_output_files = tmp/\n'
-        script += '+MaxRuntime = {runtime}\n'.format(runtime=runtime)
-
-        # Afiq's Special Treatment
-        if os.getlogin() == 'afiqaize':
-            script += '+AccountingGroup = "group_u_CMST3.all"\n'
+        script += '+MaxRuntime = {runtime}\n'.format(runtime=runtime)        
 
     script += "queue\n\n"
     return script
@@ -328,8 +331,8 @@ def aggregate_submit():
 
 def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
     global current_submissions
-    if not hasattr(submit_job, "firstprint"):
-        submit_job.firstprint = True
+    if not hasattr(submit_job, "firstjob"):
+        submit_job.firstjob = True
 
     # figure out symlinks (similar to $(readlink))
     job_dir = os.path.realpath(job_dir)
@@ -356,11 +359,11 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             runtmp = runtmp
         )
 
-        if submit_job.firstprint:
+        if submit_job.firstjob:
             print("Submission script:")
             print(sub_script)
             sys.stdout.flush()
-            submit_job.firstprint = False
+            submit_job.firstjob = False
 
         current_submissions.append(sub_script)
 
@@ -376,13 +379,31 @@ def flush_jobs(job_agg):
         with open(job_agg, "w") as f:
             f.write(script)
 
-        syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
-        os.remove(job_agg)
+        #syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
+        #os.remove(job_agg)
 
         current_submissions = []
     else:
         print("Nothing to submit.")
         
+def problematic_datacard_log(logfile):
+    if not hasattr(problematic_datacard_log, "problems"):
+        problematic_datacard_log.problems = [
+            r"'up/down templates vary the yield in the same direction'",
+            r"'up/down templates are identical'",
+            r"'At least one of the up/down systematic uncertainty templates is empty'",
+            r"'Empty process'",
+            r"'Bins of the template empty in background'",
+        ]
+
+    with open(logfile) as lf:
+        for line in lf:
+            for problem in problematic_datacard_log.problems:
+                if problem in line and 'no warnings' not in line:
+                    lf.close()
+                    return True
+        lf.close()
+    return False
 
 # problem is, setparameters and freezeparameters may appear only once
 # so --extra-option is not usable to study shifting them up if we set g etc

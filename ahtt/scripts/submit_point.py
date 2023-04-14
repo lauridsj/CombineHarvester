@@ -10,14 +10,14 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit, flush_jobs, chunks, get_nbin, input_base, input_bkg, input_sig, index_list
+from utilities import syscall, submit_job, aggregate_submit, flush_jobs, problematic_datacard_log, chunks, get_nbin, input_base, input_bkg, input_sig, index_list
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    common_point(parser)
+    common_point(parser, False)
     common_common(parser)
     common_fit_pure(parser)
     common_fit_forwarded(parser)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
             for width in widths:
                 pnt = "_".join([parity, mass, width])
 
-                if args.point == "" or any([kk in pnt for kk in keep_point]):
+                if keep_point == [] or any([kk in pnt for kk in keep_point]):
                     points.append(pnt)
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
@@ -75,6 +75,8 @@ if __name__ == '__main__':
         if os.path.isdir(pnt + args.tag):
             logs = glob.glob("single_point_" + pnt + args.tag + "_*.o*")
             for ll in logs:
+                if 'validate' in ll and problematic_datacard_log(ll):
+                    print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log() in utilities.py!!!\n\n\n".format(pnt = pnt))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
         if rundc and os.path.isdir(pnt + args.tag):
