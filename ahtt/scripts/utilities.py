@@ -48,7 +48,6 @@ kfactor_file_name = {
 }
 
 def make_submission_script_header():
-
     script = "Job_Proc_ID = $(Process) + 1 \n"
     script += "executable = {script}\n".format(script=condorrun)
     script += "notification = error\n"
@@ -71,8 +70,7 @@ def make_submission_script_header():
 
     return script
     
-def make_submission_script_single(name, directory, executable, arguments, cpus=None, runtime=None, memory=None, runtmp=False):
-    
+def make_submission_script_single(name, directory, executable, arguments, cpus = None, runtime = None, memory = None, runtmp = False):
     script = """
 batch_name = {name}
 output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
@@ -80,27 +78,25 @@ error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
 arguments = {executable} {args}
 """
 
-    script = script.format(name=name, directory=directory,
-        executable=executable, args=' '.join(arguments.split()))
-    
+    script = script.format(name = name, directory = directory, executable = executable, args = ' '.join(arguments.split()))
     if cpus is not None and cpus != "" and cpus > 1:
-        script += "request_cpus = {cpus}\n".format(cpus=cpus)
+        script += "request_cpus = {cpus}\n".format(cpus = cpus)
 
     if memory is not None and memory != "":
-        script += "RequestMemory = {memory}\n".format(memory=memory)
-    
+        script += "RequestMemory = {memory}\n".format(memory = memory)
+
     if runtime is not None and runtime != "":
-        script += "+RequestRuntime = {runtime}\n".format(runtime=runtime)
+        script += "+RequestRuntime = {runtime}\n".format(runtime = runtime)
 
     if runtmp or cluster == "lxplus":
         script += "should_transfer_files = YES\n"
         script += "when_to_transfer_output = ON_EXIT_OR_EVICT\n"
     else:
-        script += "initialdir = {cwd}\n".format(cwd=os.getcwd())
+        script += "initialdir = {cwd}\n".format(cwd = os.getcwd())
 
     if cluster == "lxplus":
         script += 'transfer_output_files = tmp/\n'
-        script += '+MaxRuntime = {runtime}\n'.format(runtime=runtime)        
+        script += '+MaxRuntime = {runtime}\n'.format(runtime = runtime)
 
     script += "queue\n\n"
     return script
@@ -378,7 +374,7 @@ def flush_jobs(job_agg):
         with open(job_agg, "w") as f:
             f.write(script)
 
-        syscall("condor_submit {job_agg}".format(job_agg=job_agg), True)
+        syscall("condor_submit {job_agg}".format(job_agg = job_agg), False)
         os.remove(job_agg)
 
         current_submissions = []
