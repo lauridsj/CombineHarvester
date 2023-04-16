@@ -347,7 +347,6 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
         syscall('{executable} {job_arg} |& tee -a {log}'.format(executable = executable, job_arg = job_arg, log = lname), True)
         syscall('echo "Job execution ends at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
     else:
-
         sub_script = make_submission_script_single(
             name = job_name,
             directory = job_dir,

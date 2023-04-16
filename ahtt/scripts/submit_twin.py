@@ -294,6 +294,8 @@ if __name__ == '__main__':
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
                 print "using the following grids:"
                 print ggrid
+                print
+                sys.stdout.flush()
 
                 if args.fcsinglepnt:
                     gvalues = [tuple([float(gg) for gg in args.gvalues])]
