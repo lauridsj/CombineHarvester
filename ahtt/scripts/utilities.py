@@ -510,10 +510,15 @@ def elementwise_add(list_of_lists):
 
     return result
 
-def fit_strategy(strat, robust = False):
+def fit_strategy(strat, robust = False, high_tolerance = False):
     fstr = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+    if high_tolerance:
+        fstr += ":0.5 --cminDefaultMinimizerTolerance 0.5 "
     if robust:
-        fstr += " --robustFit 1 --setRobustFitStrategy {ss}".format(ss = strat)
+        fstr += " --robustFit 1 --setRobustFitStrategy {ss} {tt}".format(
+            ss = strat,
+            tt = "--setRobustFitTolerance 0.5 --setCrossingTolerance 5e-4" if high_tolerance else ""
+        )
     return fstr
 
 def recursive_glob(base_directory, pattern):

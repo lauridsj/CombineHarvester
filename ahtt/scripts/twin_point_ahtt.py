@@ -272,7 +272,7 @@ if __name__ == '__main__':
             for fcexp in args.fcexp:
                 identifier = "_" + fcexp
 
-                for istrat, irobust in [(istrat, irobust) for istrat in ["0", "1", "2"] for irobust in [False, True]]:
+                for istrat, irobust, ihigh in [(istrat, irobust, ihigh) for istrat in ["0", "1", "2"] for irobust in [False, True] for ihigh in [False, True]]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "--setParameters '{exp}{msk}' {stg} {asm} {toy} {wsp}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
