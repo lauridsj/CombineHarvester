@@ -281,7 +281,7 @@ if __name__ == '__main__':
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
                                 msk = "," + ",".join(masks) if len(masks) > 0 else "",
-                                stg = fit_strategy(istrat, irobust),
+                                stg = fit_strategy(istrat, irobust, ihigh),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
                                 wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
