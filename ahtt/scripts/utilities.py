@@ -368,7 +368,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
 def flush_jobs(job_agg):
     global current_submissions
     if len(current_submissions) > 0:
-        print("Submitting {njobs} jobs".format(njobs=len(current_submissions)))
+        print("Submitting {njobs} jobs".format(njobs = len(current_submissions)))
         header = make_submission_script_header()
         script = header + "\n" + "\n".join(current_submissions)
         with open(job_agg, "w") as f:
