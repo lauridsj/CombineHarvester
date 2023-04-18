@@ -325,7 +325,7 @@ if __name__ == '__main__':
                                 continue
 
                         firstjob = idx == idxs[0]
-                        fcrundat = args.fcmode != "add" and args.fcrundat and firstjob
+                        fcrundat = args.fcrundat and firstjob
 
                         jarg = job_arg
                         jarg += " {gvl} {toy} {dat} {idx}".format(
@@ -340,7 +340,7 @@ if __name__ == '__main__':
                             if args.savetoy:
                                 jarg += " --save-toy"
 
-                        if "--fc-skip-data" not in jarg or "--n-toy 0" not in jarg:
+                        if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
         else:
