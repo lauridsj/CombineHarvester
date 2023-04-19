@@ -45,7 +45,7 @@ condor_check . | tee /dev/tty | xargs rm
 #5a repeat step 4
 
 #6 merge the toy files
-./../scripts/submit_twin.py --mode merge --point "${pairs}" --tag "${tag}"
+./../scripts/submit_twin.py --mode 'clean,merge' --point "${pairs}" --tag "${tag}"
 
 #7 compile the available statistics - the non-shared toys are deleted, but all the relevant numbers we have gotten already
 ./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root --local --force #--unblind
@@ -53,11 +53,11 @@ condor_check . | tee /dev/tty | xargs rm
 #8 only if extra toys are needed
 #8a if you don't use --delete-root in #6, make sure the --run-idxs are different!
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add #--unblind
-#8a repeat step 4
+#8a repeat step 4 and go back to 6
 #8b to add a variable number of toys per point, such that the sum for each point is about the same
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim #--unblind
 
 #9 if enough toys are made for each point, refine the grid
 #9a always do #6 and #7 every time after #8 and #9
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode refine #--unblind
-#9a repeat step 4
+#9a repeat step 4 and go back to 6
