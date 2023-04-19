@@ -320,7 +320,7 @@ if __name__ == '__main__':
                     ndiff = int(math.ceil(float(ndiff) / args.ntoy))
 
                     for ii, idx in enumerate(idxs):
-                        if args.fcmode == "brim" and ii + 1 >= ndiff:
+                        if args.fcmode == "brim" and (ndiff == 0 or ii + 1 >= ndiff):
                             continue
 
                         jname = job_name + scan_name

@@ -54,6 +54,8 @@ condor_check . | tee /dev/tty | xargs rm
 #8a if you don't use --delete-root in #6, make sure the --run-idxs are different!
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add #--unblind
 #8a repeat step 4
+#8b to add a variable number of toys per point, such that the sum for each point is about the same
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim #--unblind
 
 #9 if enough toys are made for each point, refine the grid
 #9a always do #6 and #7 every time after #8 and #9
