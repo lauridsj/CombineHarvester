@@ -47,12 +47,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 print "currently expected: ", pair
                 return g_grid
 
-            if gmode == "add":
+            if gmode == "add" or gmode == "brim":
                 for gv in contour["g-grid"].keys():
                     if contour["g-grid"][gv] is not None:
+                        ntoy = (contour["g-grid"][gv]["total"],) if gmode == "brim" else (0,)
                         gt = tuplize(gv)
                         if gt not in g_grid:
-                            g_grid.append(gt)
+                            g_grid.append(gt + ntoy)
 
             if gmode == "refine":
                 mintoy = sys.maxsize
@@ -97,7 +98,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
                                 for half in halfsies:
                                     if half not in g_grid:
-                                        g_grid.append(half)
+                                        g_grid.append(half + (0,))
         return g_grid
 
     # default LO case
@@ -312,10 +313,16 @@ if __name__ == '__main__':
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
 
-                for ig1, ig2 in gvalues:
+                sumtoy = args.ntoy * (len(idxs) - 1)
+                for ig1, ig2, ntotal in gvalues:
                     scan_name = "_g1_" + str(ig1) + "_g2_" + str(ig2)
+                    ndiff = max(0, sumtoy - ntotal) if args.fcmode == "brim" else 0
+                    ndiff = int(math.ceil(float(ndiff) / args.ntoy))
 
                     for ii, idx in enumerate(idxs):
+                        if args.fcmode == "brim" and ii + 1 >= ndiff:
+                            continue
+
                         jname = job_name + scan_name
                         jname += '_' + str(idx) if idx != -1 else ''
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
