@@ -44,6 +44,7 @@ def read_previous_grid(points, prev_best_fit, gname):
         print "\ninconsistent previous grid, ignoring the previous grid..."
         print "previous: ", points, prev_best_fit
         print "current: ", result["points"], result["best_fit_g1_g2_dnll"]
+        sys.stdout.flush()
 
     return OrderedDict()
 
@@ -83,7 +84,7 @@ def sum_up(g1, g2):
 
     gs = OrderedDict()
     if g1["dnll"] != g2["dnll"]:
-        print '\n WARNING :: incompatible expected/data dnll, when they should be!! Using the first dnll: ', g1["dnll"], ', over the second: ', g2["dnll"]
+        print '\nWARNING :: incompatible expected/data dnll, when they should be!! Using the first dnll: ', g1["dnll"], ', over the second: ', g2["dnll"]
         sys.stdout.flush()
 
     gs["total"] = g1["total"] + g2["total"]
@@ -387,6 +388,7 @@ if __name__ == '__main__':
                     print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
                     print "current result ", pnt, ": ", get_fit(pnt)
                     print "first result ", gpoints[0], ": ", best_fit
+                    sys.stdout.flush()
 
                 bf = get_fit(pnt, False)
                 if bf is None:
