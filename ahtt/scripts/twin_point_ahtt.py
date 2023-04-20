@@ -83,10 +83,12 @@ def sum_up(g1, g2):
 
     gs = OrderedDict()
     if g1["dnll"] != g2["dnll"]:
-        print '\n WARNING :: incompatible expected/data dnll, when they should be!!'
+        print '\n WARNING :: incompatible expected/data dnll, when they should be!! Using the first dnll: ', g1["dnll"], ', over the second: ', g2["dnll"]
+        sys.stdout.flush()
 
     gs["total"] = g1["total"] + g2["total"]
     gs["pass"] = g1["pass"] + g2["pass"]
+    gs["dnll"] = g1["dnll"]
 
     return gs
 
@@ -369,7 +371,7 @@ if __name__ == '__main__':
             gpoints.sort()
 
             ggrid = glob.glob("{dcd}{pnt}{tag}_fc-scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
-            ggrid.sort()
+            ggrid.sort(key = os.path.getmtime)
             idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
 
             best_fit = get_fit(gpoints[0])
