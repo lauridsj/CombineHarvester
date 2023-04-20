@@ -52,7 +52,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     if contour["g-grid"][gv] is not None:
                         ntoy = (contour["g-grid"][gv]["total"],) if gmode == "brim" else (0,)
                         gt = tuplize(gv)
-                        if gt not in g_grid:
+                        if not any([gt == (ggt[0], ggt[1]) for ggt in g_grid]):
                             g_grid.append(gt + ntoy)
 
             if gmode == "refine":
@@ -97,7 +97,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                 halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
 
                                 for half in halfsies:
-                                    if half not in g_grid:
+                                    if not any([half == (ggt[0], ggt[1]) for ggt in g_grid]):
                                         g_grid.append(half + (0,))
         return g_grid
 
@@ -105,7 +105,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
     gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
-            g_grid.append( (ig1,ig2) )
+            g_grid.append( (ig1, ig2, 0) )
 
     return g_grid
 
