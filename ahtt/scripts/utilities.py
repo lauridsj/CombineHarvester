@@ -70,15 +70,17 @@ def make_submission_script_header():
 
     return script
     
-def make_submission_script_single(name, directory, executable, arguments, cpus = None, runtime = None, memory = None, runtmp = False):
+def make_submission_script_single(name, directory, executable, arguments, cpus = None, runtime = None, memory = None, runtmp = False, writelog = True):
     script = """
 batch_name = {name}
-output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
-error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)
 arguments = {executable} {args}
 """
 
     script = script.format(name = name, directory = directory, executable = executable, args = ' '.join(arguments.split()))
+    if writelog:
+        script += "output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
+        script += "error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
+
     if cpus is not None and cpus != "" and cpus > 1:
         script += "request_cpus = {cpus}\n".format(cpus = cpus)
 
@@ -325,7 +327,7 @@ max_jobs_per_submit = 4000
 def aggregate_submit():
     return 'conSub_' + right_now() + '.txt'
 
-def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False):
+def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False, writelog = True):
     global current_submissions
     if not hasattr(submit_job, "firstjob"):
         submit_job.firstjob = True
@@ -351,7 +353,8 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
             cpus = job_cpu,
             runtime = job_time,
             memory = job_mem,
-            runtmp = runtmp
+            runtmp = runtmp,
+            writelog = writelog
         )
 
         if submit_job.firstjob:

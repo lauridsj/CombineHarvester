@@ -323,16 +323,17 @@ if __name__ == '__main__':
                         if args.fcmode == "brim" and (ndiff == 0 or ii - 1 >= ndiff):
                             continue
 
-                        jname = job_name + scan_name
-                        jname += '_' + str(idx) if idx != -1 else ''
+                        firstjob = ii == 0
+                        writelog = ii < 2 # write logs only for best fit and first toy job
+                        sdx = '_' + str(idx) if idx != -1 else ''
+                        jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+                        roots = glob.glob(pstr + args.tag + "/" + pstr + args.tag + "fc-scan_pnt" + scan_name + "_toys" + sdx + ".root")
+                        fcrundat = args.fcrundat and firstjob
 
                         if not (args.runlocal and args.forcelocal):
-                            if len(logs) > 0:
+                            if len(logs) > 0 or (len(roots) > 0 and not firstjob):
                                 continue
-
-                        firstjob = idx == idxs[0]
-                        fcrundat = args.fcrundat and firstjob
 
                         jarg = job_arg
                         jarg += " {gvl} {toy} {dat} {idx}".format(
@@ -349,25 +350,24 @@ if __name__ == '__main__':
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
+                                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
         else:
+            if runclean:
+                for job in ["contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
+                    syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), True, True)
+
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
             if not (args.runlocal and args.forcelocal):
                 if len(logs) > 0:
                     continue
 
-            if runclean:
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_contour_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_fc-scan_g1_*_g2_*.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_merge.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_hadd.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-                syscall("find {dcd} -type f -name 'twin_point_{dcd}_*compile.o*.*' | xargs rm".format(dcd = pstr + args.otag), True, True)
-
             #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
             job_mem = ""
-            submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
-                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-                       True, runcompile or args.runlocal)
+
+            if len([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]) > 0:
+                submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
+                           "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
+                           True, runcompile or args.runlocal)
 
         flush_jobs(agg)
