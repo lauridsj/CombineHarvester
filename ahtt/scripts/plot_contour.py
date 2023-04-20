@@ -151,20 +151,21 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--point",
                         help = "desired pairs of signal points to run on, comma (between points) and semicolon (between pairs) separated\n"
-                        "another syntax is: m1,m2,...,mN;w1,w2,...,wN;m1,m2,...,mN;w1,w2,...,wN, where:\n"
+                        "another syntax is: m1,m2,...,mN ; w1,w2,...,wN ; m1,m2,...,mN ; w1,w2,...,wN where:\n"
                         "the first mass and width strings refer to the A grid, and the second to the H grid.\n"
                         "both mass and width strings must include their m and w prefix, and for width, their p0 suffix.\n"
-                        "e.g. m400,m450;w5p0;m750;w2p5,w10p0 expands to A_m400_w5p0,H_m750_w2p5;A_m400_w5p0,H_m750_w10p0;A_m450_w5p0,H_m750_w2p5;A_m450_w5p0,H_m750_w10p0",
+                        "e.g. m400,m450 ;w5p0 ; m750 ; w2p5,w10p0 expands to \n"
+                        "A_m400_w5p0,H_m750_w2p5 ; A_m400_w5p0,H_m750_w10p0 ; A_m450_w5p0,H_m750_w2p5 ; A_m450_w5p0,H_m750_w10p0",
                         default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--contour", help = "the json files containing the contour information, semicolon separated.\n"
                         "two separate syntaxes are possible:\n"
-                        "'tag': t1/s1:o1:i1,s2:o2:i2;t2/s3:o3:i3... expands to (let p being the considered point, and <fc> = fc-scan):"
-                        "<p>_<t1>/<p>_<o1>_<fc>_<s1>_<i1>.json;<p>_<t1>/<p>_<o2>_<fc>_<s2>_<i2>.json;<p>_<t2>/<p>_<o3>_<fc>_<s3>_<i3>.json, "
+                        "'tag': t1/s1:o1:i1,s2:o2:i2 ; t2/s3:o3:i3 ; ... expands to (let p being the considered point, and <fc> = fc-scan):"
+                        "'<p>_<t1>/<p>_<o1>_<fc>_<s1>_<i1>.json ; <p>_<t1>/<p>_<o2>_<fc>_<s2>_<i2>.json ; <p>_<t2>/<p>_<o3>_<fc>_<s3>_<i3>.json', "
                         "where the code will search for output tag o1 and index i1 corresponding to scenario s1 and so on."
                         "if :o1 etc is omitted, they default to o1 = t1, ..., oN = tN.\n"
                         "if :i1 etc is omitted, the latest index will be picked.\n"
                         "used if --point is non-empty, and looped over all pairs. \n"
-                        "'direct': <json 1>;<json 2>;... used only when --point is empty",
+                        "'direct': <json 1> ; <json 2> ; ... used only when --point is empty",
                         default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     parser.add_argument("--plot-tag", help = "extra tag to append to plot names", default = "", dest = "ptag", required = False, type = prepend_if_not_empty)
