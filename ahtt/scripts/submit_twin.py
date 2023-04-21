@@ -328,11 +328,11 @@ if __name__ == '__main__':
                         sdx = '_' + str(idx) if idx != -1 else ''
                         jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
-                        roots = glob.glob(pstr + args.tag + "/" + pstr + args.tag + "fc-scan_pnt" + scan_name + "_toys" + sdx + ".root")
+                        roots = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc-scan_pnt" + scan_name + "_toys" + sdx + ".root")
                         fcrundat = args.fcrundat and firstjob
 
                         if not (args.runlocal and args.forcelocal):
-                            if len(logs) > 0 or (len(roots) > 0 and not firstjob):
+                            if len(logs) > 0 or len(roots) > 0:
                                 continue
 
                         jarg = job_arg
