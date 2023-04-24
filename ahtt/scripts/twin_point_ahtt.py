@@ -345,12 +345,10 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        idxs = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
 
-        if len(idxs) > 0:
+        if len(toys) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
-
-            toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
             toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
 
             for toy in toys:
