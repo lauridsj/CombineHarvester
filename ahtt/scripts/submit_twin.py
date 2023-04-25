@@ -299,7 +299,7 @@ if __name__ == '__main__':
                 sys.stdout.flush()
 
                 if args.fcsinglepnt:
-                    gvalues = [tuple([float(gg) for gg in args.gvalues])]
+                    gvalues = [tuple([float(gg) for gg in args.gvalues]) + (0,)]
 
                     toylocs = []
                     if args.toyloc != "" and not args.savetoy:
