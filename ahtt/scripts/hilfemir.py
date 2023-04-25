@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# similar to utilities.py, but dedicated solely to a dump of help messages of various scripts
+# similar to utils*.py, but dedicated solely to a dump of help messages of various scripts
 # life has enough tedium to be writing the same thing more than twice
 
 # for options that occur on scripts that run combine directly

@@ -10,7 +10,12 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilities import syscall, submit_job, aggregate_submit, flush_jobs, problematic_datacard_log, chunks, get_nbin, input_base, input_bkg, input_sig, index_list
+from utilspy import syscall, chunks, index_list
+from utilslab import input_base, input_bkg, input_sig
+from utilsroot import get_nbin
+from utilscombine import problematic_datacard_log
+from utilshtc import submit_job, aggregate_submit, flush_jobs
+
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -76,7 +81,7 @@ if __name__ == '__main__':
             logs = glob.glob("single_point_" + pnt + args.tag + "_*.o*")
             for ll in logs:
                 if 'validate' in ll and problematic_datacard_log(ll):
-                    print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log() in utilities.py!!!\n\n\n".format(pnt = pnt))
+                    print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pnt = pnt))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
         if rundc and os.path.isdir(pnt + args.tag):

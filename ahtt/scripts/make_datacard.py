@@ -20,9 +20,9 @@ TH1.SetDefaultSumw2(True)
 from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilities import kfactor_file_name, syscall, get_point, flat_reldev_wrt_nominal, scale, zero_out
-from utilities import project, add_scaled_nuisance, apply_relative_nuisance, index_list, chop_up
-from utilities import add_original_nominal, read_original_nominal
+from utilspy import syscall, get_point, index_list
+from utilslab import kfactor_file_name
+from utilsroot import flat_reldev_wrt_nominal, scale, zero_out, project, add_scaled_nuisance, apply_relative_nuisance, chop_up, add_original_nominal, read_original_nominal
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, make_datacard_pure

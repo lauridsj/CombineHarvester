@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# similar to utilities.py, but dedicated to functions that manipulate arguments given to argparse
+# similar to utils*.py, but dedicated to functions that manipulate arguments given to argparse
 # the name is just a quip on how different lab 'salts' the arguments differently
 
 def remove_quotes(string):

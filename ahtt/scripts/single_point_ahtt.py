@@ -11,7 +11,9 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilities import syscall, get_point, chunks, min_g, max_g, make_best_fit, starting_nuisance, elementwise_add, fit_strategy, make_datacard_with_args, set_parameter
+from utilspy import syscall, get_point, chunks, elementwise_add
+from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
+
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D
 from hilfemir import combine_help_messages

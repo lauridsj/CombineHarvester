@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# similar to utilities.py, but dedicated to supplying stock argparse objects
+# similar to utils*.py, but dedicated to supplying stock argparse objects
 # as scripts tend to have very similar implementation of these things
 # we'll have different arg types - pure, forwarded and final
 # pure args are just that - that needs no further conversion/cleanup
@@ -11,7 +11,7 @@
 # note: at this stage this is a mere convention, and is not enforced at code level
 # the main goal is to minimize duplication, rather than getting the categorization watertight
 
-from utilities import update_mask
+from utilscombine import update_mask
 from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from hilfemir import combine_help_messages, submit_help_messages
 

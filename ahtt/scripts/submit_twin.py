@@ -14,7 +14,11 @@ import json
 import math
 from datetime import datetime
 
-from utilities import syscall, submit_job, aggregate_submit, flush_jobs, problematic_datacard_log, input_base, input_bkg, input_sig, min_g, max_g, tuplize, recursive_glob, index_list
+from utilspy import syscall, tuplize, recursive_glob, index_list
+from utilslab import input_base, input_bkg, input_sig
+from utilscombine import problematic_datacard_log, min_g, max_g
+from utilshtc import submit_job, aggregate_submit, flush_jobs
+
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit
 from hilfemir import combine_help_messages, submit_help_messages
@@ -210,7 +214,7 @@ if __name__ == '__main__':
             logs = glob.glob("twin_point_" + pstr + args.tag + "_*.o*")
             for ll in logs:
                 if 'validate' in ll and problematic_datacard_log(ll):
-                    print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log() in utilities.py!!!\n\n\n".format(pstr = pstr))
+                    print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pstr = pstr))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pstr + args.tag))
 
         if rundc and os.path.isdir(pstr + args.tag):
