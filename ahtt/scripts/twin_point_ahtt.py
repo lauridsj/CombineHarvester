@@ -333,6 +333,7 @@ if __name__ == '__main__':
 
             if args.savetoy:
                 syscall("cp {dcd}{pnt}{tag}_fc-scan_{snm}.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
+                    dcd = dcdir,
                     opd = args.toyloc,
                     snm = scan_name + identifier,
                     pnt = "__".join(points),
