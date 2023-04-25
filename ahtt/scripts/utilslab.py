@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # utilities containing functions used throughout - lab-specific file ie those pertaining to lxplus/desy differences
 
+import os
 import platform
+from utilspy import syscall
 
 cluster = None
 if "desy" in platform.node():
@@ -55,3 +57,8 @@ def input_sig(signal, points, injects, channels, years):
                 signals.append(input_base + "templates_ULFR2/breaktype3_mtAH_230314/lj/templates_lj_sig_" + im + ".root")
 
     return ','.join(signals)
+
+def remove_mjf():
+    # in lxplus the file return output also gives an unneeded dir
+    if "desy" not in input_base:
+        syscall("rm -r mjf-{user}".format(user = os.environ.get('USER')), False, True)

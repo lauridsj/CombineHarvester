@@ -17,7 +17,7 @@ from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, aggregate_submit, flush_jobs
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
-from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit
+from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
@@ -36,7 +36,8 @@ if __name__ == '__main__':
     parser.add_argument("--skip-expth", help = submit_help_messages["--skip-expth"], dest = "runexpth", action = "store_false", required = False)
     parser.add_argument("--run-mc-stats", help = submit_help_messages["--run-mc-stats"], dest = "runbb", action = "store_true", required = False)
 
-    args = parser.parse_args()
+    args = parse_args(parser)
+    remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
     parities = ("A", "H")
@@ -57,15 +58,8 @@ if __name__ == '__main__':
     runlimit = "limit" in args.mode
     runpull = "pull" in args.mode or "impact" in args.mode
 
-    if args.otag == "":
-        args.otag = args.tag
-
     # generate an aggregate submission file name
     agg = aggregate_submit()
-
-    # in lxplus the file return output also gives an unneeded dir
-    if "desy" not in input_base:
-        syscall("rm -r mjf-{user}".format(user = os.environ.get('USER')), False, True)
 
     for pnt in points:
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):

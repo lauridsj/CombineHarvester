@@ -105,3 +105,14 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "repnom", default = "", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = "", required = False)
     return parser
+
+def parse_args(parser):
+    '''
+    some stuff with the args is always done
+    this introduces undesirable redundancy in the code downstream
+    do those things here instead
+    '''
+    args = parser.parse_args()
+    if args.otag == "":
+        args.otag = args.tag
+    return args

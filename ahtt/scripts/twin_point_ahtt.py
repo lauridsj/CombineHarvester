@@ -17,7 +17,7 @@ from utilspy import syscall, get_point, right_now, elementwise_add, stringify
 from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
-from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D
+from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
 def get_fit(dname, qexp_eq_m1 = True):
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--run-idx", help = combine_help_messages["--run-idx"], default = -1, dest = "runidx", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
-    args = parser.parse_args()
+    args = parse_args(parser)
     print "twin_point_ahtt :: called with the following arguments"
     print sys.argv[1:]
     print "\n"
@@ -165,9 +165,6 @@ if __name__ == '__main__':
     if len(args.fcexp) > 0 and not all([exp in allexp for exp in args.fcexp]):
         print "supported expected scenario:", allexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
-
-    if args.otag == "":
-        args.otag = args.tag
 
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"

@@ -15,7 +15,7 @@ from utilspy import syscall, get_point, chunks, elementwise_add
 from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
-from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D
+from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D, parse_args
 from hilfemir import combine_help_messages
 
 def get_limit(lfile):
@@ -211,8 +211,8 @@ if __name__ == '__main__':
     parser.add_argument("--raster-i", help = combine_help_messages["--raster-i"], dest = "ichunk", default = 0, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--impact-nuisances", help = combine_help_messages["--impact-nuisances"], dest = "impactnui", default = "", required = False,
                         type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
+    args = parse_args(parser)
 
-    args = parser.parse_args()
     print "single_point_ahtt :: called with the following arguments"
     print sys.argv[1:]
     print "\n"
@@ -246,9 +246,6 @@ if __name__ == '__main__':
     runpull = "pull" in modes or "impact" in modes
     runprepost = "prepost" in modes or "corrmat" in modes
     runnll = "nll" in modes or "likelihood" in modes
-
-    if args.otag == "":
-        args.otag = args.tag
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
