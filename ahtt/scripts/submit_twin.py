@@ -15,7 +15,7 @@ import math
 from datetime import datetime
 
 from utilspy import syscall, tuplize, recursive_glob, index_list
-from utilslab import input_base, input_bkg, input_sig
+from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
 

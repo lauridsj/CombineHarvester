@@ -11,7 +11,7 @@ import copy
 from collections import OrderedDict
 
 from utilspy import syscall, chunks, index_list
-from utilslab import input_base, input_bkg, input_sig
+from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, aggregate_submit, flush_jobs
