@@ -260,7 +260,7 @@ if __name__ == '__main__':
 
         if rungen or runfc:
             if args.ntoy > 0:
-                idxs = [-1] + index_list(args.runidxs)
+                idxs = [-1] + index_list(args.runidxs) if runfc else index_list(args.runidxs)
             else:
                 idxs = [-1]
 
