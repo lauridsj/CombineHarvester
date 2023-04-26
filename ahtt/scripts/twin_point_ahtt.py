@@ -13,7 +13,7 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilspy import syscall, get_point, right_now, elementwise_add, stringify
+from utilspy import syscall, get_point, right_now, elementwise_add, tuplize, stringify
 from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
