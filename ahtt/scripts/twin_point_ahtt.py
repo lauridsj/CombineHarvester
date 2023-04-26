@@ -71,7 +71,7 @@ def points_to_compile(points, expfits, gname):
         if result["points"] == points:
             for gv in result["g-grid"]:
                 gpoints.append(tuplize(gv))
-    return set(gpoints)
+    return sorted(list(set(gpoints)))
 
 def get_toys(tname, best_fit, whatever_else = None):
     if not os.path.isfile(tname):
@@ -422,7 +422,7 @@ if __name__ == '__main__':
                     tag = args.otag,
                     g1 = pnt[0],
                     g2 = pnt[1],
-                    exp = "_" + fcexp
+                    exp = fcexp
                 )
                 current_fit = get_fit(ename)
                 expected_fit = get_fit(ename, False)
@@ -440,7 +440,7 @@ if __name__ == '__main__':
                     print "first result ", best_fit
                     sys.stdout.flush()
 
-                tname = ename.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root")
+                tname = ename.replace("{exp}.root".format(exp = fcexp), "toys.root")
                 gg = get_toys(tname, expected_fit)
                 if args.rmroot:
                     syscall("rm " + ename, False, True)
@@ -453,11 +453,11 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
             grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-            with open("{dcd}{pnt}{tag}_fc-scan{exp}_{idx}.json".format(
+            with open("{dcd}{pnt}{tag}_fc-scan_{exp}_{idx}.json".format(
                     dcd = dcdir,
                     pnt = "__".join(points),
                     tag = args.otag,
-                    exp = "_" + fcexp,
+                    exp = fcexp,
                     idx = str(idx)
             ), "w") as jj:
                 json.dump(grid, jj, indent = 1)
