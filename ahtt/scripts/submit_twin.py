@@ -301,7 +301,7 @@ if __name__ == '__main__':
 
                     toylocs = []
                     if args.toyloc != "" and not args.savetoy:
-                        toylocs = recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
+                        toylocs = [""] + recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
                         shuffle(toylocs)
                         if len(toylocs) < len(idxs):
                             raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
