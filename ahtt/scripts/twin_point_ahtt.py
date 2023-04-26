@@ -21,7 +21,7 @@ from argumentative import common_point, common_common, common_fit_pure, common_f
 from hilfemir import combine_help_messages
 
 def get_fit(dname, qexp_eq_m1 = True):
-    if not os.path.isfile(ename):
+    if not os.path.isfile(dname):
         return None
 
     dfile = TFile.Open(dname)
