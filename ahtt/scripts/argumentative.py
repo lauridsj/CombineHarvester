@@ -80,7 +80,7 @@ def common_2D(parser):
 
 def common_submit(parser):
     parser.add_argument("--job-time", help = submit_help_messages["--job-time"], default = "", dest = "jobtime", required = False,
-                        type = lambda s: "-t " + s if s != "" and int(s) > 10800 else "-t 10800")
+                        type = lambda s: s if s != "" and int(s) > 10800 else "10800")
     parser.add_argument("--local", help = submit_help_messages["--local"], dest = "runlocal", action = "store_true", required = False)
     parser.add_argument("--force", help = submit_help_messages["--force"], dest = "forcelocal", action = "store_true", required = False)
 

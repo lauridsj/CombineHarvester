@@ -53,7 +53,7 @@ arguments = {executable} {args}
         script += "RequestMemory = {memory}\n".format(memory = memory)
 
     if runtime is not None and runtime != "":
-        script += "+RequestRuntime = {runtime}\n".format(runtime = runtime)
+        script += "+{req}Runtime = {runtime}\n".format(req = "Max" if cluster == "lxplus" else "Request", runtime = runtime)
 
     if runtmp or cluster == "lxplus":
         script += "should_transfer_files = YES\n"
@@ -63,7 +63,6 @@ arguments = {executable} {args}
 
     if cluster == "lxplus":
         script += 'transfer_output_files = tmp/\n'
-        script += '+MaxRuntime = {runtime}\n'.format(runtime = runtime)
 
     script += "queue\n\n"
     return script
@@ -82,9 +81,6 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
 
     # figure out symlinks (similar to $(readlink))
     job_dir = os.path.realpath(job_dir)
-
-    # for some reason this is given with the "-t" already in the python argument. workaround here for compability
-    job_time = job_time.split("-t ")[1] if "-t " in job_time else job_time
 
     if runlocal:
         lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
