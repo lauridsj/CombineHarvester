@@ -315,7 +315,7 @@ if __name__ == '__main__':
                 for ig1, ig2, ntotal in gvalues:
                     scan_name = "_g1_" + str(ig1) + "_g2_" + str(ig2)
                     ndiff = max(0, sumtoy - ntotal) if args.fcmode == "brim" else 0
-                    ndiff = int(math.ceil(float(ndiff) / args.ntoy))
+                    ndiff = int(math.ceil(float(ndiff) / args.ntoy)) if args.ntoy > 0 else 0
 
                     for ii, idx in enumerate(idxs):
                         if args.fcmode == "brim" and (ndiff == 0 or ii - 1 >= ndiff):
