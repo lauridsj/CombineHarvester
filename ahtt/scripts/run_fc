@@ -51,11 +51,11 @@ condor_check . | tee /dev/tty | xargs rm
 ./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root --local --force #--unblind
 
 #8 only if extra toys are needed
-#8a if you don't use --delete-root in #6, make sure the --run-idxs are different!
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add #--unblind
-#8a repeat step 4 and go back to 6
-#8b to add a variable number of toys per point, such that the sum for each point is about the same
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim #--unblind
+#8a use this to add a fixed amount of toys = nidxs * ntoy
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add --fc-skip-data #--unblind
+#8b use this to add a variable number of toys per point, such that the sum for each point is about the same
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim --fc-skip-data #--unblind
+#8c repeat step #4 and go back to #6/#7, whichever of --fc-mode add/brim is used
 
 #9 if enough toys are made for each point, refine the grid
 #9a always do #6 and #7 every time after #8 and #9

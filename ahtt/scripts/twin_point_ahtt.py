@@ -21,6 +21,9 @@ from argumentative import common_point, common_common, common_fit_pure, common_f
 from hilfemir import combine_help_messages
 
 def get_fit(dname, qexp_eq_m1 = True):
+    if not os.path.isfile(ename):
+        return None
+
     dfile = TFile.Open(dname)
     dtree = dfile.Get("limit")
 
@@ -35,6 +38,11 @@ def get_fit(dname, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
+def read_previous_best_fit(gname):
+    with open(gname) as ff:
+        result = json.load(ff, object_pairs_hook = OrderedDict)
+    return tuple(result["best_fit_g1_g2_dnll"])
+
 def read_previous_grid(points, prev_best_fit, gname):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
@@ -48,6 +56,22 @@ def read_previous_grid(points, prev_best_fit, gname):
         sys.stdout.flush()
 
     return OrderedDict()
+
+def points_to_compile(points, expfits, gname):
+    gpoints = []
+    for ef in expfits:
+        gs = ef.split("_")
+        g1 = float(gs[ gs.index("g1") + 1 ])
+        g2 = float(gs[ gs.index("g2") + 1 ])
+        gpoints.append((g1, g2))
+
+    if gname is not None:
+        with open(gname) as ff:
+            result = json.load(ff, object_pairs_hook = OrderedDict)
+        if result["points"] == points:
+            for gv in result["g-grid"]:
+                gpoints.append(tuplize(gv))
+    return set(gpoints)
 
 def get_toys(tname, best_fit, whatever_else = None):
     if not os.path.isfile(tname):
@@ -363,41 +387,65 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            gpoints = glob.glob("{dcd}{pnt}{tag}_fc-scan_*{exp}.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
-            if len(gpoints) == 0:
-                raise RuntimeError("result compilation can't proceed without the best fit files being available!!")
-            gpoints.sort()
+            expfits = glob.glob("{dcd}{pnt}{tag}_fc-scan_*{exp}.root".format(
+                dcd = dcdir,
+                pnt = "__".join(points),
+                tag = args.otag,
+                exp = "_" + fcexp
+            ))
+            expfits.sort()
 
-            ggrid = glob.glob("{dcd}{pnt}{tag}_fc-scan{exp}_*.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp))
-            ggrid.sort(key = os.path.getmtime)
-            idx = 0 if len(ggrid) == 0 else int(ggrid[-1].split("_")[-1].split(".")[0]) + 1
+            previous_grids = glob.glob("{dcd}{pnt}{tag}_fc-scan{exp}_*.json".format(
+                dcd = dcdir,
+                pnt = "__".join(points),
+                tag = args.otag,
+                exp = "_" + fcexp
+            ))
+            previous_grids.sort(key = os.path.getmtime)
 
-            best_fit = get_fit(gpoints[0])
+            if len(expfits) == 0 and (args.ignoreprev or len(previous_grids) == 0):
+                raise RuntimeError("result compilation can't proceed without the best fit files or previous grids being available!!")
+            gpoints = points_to_compile(points, expfits, None if args.ignoreprev else previous_grids[-1])
+            idx = 0 if len(previous_grids) == 0 else int(previous_grids[-1].split("_")[-1].split(".")[0]) + 1
+            best_fit = get_fit(expfits[0]) if len(expfits) > 0 else read_previous_best_fit(previous_grids[-1])
 
             grid = OrderedDict()
             grid["points"] = points
             grid["best_fit_g1_g2_dnll"] = best_fit
-            grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, ggrid[-1])
+            grid["g-grid"] = OrderedDict() if idx == 0 or args.ignoreprev else read_previous_grid(points, best_fit, previous_grids[-1])
 
             for pnt in gpoints:
-                if best_fit != get_fit(pnt):
+                gv = stringify(pnt)
+                ename = "{dcd}{pnt}{tag}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
+                    dcd = dcdir,
+                    pnt = "__".join(points),
+                    tag = args.otag,
+                    g1 = pnt[0],
+                    g2 = pnt[1],
+                    exp = "_" + fcexp
+                )
+                current_fit = get_fit(ename)
+                expected_fit = get_fit(ename, False)
+
+                if expected_fit is None:
+                    if gv in grid["g-grid"]:
+                        expected_fit = pnt + (grid["g-grid"][gv]["dnll"],)
+                    else:
+                        raise RuntimeError("failed getting the expected fit for point " + gv + " from file or grid. aborting.")
+
+                if current_fit is not None and best_fit != current_fit:
                     print '\nWARNING :: incompatible best fit across different g values!! ignoring current, assuming it is due to numerical instability!'
                     print 'this should NOT happen too frequently within a single compilation, and the difference should not be large!!'
-                    print "current result ", pnt, ": ", get_fit(pnt)
-                    print "first result ", gpoints[0], ": ", best_fit
+                    print "current result ", ename, ": ", current_fit
+                    print "first result ", best_fit
                     sys.stdout.flush()
 
-                bf = get_fit(pnt, False)
-                if bf is None:
-                    raise RuntimeError("failed getting best fit point for file " + pnt + ". aborting.")
-
-                gg = get_toys(pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), bf)
-                gv = stringify((bf[0], bf[1]))
-
+                tname = ename.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root")
+                gg = get_toys(tname, expected_fit)
                 if args.rmroot:
-                    syscall("rm " + pnt, False, True)
+                    syscall("rm " + ename, False, True)
                     if fcexp == args.fcexp[-1]:
-                        syscall("rm " + pnt.replace("{exp}.root".format(exp = "_" + fcexp), "_toys.root"), False, True)
+                        syscall("rm " + tname, False, True)
 
                 if gv in grid["g-grid"]:
                     grid["g-grid"][gv] = sum_up(grid["g-grid"][gv], gg)
@@ -405,7 +453,13 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
             grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-            with open("{dcd}{pnt}{tag}_fc-scan{exp}_{idx}.json".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag, exp = "_" + fcexp, idx = str(idx)), "w") as jj:
+            with open("{dcd}{pnt}{tag}_fc-scan{exp}_{idx}.json".format(
+                    dcd = dcdir,
+                    pnt = "__".join(points),
+                    tag = args.otag,
+                    exp = "_" + fcexp,
+                    idx = str(idx)
+            ), "w") as jj:
                 json.dump(grid, jj, indent = 1)
 
     if runprepost:
