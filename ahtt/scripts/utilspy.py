@@ -7,7 +7,7 @@ import math
 import fnmatch
 
 from datetime import datetime
-from desalinator import tokenize_to_list
+from desalinator import remove_spaces_quotes, tokenize_to_list
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -25,7 +25,7 @@ def stringify(gtuple):
     return str(gtuple)[1: -1]
 
 def tuplize(gstring):
-    return tuple([float(gg) for gg in gstring.replace(" ", "").split(",")])
+    return tuple([float(gg) for gg in tokenize_to_list(remove_spaces_quotes(gstring))])
 
 def right_now():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
