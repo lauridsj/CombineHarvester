@@ -29,7 +29,7 @@ def get_fit(dname, qexp_eq_m1 = True):
 
     bf = None
     for i in dtree:
-        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
+        if dtree.deltaNLL >= 0. and ((dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1)):
             bf = (getattr(dtree, "g1"), getattr(dtree, "g2"), dtree.deltaNLL)
 
         if bf is not None:
@@ -86,7 +86,7 @@ def get_toys(tname, best_fit, whatever_else = None):
     ipas = 0
 
     for i in ttree:
-        if ttree.quantileExpected != -1. and not ttree.deltaNLL < 0.:
+        if ttree.quantileExpected != -1. and ttree.deltaNLL >= 0.:
             isum += 1
             if ttree.deltaNLL > best_fit[2]:
                 ipas += 1
