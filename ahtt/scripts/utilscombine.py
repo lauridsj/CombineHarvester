@@ -83,7 +83,7 @@ def read_nuisance(dname, points, qexp_eq_m1 = True):
     frzpar = []
 
     for i in dtree:
-        if dtree.deltaNLL < 0. or (dtree.quantileExpected != -1. and qexp_eq_m1) or (dtree.quantileExpected == -1. and not qexp_eq_m1):
+        if (dtree.quantileExpected != -1. and qexp_eq_m1) or (dtree.quantileExpected == -1. and not qexp_eq_m1):
             continue
 
         for nn in nuisances:
@@ -124,14 +124,14 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
 
     return [[], []]
 
-def fit_strategy(strat, robust = False, high_tolerance = False):
+def fit_strategy(strat, robust = False, tolerance_level = 0):
     fstr = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
-    if high_tolerance:
-        fstr += ":0.5 --cminDefaultMinimizerTolerance 0.5 "
+    if tolerance_level > 0:
+        fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance} ".format(tolerance = tolerance_level * 0.5)
     if robust:
         fstr += " --robustFit 1 --setRobustFitStrategy {ss} {tt}".format(
             ss = strat,
-            tt = "--setRobustFitTolerance 0.5 --setCrossingTolerance 5e-4" if high_tolerance else ""
+            tt = "--setRobustFitTolerance {tolerance} --setCrossingTolerance {tolerance}e-3".format(tolerance = tolerance_level * 0.5) if tolerance_level > 0 else ""
         )
     return fstr
 
