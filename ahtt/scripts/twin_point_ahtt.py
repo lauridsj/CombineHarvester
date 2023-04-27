@@ -86,7 +86,7 @@ def get_toys(tname, best_fit, whatever_else = None):
     ipas = 0
 
     for i in ttree:
-        if ttree.quantileExpected != -1. and ttree.deltaNLL >= 0.:
+        if ttree.quantileExpected >= 0. and ttree.deltaNLL >= 0.:
             isum += 1
             if ttree.deltaNLL > best_fit[2]:
                 ipas += 1
