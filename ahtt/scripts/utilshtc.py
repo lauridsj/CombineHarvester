@@ -43,8 +43,8 @@ arguments = {executable} {args}
         script += "output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
         script += "error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
     else:
-        script += "output =\n"
-        script += "error =\n"
+        script += "output = /dev/null\n"
+        script += "error = /dev/null\n"
 
     if cpus is not None and cpus != "" and cpus > 1:
         script += "request_cpus = {cpus}\n".format(cpus = cpus)
