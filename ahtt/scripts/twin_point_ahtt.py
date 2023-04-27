@@ -30,7 +30,7 @@ def get_fit(dname, qexp_eq_m1 = True):
     bf = None
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
-            bf = (dtree.g1, dtree.g2, dtree.deltaNLL if dtree.deltaNLL >= 0. else 999999.)
+            bf = (dtree.g1, dtree.g2, dtree.deltaNLL if dtree.deltaNLL >= 0. else 0.)
 
         if bf is not None:
             break
