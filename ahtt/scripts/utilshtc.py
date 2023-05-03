@@ -26,7 +26,7 @@ def make_submission_script_header():
 
         # Afiq's Special Treatment
         if os.getlogin() == 'afiqaize':
-            grp = 'group_u_CMST3.all' if rng.binomial(1, 0.5) else 'group_u_CMS.u_zh.users'
+            grp = 'group_u_CMST3.all' if rng.binomial(1, 0.9) else 'group_u_CMS.u_zh.users'
             script += '+AccountingGroup = "{grp}"\n'.format(grp=grp)
 
     script += "\n"
@@ -103,7 +103,7 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
 
         if submit_job.firstjob:
             print("Submission script:")
-            print(sub_script)
+            print(make_submission_script_header() + sub_script)
             sys.stdout.flush()
             submit_job.firstjob = False
 
