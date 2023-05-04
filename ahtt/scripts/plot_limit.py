@@ -396,8 +396,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                                       linewidth = 2, linestyle = 'solid'), label + " " + labels[i1]))
 
     ymax2 = math.ceil(ymax1 * 5.5) / 4.
-    while ymax1 / ymax2 < 0.65:
-        ymax2 -= 0.25
+    while ymax1 / ymax2 < 0.6:
+        ymax1 += 0.25
 
     plt.ylim((ymin, ymax2))
     ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2)
