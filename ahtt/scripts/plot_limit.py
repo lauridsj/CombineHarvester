@@ -395,9 +395,9 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                                       edgecolor = mcl.to_rgba(draw_1D.colors[len(limits)][i1]["obsl"], 1.),
                                       linewidth = 2, linestyle = 'solid'), label + " " + labels[i1]))
 
-    ymax2 = math.ceil(ymax1 * 2.8) / 2.
+    ymax2 = math.ceil(ymax1 * 5.5) / 4.
     while ymax1 / ymax2 < 0.65:
-        ymax2 -= 0.5
+        ymax2 -= 0.25
 
     plt.ylim((ymin, ymax2))
     ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2)
