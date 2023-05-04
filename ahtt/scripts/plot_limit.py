@@ -205,7 +205,12 @@ def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
 
                             ax.plot(g, spline(g), 'g', lw = 3)
                             fig.tight_layout()
-                            fig.savefig("{dcd}/{pnt}_{tag}_spline_{qua}.png".format(dcd = odir, tag = tag, pnt = '_'.join(dcd.split('_')[:3]), qua = qstr), transparent = True)
+                            fig.savefig("{dcd}/{pnt}_{tag}_spline_{qua}.png".format(
+                                dcd = odir,
+                                tag = otags[tt],
+                                pnt = '_'.join(dcd.split('_')[:3]),
+                                qua = qstr
+                            ), transparent = True)
                             fig.clf()
 
                         limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
