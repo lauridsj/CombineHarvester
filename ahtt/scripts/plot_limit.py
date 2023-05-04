@@ -399,7 +399,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     if ymax1 / ymax2 < 0.6:
         ymax1 += 0.25
     elif ymax1 / ymax2 > 0.7:
-        ymax1 -= 0.25
+        ymax2 += 0.25
 
     plt.ylim((ymin, ymax2))
     ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2)
