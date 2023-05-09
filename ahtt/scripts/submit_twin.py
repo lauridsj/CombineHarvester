@@ -325,7 +325,7 @@ if __name__ == '__main__':
                     ndiff = int(math.ceil(float(ndiff) / args.ntoy)) if args.ntoy > 0 else 0
 
                     for ii, idx in enumerate(idxs):
-                        if expected_nfile > max_nfile_per_dir:
+                        if expnres > max_nfile_per_dir:
                             resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
                             expnres = 0
 
