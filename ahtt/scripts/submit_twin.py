@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, recursive_glob, index_list
+from utilspy import syscall, tuplize, recursive_glob, index_list, make_timestamp_dir, max_nfile_per_dir
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
@@ -265,7 +265,12 @@ if __name__ == '__main__':
                 idxs = [-1]
 
             if rungen:
+                toyloc = ""
                 for ii, idx in enumerate(idxs):
+                    if ii % max_nfile_per_dir == 0:
+                        toyloc = make_timestamp_dir(base = args.toyloc, prefix = "toys") if args.toyloc != "" else make_timestamp_dir(base = pstr + args.tag, prefix = "toys")
+
+                    writelog = ii < 1 # write logs only for first toy job
                     jname = job_name
                     jname += '_' + str(idx) if idx != -1 else ''
                     logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
@@ -282,7 +287,7 @@ if __name__ == '__main__':
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
-                               "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal)
+                               "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if runfc:
                 if args.fcmode != "" and ggrid == "":
@@ -312,12 +317,18 @@ if __name__ == '__main__':
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
 
                 sumtoy = args.ntoy * (len(idxs) - 1)
+                resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
+                expnres = 0
                 for ig1, ig2, ntotal in gvalues:
                     scan_name = "_g1_" + str(ig1) + "_g2_" + str(ig2)
                     ndiff = max(0, sumtoy - ntotal) if args.fcmode == "brim" else 0
                     ndiff = int(math.ceil(float(ndiff) / args.ntoy)) if args.ntoy > 0 else 0
 
                     for ii, idx in enumerate(idxs):
+                        if expected_nfile > max_nfile_per_dir:
+                            resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
+                            expnres = 0
+
                         if args.fcmode == "brim" and (ndiff == 0 or ii - 1 >= ndiff):
                             continue
 
@@ -334,10 +345,11 @@ if __name__ == '__main__':
                                 continue
 
                         jarg = job_arg
-                        jarg += " {gvl} {toy} {dat} {idx}".format(
+                        jarg += " {gvl} {toy} {dat} {rsd} {idx}".format(
                             gvl = "--g-values '" + str(ig1) + "," + str(ig2) + "'",
                             toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
                             dat = "--fc-skip-data " if not fcrundat else "",
+                            rsd = "--fc-result-dir " + resdir,
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
 
@@ -347,6 +359,7 @@ if __name__ == '__main__':
                                 jarg += " --save-toy"
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
+                            expnres += 2 * len(args.fcexp) if firstjob and fcrundat else 2 if writelog else 1
                             submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
         else:

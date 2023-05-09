@@ -214,10 +214,7 @@ if __name__ == '__main__':
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
         if args.toyloc == "":
             # no toy location is given, dump the toys in some directory under datacard directory
-            # in gof/fc, files are actually just copied off the files already generated, but this is probably easier to move off to some central storage
-            timestamp_dir = os.path.join(dcdir, "toys_" + right_now())
-            os.makedirs(timestamp_dir)
-            args.toyloc = os.path.abspath(timestamp_dir) + "/"
+            args.toyloc = dcdir
 
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
@@ -284,6 +281,9 @@ if __name__ == '__main__':
         if any(float(gg) < 0. for gg in gvalues):
             raise RuntimeError("in FC scans both g can't be negative!!")
 
+        if args.fcresdir = "":
+            args.fcresdir = dcdir
+
         exp_scenario = OrderedDict()
         exp_scenario["exp-b"]  = "g1=0,g2=0"
         exp_scenario["exp-s"]  = "g1=1,g2=1"
@@ -319,11 +319,12 @@ if __name__ == '__main__':
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
                 syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
-                    dcd = dcdir,
+                    dcd = args.fcresdir,
                     pnt = "__".join(points),
                     tag = args.otag,
                     snm = scan_name + identifier,
-                    mmm = mstr), False)
+                    mmm = mstr
+                ), False)
 
         if args.ntoy > 0:
             identifier = "_toys_" + str(args.runidx) if args.runidx > -1 else "_toys"
@@ -347,7 +348,7 @@ if __name__ == '__main__':
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
-                dcd = dcdir,
+                dcd = args.fcresdir,
                 pnt = "__".join(points),
                 tag = args.otag,
                 snm = scan_name + identifier,

@@ -72,6 +72,8 @@ def common_2D(parser):
 
     parser.add_argument("--fc-expect", help = combine_help_messages["--fc-expect"], default = "exp-b", dest = "fcexp", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--fc-result-directory", help = combine_help_messages["--fc-result-directory"], dest = "fcresdir", default = "", required = False,
+                        type = append_if_not_empty)
 
     parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
     parser.add_argument("--delete-root", help = combine_help_messages["--delete-root"], dest = "rmroot", action = "store_true", required = False)

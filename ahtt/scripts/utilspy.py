@@ -7,7 +7,9 @@ import math
 import fnmatch
 
 from datetime import datetime
-from desalinator import remove_spaces_quotes, tokenize_to_list
+from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
+
+max_nfile_per_dir = 4000
 
 def syscall(cmd, verbose = True, nothrow = False):
     if verbose:
@@ -140,3 +142,11 @@ def index_list(index_string, baseline = 0):
             idxs.append(int(istr))
 
     return list(set(idxs))
+
+def make_timestamp_dir(base, prefix = "tmp"):
+    '''
+    make a timestamp directory within some base, and return its absolute path
+    '''
+    timestamp_dir = os.path.join(base, append_if_not_empty(prefix, token = "_") + right_now())
+    os.makedirs(timestamp_dir)
+    return os.path.abspath(timestamp_dir) + "/"

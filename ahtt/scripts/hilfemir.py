@@ -97,8 +97,10 @@ combine_help_messages = {
 
     "--fc-expect": "expected scenarios to assume in the FC scan. comma separated.\n"
     "exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0",
+    "--fc-result-directory": "where to write the fc scan results, relative to the datacard directory",
+
     "--fc-nuisance-mode": "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
-    "WARNING: profile mode implementation is incomplete!!",
+    "WARNING: profile mode is deprecated!!",
 
     "--fc-skip-data": "skip running on data/asimov",
     "--delete-root": "delete root files after compiling",
