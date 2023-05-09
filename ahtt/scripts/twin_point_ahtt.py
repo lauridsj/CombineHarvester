@@ -391,7 +391,13 @@ if __name__ == '__main__':
                     if 'fc-result' in tm:
                         directory_to_delete(location = tm)
 
-                syscall("hadd {toy} {tox} && rm {tox}".format(toy = mrgdir + toy, tox = " ".join(tomerge)))
+                if len(tomerge) > 1:
+                    syscall("hadd {toy} {tox} && rm {tox}".format(toy = mrgdir + toy, tox = " ".join(tomerge)))
+                elif len(tomerge) == 1:
+                    syscall("mv {tox} {toy}".format(
+                        tox = tomerge[0],
+                        toy = re.sub('toys_.*.root', 'toys.root', tomerge[0])
+                    ), False, True)
 
             directory_to_delete(location = None, flush = True)
 
