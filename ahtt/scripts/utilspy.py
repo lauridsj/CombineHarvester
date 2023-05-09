@@ -150,3 +150,26 @@ def make_timestamp_dir(base, prefix = "tmp"):
     timestamp_dir = os.path.join(base, append_if_not_empty(prefix, token = "_") + right_now())
     os.makedirs(timestamp_dir)
     return os.path.abspath(timestamp_dir) + "/"
+
+def directory_to_delete(location, flush = False):
+    '''
+    location can be a file or a directory
+    the directory corresponding to location is tagged in the list
+    and when flush is true, the empty tagged directories are deleted
+    empty is taken to be containing no files as defined by recursive_glob
+    '''
+    if not hasattr(directory_to_delete, "tagged"):
+        directory_to_delete.tagged = []
+
+    if location is not None:
+        if os.path.isfile(location):
+            location = os.path.dirname(location)
+            if os.path.isdir(location):
+                directory_to_delete.tagged.append(os.path.abspath(location))
+        elif os.path.isdir(location):
+            directory_to_delete.tagged.append(os.path.abspath(location))
+
+    if flush:
+        for tag in set(directory_to_delete.tagged):
+            if len(recursive_glob(tag, '*')) == 0:
+                syscall("rm -r {tag}".format(tag = tag))

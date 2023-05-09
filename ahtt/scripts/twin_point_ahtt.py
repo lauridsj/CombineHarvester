@@ -13,7 +13,8 @@ import json
 
 from ROOT import TFile, TTree
 
-from utilspy import syscall, recursive_glob, make_timestamp_dir, get_point, elementwise_add, tuplize, stringify, max_nfile_per_dir
+from utilspy import syscall, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
+from utilspy import get_point, elementwise_add, tuplize, stringify
 from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -377,7 +378,6 @@ if __name__ == '__main__':
             toys = set([os.path.basename(re.sub('toys_.*.root', 'toys.root', toy)) for toy in toys])
 
             mrgdir = ""
-            resdirs = []
             for ii, toy in enumerate(toys):
                 if ii % max_nfile_per_dir == 0:
                     mrgdir = make_timestamp_dir(base = dcdir, prefix = "fc-merge")
@@ -391,22 +391,8 @@ if __name__ == '__main__':
 
                 for tm in tomerge:
                     if 'fc-result' in tm:
-                        resdirs.append(os.path.abspath(os.path.dirname(tm)))
-
-            for resdir in set(resdirs):
-                if len(recursive_glob(resdir, '*')) == 0:
-                    syscall("rm -r {rsd}".format(rsd = resdir))
-
-        #toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
-
-        #if len(toys) > 0:
-        #    print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
-        #    toys = set([re.sub('toys_.*.root', 'toys.root', toy) for toy in toys])
-
-        #    for toy in toys:
-        #        # FIXME they now dont have to be in the same directory
-        #        syscall("mv {toy} {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_x.root")), False, True)
-        #        syscall("hadd {toy} {tox} && rm {tox}".format(toy = toy, tox = toy.replace("toys.root", "toys_*.root")))
+                        directory_to_delete(location = tm)
+            directory_to_delete(location = None, flush = True)
 
     if runcompile:
         toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
