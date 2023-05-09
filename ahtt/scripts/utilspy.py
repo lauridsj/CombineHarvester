@@ -172,4 +172,5 @@ def directory_to_delete(location, flush = False):
     if flush:
         for tag in set(directory_to_delete.tagged):
             if len(recursive_glob(tag, '*')) == 0:
-                syscall("rm -r {tag}".format(tag = tag))
+                syscall("rm -r {tag}".format(tag = tag), False)
+        directory_to_delete.tagged = []

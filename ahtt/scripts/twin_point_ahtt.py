@@ -387,11 +387,12 @@ if __name__ == '__main__':
                     syscall("mv {toy} {tox}".format(toy = tomerge[0], tox = toy.replace("toys.root", "toys_x.root")), False, True)
 
                 tomerge = recursive_glob(dcdir, toy.replace("toys.root", "toys_*.root"))
-                syscall("hadd {toy} {tox} && rm {tox}".format(toy = mrgdir + toy, tox = " ".join(tomerge)))
-
                 for tm in tomerge:
                     if 'fc-result' in tm:
                         directory_to_delete(location = tm)
+
+                syscall("hadd {toy} {tox} && rm {tox}".format(toy = mrgdir + toy, tox = " ".join(tomerge)))
+
             directory_to_delete(location = None, flush = True)
 
     if runcompile:
