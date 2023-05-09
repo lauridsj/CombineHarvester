@@ -39,17 +39,17 @@ def common_fit_pure(parser):
 
     parser.add_argument("--extra-option", help = combine_help_messages["--extra-option"], dest = "extopt", default = "", required = False)
     parser.add_argument("--output-tag", help = combine_help_messages["--output-tag"], dest = "otag", default = "", required = False, type = prepend_if_not_empty)
+
+    parser.add_argument("--base-directory", help = combine_help_messages["--base-directory"], dest = "basedir", default = "", required = False, type = append_if_not_empty)
     return parser
 
 def common_fit_forwarded(parser):
     parser.add_argument("--mode", help = combine_help_messages["--mode"], default = "datacard", required = False)
-    parser.add_argument("--base-directory", help = combine_help_messages["--base-directory"], dest = "basedir", default = "", required = False)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False)
     return parser
 
 def common_fit(parser):
     parser.add_argument("--mode", help = combine_help_messages["--mode"], default = "datacard", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
-    parser.add_argument("--base-directory", help = combine_help_messages["--base-directory"], dest = "basedir", default = "", required = False, type = append_if_not_empty)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
                         type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
     return parser
