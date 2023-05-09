@@ -83,11 +83,14 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
     job_dir = os.path.realpath(job_dir)
 
     if runlocal:
-        lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
-        syscall("touch {log}".format(log = lname), False)
-        syscall('echo "Job execution starts at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
-        syscall('{executable} {job_arg} |& tee -a {log}'.format(executable = executable, job_arg = job_arg, log = lname), True)
-        syscall('echo "Job execution ends at {atm}" |& tee -a {log}'.format(atm = datetime.now(), log = lname), False)
+        lname = ""
+        if writelog:
+            lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
+            syscall("touch {log}".format(log = lname), False)
+
+        syscall('echo "Job execution starts at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
+        syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True)
+        syscall('echo "Job execution ends at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
     else:
         sub_script = make_submission_script_single(
             name = job_name,
