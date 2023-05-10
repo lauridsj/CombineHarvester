@@ -152,6 +152,7 @@ if __name__ == '__main__':
     gvalues = args.gvalues
     if len(points) != 2 or len(gvalues) != 2:
         raise RuntimeError("this script is to be used with exactly two A/H points!")
+    ptag = "{pnt}{tag}".format(pnt = "__".join(points), tag = args.otag)
 
     modes = args.mode
     scriptdir = os.path.dirname(os.path.abspath(__file__))
@@ -205,10 +206,9 @@ if __name__ == '__main__':
 
     if runvalid:
         print "\ntwin_point_ahtt :: validating datacard"
-        syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}{tag}_validate.json --printLevel 3 {dcd}{crd}".format(
+        syscall("ValidateDatacards.py --jsonFile {dcd}{ptg}_validate.json --printLevel 3 {dcd}{crd}".format(
             dcd = dcdir,
-            pnt = "__".join(points),
-            tag = args.otag,
+            ptg = ptag,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
@@ -228,11 +228,10 @@ if __name__ == '__main__':
                     toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
                 ))
 
-        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
             opd = args.toyloc,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
-            pnt = "__".join(points),
-            tag = args.otag,
+            ptg = ptag,
             gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
             toy = "_n" + str(args.ntoy),
@@ -319,10 +318,9 @@ if __name__ == '__main__':
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
-                syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
+                syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
                     dcd = args.fcresdir,
-                    pnt = "__".join(points),
-                    tag = args.otag,
+                    ptg = ptag,
                     snm = scan_name + identifier,
                     mmm = mstr
                 ), False)
@@ -348,21 +346,19 @@ if __name__ == '__main__':
                         svt = "--saveToys" if args.savetoy else ""
                     ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{pnt}{tag}_fc-scan_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
                 dcd = args.fcresdir,
-                pnt = "__".join(points),
-                tag = args.otag,
+                ptg = ptag,
                 snm = scan_name + identifier,
                 mmm = mstr,
             ), False)
 
             if args.savetoy:
-                syscall("cp {dcd}{pnt}{tag}_fc-scan_{snm}.root {opd}{pnt}{tag}_toys{gvl}{fix}{toy}{idx}.root".format(
+                syscall("cp {dcd}{ptg}_fc-scan_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
                     dcd = dcdir,
                     opd = args.toyloc,
                     snm = scan_name + identifier,
-                    pnt = "__".join(points),
-                    tag = args.otag,
+                    ptg = ptag,
                     gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
                     fix = "_fixed" if args.fixpoi and gstr != "" else "",
                     toy = "_n" + str(args.ntoy),
@@ -371,7 +367,7 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        toys = recursive_glob(dcdir, "{pnt}{tag}_fc-scan_*_toys_*.root".format(pnt = "__".join(points), tag = args.otag))
+        toys = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys_*.root".format(ptg = ptag))
 
         if len(toys) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
@@ -402,27 +398,28 @@ if __name__ == '__main__':
             directory_to_delete(location = None, flush = True)
 
     if runcompile:
-        toys = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
-        idxs = glob.glob("{dcd}{pnt}{tag}_fc-scan_*_toys_*.root".format(dcd = dcdir, pnt = "__".join(points), tag = args.otag))
+        toys = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys.root".format(ptg = ptag))
+        idxs = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys_*.root".format(ptg = ptag))
+        #toys = glob.glob("{dcd}{ptg}_fc-scan_*_toys.root".format(dcd = dcdir, ptg = ptag))
+        #idxs = glob.glob("{dcd}{ptg}_fc-scan_*_toys_*.root".format(dcd = dcdir, ptg = ptag))
         if len(toys) == 0 or len(idxs) > 0:
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            expfits = glob.glob("{dcd}{pnt}{tag}_fc-scan_*{exp}.root".format(
-                dcd = dcdir,
-                pnt = "__".join(points),
-                tag = args.otag,
-                exp = "_" + fcexp
-            ))
+            expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = fcexp))
+            #expfits = glob.glob("{dcd}{ptg}_fc-scan_*{exp}.root".format(
+            #    dcd = dcdir,
+            #    ptg = ptag,
+            #    exp = "_" + fcexp
+            #))
             expfits.sort()
 
-            previous_grids = glob.glob("{dcd}{pnt}{tag}_fc-scan{exp}_*.json".format(
+            previous_grids = glob.glob("{dcd}{ptg}_fc-scan_{exp}_*.json".format(
                 dcd = dcdir,
-                pnt = "__".join(points),
-                tag = args.otag,
-                exp = "_" + fcexp
+                ptg = ptag,
+                exp = fcexp
             ))
             previous_grids.sort(key = os.path.getmtime)
 
@@ -439,14 +436,19 @@ if __name__ == '__main__':
 
             for pnt in gpoints:
                 gv = stringify(pnt)
-                ename = "{dcd}{pnt}{tag}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
-                    dcd = dcdir,
-                    pnt = "__".join(points),
-                    tag = args.otag,
+                ename = recursive_glob(dcdir, "{ptg}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
+                    ptg = ptag,
                     g1 = pnt[0],
                     g2 = pnt[1],
                     exp = fcexp
-                )
+                ))[0]
+                #ename = "{dcd}{ptg}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
+                #    dcd = dcdir,
+                #    ptg = ptag,
+                #    g1 = pnt[0],
+                #    g2 = pnt[1],
+                #    exp = fcexp
+                #)
                 current_fit = get_fit(ename)
                 expected_fit = get_fit(ename, False)
 
@@ -463,11 +465,13 @@ if __name__ == '__main__':
                     print "first result ", best_fit
                     sys.stdout.flush()
 
-                tname = ename.replace("{exp}.root".format(exp = fcexp), "toys.root")
+                tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = fcexp), "toys.root"))[0]
                 gg = get_toys(tname, expected_fit)
                 if args.rmroot:
+                    directory_to_delete(location = ename)
                     syscall("rm " + ename, False, True)
                     if fcexp == args.fcexp[-1]:
+                        directory_to_delete(location = tname)
                         syscall("rm " + tname, False, True)
 
                 if gv in grid["g-grid"]:
@@ -476,14 +480,15 @@ if __name__ == '__main__':
                     grid["g-grid"][gv] = gg
 
             grid["g-grid"] = OrderedDict(sorted(grid["g-grid"].items()))
-            with open("{dcd}{pnt}{tag}_fc-scan_{exp}_{idx}.json".format(
+            with open("{dcd}{ptg}_fc-scan_{exp}_{idx}.json".format(
                     dcd = dcdir,
-                    pnt = "__".join(points),
-                    tag = args.otag,
+                    ptg = ptag,
                     exp = fcexp,
                     idx = str(idx)
             ), "w") as jj:
                 json.dump(grid, jj, indent = 1)
+
+        directory_to_delete(location = None, flush = True)
 
     if runprepost:
         if args.frzbbp or args.frznui:
@@ -509,10 +514,9 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}{tag}_fitdiagnostics{gvl}{fix}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics{gvl}{fix}.root".format(
             dcd = dcdir,
-            pnt = "__".join(points),
-            tag = args.otag,
+            ptg = ptag,
             gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
