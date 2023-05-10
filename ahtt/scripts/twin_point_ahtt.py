@@ -400,8 +400,6 @@ if __name__ == '__main__':
     if runcompile:
         toys = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys.root".format(ptg = ptag))
         idxs = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys_*.root".format(ptg = ptag))
-        #toys = glob.glob("{dcd}{ptg}_fc-scan_*_toys.root".format(dcd = dcdir, ptg = ptag))
-        #idxs = glob.glob("{dcd}{ptg}_fc-scan_*_toys_*.root".format(dcd = dcdir, ptg = ptag))
         if len(toys) == 0 or len(idxs) > 0:
             print "\ntwin_point_ahtt :: either no merged toy files are present, or some indexed ones are."
             raise RuntimeError("run either the fc-scan or hadd modes first before proceeding!")
@@ -409,11 +407,6 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
             expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = fcexp))
-            #expfits = glob.glob("{dcd}{ptg}_fc-scan_*{exp}.root".format(
-            #    dcd = dcdir,
-            #    ptg = ptag,
-            #    exp = "_" + fcexp
-            #))
             expfits.sort()
 
             previous_grids = glob.glob("{dcd}{ptg}_fc-scan_{exp}_*.json".format(
@@ -422,10 +415,11 @@ if __name__ == '__main__':
                 exp = fcexp
             ))
             previous_grids.sort(key = os.path.getmtime)
+            no_previous = args.ignoreprev or len(previous_grids) == 0
 
-            if len(expfits) == 0 and (args.ignoreprev or len(previous_grids) == 0):
+            if len(expfits) == 0 and no_previous:
                 raise RuntimeError("result compilation can't proceed without the best fit files or previous grids being available!!")
-            gpoints = points_to_compile(points, expfits, None if args.ignoreprev or len(previous_grids) == 0 else previous_grids[-1])
+            gpoints = points_to_compile(points, expfits, None if no_previous else previous_grids[-1])
             idx = 0 if len(previous_grids) == 0 else int(previous_grids[-1].split("_")[-1].split(".")[0]) + 1
             best_fit = get_fit(expfits[0]) if len(expfits) > 0 else read_previous_best_fit(previous_grids[-1])
 
@@ -442,13 +436,6 @@ if __name__ == '__main__':
                     g2 = pnt[1],
                     exp = fcexp
                 ))[0]
-                #ename = "{dcd}{ptg}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
-                #    dcd = dcdir,
-                #    ptg = ptag,
-                #    g1 = pnt[0],
-                #    g2 = pnt[1],
-                #    exp = fcexp
-                #)
                 current_fit = get_fit(ename)
                 expected_fit = get_fit(ename, False)
 
