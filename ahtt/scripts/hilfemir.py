@@ -122,6 +122,7 @@ submit_help_messages = {
     "--job-time": "time to assign to each job",
     "--local": "run jobs locally, do not submit to HTC",
     "--force": "force local jobs to run, even if a job log already exists",
+    "--no-log": "dont write job logs",
 
     "--point": "desired pairs of signal points to run on, comma (between points) and semicolon (between pairs) separated\n"
     "another syntax is: m1,m2,...,mN;w1,w2,...,wN;m1,m2,...,mN;w1,w2,...,wN, where:\n"

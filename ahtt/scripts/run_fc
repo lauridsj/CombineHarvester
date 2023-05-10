@@ -59,5 +59,6 @@ condor_check . | tee /dev/tty | xargs rm
 
 #9 if enough toys are made for each point, refine the grid
 #9a always do #6 and #7 every time after #8 and #9
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode refine #--unblind
-#9a repeat step 4 and go back to 6
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode refine #--unblind --no-log
+#9b repeat step 4 and go back to 6
+#9c rule of thumb: use --no-log when more than ~2k points are submitted, or always if the jobs usually succeed, and the logs aren't needed

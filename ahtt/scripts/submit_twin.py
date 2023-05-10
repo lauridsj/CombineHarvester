@@ -270,7 +270,7 @@ if __name__ == '__main__':
                     if ii % max_nfile_per_dir == 0:
                         toyloc = make_timestamp_dir(base = args.toyloc, prefix = "toys") if args.toyloc != "" else make_timestamp_dir(base = pstr + args.tag, prefix = "toys")
 
-                    writelog = ii < 1 # write logs only for first toy job
+                    writelog = ii < 1 and args.writelog # write logs only for first toy job, unless explicitly disabled
                     jname = job_name
                     jname += '_' + str(idx) if idx != -1 else ''
                     logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
@@ -333,7 +333,7 @@ if __name__ == '__main__':
                             continue
 
                         firstjob = ii == 0
-                        writelog = ii < 2 # write logs only for best fit and first toy job
+                        writelog = ii < 2 and args.writelog # write logs only for best fit and first toy job unless explicitly disabled
                         sdx = '_' + str(idx) if idx != -1 else ''
                         jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
@@ -379,6 +379,6 @@ if __name__ == '__main__':
             if len([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]) > 0:
                 submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
                            "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-                           True, runcompile or args.runlocal)
+                           True, runcompile or args.runlocal, args.writelog)
 
         flush_jobs(agg)

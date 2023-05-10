@@ -85,6 +85,7 @@ def common_submit(parser):
                         type = lambda s: s if s != "" and int(s) > 10800 else "10800")
     parser.add_argument("--local", help = submit_help_messages["--local"], dest = "runlocal", action = "store_true", required = False)
     parser.add_argument("--force", help = submit_help_messages["--force"], dest = "forcelocal", action = "store_true", required = False)
+    parser.add_argument("--no-log", help = submit_help_messages["--no-log"], dest = "writelog", action = "store_false", required = False)
 
 def make_datacard_pure(parser):
     parser.add_argument("--sushi-kfactor", help = combine_help_messages["--sushi-kfactor"], dest = "kfactor", action = "store_true", required = False)
