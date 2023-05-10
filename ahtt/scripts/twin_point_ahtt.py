@@ -425,9 +425,7 @@ if __name__ == '__main__':
 
             if len(expfits) == 0 and (args.ignoreprev or len(previous_grids) == 0):
                 raise RuntimeError("result compilation can't proceed without the best fit files or previous grids being available!!")
-            gpoints = points_to_compile(points,
-                                        [os.path.basename(ef) for ef in expfits],
-                                        None if args.ignoreprev else previous_grids[-1])
+            gpoints = points_to_compile(points, expfits, None if args.ignoreprev or len(previous_grids) == 0 else previous_grids[-1])
             idx = 0 if len(previous_grids) == 0 else int(previous_grids[-1].split("_")[-1].split(".")[0]) + 1
             best_fit = get_fit(expfits[0]) if len(expfits) > 0 else read_previous_best_fit(previous_grids[-1])
 
