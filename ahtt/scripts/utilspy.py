@@ -143,14 +143,6 @@ def index_list(index_string, baseline = 0):
 
     return list(set(idxs))
 
-def make_timestamp_dir(base, prefix = "tmp"):
-    '''
-    make a timestamp directory within some base, and return its absolute path
-    '''
-    timestamp_dir = os.path.join(base, append_if_not_empty(prefix, token = "_") + right_now())
-    os.makedirs(timestamp_dir)
-    return os.path.abspath(timestamp_dir) + "/"
-
 def directory_to_delete(location, flush = False):
     '''
     location can be a file or a directory
@@ -174,3 +166,13 @@ def directory_to_delete(location, flush = False):
             if len(recursive_glob(tag, '*')) == 0:
                 syscall("rm -r {tag}".format(tag = tag), False)
         directory_to_delete.tagged = []
+
+def make_timestamp_dir(base, prefix = "tmp"):
+    '''
+    make a timestamp directory within some base, and return its absolute path
+    '''
+    timestamp_dir = os.path.join(base, append_if_not_empty(prefix, token = "_") + right_now())
+    os.makedirs(timestamp_dir)
+    dirname = os.path.abspath(timestamp_dir) + "/"
+    directory_to_delete(location = dirname)
+    return dirname
