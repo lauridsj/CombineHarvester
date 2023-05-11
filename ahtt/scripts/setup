@@ -7,11 +7,10 @@ git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsA
 cd HiggsAnalysis/CombinedLimit
 cd $CMSSW_BASE/src/HiggsAnalysis/CombinedLimit
 git fetch origin
-git checkout v8.2.0
+git checkout 102x-comb2021
 git remote add steggema https://github.com/steggema/HiggsAnalysis-CombinedLimit
 git remote update
 git cherry-pick cdd99d553c473e886dd6dcbc2e20af99cd0df9d8
-git diff v8.2.0
 cd $CMSSW_BASE/src/
 git clone https://github.com/afiqaize/CombineHarvester.git CombineHarvester
 cd CombineHarvester

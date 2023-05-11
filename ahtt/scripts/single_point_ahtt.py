@@ -253,11 +253,12 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making workspaces"
         for onepoi in [True, False]:
-            syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy} --channel-masks".format(
+            syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy} {ext}".format(
                 dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                 mod = "one-poi" if onepoi else "g-scan",
                 mmm = mstr,
-                phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed"
+                phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed",
+                ext = "--channel-masks --for-fits --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
             ))
 
     if runvalid:

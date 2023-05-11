@@ -125,7 +125,9 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
     return [[], []]
 
 def fit_strategy(strat, robust = False, tolerance_level = 0):
-    fstr = "--cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+    fstr = "--X-rtd NO_INITIAL_SNAP --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
+    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+
     if tolerance_level > 0:
         fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance} ".format(tolerance = tolerance_level * 0.5)
     if robust:
