@@ -22,7 +22,7 @@ years='2016pre,2016post,2017,2018'
 ntoy='40'
 idxs='..25'
 exps='exp-b,exp-s,exp-01,exp-10'
-keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_'
+keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD'
 drops='Type3,FlavorQCD_201,TT_norm'
 
 #2 make the datacard
