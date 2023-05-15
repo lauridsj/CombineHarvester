@@ -260,7 +260,7 @@ if __name__ == '__main__':
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = "--g-values '" + args.gvalues + "'" if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
-            ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
+            ext = "--extra-option{s}'".format(s = '=' if args.extopt[0] == "-" else " ") + args.extopt + "'" if args.extopt != "" else "",
             otg = "--output-tag " + args.otag if args.otag != "" else "",
             exp = "--fc-expect{s}'".format(s = '=' if args.fcexp[0][0] == "-" else " ") + ";".join(args.fcexp) + "'" if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
