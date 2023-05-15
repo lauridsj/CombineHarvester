@@ -21,6 +21,28 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
+def expected_scenario(exp):
+    specials = {
+        "exp-b":  "g1=0,g2=0",
+        "exp-s":  "g1=1,g2=1",
+        "exp-01": "g1=0,g2=1",
+        "exp-10": "g1=1,g2=0"
+        "obs":    "g1=0,g2=0"
+    }
+
+    if exp in specials:
+        return (exp, specials[exp])
+
+    if ',' in exp:
+        gvalues = tokenize_to_list(exp)
+        if not all([float(gg) >= 0. for gg in gvalues]):
+            return None
+        g1, g2 = gvalues
+
+        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), f"g1={g1},g2={g2}")
+
+    return None
+
 def get_fit(dname, qexp_eq_m1 = True):
     if not os.path.isfile(dname):
         return None
@@ -187,9 +209,8 @@ if __name__ == '__main__':
     runcompile = "compile" in args.mode
     runprepost = "prepost" in modes or "corrmat" in modes
 
-    allexp = ["exp-b", "exp-s", "exp-01", "exp-10", "obs"]
-    if len(args.fcexp) > 0 and not all([exp in allexp for exp in args.fcexp]):
-        print "supported expected scenario:", allexp
+    if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
+        print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
     if rundc:
@@ -285,33 +306,28 @@ if __name__ == '__main__':
         if args.fcresdir == "":
             args.fcresdir = dcdir
 
-        exp_scenario = OrderedDict()
-        exp_scenario["exp-b"]  = "g1=0,g2=0"
-        exp_scenario["exp-s"]  = "g1=1,g2=1"
-        exp_scenario["exp-01"] = "g1=0,g2=1"
-        exp_scenario["exp-10"] = "g1=1,g2=0"
-
         scan_name = "pnt_g1_" + gvalues[0] + "_g2_" + gvalues[1]
 
         if args.fcrundat:
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
 
             for fcexp in args.fcexp:
-                identifier = "_" + fcexp
+                scenario = expected_scenario(fcexp)
+                identifier = "_" + scenario[0]
 
                 for itol, irobust, istrat in [(itol, irobust, istrat) for itol in [0, 1, 2] for irobust in [False, True] for istrat in [0, 1, 2]]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {wsp}".format(
+                            "--setParameters '{exp}{msk}' {stg} {asm} {toy}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
                                 mmm = mstr,
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                                exp = exp_scenario[fcexp] if fcexp != "obs" else exp_scenario["exp-b"],
+                                exp = scenario[1],
                                 msk = "," + ",".join(masks) if len(masks) > 0 else "",
                                 stg = fit_strategy(istrat, irobust, itol),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
-                                wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
+                                #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
 
                     if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], ff) is not None for ff in [True, False]]):
@@ -332,7 +348,7 @@ if __name__ == '__main__':
 
             setpar, frzpar = ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {byp} {svt}".format(
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {svt}".format(
                         dcd = dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -343,7 +359,7 @@ if __name__ == '__main__':
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
-                        byp = "--bypassFrequentistFit --fastScan" if False else "",
+                        #byp = "--bypassFrequentistFit --fastScan" if False else "",
                         svt = "--saveToys" if args.savetoy else ""
                     ))
 
@@ -407,13 +423,14 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = fcexp))
+            scenario = expected_scenario(fcexp)
+            expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = scenario[0]))
             expfits.sort()
 
             previous_grids = glob.glob("{dcd}{ptg}_fc-scan_{exp}_*.json".format(
                 dcd = dcdir,
                 ptg = ptag,
-                exp = fcexp
+                exp = scenario[0]
             ))
             previous_grids.sort(key = os.path.getmtime)
             no_previous = args.ignoreprev or len(previous_grids) == 0
@@ -435,7 +452,7 @@ if __name__ == '__main__':
                     ptg = ptag,
                     g1 = pnt[0],
                     g2 = pnt[1],
-                    exp = fcexp
+                    exp = scenario[0]
                 ))[0]
                 current_fit = get_fit(ename)
                 expected_fit = get_fit(ename, False)
@@ -453,7 +470,7 @@ if __name__ == '__main__':
                     print "first result ", best_fit
                     sys.stdout.flush()
 
-                tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = fcexp), "toys.root"))[0]
+                tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))[0]
                 gg = get_toys(tname, expected_fit)
                 if args.rmroot:
                     directory_to_delete(location = ename)
@@ -471,7 +488,7 @@ if __name__ == '__main__':
             with open("{dcd}{ptg}_fc-scan_{exp}_{idx}.json".format(
                     dcd = dcdir,
                     ptg = ptag,
-                    exp = fcexp,
+                    exp = scenario[0],
                     idx = str(idx)
             ), "w") as jj:
                 json.dump(grid, jj, indent = 1)
