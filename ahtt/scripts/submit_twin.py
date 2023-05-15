@@ -366,6 +366,10 @@ if __name__ == '__main__':
             if runclean:
                 for job in ["contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
                     syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), True, True)
+                for tmps in ["fc-result", "toys"]:
+                    tmp = glob.glob(pstr + args.tag + "/" + tmp + "_*")
+                    for tm in tmp:
+                        directory_to_delete(location = tm)
 
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
@@ -382,3 +386,4 @@ if __name__ == '__main__':
                            True, runcompile or args.runlocal, args.writelog)
 
         flush_jobs(agg)
+        directory_to_delete(location = None, flush = True)
