@@ -30,9 +30,12 @@ def problematic_datacard_log(logfile):
         lf.close()
     return False
 
-# problem is, setparameters and freezeparameters may appear only once
-# so --extra-option is not usable to study shifting them up if we set g etc
 def set_parameter(set_freeze, extopt, masks):
+    '''
+    problem is, setparameters and freezeparameters may appear only once
+    so --extra-option is not usable to study shifting them up if we set g etc
+    this method harmonizes the set/freezeParameter options and ignore all others
+    '''
     setpar = list(set_freeze[0])
     frzpar = list(set_freeze[1])
 
@@ -53,17 +56,34 @@ def set_parameter(set_freeze, extopt, masks):
         ext = ' '.join(extopt)
     )
 
+def nonparametric_option(extopt):
+    '''
+    removes the parametric part of extopt, and returns the rest as one option string to be passed to combine
+    '''
+    if extopt == "":
+        return ""
+
+    extopt = extopt.split(' ')
+    for option in ['--setParameters', '--freezeParameters']:
+        while option in extopt:
+            iopt = extopt.index(option)
+            parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
+            extopt.pop(iopt)
+
+    return " ".join(extopt)
+
 def make_best_fit(dcdir, card, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
 
-    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm}".format(
+    syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
         dcd = dcdir + card,
         bff = fname,
         stg = strategy,
         prg = poi_range,
         asm = "-t -1" if asimov else "",
         wsp = "--saveWorkspace --saveSpecifiedNuis=all",
-        prm = set_parameter(set_freeze, extopt, masks)
+        prm = set_parameter(set_freeze, extopt, masks),
+        ext = nonparametric_option(extopt)
     ))
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)

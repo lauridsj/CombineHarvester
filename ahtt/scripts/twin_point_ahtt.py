@@ -15,7 +15,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, elementwise_add, tuplize, stringify
-from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
+from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -317,7 +317,7 @@ if __name__ == '__main__':
 
                 for itol, irobust, istrat in [(itol, irobust, istrat) for itol in [0, 1, 2] for irobust in [False, True] for istrat in [0, 1, 2]]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                            "--setParameters '{exp}{msk}' {stg} {asm} {toy}".format(
+                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {ext}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
                                 mmm = mstr,
                                 snm = scan_name + identifier,
@@ -327,6 +327,7 @@ if __name__ == '__main__':
                                 stg = fit_strategy(istrat, irobust, itol),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
+                                ext = nonparametric_option(args.extopt),
                                 #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
 
@@ -348,7 +349,7 @@ if __name__ == '__main__':
 
             setpar, frzpar = ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {opd} {svt}".format(
+                    "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {ext} {opd} {svt}".format(
                         dcd = dcdir + "workspace_twin-g.root",
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -358,6 +359,7 @@ if __name__ == '__main__':
                         nuf = "",
                         stg = fit_strategy("0"),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
+                        ext = nonparametric_option(args.extopt),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         #byp = "--bypassFrequentistFit --fastScan" if False else "",
                         svt = "--saveToys" if args.savetoy else ""
@@ -510,7 +512,8 @@ if __name__ == '__main__':
                     stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
-                    prm = set_parameter(set_freeze, args.extopt, masks)
+                    prm = set_parameter(set_freeze, args.extopt, masks),
+                    ext = nonparametric_option(args.extopt)
         ))
 
         syscall("rm *_th1x_*.png", False, True)

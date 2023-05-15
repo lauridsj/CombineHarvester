@@ -12,7 +12,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, get_point, chunks, elementwise_add
-from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter
+from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D, parse_args
@@ -365,18 +365,19 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm} {ext}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
             stg = fit_strategy("0", True),
             asm = "-t -1" if args.asimov else "",
-            prm = set_parameter(set_freeze, args.extopt, masks)
+            prm = set_parameter(set_freeze, args.extopt, masks),
+            ext = nonparametric_option(args.extopt)
         ))
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -384,7 +385,8 @@ if __name__ == '__main__':
             stg = fit_strategy("0", True),
             asm = "-t -1" if args.asimov else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
-            prm = set_parameter(set_freeze, args.extopt, masks)
+            prm = set_parameter(set_freeze, args.extopt, masks),
+            ext = nonparametric_option(args.extopt)
         ))
 
         print "\nsingle_point_ahtt :: collecting impact results"
@@ -413,14 +415,15 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
+                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm} {ext}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
                     stg = fit_strategy("2", True) + " --robustHesse 1",
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
-                    prm = set_parameter(set_freeze, args.extopt, masks)
+                    prm = set_parameter(set_freeze, args.extopt, masks),
+                    ext = nonparametric_option(args.extopt)
         ))
 
         syscall("rm *_th1x_*.png", False, True)
@@ -468,7 +471,7 @@ if __name__ == '__main__':
 
             if args.onepoi:
                 syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll {prg} {gvl} "
-                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz}".format(
+                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {ext}".format(
                             dcd = dcdir,
                             mmm = mstr,
                             prg = poi_range,
@@ -476,7 +479,8 @@ if __name__ == '__main__':
                             stg = fit_strategy("1", True),
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                            ext = nonparametric_option(args.extopt)
                         ))
 
                 syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}{tag}_nll_{sce}_one-poi.root".format(
@@ -496,7 +500,7 @@ if __name__ == '__main__':
                 for gval in gvalues:
                     gstr = str(round(gval, 3)).replace('.', 'p')
                     syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {prg} "
-                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz}".format(
+                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {ext}".format(
                                 dcd = dcdir,
                                 mmm = mstr,
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
@@ -505,7 +509,8 @@ if __name__ == '__main__':
                                 stg = fit_strategy("1", True),
                                 asm = asimov,
                                 stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else ""
+                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+                                ext = nonparametric_option(args.extopt)
                             ))
 
                 syscall("hadd {dcd}{pnt}{tag}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
