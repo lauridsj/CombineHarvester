@@ -26,7 +26,7 @@ def expected_scenario(exp):
         "exp-b":  "g1=0,g2=0",
         "exp-s":  "g1=1,g2=1",
         "exp-01": "g1=0,g2=1",
-        "exp-10": "g1=1,g2=0"
+        "exp-10": "g1=1,g2=0",
         "obs":    "g1=0,g2=0"
     }
 
