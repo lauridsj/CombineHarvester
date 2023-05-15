@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, recursive_glob, index_list, make_timestamp_dir, max_nfile_per_dir
+from utilspy import syscall, tuplize, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
@@ -365,7 +365,7 @@ if __name__ == '__main__':
         else:
             if runclean:
                 for job in ["contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
-                    syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), True, True)
+                    syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), False, True)
                 for tmps in ["fc-result", "toys"]:
                     tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
                     for tm in tmp:
