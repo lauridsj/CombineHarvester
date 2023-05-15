@@ -33,7 +33,7 @@ def expected_scenario(exp):
     if exp in specials:
         return (exp, specials[exp])
 
-    if ',' in exp:
+    if not re.search(r',[eo]', exp):
         gvalues = tokenize_to_list(exp)
         if not all([float(gg) >= 0. for gg in gvalues]):
             return None
