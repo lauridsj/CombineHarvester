@@ -20,7 +20,8 @@ from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
-from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D, common_submit, parse_args
+from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D
+for argumentative import common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
 sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
@@ -254,7 +255,7 @@ if __name__ == '__main__':
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
             otg = "--output-tag " + args.otag if args.otag != "" else "",
-            exp = "--fc-expect " + ','.join(args.fcexp) if runfc or runcompile else "",
+            exp = "--fc-expect " + ";".join(args.fcexp) if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 

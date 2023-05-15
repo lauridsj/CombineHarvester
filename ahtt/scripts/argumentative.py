@@ -11,6 +11,8 @@
 # note: at this stage this is a mere convention, and is not enforced at code level
 # the main goal is to minimize duplication, rather than getting the categorization watertight
 
+import re
+
 from utilscombine import update_mask
 from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from hilfemir import combine_help_messages, submit_help_messages
@@ -71,7 +73,7 @@ def common_2D(parser):
     parser.add_argument("--save-toy", help = combine_help_messages["--save-toy"], dest = "savetoy", action = "store_true", required = False)
 
     parser.add_argument("--fc-expect", help = combine_help_messages["--fc-expect"], default = "exp-b", dest = "fcexp", required = False,
-                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ',' if ';' not in s else ';' ))
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
     parser.add_argument("--fc-result-directory", help = combine_help_messages["--fc-result-directory"], dest = "fcresdir", default = "", required = False,
                         type = append_if_not_empty)
 
