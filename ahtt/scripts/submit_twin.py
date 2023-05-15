@@ -367,7 +367,7 @@ if __name__ == '__main__':
                 for job in ["contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
                     syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), True, True)
                 for tmps in ["fc-result", "toys"]:
-                    tmp = glob.glob(pstr + args.tag + "/" + tmp + "_*")
+                    tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
                     for tm in tmp:
                         directory_to_delete(location = tm)
 
