@@ -35,7 +35,7 @@ def expected_scenario(exp):
 
     if not re.search(r',[eo]', exp):
         gvalues = tokenize_to_list(exp)
-        if not all([float(gg) >= 0. for gg in gvalues]):
+        if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
             return None
         g1, g2 = gvalues
 
