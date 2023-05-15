@@ -39,7 +39,7 @@ def expected_scenario(exp):
             return None
         g1, g2 = gvalues
 
-        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), f"g1={g1},g2={g2}")
+        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), "g1={g1},g2={g2}".format(g1 = g1, g2 = g2))
 
     return None
 
