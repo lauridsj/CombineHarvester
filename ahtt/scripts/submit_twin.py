@@ -262,7 +262,7 @@ if __name__ == '__main__':
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option '" + args.extopt + "'" if args.extopt != "" else "",
             otg = "--output-tag " + args.otag if args.otag != "" else "",
-            exp = "--fc-expect " + ";".join(args.fcexp) if runfc or runcompile else "",
+            exp = "--fc-expect{s}'".format(s = '=' if args.fcexp[0][0] == "-" else " ") + ";".join(args.fcexp) + "'" if runfc or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
