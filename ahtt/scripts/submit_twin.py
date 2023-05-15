@@ -368,7 +368,7 @@ if __name__ == '__main__':
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             expnres += 2 * len(args.fcexp) if firstjob and fcrundat else 2 if writelog else 1
-                            submit_job(agg, jname, jarg, "1200" if "--n-toy 0" in jarg else args.jobtime, 1, "",
+                            submit_job(agg, jname, jarg, "1200" if "--n-toy 0" in jarg and len(args.fcexp) < 10 else args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
         else:
             if runclean:
