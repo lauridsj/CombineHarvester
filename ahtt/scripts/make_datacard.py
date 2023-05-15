@@ -563,17 +563,17 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
             )),
             (("2016post", "2016pre", "2017", "2018"), (
                 # single scheme
-                ("lumi_13TeV",         ("2016pre", "2016post", "2017", "2018"), "all", 1.016),
+                #("lumi_13TeV",         ("2016pre", "2016post", "2017", "2018"), "all", 1.016),
 
                 # minimal scheme
-                #("lumi_13TeV_16",         ("2016pre", "2016post"), "all", 1.01),
-                #("lumi_13TeV_17",         ("2017",), "all", 1.02),
-                #("lumi_13TeV_18",         ("2018",), "all", 1.015),
-                #("lumi_13TeV_1718",       ("2017",), "all", 1.006),
-                #("lumi_13TeV_1718",       ("2018",), "all", 1.002),
-                #("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
-                #("lumi_13TeV_correlated", ("2017",), "all", 1.009),
-                #("lumi_13TeV_correlated", ("2018",), "all", 1.02),
+                ("lumi_13TeV_16",         ("2016pre", "2016post"), "all", 1.01),
+                ("lumi_13TeV_17",         ("2017",), "all", 1.02),
+                ("lumi_13TeV_18",         ("2018",), "all", 1.015),
+                ("lumi_13TeV_1718",       ("2017",), "all", 1.006),
+                ("lumi_13TeV_1718",       ("2018",), "all", 1.002),
+                ("lumi_13TeV_correlated", ("2016pre", "2016post"), "all", 1.006),
+                ("lumi_13TeV_correlated", ("2017",), "all", 1.009),
+                ("lumi_13TeV_correlated", ("2018",), "all", 1.02),
 
                 # full scheme
                 #("lumi_13TeV_16",                     ("2016pre", "2016post"), "all", 1.01),
