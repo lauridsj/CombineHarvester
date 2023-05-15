@@ -24,6 +24,8 @@ from argumentative import common_common, common_fit_pure, common_fit_forwarded, 
 from argumentative import common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
+from twin_point_ahtt import expected_scenario
+
 sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
@@ -301,7 +303,7 @@ if __name__ == '__main__':
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"
                     for fcexp in args.fcexp:
-                        ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc-scan_" + fcexp + "_*.json")
+                        ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc-scan_" + expected_scenario(fcexp)[0] + "_*.json")
                         ggg.sort(key = os.path.getmtime)
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
                 print "using the following grids:"
