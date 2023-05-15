@@ -396,4 +396,3 @@ if __name__ == '__main__':
                            True, runcompile or args.runlocal, args.writelog)
 
         flush_jobs(agg)
-        directory_to_delete(location = None, flush = True)
