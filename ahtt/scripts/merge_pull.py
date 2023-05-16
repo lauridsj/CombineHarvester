@@ -35,17 +35,19 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                     result = json.load(ff)
 
                 if len(nuisances) > 0:
-                    result["params"] = [param for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
+                    names = [param["name"] for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
+                    names = set(names)
+                    params = [param for param in result["params"] if param["name"] in names]
 
                 if not pulls:
                     pulls["POIs"] = result["POIs"]
                     pulls["method"] = result["method"]
-                    pulls["params"] = result["params"]
+                    pulls["params"] = params
                 else:
                     if pulls["POIs"] != result["POIs"]:
                         print("merge_pull :: WARNING :: incompatible POI best fit between input jsons!!")
 
-                    pulls["params"] += result["params"]
+                    pulls["params"] += params
 
         with open("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}_{out}.json".format(
                 dcd = directory,
