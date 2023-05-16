@@ -46,7 +46,6 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                         print("merge_pull :: WARNING :: incompatible POI best fit between input jsons!!")
 
                     pulls["params"] += result["params"]
-                    pulls["params"] = list(set(pulls["params"]))
 
         with open("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}_{out}.json".format(
                 dcd = directory,
