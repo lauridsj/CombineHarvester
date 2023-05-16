@@ -34,10 +34,11 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                 with open(imp) as ff:
                     result = json.load(ff)
 
+                names = None
                 if len(nuisances) > 0:
                     names = [param["name"] for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
                     names = set(names)
-                    params = [param for param in result["params"] if param["name"] in names]
+                params = [param for param in result["params"] if names is None or param["name"] in names]
 
                 if not pulls:
                     pulls["POIs"] = result["POIs"]
