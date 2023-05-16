@@ -37,7 +37,7 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                 if len(nuisances) > 0:
                     result["params"] = [param for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
 
-                if ii == 0:
+                if not pulls:
                     pulls["POIs"] = result["POIs"]
                     pulls["method"] = result["method"]
                     pulls["params"] = result["params"]
