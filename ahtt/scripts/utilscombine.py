@@ -147,13 +147,12 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
 def fit_strategy(strat, robust = False, tolerance_level = 0):
     fstr = "--X-rtd NO_INITIAL_SNAP --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
     fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
+    fstr += ":{tolerance}e-1 --cminDefaultMinimizerTolerance {tolerance}e-1".format(tolerance = 10.**tolerance_level)
 
-    if tolerance_level > 0:
-        fstr += ":{tolerance}e-2 --cminDefaultMinimizerTolerance {tolerance}e-2 ".format(tolerance = 10.**tolerance_level)
     if robust:
-        fstr += " --robustFit 1 --robustHesse 1 --stepSize 0.001 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
+        fstr += " --robustFit 1 --robustHesse 1 --stepSize {tolerance}e-2 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
             ss = strat,
-            tt = "--setRobustFitTolerance {tolerance}e-2 --setCrossingTolerance {tolerance}e-4".format(tolerance = 10.**tolerance_level)
+            tt = "--setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level)
         )
     return fstr
 
