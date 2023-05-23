@@ -376,6 +376,7 @@ if __name__ == '__main__':
             prm = set_parameter(set_freeze, args.extopt, masks),
             ext = nonparametric_option(args.extopt)
         ))
+        syscall("rm robustHesse_*.root", False, True)
 
         print "\nsingle_point_ahtt :: impact remaining fits"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
@@ -389,6 +390,7 @@ if __name__ == '__main__':
             prm = set_parameter(set_freeze, args.extopt, masks),
             ext = nonparametric_option(args.extopt)
         ))
+        syscall("rm robustHesse_*.root", False, True)
 
         print "\nsingle_point_ahtt :: collecting impact results"
         syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
@@ -413,6 +415,7 @@ if __name__ == '__main__':
                                           args.asimov, fit_strategy("2", True), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           args.extopt, masks)
+            syscall("rm robustHesse_*.root", False, True)
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
@@ -451,6 +454,7 @@ if __name__ == '__main__':
                                           args.asimov, fit_strategy("1", True), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           "", masks)
+            syscall("rm robustHesse_*.root", False, True)
         set_freeze = starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
@@ -488,6 +492,7 @@ if __name__ == '__main__':
                             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                             ext = nonparametric_option(args.extopt)
                         ))
+                syscall("rm robustHesse_*.root", False, True)
 
                 syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}{tag}_nll_{sce}_one-poi.root".format(
                     dcd = dcdir,
@@ -518,6 +523,7 @@ if __name__ == '__main__':
                                 frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
                                 ext = nonparametric_option(args.extopt)
                             ))
+                    syscall("rm robustHesse_*.root", False, True)
 
                 syscall("hadd {dcd}{pnt}{tag}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
                         "rm higgsCombine_nll_fix-g*.root".format(

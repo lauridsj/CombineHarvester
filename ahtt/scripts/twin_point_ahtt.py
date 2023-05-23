@@ -330,12 +330,12 @@ if __name__ == '__main__':
                                 ext = nonparametric_option(args.extopt),
                                 #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
+                    if irobust:
+                        syscall("rm robustHesse_*.root", False, True)
 
                     if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
                             snm = scan_name + identifier,
                             mmm = mstr))[0], ff) is not None for ff in [True, False]]):
-                        if irobust:
-                            syscall("rm robustHesse_*.root", False, True)
                         break
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
@@ -506,6 +506,7 @@ if __name__ == '__main__':
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
                                           args.asimov, fit_strategy("2", True), poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
+            syscall("rm robustHesse_*.root", False, True)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
 
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
