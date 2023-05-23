@@ -150,9 +150,9 @@ def fit_strategy(strat, robust = False, tolerance_level = 0):
     fstr += ":{tolerance}e-1 --cminDefaultMinimizerTolerance {tolerance}e-1".format(tolerance = 10.**tolerance_level)
 
     if robust:
-        fstr += " --robustFit 1 --robustHesse 1 --stepSize {tolerance}e-2 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
+        fstr += " --robustFit 1 --robustHesse 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
             ss = strat,
-            tt = "--setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level)
+            tt = "--stepSize {tolerance}e-2 --setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level)
         )
     return fstr
 
