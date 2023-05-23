@@ -353,6 +353,7 @@ if __name__ == '__main__':
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
 
         if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
             raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
@@ -404,6 +405,7 @@ if __name__ == '__main__':
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
 
     if runprepost:
         if args.frzbbp or args.frznui:
@@ -458,7 +460,11 @@ if __name__ == '__main__':
         scenarii = ['exp-b', 'exp-s', 'obs']
         nlls = OrderedDict()
 
-        syscall("rm {dcd}{pnt}{tag}_nll_one-poi.root {dcd}{pnt}{tag}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag, mod = "one-poi" if args.onepoi else "g-scan"), False, True)
+        syscall("rm {dcd}{pnt}{tag}_nll_one-poi.root {dcd}{pnt}{tag}_nll_{mod}.json".format(
+            dcd = dcdir,
+            pnt = args.point[0],
+            tag = args.otag,
+            mod = "one-poi" if args.onepoi else "g-scan"), False, True)
 
         for sce in scenarii:
             asimov = "-t -1" if sce != "obs" else ""
@@ -529,6 +535,7 @@ if __name__ == '__main__':
                 ))
 
         syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
 
         with open("{dcd}{pnt}{tag}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)

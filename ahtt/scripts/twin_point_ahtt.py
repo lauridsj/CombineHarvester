@@ -331,7 +331,11 @@ if __name__ == '__main__':
                                 #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
 
-                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr))[0], ff) is not None for ff in [True, False]]):
+                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
+                            snm = scan_name + identifier,
+                            mmm = mstr))[0], ff) is not None for ff in [True, False]]):
+                        if irobust:
+                            syscall("rm robustHesse_*.root", False, True)
                         break
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
