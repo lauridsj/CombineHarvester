@@ -149,11 +149,11 @@ def fit_strategy(strat, robust = False, tolerance_level = 0):
     fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
 
     if tolerance_level > 0:
-        fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance} ".format(tolerance = tolerance_level * 0.5)
+        fstr += ":{tolerance}e-2 --cminDefaultMinimizerTolerance {tolerance}e-2 ".format(tolerance = 10.**tolerance_level)
     if robust:
-        fstr += " --robustFit 1 --setRobustFitStrategy {ss} {tt}".format(
+        fstr += " --robustFit 1 --robustHesse 1 --stepSize 0.001 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
             ss = strat,
-            tt = "--setRobustFitTolerance {tolerance} --setCrossingTolerance {tolerance}e-3".format(tolerance = tolerance_level * 0.5) if tolerance_level > 0 else ""
+            tt = "--setRobustFitTolerance {tolerance}e-2 --setCrossingTolerance {tolerance}e-4".format(tolerance = 10.**tolerance_level)
         )
     return fstr
 

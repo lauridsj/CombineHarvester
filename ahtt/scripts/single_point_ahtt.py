@@ -408,7 +408,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy("2", True) + " --robustHesse 1", poi_range,
+                                          args.asimov, fit_strategy("2", True), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           args.extopt, masks)
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -419,7 +419,7 @@ if __name__ == '__main__':
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
-                    stg = fit_strategy("2", True) + " --robustHesse 1",
+                    stg = fit_strategy("2", True),
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
