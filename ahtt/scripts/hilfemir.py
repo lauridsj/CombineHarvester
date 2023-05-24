@@ -72,6 +72,7 @@ combine_help_messages = {
     "--fix-poi": "fix pois in the fit, to the values set in --g-value(s) and/or --r-value",
     "--mask": "comma-separated list of channel_year combinations to be masked in statistical analysis modes",
 
+    "--fit-strategy": "if >= 0, use this fit strategy, overriding whatever default in the mode.",
     "--use-hesse": "only in the pull/impact/prepost/corrmat/nll mode, use robust hesse to calculate uncertainties. very slow.",
     "--freeze-mc-stats-zero": "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
     "--freeze-mc-stats-post": "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "

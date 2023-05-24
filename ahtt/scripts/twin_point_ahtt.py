@@ -246,7 +246,7 @@ if __name__ == '__main__':
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                     par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                    stg = fit_strategy("0"),
+                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
                     toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
                 ))
 
@@ -281,7 +281,7 @@ if __name__ == '__main__':
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-data",
-            stg = fit_strategy("0")
+            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0)
         ))
 
         print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - toy fits"
@@ -289,7 +289,7 @@ if __name__ == '__main__':
             dcd = dcdir + "workspace_twin-g.root",
             mmm = mstr,
             snm = "gof-saturated-toys",
-            stg = fit_strategy("0"),
+            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
             toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
             opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
             svt = "--saveToys" if args.savetoy else ""
@@ -361,7 +361,7 @@ if __name__ == '__main__':
                         msk = "," + ",".join(masks) if len(masks) > 0 else "",
                         nus = "",
                         nuf = "",
-                        stg = fit_strategy("0"),
+                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         ext = nonparametric_option(args.extopt),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
@@ -504,7 +504,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, fit_strategy("2", True, args.usehesse), poi_range,
+                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -514,7 +514,7 @@ if __name__ == '__main__':
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    stg = fit_strategy("2", True, args.usehesse),
+                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),

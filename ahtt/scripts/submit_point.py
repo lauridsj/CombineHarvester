@@ -102,7 +102,7 @@ if __name__ == '__main__':
         )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {hes} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
+                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {fst} {hes} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -123,6 +123,7 @@ if __name__ == '__main__':
                        prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
                        cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
                        rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
+                       fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
                        hes = "--use-hesse" if args.usehesse else "",
                        frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
                        asm = "--unblind" if not args.asimov else "",

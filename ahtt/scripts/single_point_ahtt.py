@@ -282,7 +282,7 @@ if __name__ == '__main__':
                 maxg = max_g,
                 prg = poi_range,
                 acc = accuracies,
-                stg = fit_strategy("1"),
+                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1),
                 asm = "--run blind -t -1" if args.asimov else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
@@ -311,7 +311,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy("1"), args.asimov, masks))
+            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -360,7 +360,7 @@ if __name__ == '__main__':
 
         if args.frzbbp:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy("1", True, args.usehesse), poi_range,
+                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           args.extopt, masks)
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
@@ -371,7 +371,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("0", True, args.usehesse),
+            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
             asm = "-t -1" if args.asimov else "",
             prm = set_parameter(set_freeze, args.extopt, masks),
             ext = nonparametric_option(args.extopt)
@@ -384,7 +384,7 @@ if __name__ == '__main__':
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             prg = poi_range,
-            stg = fit_strategy("0", True, args.usehesse),
+            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
             asm = "-t -1" if args.asimov else "",
             nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
             prm = set_parameter(set_freeze, args.extopt, masks),
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy("2", True, args.usehesse), poi_range,
+                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           args.extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
@@ -424,7 +424,7 @@ if __name__ == '__main__':
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
                     mmm = mstr,
-                    stg = fit_strategy("2", True, args.usehesse),
+                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
@@ -451,7 +451,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy("1", True, args.usehesse), poi_range,
+                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
                                           elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
                                           "", masks)
             syscall("rm robustHesse_*.root", False, True)
@@ -486,7 +486,7 @@ if __name__ == '__main__':
                             mmm = mstr,
                             prg = poi_range,
                             gvl = "--points 193 --alignEdges 1",
-                            stg = fit_strategy("1", True, args.usehesse),
+                            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
                             asm = asimov,
                             stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                             frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
@@ -517,7 +517,7 @@ if __name__ == '__main__':
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
                                 prg = poi_range,
                                 gvl = str(gval),
-                                stg = fit_strategy("1", True, args.usehesse),
+                                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
                                 asm = asimov,
                                 stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
                                 frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
