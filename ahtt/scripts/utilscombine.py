@@ -147,12 +147,14 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
 def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
     fstr = "--X-rtd NO_INITIAL_SNAP --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
     fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
-    fstr += ":{tolerance}e-1 --cminDefaultMinimizerTolerance {tolerance}e-1".format(tolerance = 10.**tolerance_level)
+    fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 7))
 
     if robust:
-        fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt} {hh}".format(
+        fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {t0} {t1} {t2} {hh}".format(
             ss = strat,
-            tt = "--stepSize {tolerance}e-2 --setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level),
+            t0 = "--setRobustFitTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 7)),
+            t1 = "--stepSize {tolerance}".format(tolerance = 2.**(tolerance_level - 10)),
+            t2 = "--setCrossingTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 13)),
             hh = "--robustHesse 1" if use_hesse else ""
         )
     return fstr
