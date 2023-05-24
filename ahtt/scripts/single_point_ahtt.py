@@ -41,6 +41,27 @@ def get_limit(lfile):
     lfile.Close()
     return limit
 
+def sensible_enough_pull(nuisance, mass):
+    lfile = TFile.Open("higgsCombine_paramFit__pull_{nui}.MultiDimFit.mH{mmm}.root".format(nui = nuisance, mmm = mass))
+    ltree = lfile.Get("limit")
+
+    central, band, isgood = False, 0, False
+    for i in ltree:
+        value = getattr(ltree, nuisance, None)
+
+        if value is not None:
+            if ltree.quantileExpected == -1.:
+                central = True
+            elif ltree.quantileExpected >= 0.:
+                band += 1
+
+        if central and band > 1:
+            isgood = True
+            break
+
+    lfile.Close()
+    return isgood
+
 def get_nll_one_poi(lfile):
     # relevant branches are r, nllo0 (for the minimum NLL value), deltaNLL (wrt nll0), quantileExpected (-1 for data, rest irrelevant)
     lfile = TFile.Open(lfile)
@@ -335,10 +356,10 @@ if __name__ == '__main__':
 
     if runpull:
         group = ""
-        nuisances = ""
+        nuisances = [""]
         if args.impactnui is not None:
             group = "_" + args.impactnui[0]
-            nuisances = args.impactnui[1]
+            nuisances = tokenize_to_list(args.impactnui[1])
 
         syscall("rm {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
@@ -379,21 +400,26 @@ if __name__ == '__main__':
         syscall("rm robustHesse_*.root", False, True)
 
         print "\nsingle_point_ahtt :: impact remaining fits"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
-            dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "g-scan",
-            mmm = mstr,
-            prg = poi_range,
-            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
-            asm = "-t -1" if args.asimov else "",
-            nui = "--named '" + nuisances + "'" if args.impactnui is not None else "",
-            prm = set_parameter(set_freeze, args.extopt, masks),
-            ext = nonparametric_option(args.extopt)
-        ))
-        syscall("rm robustHesse_*.root", False, True)
+        for nuisance in nuisances:
+            for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [0, 1, 2] for itol in range(5)]:
+                syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
+                    dcd = dcdir,
+                    mod = "one-poi" if args.onepoi else "g-scan",
+                    mmm = mstr,
+                    prg = poi_range,
+                    stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
+                    asm = "-t -1" if args.asimov else "",
+                    nui = "--named '" + nuisance + "'" if nuisance != "" else "",
+                    prm = set_parameter(set_freeze, args.extopt, masks),
+                    ext = nonparametric_option(args.extopt)
+                ))
+                syscall("rm robustHesse_*.root", False, True)
+
+                if nuisance == "" or sensible_enough_pull(nuisance, mstr):
+                    break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
@@ -402,7 +428,8 @@ if __name__ == '__main__':
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-            grp = group
+            grp = group,
+            nui = "--named '" + ','.join(nuisances) + "'" if args.impactnui is not None else ""
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
