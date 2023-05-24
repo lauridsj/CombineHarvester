@@ -401,7 +401,7 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
-            for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [0, 1, 2] for itol in range(4)]:
+            for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [1, 2, 0] for itol in [0, -1, 1, -2, 2, -3, 3]]:
                 syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
                     dcd = dcdir,
                     mod = "one-poi" if args.onepoi else "g-scan",
