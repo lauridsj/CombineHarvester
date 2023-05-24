@@ -315,7 +315,7 @@ if __name__ == '__main__':
                 scenario = expected_scenario(fcexp)
                 identifier = "_" + scenario[0]
 
-                for itol, irobust, istrat in [(itol, irobust, istrat) for itol in [0, 1, 2] for irobust in [False, True] for istrat in [0, 1, 2]]:
+                for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [False, True] for istrat in [0, 1, 2] for itol in range(5)]:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "--setParameters '{exp}{msk}' {stg} {asm} {toy} {ext}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
