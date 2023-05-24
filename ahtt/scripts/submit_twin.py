@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
+                   "{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {hes} {frz} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -254,6 +254,7 @@ if __name__ == '__main__':
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
             rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
+            hes = "--use-hesse" if args.usehesse else "",
             frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
             asm = "--unblind" if not args.asimov else "",
             rsd = "--seed " + args.seed if args.seed != "" else "",

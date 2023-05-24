@@ -144,15 +144,16 @@ def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisan
 
     return [[], []]
 
-def fit_strategy(strat, robust = False, tolerance_level = 0):
+def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
     fstr = "--X-rtd NO_INITIAL_SNAP --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
     fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
     fstr += ":{tolerance}e-1 --cminDefaultMinimizerTolerance {tolerance}e-1".format(tolerance = 10.**tolerance_level)
 
     if robust:
-        fstr += " --robustFit 1 --robustHesse 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt}".format(
+        fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {tt} {hh}".format(
             ss = strat,
-            tt = "--stepSize {tolerance}e-2 --setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level)
+            tt = "--stepSize {tolerance}e-2 --setRobustFitTolerance {tolerance}e-1 --setCrossingTolerance {tolerance}e-3".format(tolerance = 10.**tolerance_level),
+            hh = "--robustHesse 1" if use_hesse else ""
         )
     return fstr
 

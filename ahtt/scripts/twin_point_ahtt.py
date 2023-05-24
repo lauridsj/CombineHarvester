@@ -324,7 +324,7 @@ if __name__ == '__main__':
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = scenario[1],
                                 msk = "," + ",".join(masks) if len(masks) > 0 else "",
-                                stg = fit_strategy(istrat, irobust, itol),
+                                stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
                                 ext = nonparametric_option(args.extopt),
@@ -504,7 +504,7 @@ if __name__ == '__main__':
     if runprepost:
         if args.frzbbp or args.frznui:
             best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, fit_strategy("2", True), poi_range,
+                                          args.asimov, fit_strategy("2", True, args.usehesse), poi_range,
                                           elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
@@ -514,7 +514,7 @@ if __name__ == '__main__':
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
                     dcd = dcdir,
                     mmm = mstr,
-                    stg = fit_strategy("2", True),
+                    stg = fit_strategy("2", True, args.usehesse),
                     prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),

@@ -35,6 +35,7 @@ def common_fit_pure(parser):
     parser.add_argument("--fix-poi", help = combine_help_messages["--fix-poi"], dest = "fixpoi", action = "store_true", required = False)
     parser.add_argument("--compress", help = combine_help_messages["--compress"], dest = "compress", action = "store_true", required = False)
 
+    parser.add_argument("--use-hesse", help = combine_help_messages["--use-hesse"], dest = "usehesse", action = "store_true", required = False)
     parser.add_argument("--freeze-mc-stats-zero", help = combine_help_messages["--freeze-mc-stats-zero"], dest = "frzbb0", action = "store_true", required = False)
     parser.add_argument("--freeze-mc-stats-post", help = combine_help_messages["--freeze-mc-stats-post"], dest = "frzbbp", action = "store_true", required = False)
     parser.add_argument("--freeze-nuisance-post", help = combine_help_messages["--freeze-nuisance-post"], dest = "frznui", action = "store_true", required = False)
