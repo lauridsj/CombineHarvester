@@ -52,7 +52,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
             if None not in [v0, u0, l0]:
                 large = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
                 if large:
-                    print("analyze_pull :: {pp} in tag {t0} = {m0} deviates by {th} sigma from 0.".format(
+                    print("\nanalyze_pull :: {pp} in tag {t0} = {m0} deviates by {th} sigma from 0.".format(
                         pp = name,
                         t0 = tag0,
                         m0 = measurement_format(v0, u0, l0),
@@ -76,7 +76,6 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
                                     t0 = tag0,
                                     m0 = measurement_format(v0, u0, l0),
                                 ))
-            print("\n")
 
 def analyze(directories, onepoi, gvalue, rvalue, fixpoi, otag):
     results = []
