@@ -48,9 +48,9 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
             v0 = values[nn]["central"][i0]
             u0 = values[nn]["upper"][i0]
             l0 = values[nn]["lower"][i0]
-            large0 = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
 
             if None not in [v0, u0, l0]:
+                large0 = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
                 for i1, tag1 in enumerate(tags):
                     if i1 != i0:
                         v1 = values[nn]["central"][i1]
