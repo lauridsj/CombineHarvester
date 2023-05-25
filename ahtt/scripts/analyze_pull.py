@@ -39,7 +39,7 @@ def names_and_values(results, key):
 
     return [allnames, values]
 
-def report_discrepancy_wrt_reference(directories, parameters, threshold = 2):
+def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
     tags = ["/".join(directory) for directory in directories]
     names, values = parameters
 
@@ -48,6 +48,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 2):
             v0 = values[nn]["central"][i0]
             u0 = values[nn]["upper"][i0]
             l0 = values[nn]["lower"][i0]
+            large0 = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
 
             if None not in [v0, u0, l0]:
                 for i1, tag1 in enumerate(tags):
@@ -57,8 +58,9 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 2):
                         l1 = values[nn]["lower"][i1]
 
                         if None not in [v1, u1, l1]:
+                            large1 = abs(v1) / u0 > threshold or abs(v1) / l0 > threshold
                             discrepant = (v1 > v0 and abs(v1 - v0) / threshold > u0) or (v1 < v0 and abs(v1 - v0) / threshold > l0)
-                            if discrepant:
+                            if discrepant or large0 or large1:
                                 print("analyze_pull :: {pp} with tag {t1} = {m1} differ by {th} sigma wrt tag {t0} = {m0}".format(
                                     pp = name,
                                     t1 = tag1,
