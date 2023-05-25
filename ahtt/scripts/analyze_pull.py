@@ -50,7 +50,15 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
             l0 = values[nn]["lower"][i0]
 
             if None not in [v0, u0, l0]:
-                large0 = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
+                large = abs(v0) / u0 > threshold or abs(v0) / l0 > threshold
+                if large:
+                    print("analyze_pull :: {pp} in tag {t0} = {m0} deviates by {th} sigma from 0.".format(
+                        pp = name,
+                        t0 = tag0,
+                        m0 = measurement_format(v0, u0, l0),
+                        th = threshold,
+                    ))
+
                 for i1, tag1 in enumerate(tags):
                     if i1 != i0:
                         v1 = values[nn]["central"][i1]
@@ -58,9 +66,8 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
                         l1 = values[nn]["lower"][i1]
 
                         if None not in [v1, u1, l1]:
-                            large1 = abs(v1) / u0 > threshold or abs(v1) / l0 > threshold
                             discrepant = (v1 > v0 and abs(v1 - v0) / threshold > u0) or (v1 < v0 and abs(v1 - v0) / threshold > l0)
-                            if discrepant or large0 or large1:
+                            if discrepant:
                                 print("analyze_pull :: {pp} with tag {t1} = {m1} differ by {th} sigma wrt tag {t0} = {m0}".format(
                                     pp = name,
                                     t1 = tag1,
@@ -69,6 +76,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
                                     t0 = tag0,
                                     m0 = measurement_format(v0, u0, l0),
                                 ))
+            print("\n")
 
 def analyze(directories, onepoi, gvalue, rvalue, fixpoi, otag):
     results = []
