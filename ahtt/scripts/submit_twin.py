@@ -295,7 +295,7 @@ if __name__ == '__main__':
                     jarg += " {toy} {idx} {opd}".format(
                         toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 else "",
                         idx = "--run-idx " + str(idx) if idx > -1 else "",
-                        opd = "--toy-location " + os.path.abspath(args.toyloc) if args.toyloc != "" else ""
+                        opd = "--toy-location " + os.path.abspath(toyloc) if toyloc != "" else ""
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
