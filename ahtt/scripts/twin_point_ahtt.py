@@ -213,6 +213,9 @@ if __name__ == '__main__':
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
+    if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
+        raise RuntimeError("in toy generation or FC scans no g can be negative!!")
+
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         make_datacard_with_args(scriptdir, args)
@@ -300,9 +303,6 @@ if __name__ == '__main__':
         pass
 
     if runfc:
-        if any(float(gg) < 0. for gg in gvalues):
-            raise RuntimeError("in FC scans both g can't be negative!!")
-
         if args.fcresdir == "":
             args.fcresdir = dcdir
 
