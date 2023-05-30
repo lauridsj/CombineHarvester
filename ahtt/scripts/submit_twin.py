@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     rungen = "generate" in args.mode
-    rungof = "gof" in modes
+    rungof = "gof" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
