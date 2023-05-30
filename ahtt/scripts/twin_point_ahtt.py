@@ -439,7 +439,7 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        toys = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys_*.root".format(ptg = ptag))
+        toys = recursive_glob(dcdir, "{ptg}_*_toys_*.root".format(ptg = ptag))
 
         if len(toys) > 0:
             print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
