@@ -342,7 +342,7 @@ if __name__ == '__main__':
                         idx = "--run-idx " + str(idx) if idx > -1 else ""
                     )
 
-                    if len(toylocs) > 0 and not firstjob:
+                    if len(toylocs) > 1 and not firstjob:
                         jarg += " --toy-location " + toylocs[ii]
                         if args.savetoy:
                             jarg += " --save-toy"
@@ -408,7 +408,7 @@ if __name__ == '__main__':
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
 
-                        if args.fcsinglepnt and len(toylocs) > 0 and not firstjob:
+                        if args.fcsinglepnt and len(toylocs) > 1 and not firstjob:
                             jarg += " --toy-location " + toylocs[ii]
                             if args.savetoy:
                                 jarg += " --save-toy"
