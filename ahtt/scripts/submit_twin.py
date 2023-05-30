@@ -262,7 +262,7 @@ if __name__ == '__main__':
             com = "--compress" if rundc else "",
             rmr = "--delete-root" if args.rmroot else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
-            gvl = "--g-values '" + args.gvalues + "'" if valid_g and not runfc else "",
+            gvl = "--g-values '" + ','.join(args.gvalues) + "'" if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option{s}'".format(s = '=' if args.extopt[0] == "-" else " ") + args.extopt + "'" if args.extopt != "" else "",
             otg = "--output-tag " + args.otag if args.otag != "" else "",
