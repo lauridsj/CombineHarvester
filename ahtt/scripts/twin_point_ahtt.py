@@ -43,7 +43,7 @@ def expected_scenario(exp):
 
     return None
 
-def get_fit(dname, qexp_eq_m1 = True, must_have_g = True):
+def get_fit(dname, attributes, qexp_eq_m1 = True):
     if not os.path.isfile(dname):
         return None
 
@@ -53,13 +53,17 @@ def get_fit(dname, qexp_eq_m1 = True, must_have_g = True):
     bf = None
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
-            bf = (getattr(dtree, 'g1', None), getattr(dtree, 'g2', None), dtree.deltaNLL if dtree.deltaNLL >= 0. else 0.)
+            bf = [getattr(dtree, attr) for attr in attributes]
+            if 'deltaNLL' in attributes:
+                idx = attributes.index('deltaNLL')
+                bf[idx] = max(bf[idx], 0.)
+            bf = tuple(bf)
 
         if bf is not None:
             break
 
     dfile.Close()
-    return None if must_have_g and None in bf else bf
+    return bf
 
 def read_previous_best_fit(gname):
     with open(gname) as ff:
@@ -298,7 +302,7 @@ if __name__ == '__main__':
                 if irobust:
                     syscall("rm robustHesse_*.root", False, True)
 
-                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], True, False):
+                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], ['limit'], True, False):
                     break
                 else:
                     syscall("rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
@@ -380,7 +384,7 @@ if __name__ == '__main__':
 
                     if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
                             snm = scan_name + identifier,
-                            mmm = mstr))[0], ff) is not None for ff in [True, False]]):
+                            mmm = mstr))[0], ['g1', 'g2', 'deltaNLL'], ff) is not None for ff in [True, False]]):
                         break
                     else:
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
@@ -490,7 +494,7 @@ if __name__ == '__main__':
                 raise RuntimeError("result compilation can't proceed without the best fit files or previous grids being available!!")
             gpoints = points_to_compile(points, expfits, None if no_previous else previous_grids[-1])
             idx = 0 if len(previous_grids) == 0 else int(previous_grids[-1].split("_")[-1].split(".")[0]) + 1
-            best_fit = get_fit(expfits[0]) if len(expfits) > 0 else read_previous_best_fit(previous_grids[-1])
+            best_fit = get_fit(expfits[0], ['g1', 'g2', 'deltaNLL']) if len(expfits) > 0 else read_previous_best_fit(previous_grids[-1])
 
             grid = OrderedDict()
             grid["points"] = points
@@ -505,8 +509,8 @@ if __name__ == '__main__':
                     g2 = pnt[1],
                     exp = scenario[0]
                 ))[0]
-                current_fit = get_fit(ename)
-                expected_fit = get_fit(ename, False)
+                current_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'])
+                expected_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'], False)
 
                 if expected_fit is None:
                     if gv in grid["g-grid"]:
