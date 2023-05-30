@@ -306,7 +306,7 @@ if __name__ == '__main__':
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
                 dcd = args.gofresdir,
                 snm = scan_name,
-                mmm = mstr
+                mmm = mstr,
                 ptg = ptag,
             ), False)
 
