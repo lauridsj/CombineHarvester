@@ -102,11 +102,14 @@ combine_help_messages = {
     "direct: same syntax as --gvalues, but both g must be valid.\n"
     "using the direct syntax requires the use of semicolon separator.",
     "--fc-result-directory": "where to write the fc scan results, relative to the datacard directory",
+    "--fc-skip-data": "skip running on data/asimov in fc scan",
 
     "--fc-nuisance-mode": "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
     "WARNING: profile mode is deprecated!!",
 
-    "--fc-skip-data": "skip running on data/asimov",
+    "--gof-result-directory": "where to write the gof scan results, relative to the datacard directory",
+    "--gof-skip-data": "skip running on data in goodness of fit test",
+
     "--delete-root": "delete root files after compiling",
     "--ignore-previous": "ignore previous grid when compiling",
 }

@@ -79,8 +79,12 @@ def common_2D(parser):
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
     parser.add_argument("--fc-result-directory", help = combine_help_messages["--fc-result-directory"], dest = "fcresdir", default = "", required = False,
                         type = append_if_not_empty)
-
     parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
+
+    parser.add_argument("--gof-result-directory", help = combine_help_messages["--gof-result-directory"], dest = "gofresdir", default = "", required = False,
+                        type = append_if_not_empty)
+    parser.add_argument("--gof-skip-data", help = combine_help_messages["--gof-skip-data"], dest = "gofrundat", action = "store_false", required = False)
+
     parser.add_argument("--delete-root", help = combine_help_messages["--delete-root"], dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = combine_help_messages["--ignore-previous"], dest = "ignoreprev", action = "store_true", required = False)
     return parser

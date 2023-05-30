@@ -124,7 +124,8 @@ def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_d
                 toyloc = make_timestamp_dir(base = base, prefix = "toys") if base != "" else ""
             toylocs.append(toyloc)
     elif base != "" and not savetoy:
-        toylocs = recursive_glob("{opd}".format(opd = base), "*_toys_{gstr}_n*.root".format(gstr = g_in_filename(gvalues)))
+        gstr = g_in_filename(gvalues)
+        toylocs = recursive_glob("{opd}".format(opd = base), "*_toys_{gstr}_n*.root".format(gstr = gstr if gstr != "" else "*"))
         if len(toylocs) < len(idxs):
             raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
         shuffle(toylocs)
@@ -288,7 +289,7 @@ if __name__ == '__main__':
         if rungen or rungof or runfc:
             idxs = index_list(args.runidxs) if args.ntoy > 0 else [-1]
 
-            if rungen or rungof:
+            if rungen:
                 for ii, idx in enumerate(idxs):
                     toylocs = toy_locations(base = args.toyloc if args.toyloc != "" else pstr + args.tag if rungen else "",
                                             savetoy = rungen or args.savetoy, gvalues = args.gvalues, indices = idxs)
@@ -310,6 +311,47 @@ if __name__ == '__main__':
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
+
+            if rungof:
+                toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = [-1, -1], indices = idxs)
+                resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "gof-result")
+                expnres = 0
+
+                for ii, idx in enumerate([-1] + idxs):
+                    if expnres > max_nfile_per_dir:
+                        resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "gof-result")
+                        expnres = 0
+
+                    firstjob = ii == 0
+                    writelog = ii < 2 and args.writelog # write logs only for best fit and first toy job unless explicitly disabled
+                    sdx = '_' + str(idx) if idx != -1 else ''
+                    jname = job_name + sdx
+                    logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+                    roots = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_gof-saturated_toys" + sdx + ".root")
+                    gofrundat = args.gofrundat and firstjob
+
+                    if not (args.runlocal and args.forcelocal):
+                        if len(logs) > 0 or len(roots) > 0:
+                            continue
+
+                    jarg = job_arg
+                    jarg += " {toy} {dat} {rsd} {idx}".format(
+                        toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
+                        dat = "--gof-skip-data " if not gofrundat else "",
+                        rsd = "--gof-result-dir " + resdir,
+                        idx = "--run-idx " + str(idx) if idx > -1 else ""
+                    )
+
+                    if len(toylocs) > 0 and not firstjob:
+                        jarg += " --toy-location " + toylocs[ii]
+                        if args.savetoy:
+                            jarg += " --save-toy"
+
+                    if not ("--gof-skip-data" in jarg and "--n-toy 0" in jarg):
+                        expnres += 2 if firstjob and fcrundat else 2 if writelog else 1
+                        submit_job(agg, jname, jarg, "1200" if "--n-toy 0" in jarg and len(args.fcexp) < 10 else args.jobtime, 1, "",
+                                   "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
+
             if runfc:
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"

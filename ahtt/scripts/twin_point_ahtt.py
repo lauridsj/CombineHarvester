@@ -261,6 +261,7 @@ if __name__ == '__main__':
         ), False)
 
     if rungof or runfc:
+        never_gonna_give_you_up = [(irobust, istrat, itol) for irobust in [False, True] for istrat in [0, 1, 2] for itol in range(4)]
         readtoy = args.toyloc.endswith(".root") and not args.savetoy
         if readtoy:
             for ftoy in reversed(args.toyloc.split("_")):
@@ -275,28 +276,76 @@ if __name__ == '__main__':
         if args.asimov:
             raise RuntimeError("mode gof is meaningless for asimov dataset!!")
 
-        print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
-        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg}".format(
-            dcd = dcdir + "workspace_twin-g.root",
-            mmm = mstr,
-            snm = "gof-saturated-data",
-            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0)
-        ))
+        if args.gofresdir == "":
+            args.gofresdir = dcdir
 
-        print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - toy fits"
-        syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt}".format(
-            dcd = dcdir + "workspace_twin-g.root",
-            mmm = mstr,
-            snm = "gof-saturated-toys",
-            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
-            toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
-            opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
-            svt = "--saveToys" if args.savetoy else ""
-        ))
+        set_freeze = starting_poi(gvalues, args.fixpoi)
 
-        print "\ntwin_point_ahtt :: goodness of fit - collecting results"
-        # FIXME continue
-        pass
+        if args.gofrundat:
+            print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
+            scan_name = "gof-saturated_obs"
+
+            for irobust, istrat, itol in never_gonna_give_you_up:
+                syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
+                    dcd = dcdir + "workspace_twin-g.root",
+                    mmm = mstr,
+                    snm = scan_name,
+                    stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
+                    msk = ",".join(masks) if len(masks) > 0 else "",
+                    prm = set_parameter(set_freeze, args.extopt, masks),
+                    ext = nonparametric_option(args.extopt),
+                ))
+                if irobust:
+                    syscall("rm robustHesse_*.root", False, True)
+
+                if get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], True):
+                    break
+                else:
+                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
+
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
+                dcd = args.gofresdir,
+                snm = scan_name,
+                mmm = mstr
+                ptg = ptag,
+            ), False)
+
+        if args.ntoy > 0:
+            print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - toy fits"
+            scan_name = "gof-saturated_toys"
+            scan_name += "_" + str(args.runidx) if args.runidx > -1 else ""
+
+            syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt} {prm} {ext}".format(
+                dcd = dcdir + "workspace_twin-g.root",
+                mmm = mstr,
+                snm = scan_name,
+                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
+                toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
+                opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
+                svt = "--saveToys" if args.savetoy else "",
+                prm = set_parameter(set_freeze, args.extopt, masks),
+                ext = nonparametric_option(args.extopt),
+            ))
+
+            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
+                dcd = args.fcresdir,
+                ptg = ptag,
+                snm = scan_name,
+                mmm = mstr,
+            ), False)
+
+            if args.savetoy:
+                syscall("cp {dcd}{ptg}_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
+                    dcd = dcdir,
+                    opd = args.toyloc,
+                    ptg = ptag,
+                    snm = scan_name,
+                    gvl = "_" + gstr if gstr != "" else "",
+                    fix = "_fixed" if args.fixpoi and gstr != "" else "",
+                    toy = "_n" + str(args.ntoy),
+                    idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+                    mmm = mstr,
+                ), False)
 
     if runfc:
         if args.fcresdir == "":
@@ -311,7 +360,7 @@ if __name__ == '__main__':
                 scenario = expected_scenario(fcexp)
                 identifier = "_" + scenario[0]
 
-                for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [False, True] for istrat in [0, 1, 2] for itol in range(4)]:
+                for irobust, istrat, itol in never_gonna_give_you_up:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "--setParameters '{exp}{msk}' {stg} {asm} {toy} {ext}".format(
                                 dcd = dcdir + "workspace_twin-g.root",
@@ -395,7 +444,7 @@ if __name__ == '__main__':
             mrgdir = ""
             for ii, toy in enumerate(toys):
                 if ii % max_nfile_per_dir == 0:
-                    mrgdir = make_timestamp_dir(base = dcdir, prefix = "fc-merge")
+                    mrgdir = make_timestamp_dir(base = dcdir, prefix = "{mode}-merge".format(mode = "fc" if "fc-" in toy else "gof"))
 
                 tomerge = recursive_glob(dcdir, toy)
                 if len(tomerge) > 0:
@@ -403,7 +452,7 @@ if __name__ == '__main__':
 
                 tomerge = recursive_glob(dcdir, toy.replace("toys.root", "toys_*.root"))
                 for tm in tomerge:
-                    if 'fc-result' in tm:
+                    if '-result' in tm:
                         directory_to_delete(location = tm)
 
                 if len(tomerge) > 1:
