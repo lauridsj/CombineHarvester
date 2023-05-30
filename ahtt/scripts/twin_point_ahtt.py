@@ -303,7 +303,7 @@ if __name__ == '__main__':
                 else:
                     syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
                 dcd = args.gofresdir,
                 snm = scan_name,
                 mmm = mstr,
@@ -327,7 +327,7 @@ if __name__ == '__main__':
                 ext = nonparametric_option(args.extopt),
             ))
 
-            syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
+            syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
                 dcd = args.fcresdir,
                 ptg = ptag,
                 snm = scan_name,
