@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
+from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
@@ -116,6 +116,20 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
     return g_grid
 
+def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_dir):
+    toylocs = []
+    if savetoy:
+        for ii, idx in enumerate(idxs):
+            if ii % max_per_dir == 0:
+                toyloc = make_timestamp_dir(base = base, prefix = "toys") if base != "" else ""
+            toylocs.append(toyloc)
+    elif base != "" and not savetoy:
+        toylocs = recursive_glob("{opd}".format(opd = base), "*_toys_{gstr}_n*.root".format(gstr = g_in_filename(gvalues)))
+        if len(toylocs) < len(idxs):
+            raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
+        shuffle(toylocs)
+    return toylocs
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     common_common(parser)
@@ -186,6 +200,7 @@ if __name__ == '__main__':
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
     rungen = "generate" in args.mode
+    rungof = "gof" in modes
     runfc = "fc-scan" in args.mode or "contour" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
@@ -270,18 +285,13 @@ if __name__ == '__main__':
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
-        if rungen or runfc:
-            if args.ntoy > 0:
-                idxs = [-1] + index_list(args.runidxs) if runfc else index_list(args.runidxs)
-            else:
-                idxs = [-1]
+        if rungen or rungof or runfc:
+            idxs = index_list(args.runidxs) if args.ntoy > 0 else [-1]
 
-            if rungen:
-                toyloc = ""
+            if rungen or rungof:
                 for ii, idx in enumerate(idxs):
-                    if ii % max_nfile_per_dir == 0:
-                        toyloc = make_timestamp_dir(base = args.toyloc, prefix = "toys") if args.toyloc != "" else make_timestamp_dir(base = pstr + args.tag, prefix = "toys")
-
+                    toylocs = toy_locations(base = args.toyloc if args.toyloc != "" else pstr + args.tag if rungen else "",
+                                            savetoy = rungen or args.savetoy, gvalues = args.gvalues, indices = idxs)
                     writelog = ii < 1 and args.writelog # write logs only for first toy job, unless explicitly disabled
                     jname = job_name
                     jname += '_' + str(idx) if idx != -1 else ''
@@ -295,12 +305,11 @@ if __name__ == '__main__':
                     jarg += " {toy} {idx} {opd}".format(
                         toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 else "",
                         idx = "--run-idx " + str(idx) if idx > -1 else "",
-                        opd = "--toy-location " + os.path.abspath(toyloc) if toyloc != "" else ""
+                        opd = "--toy-location " + toylocs[ii] if toyloc != "" else ""
                     )
 
                     submit_job(agg, jname, jarg, args.jobtime, 1, "",
                                "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
-
             if runfc:
                 if args.fcmode != "" and ggrid == "":
                     print "checking last grids"
@@ -315,20 +324,12 @@ if __name__ == '__main__':
 
                 if args.fcsinglepnt:
                     gvalues = [tuple([float(gg) for gg in args.gvalues]) + (0,)]
-
-                    toylocs = []
-                    if args.toyloc != "" and not args.savetoy:
-                        toylocs = [""] + recursive_glob("{opd}".format(opd = args.toyloc), "*_toys_*_n*.root")
-                        shuffle(toylocs)
-                        if len(toylocs) < len(idxs):
-                            raise RuntimeError("expecting at least as many toy files as there are run indices in {opd}!!".format(opd = args.toyloc))
-                    elif args.savetoy:
-                        toylocs = [args.toyloc for idx in idxs]
-
+                    toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
-                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
+                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
+                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
 
-                sumtoy = args.ntoy * (len(idxs) - 1)
+                sumtoy = args.ntoy * len(idxs)
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
                 expnres = 0
                 for ig1, ig2, ntotal in gvalues:
@@ -336,7 +337,7 @@ if __name__ == '__main__':
                     ndiff = max(0, sumtoy - ntotal) if args.fcmode == "brim" else 0
                     ndiff = int(math.ceil(float(ndiff) / args.ntoy)) if args.ntoy > 0 else 0
 
-                    for ii, idx in enumerate(idxs):
+                    for ii, idx in enumerate([-1] + idxs):
                         if expnres > max_nfile_per_dir:
                             resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
                             expnres = 0

@@ -14,7 +14,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
-from utilspy import get_point, elementwise_add, tuplize, stringify
+from utilspy import get_point, elementwise_add, tuplize, stringify. g_in_filename
 from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -175,6 +175,7 @@ if __name__ == '__main__':
     if len(points) != 2 or len(gvalues) != 2:
         raise RuntimeError("this script is to be used with exactly two A/H points!")
     ptag = "{pnt}{tag}".format(pnt = "__".join(points), tag = args.otag)
+    gstr = g_in_filename(gvalues)
 
     modes = args.mode
     scriptdir = os.path.dirname(os.path.abspath(__file__))
@@ -185,11 +186,6 @@ if __name__ == '__main__':
     best_fit_file = ""
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
-
-    gstr = ""
-    for ii, gg in enumerate(gvalues):
-        usc = "_" if ii > 0 else ""
-        gstr += usc + "g" + str(ii + 1) + "_" + gvalues[ii] if float(gvalues[ii]) >= 0. else ""
 
     allmodes = ["datacard", "workspace", "validate",
                 "generate", "gof", "fc-scan", "contour",
@@ -257,7 +253,7 @@ if __name__ == '__main__':
             opd = args.toyloc,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             ptg = ptag,
-            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+            gvl = "_" + gstr if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
             toy = "_n" + str(args.ntoy),
             idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
@@ -382,7 +378,7 @@ if __name__ == '__main__':
                     opd = args.toyloc,
                     snm = scan_name + identifier,
                     ptg = ptag,
-                    gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+                    gvl = "_" + gstr if gstr != "" else "",
                     fix = "_fixed" if args.fixpoi and gstr != "" else "",
                     toy = "_n" + str(args.ntoy),
                     idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
@@ -530,7 +526,7 @@ if __name__ == '__main__':
         syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics{gvl}{fix}.root".format(
             dcd = dcdir,
             ptg = ptag,
-            gvl = "_" + gstr.replace(".", "p") if gstr != "" else "",
+            gvl = "_" + gstr if gstr != "" else "",
             fix = "_fixed" if args.fixpoi and gstr != "" else "",
         ), False)
 
