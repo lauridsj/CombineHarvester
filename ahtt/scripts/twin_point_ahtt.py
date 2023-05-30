@@ -14,7 +14,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
-from utilspy import get_point, elementwise_add, tuplize, stringify. g_in_filename
+from utilspy import get_point, elementwise_add, tuplize, stringify, g_in_filename
 from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
