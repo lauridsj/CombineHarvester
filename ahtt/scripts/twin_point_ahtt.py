@@ -302,7 +302,7 @@ if __name__ == '__main__':
                 if irobust:
                     syscall("rm robustHesse_*.root", False, True)
 
-                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], ['limit'], True, False):
+                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], ['limit'], True):
                     break
                 else:
                     syscall("rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
