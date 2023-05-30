@@ -298,10 +298,10 @@ if __name__ == '__main__':
                 if irobust:
                     syscall("rm robustHesse_*.root", False, True)
 
-                if get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], True):
+                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], True):
                     break
                 else:
-                    syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
+                    syscall("rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
                 dcd = args.gofresdir,
