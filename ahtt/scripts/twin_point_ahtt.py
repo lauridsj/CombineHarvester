@@ -328,7 +328,7 @@ if __name__ == '__main__':
             ))
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
-                dcd = args.fcresdir,
+                dcd = args.gofresdir,
                 ptg = ptag,
                 snm = scan_name,
                 mmm = mstr,
@@ -336,7 +336,7 @@ if __name__ == '__main__':
 
             if args.savetoy:
                 syscall("cp {dcd}{ptg}_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
-                    dcd = dcdir,
+                    dcd = args.gofresdir,
                     opd = args.toyloc,
                     ptg = ptag,
                     snm = scan_name,
@@ -423,7 +423,7 @@ if __name__ == '__main__':
 
             if args.savetoy:
                 syscall("cp {dcd}{ptg}_fc-scan_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
-                    dcd = dcdir,
+                    dcd = args.fcresdir,
                     opd = args.toyloc,
                     snm = scan_name + identifier,
                     ptg = ptag,
