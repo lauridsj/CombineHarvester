@@ -419,7 +419,7 @@ if __name__ == '__main__':
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
         else:
             if runclean:
-                for job in ["contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
+                for job in ["generate", "gof", "contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
                     syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), False, True)
                 for tmps in ["fc-result", "toys"]:
                     tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
