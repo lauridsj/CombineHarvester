@@ -467,7 +467,7 @@ if __name__ == '__main__':
                         merged = []
 
                         for itm, tm in enumerate(tomerge):
-                            mname = mrgdir + toy.replace("toys.root", f"toys_{jj}-{itm}.root")
+                            mname = mrgdir + toy.replace("toys.root", "toys_{jj}-{itm}.root".format(jj = jj, itm = itm))
                             syscall("hadd {toy} {tox} && rm {tox}".format(toy = mname, tox = " ".join(tm)))
                             merged.append(mname)
 
