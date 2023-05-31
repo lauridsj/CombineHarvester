@@ -459,13 +459,28 @@ if __name__ == '__main__':
                     if '-result' in tm:
                         directory_to_delete(location = tm)
 
-                if len(tomerge) > 1:
-                    syscall("hadd {toy} {tox} && rm {tox}".format(toy = mrgdir + toy, tox = " ".join(tomerge)))
-                elif len(tomerge) == 1:
-                    syscall("mv {tox} {toy}".format(
-                        tox = tomerge[0],
-                        toy = re.sub('toys_.*.root', 'toys.root', tomerge[0])
-                    ), False, True)
+                jj = 0
+                while len(tomerge) > 0:
+                    if len(tomerge) > 1:
+                        about_right = 200 # arbitrary, only to prevent commands getting too long
+                        tomerge = chunks(tomerge, len(tomerge) // about_right)
+                        merged = []
+
+                        for itm, tm in enumerate(tomerge):
+                            mname = mrgdir + toy.replace("toys.root", f"toys_{jj}-{itm}.root")
+                            syscall("hadd {toy} {tox} && rm {tox}".format(toy = mname, tox = " ".join(tm)))
+                            merged.append(mname)
+
+                        jj += 1
+                        tomerge = merged
+                        continue
+
+                    elif len(tomerge) == 1:
+                        syscall("mv {tox} {toy}".format(
+                            tox = tomerge[0],
+                            toy = re.sub('toys_.*.root', 'toys.root', tomerge[0])
+                        ), False, True)
+                        tomerge = []
 
             directory_to_delete(location = None, flush = True)
 
