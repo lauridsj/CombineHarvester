@@ -80,24 +80,27 @@ def index_1n(idx1, nbins):
 
 def chunks(lst, npart):
     '''
-    split a list of length nlst into npart chunks of length ~nlst / npart
-    FIXME: seems to not work very well when setting --impact-n < 3, which relies this method
+    split a list of length nlst into npart chunks roughly of length nlst / npart
     '''
-    if npart > math.ceil(float(len(lst)) / 2) or npart < 1:
-        print 'chunks called with a invalid npart. setting it to 2.'
-        npart = 2
+    neach = len(lst) // npart
+    if neach < 1:
+        print 'chunks called with a invalid npart. setting it to 1.'
+        npart = 1
+        neach = len(lst) // npart
 
-    nf = float(len(lst)) / npart
-    nc = int(math.ceil(nf))
-    ni = len(lst) / npart
-    ii = 0
+    nreminder = len(lst) % npart
+    nappend = 0
     result = []
-    if nf - ni > 0.5:
-        ni, nc = nc, ni
-    result.append(lst[ii:ii + nc])
-    ii += nc
-    for i in xrange(ii, len(lst), ni):
-        result.append(lst[i:i + ni])
+    component = []
+
+    for ii, ll in enumerate(lst):
+        offset = 1 if nappend < nreminder else 0
+        component.append(ll)
+        if len(component) == neach + offset:
+            result.append(component)
+            component = []
+            nappend += 1
+
     return result
 
 def elementwise_add(list_of_lists):
