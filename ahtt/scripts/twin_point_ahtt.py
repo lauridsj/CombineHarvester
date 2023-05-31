@@ -468,6 +468,9 @@ if __name__ == '__main__':
 
                         for itm, tm in enumerate(tomerge):
                             mname = mrgdir + toy.replace("toys.root", "toys_{jj}-{itm}.root".format(jj = jj, itm = itm))
+                            while os.path.isfile(mname):
+                                jj += 1
+                                mname = mrgdir + toy.replace("toys.root", "toys_{jj}-{itm}.root".format(jj = jj, itm = itm))
                             syscall("hadd {toy} {tox} && rm {tox}".format(toy = mname, tox = " ".join(tm)))
                             merged.append(mname)
 
