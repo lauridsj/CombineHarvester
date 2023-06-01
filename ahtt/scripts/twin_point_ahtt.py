@@ -449,10 +449,13 @@ if __name__ == '__main__':
             for ii, toy in enumerate(toys):
                 if ii % max_nfile_per_dir == 0:
                     mrgdir = make_timestamp_dir(base = dcdir, prefix = "{mode}-merge".format(mode = "fc" if "fc-" in toy else "gof"))
+                    directory_to_delete(location = mrgdir)
 
                 tomerge = recursive_glob(dcdir, toy)
                 if len(tomerge) > 0:
                     syscall("mv {toy} {tox}".format(toy = tomerge[0], tox = toy.replace("toys.root", "toys_x.root")), False, True)
+                    for tm in tomerge:
+                        directory_to_delete(location = tm)
 
                 tomerge = recursive_glob(dcdir, toy.replace("toys.root", "toys_*.root"))
                 for tm in tomerge:
