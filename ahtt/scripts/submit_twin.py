@@ -421,10 +421,11 @@ if __name__ == '__main__':
             if runclean:
                 for job in ["generate", "gof", "contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
                     syscall("find {dcd} -type f -name 'twin_point_{dcd}_*{job}*.o*.*' | xargs rm".format(dcd = pstr + args.otag, job = job), False, True)
-                for tmps in ["fc-result", "toys"]:
-                    tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
-                    for tm in tmp:
-                        directory_to_delete(location = tm)
+                # FIXME buggy in current state since it indiscriminately cleans, even dirs that are to be used for future output
+                #for tmps in ["fc-result", "toys"]:
+                #    tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
+                #    for tm in tmp:
+                #        directory_to_delete(location = tm)
 
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
