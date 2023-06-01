@@ -423,7 +423,7 @@ if __name__ == '__main__':
                     syscall("find {pnt}{tag} -type f -name 'twin_point_{pnt}{otg}_*{job}*.o*.*' | xargs rm".format(
                         pnt = pstr,
                         tag = args.tag,
-                        otg = args.tag,
+                        otg = args.otag,
                         job = job), False, True)
                 # FIXME buggy in current state since it indiscriminately cleans, even dirs that are to be used for future output
                 #for tmps in ["fc-result", "toys"]:
