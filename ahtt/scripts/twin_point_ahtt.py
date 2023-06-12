@@ -251,7 +251,7 @@ if __name__ == '__main__':
     else:
         workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
                                   args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
-                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, {})]), args.extopt, masks)
+                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, set())]), args.extopt, masks)
         syscall("rm robustHesse_*.root", False, True)
 
         newname = "{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
