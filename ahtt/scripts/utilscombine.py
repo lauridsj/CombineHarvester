@@ -96,7 +96,7 @@ def starting_nuisance(point, freeze_zero, freeze_post):
     set_freeze = [[], []]
     setp, frzp = set_freeze
 
-    for frz in free_zero | freeze_post:
+    for frz in freze_zero | freeze_post:
         if frz in ["autoMCStats", "mcstat"]:
             param = r"rgx{prop_bin.*}"
         if frz in ["experiment", "theory", "norm", "expth"]:
