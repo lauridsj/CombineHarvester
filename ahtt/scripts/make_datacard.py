@@ -704,7 +704,6 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
             with open(tt, 'a') as txt:
                 for rp in rateparam:
                     rpp = tokenize_to_list(rp, ':')
-                    groups["norm"].append(rpp[0])
                     txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
 
     for tt in txts:
