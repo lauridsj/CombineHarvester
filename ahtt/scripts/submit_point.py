@@ -102,7 +102,7 @@ if __name__ == '__main__':
         )
 
         job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {fst} {hes} {frz} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
+                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -125,7 +125,10 @@ if __name__ == '__main__':
                        rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
                        fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
                        hes = "--use-hesse" if args.usehesse else "",
-                       frz = "--freeze-mc-stats-zero" if args.frzbb0 else "--freeze-mc-stats-post" if args.frzbbp else "--freeze-nuisance-post" if args.frznui else "",
+                       kbf = "--redo-best-fit" if not args.keepbest else "",
+                       dws = "--default-workspace" if args.defaultwsp else "",
+                       fr0 = "--freeze-zero '" + args.frzzero + "'" if args.frzzero != "" else "",
+                       frp = "--freeze-post '" + args.frzpost + "'" if args.frzpost != "" else "",
                        asm = "--unblind" if not args.asimov else "",
                        one = "--one-poi" if args.onepoi else "",
                        gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
