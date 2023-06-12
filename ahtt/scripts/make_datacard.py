@@ -635,6 +635,11 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     categories = OrderedDict([(ii, cc) for ii, cc in enumerate(cpn.keys())])
     years = tuple(sorted(years))
     mstr = str( get_point(sigpnt[0])[1] )
+    groups = {
+        "exp": [],
+        "th": [],
+        "norm": []
+    }
 
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
@@ -656,6 +661,12 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                     cb.cp().process([process]).AddSyst(cb, nuisance[0], nuisance[1][0], ch.SystMap("bin_id")([ii], nuisance[1][1]))
                 else:
                     print("make_datacard :: unknown handling for nuisance " + nuisance[0] + ", skipping")
+                    continue
+
+                if any([nn in nuisance[0] for nn in ["JEC", "JER", "eff", "fake", "pileup"]]):
+                    groups["exp"].append(nuisance[0])
+                else:
+                    groups["th"].append(nuisance[0])
 
             for ll in [write_datacard.lnNs[years], write_datacard.lnNs[channel], write_datacard.lnNs["common"]]:
                 for lnN in ll:
@@ -670,6 +681,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
 
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
                         if rateparam is None or all(["CMS_{rp}_norm_13TeV".format(rp = rp) != lnN[0] for rp in rateparam]):
+                            groups["norm"].append(lnN[0])
                             cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -680,8 +692,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     sstr = "__".join(sorted(sigpnt))
     writer.WriteCards(sstr + tag, cb)
 
+    txts = glob.glob(sstr + tag + "/ahtt_*.txt")
     if mcstat:
-        txts = glob.glob(sstr + tag + "/ahtt_*.txt")
         for tt in txts:
             with open(tt, 'a') as txt:
                 txt.write("\n* autoMCStats 0.\n")
@@ -691,7 +703,14 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
             with open(tt, 'a') as txt:
                 for rp in rateparam:
                     rpp = tokenize_to_list(rp, ':')
+                    groups["norm"].append(rpp[0])
                     txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
+
+    for tt in txts:
+        with open(tt, 'a') as txt:
+            for name, nuisances in groups.items():
+                txt.write("\n{name} group = {nuisances}\n".format(name = name, nuisances = " ".join(nuisances)))
+            txt.write("\n{name} group = {nuisances}\n".format(name = "expth", nuisances = " ".join(groups["exp"] + groups["th"])))
 
     if len(categories) > 1:
         os.chdir(sstr + tag)
