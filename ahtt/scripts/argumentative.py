@@ -59,9 +59,9 @@ def common_fit(parser):
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
                         type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
     parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False,
-                        type = lambda s: {} if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+                        type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False,
-                        type = lambda s: {} if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+                        type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     return parser
 
 def common_1D(parser):
