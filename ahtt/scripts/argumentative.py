@@ -38,9 +38,8 @@ def common_fit_pure(parser):
     parser.add_argument("--fit-strategy", help = combine_help_messages["--fit-strategy"], dest = "fitstrat", default = -1, required = False,
                         choices = [-1, 0, 1, 2], type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--use-hesse", help = combine_help_messages["--use-hesse"], dest = "usehesse", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-zero", help = combine_help_messages["--freeze-mc-stats-zero"], dest = "frzbb0", action = "store_true", required = False)
-    parser.add_argument("--freeze-mc-stats-post", help = combine_help_messages["--freeze-mc-stats-post"], dest = "frzbbp", action = "store_true", required = False)
-    parser.add_argument("--freeze-nuisance-post", help = combine_help_messages["--freeze-nuisance-post"], dest = "frznui", action = "store_true", required = False)
+    parser.add_argument("--redo-best-fit", help = combine_help_messages["--redo-best-fit"], dest = "keepbest", action = "store_false", required = False)
+    parser.add_argument("--default-workspace", help = combine_help_messages["--default-workspace"], dest = "defaultwsp", action = "store_true", required = False)
 
     parser.add_argument("--extra-option", help = combine_help_messages["--extra-option"], dest = "extopt", default = "", required = False)
     parser.add_argument("--output-tag", help = combine_help_messages["--output-tag"], dest = "otag", default = "", required = False, type = prepend_if_not_empty)
@@ -51,12 +50,18 @@ def common_fit_pure(parser):
 def common_fit_forwarded(parser):
     parser.add_argument("--mode", help = combine_help_messages["--mode"], default = "datacard", required = False)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False)
+    parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False)
+    parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False)
     return parser
 
 def common_fit(parser):
     parser.add_argument("--mode", help = combine_help_messages["--mode"], default = "datacard", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ))
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
                         type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
+    parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False,
+                        type = lambda s: {} if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False,
+                        type = lambda s: {} if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     return parser
 
 def common_1D(parser):

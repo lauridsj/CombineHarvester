@@ -74,14 +74,14 @@ combine_help_messages = {
 
     "--fit-strategy": "if >= 0, use this fit strategy, overriding whatever default in the mode.",
     "--use-hesse": "only in the pull/impact/prepost/corrmat/nll mode, use robust hesse to calculate uncertainties. very slow.",
-    "--freeze-mc-stats-zero": "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to zero",
-    "--freeze-mc-stats-post": "only in the pull/impact/prepost/corrmat/nll mode, freeze mc stats nuisances to the postfit values. "
-    "--freeze-mc-stats-zero takes priority over this option",
-    "--freeze-nuisance-post": "only in the prepost/corrmat/nll mode, freeze all nuisances to the postfit values. "
-    "--freeze-mc-stats-zero takes priority over this option",
     "--extra-option": "extra options to be passed to combine when running contour/pull/impact/prepost/corrmat/nll modes. irrelevant elsewhere. "
     "spaces should be used only to separate options, not arguments to the same option, as they present parsing difficulties.",
     "--output-tag": "a tag that is appended to the fit output files. equals --tag by default",
+
+    "--redo-best-fit": "a best fit is performed after datacard creation, to be used in future fits. this option triggers a redoing of the best fit.",
+    "--default-workspace": "suppresses the (re)creation of best-fit workspace and forces the use of the default one.",
+    "--freeze-zero": "freezes the comma-separated (groups of) nuisance parameters to zero. not supported for groups of non-mcstat nuisances. specify those individually.",
+    "--freeze-post": "freezes the comma-separated (groups of) nuisance parameters to their postfit values. --freeze-zero takes priority over this option.",
 
     "--one-poi": "use physics model with only g as poi",
     "--g-value": "g to use when evaluating impacts/fit diagnostics/nll. give negative values to leave floating",
