@@ -636,8 +636,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     years = tuple(sorted(years))
     mstr = str( get_point(sigpnt[0])[1] )
     groups = {
-        "exp": [],
-        "th": [],
+        "experiment": [],
+        "theory": [],
         "norm": []
     }
 
@@ -664,9 +664,9 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                     continue
 
                 if any([nn in nuisance[0] for nn in ["JEC", "JER", "eff", "fake", "pileup"]]):
-                    groups["exp"].append(nuisance[0])
+                    groups["experiment"].append(nuisance[0])
                 else:
-                    groups["th"].append(nuisance[0])
+                    groups["theory"].append(nuisance[0])
 
             for ll in [write_datacard.lnNs[years], write_datacard.lnNs[channel], write_datacard.lnNs["common"]]:
                 for lnN in ll:
@@ -709,8 +709,11 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
     for tt in txts:
         with open(tt, 'a') as txt:
             for name, nuisances in groups.items():
-                txt.write("\n{name} group = {nuisances}\n".format(name = name, nuisances = " ".join(nuisances)))
-            txt.write("\n{name} group = {nuisances}\n".format(name = "expth", nuisances = " ".join(groups["exp"] + groups["th"])))
+                txt.write("\n{name} group = {nuisances}\n".format(name = name, nuisances = " ".join(set(nuisances))))
+            txt.write("\n{name} group = {nuisances}\n".format(
+                name = "expth",
+                nuisances = " ".join(set(groups["experiment"] + groups["theory"] + groups["norm"]))
+            ))
 
     if len(categories) > 1:
         os.chdir(sstr + tag)
