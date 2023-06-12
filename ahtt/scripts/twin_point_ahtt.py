@@ -249,6 +249,7 @@ if __name__ == '__main__':
     elif args.keepbest and len(workspace) and os.path.isfile(workspace[0]):
         workspace = workspace[0]
     else:
+        print "\ntwin_point_ahtt :: making best fit"
         workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
                                   args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
                                   elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, set())]), args.extopt, masks)
