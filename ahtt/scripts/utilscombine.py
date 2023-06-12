@@ -104,7 +104,7 @@ def starting_nuisance(point, freeze_zero, freeze_post):
         else:
             param = frz
 
-        # --setNuisanceGroups xxx=0 ain't a thing ¯\_(ツ)_/¯
+        # --setNuisanceGroups xxx=0 ain't a thing
         if frz in frz_zero and "__grp__" not in param:
             setp.append("{param}=0".format(param = param))
         frzp.append("{param}".format(param = param))
