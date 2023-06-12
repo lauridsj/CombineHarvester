@@ -15,7 +15,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename
-from utilscombine import read_nuisance, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
+from utilscombine import max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -27,7 +27,7 @@ def expected_scenario(exp):
         "exp-s":  "g1=1,g2=1",
         "exp-01": "g1=0,g2=1",
         "exp-10": "g1=1,g2=0",
-        "obs":    "g1=0,g2=0"
+        "obs":    ""
     }
 
     if exp in specials:
@@ -237,6 +237,32 @@ if __name__ == '__main__':
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
+    default_workspace = dcdir + "workspace_twin-g.root"
+    workspace = glob.glob("{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
+        dcd = dcdir,
+        ptg = ptag,
+        gvl = "_" + gstr if gstr != "" else "",
+        fix = "_fixed" if args.fixpoi and gstr != "" else "",
+    ))
+    if args.defaultwsp:
+        workspace = default_workspace
+    elif args.keepbest and len(workspace) and os.path.isfile(workspace[0]):
+        workspace = workspace[0]
+    else:
+        workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
+                                  args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
+                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, {})]), args.extopt, masks)
+        syscall("rm robustHesse_*.root", False, True)
+
+        newname = "{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
+            dcd = dcdir,
+            ptg = ptag,
+            gvl = "_" + gstr if gstr != "" else "",
+            fix = "_fixed" if args.fixpoi and gstr != "" else "",
+        )
+        syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
+        workspace = newname
+
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
         if args.toyloc == "":
             # no toy location is given, dump the toys in some directory under datacard directory
@@ -245,7 +271,7 @@ if __name__ == '__main__':
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
         syscall("combine -v -1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
-                    dcd = dcdir + "workspace_twin-g.root",
+                    dcd = workspace,
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                     par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
@@ -283,7 +309,8 @@ if __name__ == '__main__':
         if args.gofresdir == "":
             args.gofresdir = dcdir
 
-        set_freeze = starting_poi(gvalues, args.fixpoi)
+        # FIXME test that freezing NPs lead to a very peaky distribution (possibly single value)
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
 
         if args.gofrundat:
             print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
@@ -291,7 +318,7 @@ if __name__ == '__main__':
 
             for irobust, istrat, itol in never_gonna_give_you_up:
                 syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
-                    dcd = dcdir + "workspace_twin-g.root",
+                    dcd = workspace,
                     mmm = mstr,
                     snm = scan_name,
                     stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
@@ -320,7 +347,7 @@ if __name__ == '__main__':
             scan_name += "_" + str(args.runidx) if args.runidx > -1 else ""
 
             syscall("combine -v -1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt} {prm} {ext}".format(
-                dcd = dcdir + "workspace_twin-g.root",
+                dcd = workspace,
                 mmm = mstr,
                 snm = scan_name,
                 stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
@@ -352,6 +379,7 @@ if __name__ == '__main__':
                 ), False)
 
     if runfc:
+        # FIXME mode fc still can't do frozen NPs. TBC if worth adding this.
         if args.fcresdir == "":
             args.fcresdir = dcdir
 
@@ -363,16 +391,16 @@ if __name__ == '__main__':
             for fcexp in args.fcexp:
                 scenario = expected_scenario(fcexp)
                 identifier = "_" + scenario[0]
+                parameters = [scenario[1]] if scenario[1] != "" else [] 
 
                 for irobust, istrat, itol in never_gonna_give_you_up:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                            "--setParameters '{exp}{msk}' {stg} {asm} {toy} {ext}".format(
-                                dcd = dcdir + "workspace_twin-g.root",
+                            "{exp} {stg} {asm} {toy} {ext}".format(
+                                dcd = workspace,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                                exp = scenario[1],
-                                msk = "," + ",".join(masks) if len(masks) > 0 else "",
+                                exp = "--setParameters '" + ",".join(parameters + masks) + "'" if len(parameters + masks) > 0 else "",
                                 stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
@@ -403,7 +431,7 @@ if __name__ == '__main__':
             setpar, frzpar = ([], [])
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                     "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {ext} {opd} {svt}".format(
-                        dcd = dcdir + "workspace_twin-g.root",
+                        dcd = workspace,
                         mmm = mstr,
                         snm = scan_name + identifier,
                         par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
@@ -572,17 +600,12 @@ if __name__ == '__main__':
         directory_to_delete(location = None, flush = True)
 
     if runprepost:
-        if args.frzbbp or args.frznui:
-            best_fit_file = make_best_fit(dcdir, "workspace_twin-g.root", "__".join(points),
-                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
-                                          elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0)]), args.extopt, masks)
-            syscall("rm robustHesse_*.root", False, True)
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
 
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_twin-g.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
-                    dcd = dcdir,
+                    dcd = workspace,
                     mmm = mstr,
                     stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
                     prg = poi_range,

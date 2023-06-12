@@ -37,10 +37,11 @@ def set_parameter(set_freeze, extopt, masks):
     this method harmonizes the set/freezeParameter options and ignore all others
     '''
     setpar = list(set_freeze[0])
-    frzpar = list(set_freeze[1])
+    frzpar = [par for par in set_freeze[1] if "__grp__" not in par]
+    grppar = [par.replace("__grp__", "") for par in set_freeze[1] if "__grp__" in par]
 
     extopt = [] if extopt == "" else extopt.split(' ')
-    for option in ['--setParameters', '--freezeParameters']:
+    for option in ['--setParameters', '--freezeParameters', '--freezeNuisanceGroups']:
         while option in extopt:
             iopt = extopt.index(option)
             parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
@@ -49,10 +50,13 @@ def set_parameter(set_freeze, extopt, masks):
                 setpar += parameters
             elif option == '--freezeParameters':
                 frzpar += parameters
+            elif option == '--freezeNuisanceGroups':
+                grppar += parameters
 
-    return '{stp} {frz} {ext}'.format(
+    return '{stp} {frz} {grp} {ext}'.format(
         stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
         frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
+        grp = "--freezeNuisanceGroups '" + ",".join(grppar) + "'" if len(grppar) > 0 else "",
         ext = ' '.join(extopt)
     )
 
@@ -64,7 +68,7 @@ def nonparametric_option(extopt):
         return ""
 
     extopt = extopt.split(' ')
-    for option in ['--setParameters', '--freezeParameters']:
+    for option in ['--setParameters', '--freezeParameters', "--freezeNuisanceGroups"]:
         while option in extopt:
             iopt = extopt.index(option)
             parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
@@ -72,11 +76,11 @@ def nonparametric_option(extopt):
 
     return " ".join(extopt)
 
-def make_best_fit(dcdir, card, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
+def make_best_fit(dcdir, workspace, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
 
     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
-        dcd = dcdir + card,
+        dcd = workspace,
         bff = fname,
         stg = strategy,
         prg = poi_range,
@@ -88,61 +92,24 @@ def make_best_fit(dcdir, card, point, asimov, strategy, poi_range, set_freeze, e
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)
 
-def read_nuisance(dname, points, qexp_eq_m1 = True):
-    dfile = TFile.Open(dname)
-    dtree = dfile.Get("limit")
+def starting_nuisance(point, freeze_zero, freeze_post):
+    set_freeze = [[], []]
+    setp, frzp = set_freeze
 
-    skip = ["r", "g", "r1", "r2", "g1", "g2", "deltaNLL", "quantileExpected",
-            "limit", "limitErr", "mh", "syst",
-            "iToy", "iSeed", "iChannel", "t_cpu", "t_real"]
+    for frz in free_zero | freeze_post:
+        if frz in ["autoMCStats", "mcstat"]:
+            param = r"rgx{prop_bin.*}"
+        if frz in ["experiment", "theory", "norm", "expth"]:
+            param = "__grp__{frz}".format(frz = frz)
+        else:
+            param = frz
 
-    nuisances = [bb.GetName() for bb in dtree.GetListOfBranches()]
-    hasbb = False
+        # --setNuisanceGroups xxx=0 ain't a thing ¯\_(ツ)_/¯
+        if frz in frz_zero and "__grp__" not in param:
+            setp.append("{param}=0".format(param = param))
+        frzp.append("{param}".format(param = param))
 
-    setpar = []
-    frzpar = []
-
-    for i in dtree:
-        if (dtree.quantileExpected != -1. and qexp_eq_m1) or (dtree.quantileExpected == -1. and not qexp_eq_m1):
-            continue
-
-        for nn in nuisances:
-            if nn in skip:
-                continue
-
-            if "prop_bin" not in nn:
-                frzpar.append(nn)
-            else:
-                hasbb = True
-
-            vv = round(getattr(dtree, nn), 2)
-            if abs(vv) > 0.01:
-                setpar.append(nn + "=" + str(vv))
-
-        if len(frzpar) > 0:
-            break
-
-    if hasbb:
-        frzpar.append("rgx{prop_bin.*}")
-
-    return [setpar, frzpar]
-
-def starting_nuisance(point, frz_bb_zero = True, frz_bb_post = False, frz_nuisance_post = False, best_fit_file = ""):
-    if frz_bb_zero:
-        return [["rgx{prop_bin.*}=0"], ["rgx{prop_bin.*}"]]
-    elif frz_bb_post or frz_nuisance_post:
-        if best_fit_file == "":
-            raise RuntimeError("postfit bb/nuisance freezing is requested, but no best fit file is provided!!!")
-
-        setpar, frzpar = read_nuisance(best_fit_file, point, True)
-
-        if not frz_nuisance_post:
-            setpar = [nn for nn in setpar if "prop_bin" in nn]
-            frzpar = [nn for nn in frzpar if "prop_bin" in nn]
-
-        return [setpar, frzpar]
-
-    return [[], []]
+    return set_freeze
 
 def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
     fstr = "--noMCbonly 1 --X-rtd NO_INITIAL_SNAP --X-rtd OPTIMIZE_BOUNDS=0"
