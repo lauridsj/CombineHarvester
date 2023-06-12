@@ -238,17 +238,27 @@ if __name__ == '__main__':
         ))
 
     default_workspace = dcdir + "workspace_twin-g.root"
-    workspace = glob.glob("{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
+    workspace = glob.glob("{dcd}{ptg}_best-fit*.root".format(
         dcd = dcdir,
-        ptg = ptag,
-        gvl = "_" + gstr if gstr != "" else "",
-        fix = "_fixed" if args.fixpoi and gstr != "" else "",
+        ptg = ptag
     ))
     if args.defaultwsp:
         workspace = default_workspace
-    elif args.keepbest and len(workspace) and os.path.isfile(workspace[0]):
-        workspace = workspace[0]
-    else:
+    elif args.keepbest:
+        if len(workspace) == 0 or not os.path.isfile(workspace[0]):
+            # try again, but using tag instead of otag
+            workspace = glob.glob("{dcd}{ptg}_best-fit*.root".format(
+                dcd = dcdir,
+                ptg = "{pnt}{tag}".format(pnt = "__".join(points), tag = args.tag),
+            ))
+
+        if len(workspace) and os.path.isfile(workspace[0]):
+            workspace = workspace[0]
+        else:
+            args.keepbest = False
+
+    if not args.defaultwsp and not args.keepbest:
+        # ok there really isnt a best fit file, make one
         print "\ntwin_point_ahtt :: making best fit"
         workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
                                   args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
