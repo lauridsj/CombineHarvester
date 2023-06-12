@@ -714,7 +714,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                 txt.write("\n{name} group = {nuisances}\n".format(name = name, nuisances = " ".join(set(nuisances))))
             txt.write("\n{name} group = {nuisances}\n".format(
                 name = "expth",
-                nuisances = " ".join(set(groups["experiment"] + groups["theory"] + groups["norm"]))
+                nuisances = " ".join(set(groups[cc]["experiment"] + groups[cc]["theory"] + groups[cc]["norm"]))
             ))
 
     if len(categories) > 1:
