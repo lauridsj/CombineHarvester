@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 mod = "one-poi" if onepoi else "g-scan",
                 mmm = mstr,
                 phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed",
-                ext = "--channel-masks --for-fits --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
+                ext = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
             ))
 
     if runvalid:

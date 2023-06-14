@@ -85,7 +85,7 @@ def make_best_fit(dcdir, workspace, point, asimov, strategy, poi_range, set_free
         stg = strategy,
         prg = poi_range,
         asm = "-t -1" if asimov else "",
-        wsp = "--saveWorkspace --saveSpecifiedNuis=all",
+        wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
         prm = set_parameter(set_freeze, extopt, masks),
         ext = nonparametric_option(extopt)
     ))
@@ -112,7 +112,7 @@ def starting_nuisance(point, freeze_zero, freeze_post):
     return set_freeze
 
 def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
-    fstr = "--noMCbonly 1 --X-rtd NO_INITIAL_SNAP --X-rtd OPTIMIZE_BOUNDS=0"
+    fstr = "--X-rtd NO_INITIAL_SNAP --X-rtd OPTIMIZE_BOUNDS=0"
     fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
     fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
     fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 4))

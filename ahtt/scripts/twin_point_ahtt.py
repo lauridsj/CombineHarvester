@@ -226,7 +226,7 @@ if __name__ == '__main__':
             mmm = mstr,
             pnt = ",".join(points),
             pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
-            ext = "--channel-masks --for-fits --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
+            ext = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
         ))
 
     if runvalid:
