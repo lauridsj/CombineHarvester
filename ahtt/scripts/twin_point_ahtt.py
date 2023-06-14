@@ -262,7 +262,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: making best fit"
         workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
                                   args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
-                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, set())]), args.extopt, masks)
+                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
         syscall("rm robustHesse_*.root", False, True)
 
         newname = "{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
@@ -321,7 +321,7 @@ if __name__ == '__main__':
             args.gofresdir = dcdir
 
         # FIXME test that freezing NPs lead to a very peaky distribution (possibly single value)
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         if args.gofrundat:
             print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
@@ -614,7 +614,7 @@ if __name__ == '__main__':
         for scenario in [(("0.", "0."), True, "--skipSBFit", "b"), (gvalues, args.fixpoi, "--skipBOnlyFit", "s")]:
             gtofit, fixpoi, fitopt, fittag = scenario
             gfit = g_in_filename(gtofit)
-            set_freeze = elementwise_add([starting_poi(gtofit, fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
+            set_freeze = elementwise_add([starting_poi(gtofit, fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
             print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
             syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "

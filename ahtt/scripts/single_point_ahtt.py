@@ -250,6 +250,8 @@ if __name__ == '__main__':
 
     point = get_point(args.point[0])
     mstr = str(point[1]).replace(".0", "")
+    ptag = "{pnt}{tag}".format(pnt = args.point[0], tag = args.otag)
+
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     best_fit_file = ""
     masks = ["mask_" + mm + "=1" for mm in args.mask]
@@ -284,19 +286,59 @@ if __name__ == '__main__':
 
     if runvalid:
         print "\nsingle_point_ahtt :: validating datacard"
-        syscall("ValidateDatacards.py --jsonFile {dcd}{pnt}{tag}_validate.json --printLevel 3 {dcd}{crd}".format(
+        syscall("ValidateDatacards.py --jsonFile {dcd}{ptg}_validate.json --printLevel 3 {dcd}{crd}".format(
             dcd = dcdir,
-            pnt = args.point[0],
-            tag = args.otag,
+            ptg = ptag,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
+    default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan")
+    workspace = glob.glob("{dcd}{ptg}_best-fit_{mod}*.root".format(
+        dcd = dcdir,
+        ptg = ptag,
+        mod = "one-poi" if args.onepoi else "g-scan"
+    ))
+    if args.defaultwsp:
+        workspace = default_workspace
+    elif args.keepbest:
+        if len(workspace) == 0 or not os.path.isfile(workspace[0]):
+            # try again, but using tag instead of otag
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{mod}*.root".format(
+                dcd = dcdir,
+                ptg = "{pnt}{tag}".format(pnt = args.point[0], tag = args.tag),
+                mod = "one-poi" if args.onepoi else "g-scan"
+            ))
+
+        if len(workspace) and os.path.isfile(workspace[0]):
+            workspace = workspace[0]
+        else:
+            args.keepbest = False
+
+    if not args.defaultwsp and not args.keepbest:
+        for onepoi in [not args.onepoi, args.onepoi]:
+            # ok there really isnt a best fit file, make one
+            print "\nsingle_point_ahtt :: making best fits"
+            workspace = make_best_fit(dcdir, dcdir + "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
+                                      args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
+                                      elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
+            syscall("rm robustHesse_*.root", False, True)
+
+            newname = "{dcd}{ptg}_best-fit_{mod}{gvl}{fix}.root".format(
+                dcd = dcdir,
+                ptg = ptag,
+                mod = "one-poi" if args.onepoi else "g-scan",
+                gvl = "_" + gstr if gstr != "" else "",
+                fix = "_fixed" if args.fixpoi and gstr != "" else "",
+            )
+            syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
+            workspace = newname
+    FIXME use new workspaces
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
         accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
 
         if args.onepoi:
-            syscall("rm {dcd}{pnt}{tag}_limits_one-poi.root {dcd}{pnt}{tag}_limits_one-poi.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag), False, True)
+            syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
@@ -309,12 +351,11 @@ if __name__ == '__main__':
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
-            syscall("combineTool.py -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{pnt}{tag}_limits_one-poi.json && "
+            syscall("combineTool.py -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{ptg}_limits_one-poi.json && "
                     "rm higgsCombine_limit.AsymptoticLimits.mH*.root".format(
                         dcd = dcdir,
                         mmm = mstr,
-                        pnt = args.point[0],
-                        tag = args.otag
+                        ptg = ptag
                     ))
         else:
             if args.nchunk < 0:
@@ -322,10 +363,9 @@ if __name__ == '__main__':
             if args.ichunk < 0 or args.ichunk >= args.nchunk:
                 args.ichunk = 0
 
-            syscall("rm {dcd}{pnt}{tag}_limits_g-scan_{nch}_{idx}.root {dcd}{pnt}{tag}_limits_g-scan_{nch}_{idx}.json ".format(
+            syscall("rm {dcd}{ptg}_limits_g-scan_{nch}_{idx}.root {dcd}{ptg}_limits_g-scan_{nch}_{idx}.json ".format(
                 dcd = dcdir,
-                pnt = args.point[0],
-                tag = args.otag,
+                ptg = ptag,
                 nch = "n" + str(args.nchunk),
                 idx = "i" + str(args.ichunk)), False, True)
             syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
@@ -343,15 +383,14 @@ if __name__ == '__main__':
                     limits[ll[0]] = ll[1]
             limits = OrderedDict(sorted(limits.items()))
 
-            syscall("hadd {dcd}{pnt}{tag}_limits_g-scan_{nch}_{idx}.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
+            syscall("hadd {dcd}{ptg}_limits_g-scan_{nch}_{idx}.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
                     "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
                         dcd = dcdir,
-                        pnt = args.point[0],
-                        tag = args.otag,
+                        ptg = ptag,
                         nch = "n" + str(args.nchunk),
                         idx = "i" + str(args.ichunk)
                     ))
-            with open("{dcd}{pnt}{tag}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
+            with open("{dcd}{ptg}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, ptg = ptag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
                 json.dump(limits, jj, indent = 1)
 
     if runpull:
@@ -361,10 +400,9 @@ if __name__ == '__main__':
             group = "_" + args.impactnui[0]
             nuisances = tokenize_to_list(args.impactnui[1])
 
-        syscall("rm {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
+        syscall("rm {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
             dcd = dcdir,
-            pnt = args.point[0],
-            tag = args.otag,
+            ptg = ptag,
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
@@ -419,12 +457,11 @@ if __name__ == '__main__':
                     break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{pnt}{tag}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
+        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
             dcd = dcdir,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            pnt = args.point[0],
-            tag = args.otag,
+            ptg = ptag,
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
@@ -464,10 +501,9 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{pnt}{tag}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
+        syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
             dcd = dcdir,
-            pnt = args.point[0],
-            tag = args.otag,
+            ptg = ptag,
             mod = "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
@@ -491,10 +527,9 @@ if __name__ == '__main__':
         scenarii = ['exp-b', 'exp-s', 'obs']
         nlls = OrderedDict()
 
-        syscall("rm {dcd}{pnt}{tag}_nll_one-poi.root {dcd}{pnt}{tag}_nll_{mod}.json".format(
+        syscall("rm {dcd}{ptg}_nll_one-poi.root {dcd}{ptg}_nll_{mod}.json".format(
             dcd = dcdir,
-            pnt = args.point[0],
-            tag = args.otag,
+            ptg = ptag,
             mod = "one-poi" if args.onepoi else "g-scan"), False, True)
 
         for sce in scenarii:
@@ -521,18 +556,16 @@ if __name__ == '__main__':
                         ))
                 syscall("rm robustHesse_*.root", False, True)
 
-                syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{pnt}{tag}_nll_{sce}_one-poi.root".format(
+                syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{ptg}_nll_{sce}_one-poi.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point[0],
-                    tag = args.otag
+                    ptg = ptag
                 ), False)
 
                 nlls[sce] = get_nll_one_poi("{dcd}{pnt}{pnt}_nll_{sce}_one-poi.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point[0],
-                    tag = args.otag,
+                    ptg = ptag
                 ))
             else:
                 for gval in gvalues:
@@ -552,25 +585,23 @@ if __name__ == '__main__':
                             ))
                     syscall("rm robustHesse_*.root", False, True)
 
-                syscall("hadd {dcd}{pnt}{tag}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
+                syscall("hadd {dcd}{ptg}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
                         "rm higgsCombine_nll_fix-g*.root".format(
                             dcd = dcdir,
                             sce = sce,
-                            pnt = args.point[0],
-                            tag = args.otag
+                            ptg = ptag
                         ))
 
-                nlls[sce] = get_nll_g_scan("{dcd}{pnt}{tag}_nll_{sce}_g-scan.root".format(
+                nlls[sce] = get_nll_g_scan("{dcd}{ptg}_nll_{sce}_g-scan.root".format(
                     dcd = dcdir,
                     sce = sce,
-                    pnt = args.point[0],
-                    tag = args.otag
+                    ptg = ptag
                 ))
 
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        with open("{dcd}{pnt}{tag}_nll_{mod}.json".format(dcd = dcdir, pnt = args.point[0], tag = args.otag, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
+        with open("{dcd}{ptg}_nll_{mod}.json".format(dcd = dcdir, ptg = ptag, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)
 
     if not os.path.isfile(best_fit_file):
