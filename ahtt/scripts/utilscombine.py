@@ -99,7 +99,7 @@ def starting_nuisance(point, freeze_zero, freeze_post):
     for frz in freeze_zero | freeze_post:
         if frz in ["autoMCStats", "mcstat"]:
             param = r"rgx{prop_bin.*}"
-        if frz in ["experiment", "theory", "norm", "expth"]:
+        elif frz in ["experiment", "theory", "norm", "expth"]:
             param = "__grp__{frz}".format(frz = frz)
         else:
             param = frz
