@@ -611,32 +611,37 @@ if __name__ == '__main__':
         directory_to_delete(location = None, flush = True)
 
     if runprepost:
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
+        for scenario in [(("0.", "0."), True, "--skipSBFit", "b"), (gvalues, args.fixpoi, "--skipBOnlyFit", "s")]:
+            gtofit, fixpoi, fitopt, fittag = scenario
+            gfit = g_in_filename(gtofit)
+            set_freeze = elementwise_add([starting_poi(gtofit, fixpoi), starting_nuisance(points, args.frzzero, args.frzpost)])
 
-        print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm}".format(
-                    dcd = workspace,
-                    mmm = mstr,
-                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                    prg = poi_range,
-                    asm = "-t -1" if args.asimov else "",
-                    prm = set_parameter(set_freeze, args.extopt, masks),
-                    ext = nonparametric_option(args.extopt)
-        ))
+            print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
+            syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+                    "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm} {ext} {opt}".format(
+                        dcd = workspace,
+                        mmm = mstr,
+                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
+                        prg = poi_range,
+                        asm = "-t -1" if args.asimov else "",
+                        prm = set_parameter(set_freeze, args.extopt, masks),
+                        ext = nonparametric_option(args.extopt),
+                        opt = fitopt
+                    ))
 
-        syscall("rm *_th1x_*.png", False, True)
-        syscall("rm covariance_fit_?.png", False, True)
-        syscall("rm higgsCombine_prepost*.root", False, True)
-        syscall("rm combine_logger.out", False, True)
-        syscall("rm robustHesse_*.root", False, True)
+            syscall("rm *_th1x_*.png", False, True)
+            syscall("rm covariance_fit_?.png", False, True)
+            syscall("rm higgsCombine_prepost*.root", False, True)
+            syscall("rm combine_logger.out", False, True)
+            syscall("rm robustHesse_*.root", False, True)
 
-        syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics{gvl}{fix}.root".format(
-            dcd = dcdir,
-            ptg = ptag,
-            gvl = "_" + gstr if gstr != "" else "",
-            fix = "_fixed" if args.fixpoi and gstr != "" else "",
-        ), False)
+            syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics_{ftg}{gvl}{fix}.root".format(
+                dcd = dcdir,
+                ptg = ptag,
+                ftg = fittag,
+                gvl = "_" + gfit if gfit != "" else "",
+                fix = "_fixed" if fixpoi and gfit != "" else "",
+            ), False)
 
     if not os.path.isfile(best_fit_file):
         syscall("rm {bff}".format(bff = best_fit_file), False, True)
