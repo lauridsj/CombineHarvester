@@ -666,10 +666,10 @@ if __name__ == '__main__':
             print args.nllwindow
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
         print minmax
-        if args.nllnpnt == []:
+        if len(args.nllnpnt) < len(args.nllparam):
             nsample = 32 // len(args.nllparam)
-            args.nllnpnt = [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllparam))]
-            args.nllnpnt = [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllparam))]
+            args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), len(args.nllparam))]
+            args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), len(args.nllparam))]
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam) else -1] + 1)) for ii in range(len(args.nllparam))]
         print interval
         for element in itertools.product(*interval):
