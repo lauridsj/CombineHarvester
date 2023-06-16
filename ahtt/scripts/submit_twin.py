@@ -207,7 +207,7 @@ if __name__ == '__main__':
     runcompile = "compile" in args.mode
     runprepost = "prepost" in args.mode or "corrmat" in args.mode
     runclean = "clean" in args.mode
-    runnll = "nll" in modes or "likelihood" in modes
+    runnll = "nll" in args.mode or "likelihood" in args.mode
 
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
