@@ -661,7 +661,7 @@ if __name__ == '__main__':
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
         if len(args.nllwindow) < len(args.nllparam):
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
-        minmax = [tuple(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
+        minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
 
         if args.nllnpnt == []:
             nsample = 32 // len(args.nllparam)
