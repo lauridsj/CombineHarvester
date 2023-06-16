@@ -657,7 +657,7 @@ if __name__ == '__main__':
 
         scenario = expected_scenario(args.fcexp[0], True)
         set_freeze = elementwise_add([starting_poi(scenario[1], args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
-        isgah = [param in ["g1", "g2"] for param args.nllparam]
+        isgah = [param in ["g1", "g2"] for param in args.nllparam]
         if len(args.nllwindow) < len(args.nllparam):
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
         minmax = [tuple(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
