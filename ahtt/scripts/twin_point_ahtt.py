@@ -665,9 +665,9 @@ if __name__ == '__main__':
 
         if args.nllnpnt == []:
             nsample = 32 // len(args.nllparam)
-            args.nllnpnt = [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(args.nllparam)]
-            args.nllnpnt = [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(args.nllparam)]
-        interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam) else -1]) + 1) for ii in range(args.nllparam)]
+            args.nllnpnt = [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllparam))]
+            args.nllnpnt = [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllparam))]
+        interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam) else -1]) + 1) for ii in range(len(args.nllparam))]
 
         for element in itertools.product(*interval):
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
