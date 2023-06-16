@@ -656,22 +656,22 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: evaluating nll as a function of {nlp}".format(nlp = ", ".join(args.nllparam))
 
+        nparam = len(args.nllparam)
         scenario = expected_scenario(args.fcexp[0], True)
         set_freeze = elementwise_add([starting_poi(scenario[1], args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
-        # FIXME BUGGY!!!
+
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
-        print isgah
-        if len(args.nllwindow) < len(args.nllparam):
+        if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
-            print args.nllwindow
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
-        print minmax
-        if len(args.nllnpnt) < len(args.nllparam):
-            nsample = 32 // len(args.nllparam)
-            args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), len(args.nllparam))]
-            args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), len(args.nllparam))]
-        interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam) else -1] + 1)) for ii in range(len(args.nllparam))]
-        print interval
+        addon = [[2.**-17, 2.**-13, 2.**-9] if isgah[ii] and minmax[ii][0] == 0. else [] for ii in range(nparam)]
+
+        if len(args.nllnpnt) < nparam:
+            nsample = 32 # per unit interval
+            args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), nparam)]
+            args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), nparam)]
+        interval = [addon[ii] + list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1] + 1)) for ii in range(nparam)]
+
         for element in itertools.product(*interval):
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join(["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
@@ -691,10 +691,16 @@ if __name__ == '__main__':
             if args.usehesse:
                 syscall("rm robustHesse_*.root", False, True)
 
-            pass
+        syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+            dcd = dcdir,
+            ptg = ptag,
+            exp = args.fcexp[0],
+            fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+            par = "*".join(args.nllparam),
+            mmm = mstr
+        ))
 
-        #ensure tmp output names incorporate those
-        #hadd those files when done
+        # want a json?
 
         pass
 
