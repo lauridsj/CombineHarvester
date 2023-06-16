@@ -428,7 +428,7 @@ if __name__ == '__main__':
                             submit_job(agg, jname, jarg, "1200" if "--n-toy 0" in jarg and len(args.fcexp) < 10 else args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
         elif runnll:
-            minmax = [tuple(values.split(",")[0], values.split(",")[1]) for values in args.nllwindow]
+            minmax = [(values.split(",")[0], values.split(",")[1]) for values in args.nllwindow]
             jname = job_name + "_" + args.fcexp[0]
             jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
             jname += "_" + "_".join(args.nllparam[len(minmax):])
