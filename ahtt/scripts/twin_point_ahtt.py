@@ -196,7 +196,8 @@ if __name__ == '__main__':
     allmodes = ["datacard", "workspace", "validate",
                 "generate", "gof", "fc-scan", "contour",
                 "hadd", "merge", "compile",
-                "prepost", "corrmat"]
+                "prepost", "corrmat",
+                "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
