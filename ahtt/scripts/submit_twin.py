@@ -445,7 +445,7 @@ if __name__ == '__main__':
                 pnt = "--nll-npoint '" + ",".join([str(npnt) for npnt in args.nllnpnt]) + "'" if args.nllnpnt != [] else "",
             )
 
-            submit_job(agg, jname, jarg, args.jobtime, 1, job_mem,
+            submit_job(agg, jname, jarg, args.jobtime, 1, "",
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
         else:
