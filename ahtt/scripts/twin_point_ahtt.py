@@ -673,7 +673,7 @@ if __name__ == '__main__':
 
         for element in itertools.product(*interval):
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
-            nllname = args.fcexp[0] + "_".join(["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
+            nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{pnt}' {par} "
                     "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
