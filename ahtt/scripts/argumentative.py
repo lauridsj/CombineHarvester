@@ -73,7 +73,7 @@ def common_1D(parser):
     parser.add_argument("--raster-n", help = combine_help_messages["--raster-n"], dest = "nchunk", default = 6, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     return parser
 
-def common_2D_pure(parser):
+def common_2D(parser):
     parser.add_argument("--g-values", help = combine_help_messages["--g-values"], default = "-1., -1.", dest = "gvalues", required = False,
                         type = lambda s: [str(float(ss)) for ss in tokenize_to_list( remove_spaces_quotes(s) )])
 
