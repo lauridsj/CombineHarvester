@@ -92,7 +92,7 @@ def make_best_fit(dcdir, workspace, point, asimov, strategy, poi_range, set_free
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)
 
-def starting_nuisance(point, freeze_zero, freeze_post):
+def starting_nuisance(freeze_zero, freeze_post):
     set_freeze = [[], []]
     setp, frzp = set_freeze
 
