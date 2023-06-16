@@ -21,6 +21,9 @@ def syscall(cmd, verbose = True, nothrow = False):
             print ("Tried to execute: %s" % cmd)
         raise RuntimeError("Command failed with exit code {ret}!".format(ret = retval))
 
+def pmfloat(value):
+    return str(value).replace(".", "p").replace("-", "m")
+
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
@@ -33,9 +36,6 @@ def tuplize(gstring):
 
 def g_in_filename(gvalues):
     return "_".join(["g" + str(ii + 1) + "_" + str(gg) for ii, gg in enumerate(gvalues) if float(gg) >= 0.]).replace(".", "p")
-
-def pmfloat(strfloat):
-    return strfloat.replace(".", "p").replace("-", "m")
 
 def right_now():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
