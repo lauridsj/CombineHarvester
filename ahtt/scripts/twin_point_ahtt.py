@@ -664,13 +664,12 @@ if __name__ == '__main__':
         if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
-        addon = [[2.**-17, 2.**-13, 2.**-9] if isgah[ii] and minmax[ii][0] == 0. else [] for ii in range(nparam)]
 
         if len(args.nllnpnt) < nparam:
             nsample = 32 # per unit interval
             args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), nparam)]
             args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), nparam)]
-        interval = [addon[ii] + list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1] + 1)) for ii in range(nparam)]
+        interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1] + 1)) for ii in range(nparam)]
 
         for element in itertools.product(*interval):
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
