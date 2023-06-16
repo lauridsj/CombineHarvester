@@ -658,17 +658,20 @@ if __name__ == '__main__':
 
         scenario = expected_scenario(args.fcexp[0], True)
         set_freeze = elementwise_add([starting_poi(scenario[1], args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        # FIXME BUGGY!!!
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
+        print isgah
         if len(args.nllwindow) < len(args.nllparam):
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
+            print args.nllwindow
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
-
+        print minmax
         if args.nllnpnt == []:
             nsample = 32 // len(args.nllparam)
             args.nllnpnt = [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllparam))]
             args.nllnpnt = [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllparam))]
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam) else -1]) + 1) for ii in range(len(args.nllparam))]
-
+        print interval
         for element in itertools.product(*interval):
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join(["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
@@ -681,7 +684,7 @@ if __name__ == '__main__':
                         pnt = nllpnt,
                         par = "--redefineSignalPOIs '{param}'".format(param = ",".join(args.nllparam)),
                         exp = set_parameter(set_freeze, args.extopt, masks),
-                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
+                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
                         asm = "-t -1" if args.fcexp[0] != "obs" else "",
                         ext = nonparametric_option(args.extopt),
                     ))
