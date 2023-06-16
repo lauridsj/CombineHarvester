@@ -83,9 +83,11 @@ combine_help_messages = {
     "--freeze-zero": "freezes the comma-separated (groups of) nuisance parameters to zero. not supported for groups of non-mcstat nuisances. specify those individually.",
     "--freeze-post": "freezes the comma-separated (groups of) nuisance parameters to their postfit values. --freeze-zero takes priority over this option.",
 
+    "--result-directory": "some modes give too many output files. this option is to specify where to write those files out.",
+
     "--one-poi": "use physics model with only g as poi",
-    "--g-value": "g to use when evaluating impacts/fit diagnostics/nll. give negative values to leave floating",
-    "--r-value": "r to use when evaluating impacts/fit diagnostics/nll, if --one-poi is not used. give negative values to leave floating",
+    "--g-value": "g to use when evaluating impacts/fit diagnostics. give negative values to leave floating",
+    "--r-value": "r to use when evaluating impacts/fit diagnostics, if --one-poi is not used. give negative values to leave floating",
     "--raster-n": "number of chunks to split the g raster limit scan into",
     "--raster-i": "which chunk to process, in doing the raster scan",
     "--impact-nuisances": "format: grp;n1,n2,...,nN where grp is the name of the group of nuisances, and n1,n2,...,nN are the nuisances belonging to that group",
@@ -97,18 +99,22 @@ combine_help_messages = {
     "--save-toy": "in mode contour/gof, will generate toys and save them in --toy-location, instead of reading from it.\n"
     "if --toy-location is not given, it defaults to a randomly generated directory within --base-directory.",
 
-    "--fc-expect": "expected scenarios to assume in the FC scan. comma or semicolon separated, but it must be consistently used. may take args in two syntaxes:\n"
+    "--gof-skip-data": "skip running on data in goodness of fit test",
+
+    "--fc-expect": "expected scenarios to assume in the FC/NLL scan. comma or semicolon separated, but it must be consistently used. may take args in two syntaxes:\n"
     "special: exp-b -> g1 = g2 = 0; exp-s -> g1 = g2 = 1; exp-01 -> g1 = 0, g2 = 1; exp-10 -> g1 = 1, g2 = 0\n"
     "direct: same syntax as --gvalues, but both g must be valid.\n"
-    "using the direct syntax requires the use of semicolon separator.",
-    "--fc-result-directory": "where to write the fc scan results, relative to the datacard directory",
+    "using the direct syntax requires the use of semicolon separator. --unblind adds a special scenario obs which uses real data (also requestable explicitly).",
     "--fc-skip-data": "skip running on data/asimov in fc scan",
 
     "--fc-nuisance-mode": "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
     "WARNING: profile mode is deprecated!!",
 
-    "--gof-result-directory": "where to write the gof scan results, relative to the datacard directory",
-    "--gof-skip-data": "skip running on data in goodness of fit test",
+    "--nll-parameter": "comma-separated list of parameters to evaluate the NLL for. nuisances are promoted to POI.",
+    "--nll-npoint": "comma-separated list of number of points to sample equidistantly along each parameter.\n"
+    "if not given, defaults to a scan with roughly 200 points total, finer in g than NPs.",
+    "--nll-interval": "semicolon-separated min and max value pair (that are comma-separated) to evaluate the nll along each parameter.\n"
+    "if not provided, defaults to 0, 3 for gs and -5, 5 for nuisances.",
 
     "--delete-root": "delete root files after compiling",
     "--ignore-previous": "ignore previous grid when compiling",

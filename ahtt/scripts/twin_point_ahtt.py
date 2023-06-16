@@ -7,6 +7,7 @@ import sys
 import glob
 import re
 import numpy as np
+import itertools
 
 from collections import OrderedDict
 import json
@@ -21,7 +22,7 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
-def expected_scenario(exp):
+def expected_scenario(exp, gvalues_syntax = False):
     specials = {
         "exp-b":  "g1=0,g2=0",
         "exp-s":  "g1=1,g2=1",
@@ -31,15 +32,17 @@ def expected_scenario(exp):
     }
 
     if exp in specials:
-        return (exp, specials[exp])
+        second = specials[exp].replace("g1=", "").replace("g2=", "") if gvalues_syntax else specials[exp]
+        return (exp, second)
 
     if not re.search(r',[eo]', exp):
         gvalues = tokenize_to_list(exp)
         if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
             return None
         g1, g2 = gvalues
+        second = "{g1},{g2}".format(g1 = g1, g2 = g2) if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
 
-        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), "g1={g1},g2={g2}".format(g1 = g1, g2 = g2))
+        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), second)
 
     return None
 
@@ -187,7 +190,6 @@ if __name__ == '__main__':
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
     poi_range = "--setParameterRanges '" + ":".join(["g" + str(ii + 1) + "=0.,5." for ii, pp in enumerate(points)]) + "'"
-    best_fit_file = ""
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
@@ -208,6 +210,7 @@ if __name__ == '__main__':
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
     runprepost = "prepost" in modes or "corrmat" in modes
+    runnll = "nll" in modes or "likelihood" in modes
 
     if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
         print "given expected scenarii:", args.fcexp
@@ -317,8 +320,8 @@ if __name__ == '__main__':
         if args.asimov:
             raise RuntimeError("mode gof is meaningless for asimov dataset!!")
 
-        if args.gofresdir == "":
-            args.gofresdir = dcdir
+        if args.resdir == "":
+            args.resdir = dcdir
 
         # FIXME test that freezing NPs lead to a very peaky distribution (possibly single value)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
@@ -337,7 +340,7 @@ if __name__ == '__main__':
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt),
                 ))
-                if irobust:
+                if irobust and args.usehesse:
                     syscall("rm robustHesse_*.root", False, True)
 
                 if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], ['limit'], True):
@@ -346,7 +349,7 @@ if __name__ == '__main__':
                     syscall("rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
-                dcd = args.gofresdir,
+                dcd = args.resdir,
                 snm = scan_name,
                 mmm = mstr,
                 ptg = ptag,
@@ -370,7 +373,7 @@ if __name__ == '__main__':
             ))
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
-                dcd = args.gofresdir,
+                dcd = args.resdir,
                 ptg = ptag,
                 snm = scan_name,
                 mmm = mstr,
@@ -378,7 +381,7 @@ if __name__ == '__main__':
 
             if args.savetoy:
                 syscall("cp {dcd}{ptg}_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
-                    dcd = args.gofresdir,
+                    dcd = args.resdir,
                     opd = args.toyloc,
                     ptg = ptag,
                     snm = scan_name,
@@ -391,8 +394,8 @@ if __name__ == '__main__':
 
     if runfc:
         # FIXME mode fc still can't do frozen NPs. TBC if worth adding this.
-        if args.fcresdir == "":
-            args.fcresdir = dcdir
+        if args.resdir == "":
+            args.resdir = dcdir
 
         scan_name = "pnt_g1_" + gvalues[0] + "_g2_" + gvalues[1]
 
@@ -418,7 +421,7 @@ if __name__ == '__main__':
                                 ext = nonparametric_option(args.extopt),
                                 #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                             ))
-                    if irobust:
+                    if irobust and args.usehesse:
                         syscall("rm robustHesse_*.root", False, True)
 
                     if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
@@ -429,7 +432,7 @@ if __name__ == '__main__':
                         syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
 
                 syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
-                    dcd = args.fcresdir,
+                    dcd = args.resdir,
                     ptg = ptag,
                     snm = scan_name + identifier,
                     mmm = mstr
@@ -458,7 +461,7 @@ if __name__ == '__main__':
                     ))
 
             syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
-                dcd = args.fcresdir,
+                dcd = args.resdir,
                 ptg = ptag,
                 snm = scan_name + identifier,
                 mmm = mstr,
@@ -466,7 +469,7 @@ if __name__ == '__main__':
 
             if args.savetoy:
                 syscall("cp {dcd}{ptg}_fc-scan_{snm}.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
-                    dcd = args.fcresdir,
+                    dcd = args.resdir,
                     opd = args.toyloc,
                     snm = scan_name + identifier,
                     ptg = ptag,
@@ -643,8 +646,53 @@ if __name__ == '__main__':
                 fix = "_fixed" if fixpoi and gfit != "" else "",
             ), False)
 
-    if not os.path.isfile(best_fit_file):
-        syscall("rm {bff}".format(bff = best_fit_file), False, True)
+    if runnll:
+        if len(args.nllparam) < 1:
+            raise RuntimeError("what parameter is the nll being scanned against??")
+
+        if len(args.fcexp) != 1:
+            raise RuntimeError("in mode nll only one expected scenario is allowed.")
+
+        print "\ntwin_point_ahtt :: evaluating nll as a function of {nlp}".format(nlp = ", ".join(args.nllparam))
+
+        scenario = expected_scenario(args.fcexp[0], True)
+        set_freeze = elementwise_add([starting_poi(scenario[1], args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        isgah = [param in ["g1", "g2"] for args.nllparam]
+        if len(args.nllwindow) < len(args.nllparam):
+            args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
+        minmax = [tuple(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
+
+        if args.nllnpnt == []:
+            nsample = 32 // len(args.nllparam)
+            args.nllnpnt = [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(args.nllparam)]
+            args.nllnpnt = [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(args.nllparam)]
+        interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < len(args.nllparam else -1)] + 1)) for ii in range(args.nllparam)]
+
+        for element in itertools.product(*interval):
+            nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
+            nllname = "_" + args.fcexp[0] + "_".join(["{param}{value}".format(param = param, value = round(value, 5)) for param, value in zip(args.nllparam, element)])
+
+            syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{pnt}' {par} "
+                    "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
+                        dcd = workspace,
+                        mmm = mstr,
+                        snm = nllname,
+                        pnt = nllpnt,
+                        par = "--redefineSignalPOIs '{param}'".format(param = ",".join(args.nllparam)),
+                        exp = set_parameter(set_freeze, args.extopt, masks),
+                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
+                        asm = "-t -1" if args.fcexp[0] != "obs" else "",
+                        ext = nonparametric_option(args.extopt),
+                    ))
+            if args.usehesse:
+                syscall("rm robustHesse_*.root", False, True)
+
+            pass
+
+        #ensure tmp output names incorporate those
+        #hadd those files when done
+
+        pass
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(

@@ -34,6 +34,9 @@ def tuplize(gstring):
 def g_in_filename(gvalues):
     return "_".join(["g" + str(ii + 1) + "_" + str(gg) for ii, gg in enumerate(gvalues) if float(gg) >= 0.]).replace(".", "p")
 
+def pmfloat(strfloat):
+    return strfloat.replace(".", "p").replace("-", "m")
+
 def right_now():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
 

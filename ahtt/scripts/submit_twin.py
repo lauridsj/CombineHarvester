@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
+from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, pmfloat
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
@@ -67,7 +67,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 for gv in contour["g-grid"].keys():
                     mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
 
-                cuts = [mintoy > (4.5 / alpha) for alpha in generate_g_grid.alphas]
+                cuts = [mintoy > (9. / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cut else 0 for cut in cuts]) < 2:
                     print "minimum toy count: " + str(mintoy)
                     raise RuntimeError("minimum toys insufficient to determine 2 sigma contour!! likely unintended, recheck!!")
@@ -207,9 +207,13 @@ if __name__ == '__main__':
     runcompile = "compile" in args.mode
     runprepost = "prepost" in args.mode or "corrmat" in args.mode
     runclean = "clean" in args.mode
+    runnll = "nll" in modes or "likelihood" in modes
 
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
+
+    if int(rungof) + int(runfc) + int(runnll) > 1:
+        raise RuntimeError("these are the worst modes in this suite, and you wanna run them together? lmao. edit this raise out by hand, then.")
 
     if (runfc or runcompile) and not args.asimov and "obs" not in args.fcexp:
         args.fcexp.append("obs")
@@ -285,7 +289,10 @@ if __name__ == '__main__':
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             ext = "--extra-option{s}'".format(s = '=' if args.extopt[0] == "-" else " ") + args.extopt + "'" if args.extopt != "" else "",
             otg = "--output-tag " + args.otag if args.otag != "" else "",
-            exp = "--fc-expect{s}'".format(s = '=' if args.fcexp[0][0] == "-" else " ") + ";".join(args.fcexp) + "'" if runfc or runcompile else "",
+            exp = "--{fn}-expect{s}'".format(
+                fn = "fc" if runfc or runcompile else "nll",
+                s = '=' if args.fcexp[0][0] == "-" else " "
+            ) + ";".join(args.fcexp) + "'" if runfc or runnll or runcompile else "",
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 
@@ -341,7 +348,7 @@ if __name__ == '__main__':
                     jarg += " {toy} {dat} {rsd} {idx}".format(
                         toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
                         dat = "--gof-skip-data " if not gofrundat else "",
-                        rsd = "--gof-result-dir " + resdir,
+                        rsd = "--result-dir " + resdir,
                         idx = "--run-idx " + str(idx) if idx > -1 else ""
                     )
 
@@ -407,7 +414,7 @@ if __name__ == '__main__':
                             gvl = "--g-values '" + str(ig1) + "," + str(ig2) + "'",
                             toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
                             dat = "--fc-skip-data " if not fcrundat else "",
-                            rsd = "--fc-result-dir " + resdir,
+                            rsd = "--result-dir " + resdir,
                             idx = "--run-idx " + str(idx) if idx > -1 else ""
                         )
 
@@ -420,6 +427,27 @@ if __name__ == '__main__':
                             expnres += 2 * len(args.fcexp) if firstjob and fcrundat else 2 if writelog else 1
                             submit_job(agg, jname, jarg, "1200" if "--n-toy 0" in jarg and len(args.fcexp) < 10 else args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
+        elif runnll:
+            minmax = [tuple(values.split(",")[0], values.split(",")[1]) for values in args.nllwindow]
+            jname = job_name + "_" + args.fcexp[0]
+            jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
+            jname += "_" + "_".join(args.nllparam[len(minmax):])
+            logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+
+            if not (args.runlocal and args.forcelocal):
+                if len(logs) > 0 or len(roots) > 0:
+                    continue
+
+            jarg = job_arg
+            jarg += " {par} {win} {pnt}".format(
+                par = "--nll-parameter '" + ",".join(args.nllparam) + "'",
+                win = "--nll-interval '" + ";".join(args.nllwindow) + "'" if args.nllwindow != [] else "",
+                pnt = "--nll-npoint '" + ",".join([str(npnt) for npnt in args.nllnpnt]) + "'" if args.nllnpnt != [] else "",
+            )
+
+            submit_job(agg, jname, jarg, args.jobtime, 1, job_mem,
+                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
+                       True, args.runlocal, args.writelog)
         else:
             if runclean:
                 for job in ["generate", "gof", "contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:

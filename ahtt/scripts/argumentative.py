@@ -62,6 +62,8 @@ def common_fit(parser):
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False,
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--result-directory", help = combine_help_messages["--result-directory"], dest = "resdir", default = "", required = False,
+                        type = append_if_not_empty)
     return parser
 
 def common_1D(parser):
@@ -71,7 +73,7 @@ def common_1D(parser):
     parser.add_argument("--raster-n", help = combine_help_messages["--raster-n"], dest = "nchunk", default = 6, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     return parser
 
-def common_2D(parser):
+def common_2D_pure(parser):
     parser.add_argument("--g-values", help = combine_help_messages["--g-values"], default = "-1., -1.", dest = "gvalues", required = False,
                         type = lambda s: [str(float(ss)) for ss in tokenize_to_list( remove_spaces_quotes(s) )])
 
@@ -79,19 +81,21 @@ def common_2D(parser):
     parser.add_argument("--toy-location", help = combine_help_messages["--toy-location"], dest = "toyloc", default = "", required = False,
                         type = lambda s: s if s == "" or s.endswith("/") or s.endswith(".root") else s + "/")
     parser.add_argument("--save-toy", help = combine_help_messages["--save-toy"], dest = "savetoy", action = "store_true", required = False)
-
-    parser.add_argument("--fc-expect", help = combine_help_messages["--fc-expect"], default = "exp-b", dest = "fcexp", required = False,
-                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
-    parser.add_argument("--fc-result-directory", help = combine_help_messages["--fc-result-directory"], dest = "fcresdir", default = "", required = False,
-                        type = append_if_not_empty)
-    parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
-
-    parser.add_argument("--gof-result-directory", help = combine_help_messages["--gof-result-directory"], dest = "gofresdir", default = "", required = False,
-                        type = append_if_not_empty)
     parser.add_argument("--gof-skip-data", help = combine_help_messages["--gof-skip-data"], dest = "gofrundat", action = "store_false", required = False)
+
+    parser.add_argument("--fc-expect", "--nll-expect", help = combine_help_messages["--fc-expect"], default = "exp-b", dest = "fcexp", required = False,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
+    parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
 
     parser.add_argument("--delete-root", help = combine_help_messages["--delete-root"], dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = combine_help_messages["--ignore-previous"], dest = "ignoreprev", action = "store_true", required = False)
+
+    parser.add_argument("--nll-parameter", help = combine_help_messages["--nll-parameter"], dest = "nllparam", default = "", required = False,
+                        type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))
+    parser.add_argument("--nll-npoint", help = combine_help_messages["--nll-npoint"], dest = "nllnpnt", default = "", required = False,
+                        type = lambda s: [] if s == "" else [int(npnt) for npnt in tokenize_to_list(remove_spaces_quotes(s))])
+    parser.add_argument("--nll-interval", help = combine_help_messages["--nll-interval"], dest = "nllwindow", default = "", required = False,
+                        type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s), ";"))
     return parser
 
 def common_submit(parser):
