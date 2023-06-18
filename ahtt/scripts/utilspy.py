@@ -22,7 +22,7 @@ def syscall(cmd, verbose = True, nothrow = False):
         raise RuntimeError("Command failed with exit code {ret}!".format(ret = retval))
 
 def pmfloat(value):
-    return str(value).replace(".0", "").replace("-", "m") if int(value) == float(value) else str(value).replace(".", "p").replace("-", "m")
+    return str(value).replace(".0", "").replace("-", "m") if math.floor(float(value)) == float(value) else str(value).replace(".", "p").replace("-", "m")
 
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
