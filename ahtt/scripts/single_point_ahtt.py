@@ -450,7 +450,7 @@ if __name__ == '__main__':
                     break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}{wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
+        syscall("combineTool.py -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
             dcd = dcdir,
             wsp = workspace,
             mod = "one-poi" if args.onepoi else "g-scan",
