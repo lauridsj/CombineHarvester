@@ -437,7 +437,7 @@ if __name__ == '__main__':
             logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
 
             if not (args.runlocal and args.forcelocal):
-                if len(logs) > 0 or len(roots) > 0:
+                if len(logs) > 0:
                     continue
 
             jarg = job_arg
