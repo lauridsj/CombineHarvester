@@ -32,7 +32,7 @@ def expected_scenario(exp, gvalues_syntax = False):
     }
 
     if exp in specials:
-        second = specials[exp].replace("g1=", "").replace("g2=", "") if gvalues_syntax else specials[exp]
+        second = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
         return (exp, second)
 
     if not re.search(r',[eo]', exp):
@@ -40,7 +40,7 @@ def expected_scenario(exp, gvalues_syntax = False):
         if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
             return None
         g1, g2 = gvalues
-        second = "{g1},{g2}".format(g1 = g1, g2 = g2) if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
+        second = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
 
         return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), second)
 
