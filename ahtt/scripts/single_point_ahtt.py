@@ -42,6 +42,7 @@ def get_limit(lfile):
     return limit
 
 def sensible_enough_pull(nuisance, mass):
+    # really just the existence of up/down - two-sidedness seems too strong a constraint
     lfile = TFile.Open("higgsCombine_paramFit__pull_{nui}.MultiDimFit.mH{mmm}.root".format(nui = nuisance, mmm = mass))
     ltree = lfile.Get("limit")
 
@@ -104,7 +105,7 @@ def get_nll_g_scan(lfile):
     return nll
 
 def single_point_scan(args):
-    gval, dcdir, mstr, accuracies, poi_range, strategy, asimov, masks = args
+    gval, dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     epsilon = 2.**-17
@@ -172,7 +173,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, mstr, accuracies, poi_range, strategy, asimov, masks = args
+    gvals, dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -180,7 +181,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, mstr, accuracies, poi_range, strategy, asimov, masks))
+        result = single_point_scan((gvals[ii], dcdir, workspace mstr, accuracies, poi_range, strategy, asimov, masks))
 
         if result is None:
             ii += 3
@@ -253,7 +254,6 @@ if __name__ == '__main__':
     ptag = "{pnt}{tag}".format(pnt = args.point[0], tag = args.otag)
 
     poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
-    best_fit_file = ""
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
@@ -268,7 +268,6 @@ if __name__ == '__main__':
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
     runprepost = "prepost" in modes or "corrmat" in modes
-    runnll = "nll" in modes or "likelihood" in modes
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
@@ -332,15 +331,15 @@ if __name__ == '__main__':
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
-    FIXME use new workspaces
+
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
         accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
 
         if args.onepoi:
             syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_one-poi.root -m {mmm} -n _limit {prg} {acc} {stg} {asm} {msk}".format(
-                dcd = dcdir,
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {prg} {acc} {stg} {asm} {msk}".format(
+                dcd = workspace,
                 mmm = mstr,
                 maxg = max_g,
                 prg = poi_range,
@@ -372,7 +371,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, mstr, accuracies, poi_range, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
+            lll = dotty_scan((gvals, dcdir, workspace, mstr, accuracies, poi_range, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -416,18 +415,11 @@ if __name__ == '__main__':
 
         if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
             raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
-
-        if args.frzbbp:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
-                                          args.extopt, masks)
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, False, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm} {ext}".format(
-            dcd = dcdir,
-            mod = "one-poi" if args.onepoi else "g-scan",
+        syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm} {ext}".format(
+            dcd = workspace,
             mmm = mstr,
             prg = poi_range,
             stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
@@ -440,9 +432,8 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
             for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [1, 2, 0] for itol in [0, -1, 1, -2, 2, -3, 3]]:
-                syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
-                    dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
+                syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
+                    dcd = workspace,
                     mmm = mstr,
                     prg = poi_range,
                     stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
@@ -457,8 +448,8 @@ if __name__ == '__main__':
                     break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {dcd}workspace_{mod}.root -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
-            dcd = dcdir,
+        syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
+            dcd = workspace,
             mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
             ptg = ptag,
@@ -474,19 +465,12 @@ if __name__ == '__main__':
         syscall("rm robustHesse_*.root", False, True)
 
     if runprepost:
-        if args.frzbbp or args.frznui:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
-                                          args.extopt, masks)
-            syscall("rm robustHesse_*.root", False, True)
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)])
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -v -1 -M FitDiagnostics {dcd}workspace_{mod}.root --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                 "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm} {ext}".format(
-                    dcd = dcdir,
-                    mod = "one-poi" if args.onepoi else "g-scan",
+                    dcd = workspace,
                     mmm = mstr,
                     stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
                     prg = poi_range,
@@ -511,14 +495,41 @@ if __name__ == '__main__':
         ), False)
 
     if runnll:
-        print "\nsingle_point_ahtt :: calculating nll as a function of gA/H"
-        if args.frzbbp or args.frznui:
-            best_fit_file = make_best_fit(dcdir, "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan"), args.point[0],
-                                          args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse), poi_range,
-                                          elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.point[0], args.frzbb0)]),
-                                          "", masks)
-            syscall("rm robustHesse_*.root", False, True)
-        set_freeze = starting_nuisance(args.point[0], args.frzbb0, args.frzbbp, args.frznui, best_fit_file)
+        if not args.onepoi:
+            raise NotImplementedError("single_point_ahtt :: at the moment, mode nll is supported for the one-poi model only.")
+
+        print "\nsingle_point_ahtt :: calculating nll as a function of {nlp}, with all other parameters in the model "
+        "profiled (for nuisances) or frozen to expected scenario (for g)".format(nlp = ", ".join(args.nllparam))
+        #FIXME implement in 2D
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_freeze = starting_nuisance(args.frzzero, args.frzpost)
         setpar = set_freeze[0]
         frzpar = set_freeze[1]
 
@@ -542,9 +553,9 @@ if __name__ == '__main__':
                     pois = ["r=0", "g=0"] if sce == "exp-b" else ["r=1", "g=1"]
 
             if args.onepoi:
-                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd}workspace_one-poi.root -m {mmm} -n _nll {prg} {gvl} "
+                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd} -m {mmm} -n _nll {prg} {gvl} "
                         "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {ext}".format(
-                            dcd = dcdir,
+                            dcd = workspace,
                             mmm = mstr,
                             prg = poi_range,
                             gvl = "--points 193 --alignEdges 1",
@@ -570,9 +581,9 @@ if __name__ == '__main__':
             else:
                 for gval in gvalues:
                     gstr = str(round(gval, 3)).replace('.', 'p')
-                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd}workspace_g-scan.root -m {mmm} -n _nll_{gst} {prg} "
+                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _nll_{gst} {prg} "
                             "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {ext}".format(
-                                dcd = dcdir,
+                                dcd = workspace,
                                 mmm = mstr,
                                 gst = "fix-g_" + str(gstr).replace(".", "p"),
                                 prg = poi_range,
@@ -603,9 +614,6 @@ if __name__ == '__main__':
 
         with open("{dcd}{ptg}_nll_{mod}.json".format(dcd = dcdir, ptg = ptag, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
             json.dump(nlls, jj, indent = 1)
-
-    if not os.path.isfile(best_fit_file):
-        syscall("rm {bff}".format(bff = best_fit_file), False, True)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
