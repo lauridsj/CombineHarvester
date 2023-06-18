@@ -11,8 +11,9 @@ def remove_spaces(string):
 def remove_spaces_quotes(string):
     return remove_quotes( remove_spaces(string) )
 
-def tokenize_to_list(string, token = ','):
-    return [] if string == "" else string.split(token)
+def tokenize_to_list(string, token = ',', astype = None):
+    result = [] if string == "" else string.split(token)
+    return result if astype is None else [astype(res) for res in result]
 
 def prepend_if_not_empty(string, token = "_"):
     return token + string if string != "" and not string.startswith(token) else string
