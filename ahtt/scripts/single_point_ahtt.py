@@ -181,7 +181,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, workspace mstr, accuracies, poi_range, strategy, asimov, masks))
+        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks))
 
         if result is None:
             ii += 3
