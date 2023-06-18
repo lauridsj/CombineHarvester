@@ -323,12 +323,13 @@ if __name__ == '__main__':
                                       elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_best-fit_{mod}{gvl}{fix}.root".format(
+            newname = "{dcd}{ptg}_best-fit_{mod}{gvl}{rvl}{fix}.root".format(
                 dcd = dcdir,
                 ptg = ptag,
                 mod = "one-poi" if args.onepoi else "g-scan",
-                gvl = "_" + gstr if gstr != "" else "",
-                fix = "_fixed" if args.fixpoi and gstr != "" else "",
+                gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
+                rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
+                fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
