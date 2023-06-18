@@ -496,7 +496,7 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
         ), False)
 
-    if runnll:
+    if False:
         if not args.onepoi:
             raise NotImplementedError("single_point_ahtt :: at the moment, mode nll is supported for the one-poi model only.")
 
