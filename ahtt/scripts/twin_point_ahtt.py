@@ -699,10 +699,6 @@ if __name__ == '__main__':
             mmm = mstr
         ))
 
-        # want a json?
-
-        pass
-
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
             dcd = dcdir[:-1]
