@@ -658,7 +658,7 @@ if __name__ == '__main__':
 
         nparam = len(args.nllparam)
         scenario = expected_scenario(args.fcexp[0], True)
-        set_freeze = elementwise_add([starting_poi(scenario[1], args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
         if len(args.nllwindow) < nparam:
