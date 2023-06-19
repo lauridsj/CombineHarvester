@@ -64,47 +64,6 @@ def sensible_enough_pull(nuisance, mass):
     lfile.Close()
     return isgood
 
-def get_nll_one_poi(lfile):
-    # relevant branches are r, nllo0 (for the minimum NLL value), deltaNLL (wrt nll0), quantileExpected (-1 for data, rest irrelevant)
-    lfile = TFile.Open(lfile)
-    ltree = lfile.Get("limit")
-    nll = OrderedDict()
-    nll["obs"] = OrderedDict()
-    nll["dnll"] = OrderedDict()
-
-    for i in ltree:
-        if ltree.quantileExpected == -1.:
-            nll["obs"]["r"] = 1.
-            nll["obs"]["g"] = ltree.r
-            nll["obs"]["nll0"] = ltree.nll0
-        else:
-            nll["dnll"][ ltree.r ] = ltree.deltaNLL
-
-    lfile.Close()
-    return nll
-
-def get_nll_g_scan(lfile):
-    lfile = TFile.Open(lfile)
-    ltree = lfile.Get("limit")
-    nll = OrderedDict()
-    nll["obs"] = OrderedDict()
-    nll["dnll"] = OrderedDict()
-
-    nll0 = sys.float_info.max
-
-    for i in ltree:
-        if ltree.quantileExpected == -1. and ltree.nll0 < nll0:
-            nll["obs"]["r"] = ltree.r
-            nll["obs"]["g"] = ltree.g
-            nll["obs"]["nll0"] = ltree.nll0
-
-    for i in ltree:
-        if ltree.quantileExpected >= 0.:
-            nll["dnll"][ ltree.g ] = ltree.nll0 + ltree.deltaNLL - nll["obs"]["nll0"]
-
-    lfile.Close()
-    return nll
-
 def single_point_scan(args):
     gval, dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
@@ -258,7 +217,7 @@ if __name__ == '__main__':
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
-    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat", "nll", "likelihood"]
+    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -496,127 +455,6 @@ if __name__ == '__main__':
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
         ), False)
-
-    if False:
-        if not args.onepoi:
-            raise NotImplementedError("single_point_ahtt :: at the moment, mode nll is supported for the one-poi model only.")
-
-        print "\nsingle_point_ahtt :: calculating nll as a function of {nlp}, with all other parameters in the model "
-        "profiled (for nuisances) or frozen to expected scenario (for g)".format(nlp = ", ".join(args.nllparam))
-        #FIXME implement in 2D
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        set_freeze = starting_nuisance(args.frzzero, args.frzpost)
-        setpar = set_freeze[0]
-        frzpar = set_freeze[1]
-
-        gvalues = [2.**-17, 2.**-15, 2.**-13, 2.**-11, 2.**-9] + list(np.linspace(min_g, max_g, num = 193))
-        gvalues.sort()
-        scenarii = ['exp-b', 'exp-s', 'obs']
-        nlls = OrderedDict()
-
-        syscall("rm {dcd}{ptg}_nll_one-poi.root {dcd}{ptg}_nll_{mod}.json".format(
-            dcd = dcdir,
-            ptg = ptag,
-            mod = "one-poi" if args.onepoi else "g-scan"), False, True)
-
-        for sce in scenarii:
-            asimov = "-t -1" if sce != "obs" else ""
-            pois = []
-            if sce != "obs":
-                if args.onepoi:
-                    pois = ["r=0"] if sce == "exp-b" else ["r=1"]
-                else:
-                    pois = ["r=0", "g=0"] if sce == "exp-b" else ["r=1", "g=1"]
-
-            if args.onepoi:
-                syscall("combineTool.py -v -1 -M MultiDimFit --algo grid -d {dcd} -m {mmm} -n _nll {prg} {gvl} "
-                        "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {asm} {stp} {frz} {ext}".format(
-                            dcd = workspace,
-                            mmm = mstr,
-                            prg = poi_range,
-                            gvl = "--points 193 --alignEdges 1",
-                            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
-                            asm = asimov,
-                            stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                            frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                            ext = nonparametric_option(args.extopt)
-                        ))
-                syscall("rm robustHesse_*.root", False, True)
-
-                syscall("mv higgsCombine_nll.MultiDimFit.mH*.root {dcd}{ptg}_nll_{sce}_one-poi.root".format(
-                    dcd = dcdir,
-                    sce = sce,
-                    ptg = ptag
-                ), False)
-
-                nlls[sce] = get_nll_one_poi("{dcd}{pnt}{pnt}_nll_{sce}_one-poi.root".format(
-                    dcd = dcdir,
-                    sce = sce,
-                    ptg = ptag
-                ))
-            else:
-                for gval in gvalues:
-                    gstr = str(round(gval, 3)).replace('.', 'p')
-                    syscall("combineTool.py -v -1 -M MultiDimFit --algo fixed -d {dcd} -m {mmm} -n _nll_{gst} {prg} "
-                            "--saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --fixedPointPOIs r=1,g={gvl} {stg} {asm} {stp} {frz} {ext}".format(
-                                dcd = workspace,
-                                mmm = mstr,
-                                gst = "fix-g_" + str(gstr).replace(".", "p"),
-                                prg = poi_range,
-                                gvl = str(gval),
-                                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
-                                asm = asimov,
-                                stp = "--setParameters '" + ",".join(setpar + pois + masks) + "'" if len(setpar + pois + masks) > 0 else "",
-                                frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-                                ext = nonparametric_option(args.extopt)
-                            ))
-                    syscall("rm robustHesse_*.root", False, True)
-
-                syscall("hadd {dcd}{ptg}_nll_{sce}_g-scan.root higgsCombine_nll_fix-g*.root && "
-                        "rm higgsCombine_nll_fix-g*.root".format(
-                            dcd = dcdir,
-                            sce = sce,
-                            ptg = ptag
-                        ))
-
-                nlls[sce] = get_nll_g_scan("{dcd}{ptg}_nll_{sce}_g-scan.root".format(
-                    dcd = dcdir,
-                    sce = sce,
-                    ptg = ptag
-                ))
-
-        syscall("rm combine_logger.out", False, True)
-        syscall("rm robustHesse_*.root", False, True)
-
-        with open("{dcd}{ptg}_nll_{mod}.json".format(dcd = dcdir, ptg = ptag, mod = "one-poi" if args.onepoi else "g-scan"), "w") as jj:
-            json.dump(nlls, jj, indent = 1)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
