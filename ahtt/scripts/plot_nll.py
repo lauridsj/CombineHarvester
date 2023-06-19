@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# draw the dnll(gAH) for the 1 signal point scenario
+# draw the dnll(gAH) for the 1D
 # requires matplotlib > 3.3 e.g. source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_100 x86_64-centos7-gcc10-opt
 
 from argparse import ArgumentParser
@@ -148,7 +148,7 @@ def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, range
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--point", help = combine_help_messages["--point"], default = "", required = required, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--point", help = "signal point pair", default = "", required = True, type = lambda s: sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--tag", help = "(input tag, scenario, output tag) triplet to search. the pairs are semicolon separated, and tags/scenario colon-separated, "
                         "so e.g. when there are 2 tags: 't1:s1:o1;t2:s2:o2 . output tag may be empty, in which case input tag is used for it.",
