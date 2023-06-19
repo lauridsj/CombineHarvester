@@ -53,11 +53,10 @@ def set_parameter(set_freeze, extopt, masks):
             elif option == '--freezeNuisanceGroups':
                 grppar += parameters
 
-    return '{stp} {frz} {grp} {ext}'.format(
+    return '{stp} {frz} {grp}'.format(
         stp = "--setParameters '" + ",".join(setpar + masks) + "'" if len(setpar + masks) > 0 else "",
         frz = "--freezeParameters '" + ",".join(frzpar) + "'" if len(frzpar) > 0 else "",
-        grp = "--freezeNuisanceGroups '" + ",".join(grppar) + "'" if len(grppar) > 0 else "",
-        ext = ' '.join(extopt)
+        grp = "--freezeNuisanceGroups '" + ",".join(grppar) + "'" if len(grppar) > 0 else ""
     )
 
 def nonparametric_option(extopt):
