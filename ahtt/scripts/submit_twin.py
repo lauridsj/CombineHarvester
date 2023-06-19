@@ -443,7 +443,7 @@ if __name__ == '__main__':
             jarg = job_arg
             jarg += " {par} {win} {pnt}".format(
                 par = "--nll-parameter '" + ",".join(args.nllparam) + "'",
-                win = "--nll-interval '" + ";".join(args.nllwindow) + "'" if args.nllwindow != [] else "",
+                win = "--nll-interval='" + ";".join(args.nllwindow) + "'" if args.nllwindow != [] else "",
                 pnt = "--nll-npoint '" + ",".join([str(npnt) for npnt in args.nllnpnt]) + "'" if args.nllnpnt != [] else "",
             )
 
