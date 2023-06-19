@@ -159,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument("--kinks", help = "comma separated list of values to be used by --smooth. every 2 values are treated as min and max of kink range",
                         default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = float ) )
     parser.add_argument("--x-name-label", help = "semicolon-separated parameter name and label on the x-axis. empty label means same as name for NPs.",
-                        dest = "namelabel", type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';'), default = ["g1", ""], required = False)
+                        dest = "namelabel", type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';'), default = ["g1"], required = False)
     parser.add_argument("--x-range", help = "comma-separated min and max values in the x-axis", dest = "rangex",
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 2.], required = False)
     parser.add_argument("--y-range", help = "comma-separated min and max values in the y-axis", dest = "rangey",
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     else:
         args.kinks = None
 
-    if args.namelabel[1] == "" and args.namelabel[0] in ["g1", "g2"]:
+    if len(args.namelabel) == 1 and args.namelabel[0] in ["g1", "g2"]:
         args.namelabel[1] = axes["coupling"] % str_point(points[0]) if args.namelabel[0] == "g1" else axes["coupling"] % str_point(points[1])
 
     dirs = [tag.split(':') for tag in args.itag]
