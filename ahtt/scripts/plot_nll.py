@@ -69,15 +69,15 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
 
         if kinks is not None:
             for kink in kinks:
-                values = [vv for vv, dd in originals.items() if kink[0] <= vv <= kink[1]]
-                dnlls = [dd for vv, dd in originals.items() if kink[0] <= vv <= kink[1]]
+                values = [vv for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
+                dnlls = [dd for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
 
-                if len(values) > 1 and len(dnlls) == len(values):
+                if len(values) > 6 and len(dnlls) == len(values):
                     spline = UnivariateSpline(np.array(values), np.array(dnlls))
-                    intx.append(value)
-                    inty.append(spline(value))
+                    intx += [vv for vv, dd in originals if kink[0] <= vv <= kink[1]]
+                    inty += [spline(vv) for vv, dd in originals if kink[0] <= vv <= kink[1]]
 
-        for value, dnll in originals.items():
+        for value, dnll in originals:
             if rangex[0] <= value <= rangex[1]:
                 data = inty[intx.index(value)] if value in intx else dnll
                 if rangey[0] <= data <= rangey[1]:
@@ -132,12 +132,10 @@ def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, range
     ax.margins(x = 0, y = 0)
 
     legend = ax.legend(first(handles), second(handles),
-	             loc = "upper right", ncol = 1, #bbox_to_anchor = ,
-                     mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21, frameon = False,
-                     title = " ", title_fontsize = 21)
+	               loc = "upper right", ncol = 1 if ndir < 5 else 2, borderaxespad = 1., fontsize = 21, frameon = False)
     ax.add_artist(legend)
     ax.minorticks_on()
-    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
+    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
@@ -159,7 +157,7 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list(s, token = ';' ))
     parser.add_argument("--smooth", help = "use spline to smooth kinks up. kinks are given in --kinks", action = "store_true", required = False)
     parser.add_argument("--kinks", help = "comma separated list of values to be used by --smooth. every 2 values are treated as min and max of kink range",
-                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
+                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = float ) )
     parser.add_argument("--x-name-label", help = "semicolon-separated parameter name and label on the x-axis. empty label means same as name for NPs.",
                         dest = "namelabel", type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';'), default = ["g1", ""], required = False)
     parser.add_argument("--x-range", help = "comma-separated min and max values in the x-axis", dest = "rangex",
@@ -186,7 +184,7 @@ if __name__ == '__main__':
         if len(args.kinks) % 2 == 1:
             raise RuntimeError("kinks given don't correspond to list of minmaxes. aborting!")
 
-        args.kinks = [[kinks[ii], kinks[ii + 1]] for ii in range(0, len(args.kinks), 2)]
+        args.kinks = [[args.kinks[ii], args.kinks[ii + 1]] for ii in range(0, len(args.kinks), 2)]
     else:
         args.kinks = None
 
@@ -194,9 +192,9 @@ if __name__ == '__main__':
         args.namelabel[1] = axes["coupling"] % str_point(points[0]) if args.namelabel[0] == "g1" else axes["coupling"] % str_point(points[1])
 
     dirs = [tag.split(':') for tag in args.itag]
-    dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in tag]
-    dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in tag]
+    dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
+    dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
-    draw_nll(f"{args.odir}/{pstr}_nll_{args.ptag}{args.fmt}",
+    draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
              points, dirs, args.label, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint, args.transparent, args.fmt)
     pass
