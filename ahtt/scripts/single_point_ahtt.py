@@ -237,12 +237,13 @@ if __name__ == '__main__':
         for onepoi in [True, False]:
             if args.experimental:
                 syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                        "--PO 'signal={pnt}' {pos} {opt} {ext}".format(
+                        "--PO 'signal={pnt}' {ver} {pos} {opt} {ext}".format(
                             dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                             mod = "one-poi" if onepoi else "g-scan",
                             mmm = mstr,
                             pnt = args.point[0],
-                            pos = " ".join(["--PO " + stuff for stuff in ["verbose"] + ["no-r"] if onepoi else []]),
+                            ver = "--PO verbose",
+                            pos = "--PO no-r" if onepoi else "",
                             opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
                             ext = args.extopt
                         ))
