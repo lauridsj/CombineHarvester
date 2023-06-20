@@ -128,7 +128,8 @@ def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, range
     plt.ylim(rangey)
     ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 2)
     plt.xlabel(xlabel, fontsize = 21, loc = "right")
-    plt.ylabel(axes["dnll"] % 'A/H', fontsize = 21, loc = "top")
+    #plt.ylabel(axes["dnll"] % 'A/H', fontsize = 21, loc = "top")
+    plt.ylabel("2dNLL", fontsize = 21, loc = "top")
     ax.margins(x = 0, y = 0)
 
     legend = ax.legend(first(handles), second(handles),
