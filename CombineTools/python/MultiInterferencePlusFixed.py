@@ -47,7 +47,6 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.oner = True
             if po.startswith("signal="):
                 signals = po.split('=')[1].split(',')
-
                 for ss in signals:
                     self.add_poi_per_signal(ss)
 
@@ -57,33 +56,36 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
 
     def add_poi_per_signal(self, signal):
         self.signals.append(signal)
-        self.pois.append('g{ss}'.format(ss = self.signals.index(signal) + 1))
+        idx = self.signals.index(signal) + 1 if len(self.signals) > 1 else ''
+        self.pois.append('g{ss}'.format(ss = idx))
 
         if not self.nor and not self.oner:
-            self.pois.append('r{ss}'.format(ss = self.signals.index(signal) + 1))
+            self.pois.append('r{ss}'.format(ss = idx))
         elif self.oner and 'r' not in self.pois:
             self.pois.append('r')
 
     def doParametersOfInterest(self):
         for ii, signal in enumerate(self.signals):
-            self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii + 1))
+            ii0 = ii + 1 if len(self.signals) > 1 else ''
+            self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii0))
 
             if self.nor:
-                self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g{ss})'.format(ss = ii + 1))
-                self.modelBuilder.factory_('expr::mg2_{ss}("-@0*@0", g{ss})'.format(ss = ii + 1))
-                self.modelBuilder.factory_('expr::g4_{ss}("@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
-                self.modelBuilder.factory_('expr::mg4_{ss}("-@0*@0*@0*@0", g{ss})'.format(ss = ii + 1))
+                self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g{ss})'.format(ss = ii0))
+                self.modelBuilder.factory_('expr::mg2_{ss}("-@0*@0", g{ss})'.format(ss = ii0))
+                self.modelBuilder.factory_('expr::g4_{ss}("@0*@0*@0*@0", g{ss})'.format(ss = ii0))
+                self.modelBuilder.factory_('expr::mg4_{ss}("-@0*@0*@0*@0", g{ss})'.format(ss = ii0))
             else:
                 if self.oner and self.r_is_uninitialized:
                     self.modelBuilder.doVar('r[1,0,10]')
                     self.r_is_uninitialized = False
                 else:
-                    self.modelBuilder.doVar('r{ss}[1,0,10]'.format(ss = ii + 1))
+                    self.modelBuilder.doVar('r{ss}[1,0,10]'.format(ss = ii0))
 
-                self.modelBuilder.factory_('expr::g2_{ss}("(@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
-                self.modelBuilder.factory_('expr::mg2_{ss}("(-@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
-                self.modelBuilder.factory_('expr::g4_{ss}("(@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
-                self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii + 1, tt = '' if self.oner else ii + 1))
+                ii1 = '' if self.oner else ii0
+                self.modelBuilder.factory_('expr::g2_{ss}("(@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
+                self.modelBuilder.factory_('expr::mg2_{ss}("(-@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
+                self.modelBuilder.factory_('expr::g4_{ss}("(@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
+                self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
 
         self.modelBuilder.doSet('POI', ','.join(self.pois))
 
@@ -97,7 +99,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         idx = process
         for sp in self.signal_parts:
             idx = idx.replace(sp, "")
-        idx = self.signals.index(idx) + 1
+        idx = self.signals.index(idx) + 1 if len(self.signals) > 1 else ''
 
         if self.verbose and self.printonce:
             if self.nor:
