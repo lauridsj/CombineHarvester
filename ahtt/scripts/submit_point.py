@@ -101,8 +101,8 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
 
-        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} '
-                   '{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {bsd}').format(
+        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {prj} '
+                   '{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {dbg} {bsd}').format(
                        pnt = pnt,
                        mmm = args.mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
@@ -138,6 +138,7 @@ if __name__ == '__main__':
                        otg = "--output-tag " + args.otag if args.otag != "" else "",
                        rsd = "--seed " + args.seed if args.seed != "" else "",
                        com = "--compress" if rundc else "",
+                       dbg = "--experimental" if args.experimental else "",
                        bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
                    )
 

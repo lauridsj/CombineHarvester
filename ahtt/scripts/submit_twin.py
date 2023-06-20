@@ -252,8 +252,8 @@ if __name__ == '__main__':
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
-        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} "
-                   "{shp} {mcs} {rpr} {msk} {prj} {cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {rsd} {com} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
+        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {prj} "
+                   "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {rsd} {com} {dbg} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
             pnt = pair,
             mmm = args.mode if not "clean" in args.mode else ','.join([mm for mm in args.mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -283,6 +283,7 @@ if __name__ == '__main__':
             asm = "--unblind" if not args.asimov else "",
             rsd = "--seed " + args.seed if args.seed != "" else "",
             com = "--compress" if rundc else "",
+            dbg = "--experimental" if args.experimental else "",
             rmr = "--delete-root" if args.rmroot else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = "--g-values{s}'".format(s = '=' if args.gvalues[0][0] == "-" else " ") + ','.join(args.gvalues) + "'" if valid_g and not runfc else "",
