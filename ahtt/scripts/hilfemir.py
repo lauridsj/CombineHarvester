@@ -4,6 +4,8 @@
 
 # for options that occur on scripts that run combine directly
 combine_help_messages = {
+    "--experimental": "usually does nothing. but sometimes is used to enable experimental features.",
+
     "--tag": "extra tag on datacard directory names",
     "--point": "comma-separated list of signal points to run on",
     "--signal": "signal filenames. comma separated",

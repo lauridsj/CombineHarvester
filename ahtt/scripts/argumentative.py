@@ -24,6 +24,7 @@ from hilfemir import combine_help_messages, submit_help_messages
 def common_common(parser):
     parser.add_argument("--no-mc-stats", help = combine_help_messages["--no-mc-stats"], dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--tag", help = combine_help_messages["--tag"], default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--experimental", help = combine_help_messages["--experimental"], dest = "experimental", action = "store_true", required = False)
     return parser
 
 def common_point(parser, required = True):
