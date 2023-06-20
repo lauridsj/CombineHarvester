@@ -120,13 +120,13 @@ def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, range
         color = colors[ii]
         style = styles[ii]
         label = labels[ii]
-        handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 1.5), label))
+        handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
         values = np.array([nn[0] for nn in nll])
         dnlls = np.array([nn[1] for nn in nll])
-        ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 1.5)
+        ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
 
     plt.ylim(rangey)
-    ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 2)
+    #ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 1)
     plt.xlabel(xlabel, fontsize = 21, loc = "right")
     #plt.ylabel(axes["dnll"] % 'A/H', fontsize = 21, loc = "top")
     plt.ylabel("2dNLL", fontsize = 21, loc = "top")
