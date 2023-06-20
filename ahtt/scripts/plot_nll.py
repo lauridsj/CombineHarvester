@@ -69,13 +69,13 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
 
         if ii in smooth and kinks is not None:
             for kink in kinks:
-                values = [vv for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
-                dnlls = [dd for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
+                values = [vv for vv, dd in originals if not (kink[0] < vv < kink[1])]
+                dnlls = [dd for vv, dd in originals if not (kink[0] < vv < kink[1])]
 
                 if len(values) > 6 and len(dnlls) == len(values):
                     spline = UnivariateSpline(np.array(values), np.array(dnlls))
-                    intx += [vv for vv, dd in originals if kink[0] <= vv <= kink[1]]
-                    inty += [spline(vv) for vv, dd in originals if kink[0] <= vv <= kink[1]]
+                    intx += [vv for vv, dd in originals if kink[0] < vv < kink[1]]
+                    inty += [spline(vv) for vv, dd in originals if kink[0] < vv < kink[1]]
 
         for value, dnll in originals:
             if rangex[0] <= value <= rangex[1]:
