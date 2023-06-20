@@ -23,7 +23,7 @@ import matplotlib.colors as mcl
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
-def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
+def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint):
     result = []
     pstr = "__".join(points)
 
@@ -67,7 +67,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
         inty = []
         dataset = []
 
-        if kinks is not None:
+        if ii in smooth and kinks is not None:
             for kink in kinks:
                 values = [vv for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
                 dnlls = [dd for vv, dd in originals if not (kink[0] <= vv <= kink[1])]
@@ -85,7 +85,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
         result.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, rangey, zeropoint, legendloc, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, rangex, rangey, zeropoint, legendloc, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -114,7 +114,7 @@ def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, range
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, rangex, rangey, kinks, zeropoint)
+    nlls = read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint)
 
     for ii, nll in enumerate(nlls):
         color = colors[ii]
@@ -156,9 +156,12 @@ if __name__ == '__main__':
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
     parser.add_argument("--label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", required = False,
                         type = lambda s: tokenize_to_list(s, token = ';' ))
-    parser.add_argument("--smooth", help = "use spline to smooth kinks up. kinks are given in --kinks", action = "store_true", required = False)
+
+    parser.add_argument("--smooth", help = "comma-separated zero-based indices of tags whose kinks are to be smoothed",
+                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = int ))
     parser.add_argument("--kinks", help = "comma separated list of values to be used by --smooth. every 2 values are treated as min and max of kink range",
                         default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = float ) )
+
     parser.add_argument("--x-name-label", help = "semicolon-separated parameter name and label on the x-axis. empty label means same as name for NPs.",
                         dest = "namelabel", type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';'), default = ["g1"], required = False)
     parser.add_argument("--x-range", help = "comma-separated min and max values in the x-axis", dest = "rangex",
@@ -183,7 +186,7 @@ if __name__ == '__main__':
     if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    if args.smooth and args.kinks is not None:
+    if args.kinks is not None:
         if len(args.kinks) % 2 == 1:
             raise RuntimeError("kinks given don't correspond to list of minmaxes. aborting!")
 
@@ -199,5 +202,5 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint, args.legendloc, args.transparent, args.fmt)
+             points, dirs, args.label, args.smooth, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint, args.legendloc, args.transparent, args.fmt)
     pass
