@@ -158,7 +158,7 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list(s, token = ';' ))
 
     parser.add_argument("--smooth", help = "comma-separated zero-based indices of tags whose kinks are to be smoothed",
-                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = int ))
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = int ))
     parser.add_argument("--kinks", help = "comma separated list of values to be used by --smooth. every 2 values are treated as min and max of kink range",
                         default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = float ) )
 
