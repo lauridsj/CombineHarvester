@@ -664,7 +664,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, drops, keeps, mcstat, rate
                     print("make_datacard :: unknown handling for nuisance " + nuisance[0] + ", skipping")
                     continue
 
-                if any([nn in nuisance[0] for nn in ["JEC", "JER", "eff", "fake", "pileup", "EWQCD"]]):
+                if any([nn in nuisance[0] for nn in ["JEC", "JER", "eff", "fake", "pileup", "EWQCD", "L1_prefire", "METunclustered"]]):
                     groups[cc]["experiment"].append(nuisance[0])
                 else:
                     groups[cc]["theory"].append(nuisance[0])
