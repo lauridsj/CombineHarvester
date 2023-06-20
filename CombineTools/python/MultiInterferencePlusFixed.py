@@ -4,6 +4,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
     def __init__(self):
         self.signal_parts = ['_neg', '_pos', '_res']
         self.signals = []
+        self.nsignal = 0
         self.pois    = []
         self.verbose = False
         self.nor = False
@@ -47,6 +48,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.oner = True
             if po.startswith("signal="):
                 signals = po.split('=')[1].split(',')
+                self.nsignal = len(signals)
                 for ss in signals:
                     self.add_poi_per_signal(ss)
 
@@ -56,7 +58,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
 
     def add_poi_per_signal(self, signal):
         self.signals.append(signal)
-        idx = self.signals.index(signal) + 1 if len(self.signals) > 1 else ''
+        idx = self.signals.index(signal) + 1 if self.nsignal > 1 else ''
         self.pois.append('g{ss}'.format(ss = idx))
 
         if not self.nor and not self.oner:
@@ -66,7 +68,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
 
     def doParametersOfInterest(self):
         for ii, signal in enumerate(self.signals):
-            ii0 = ii + 1 if len(self.signals) > 1 else ''
+            ii0 = ii + 1 if self.nsignal > 1 else ''
             self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii0))
 
             if self.nor:
@@ -99,7 +101,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         idx = process
         for sp in self.signal_parts:
             idx = idx.replace(sp, "")
-        idx = self.signals.index(idx) + 1 if len(self.signals) > 1 else ''
+        idx = self.signals.index(idx) + 1 if self.nsignal > 1 else ''
 
         if self.verbose and self.printonce:
             if self.nor:
