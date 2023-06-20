@@ -225,12 +225,14 @@ if __name__ == '__main__':
         make_datacard_with_args(scriptdir, args)
 
         print "\ntwin_point_ahtt :: making workspaces"
-        syscall("combineTool.py -M T2W -i {dcd} -o workspace_twin-g.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed --PO 'signal={pnt}' {pos} {ext}".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            mmm = mstr,
-            pnt = ",".join(points),
-            pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
-            ext = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum"
+        syscall("combineTool.py -M T2W -i {dcd} -o workspace_twin-g.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+                "--PO 'signal={pnt}' {pos} {opt} {ext}".format(
+                    dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                    mmm = mstr,
+                    pnt = ",".join(points),
+                    pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
+                    opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
+                    ext = args.extopt
         ))
 
     if runvalid:
