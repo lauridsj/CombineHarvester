@@ -85,14 +85,55 @@ def nonparametric_option(extopt):
 
     return " ".join(extopt)
 
-def make_best_fit(dcdir, workspace, point, asimov, strategy, poi_range, set_freeze, extopt = "", masks = []):
+def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, modifier, scenario, strategy, ranges, set_freeze, extopt = "", masks = []):
+    ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tags[0])
+
+    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
+        dcd = dcdir,
+        ptg = ptag(point, tags[0]),
+        asm = "exp" if asimov else "obs"
+    ))
+    if usedefault:
+        workspace = default
+    elif keepormake:
+        if len(workspace) == 0 or not os.path.isfile(workspace[0]):
+            # try again, but using tag instead of otag
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
+                dcd = dcdir,
+                ptg = ptag(point, tags[1]),
+                asm = "exp" if asimov else "obs"
+            ))
+
+        if len(workspace) and os.path.isfile(workspace[0]):
+            workspace = workspace[0]
+        else:
+            keepormake = False
+
+    if not usedefault and not keepormake:
+        # ok there really isnt a best fit file, make one
+        print "\nxxx_point_ahtt :: making best fits"
+        for asm in [not asimov, asimov]:
+            workspace = make_best_fit(dcdir, default, point, asm, strategy, ranges, set_freeze, extopt, masks)
+            syscall("rm robustHesse_*.root", False, True)
+
+            newname = "{dcd}{ptg}_best-fit_{asm}{sce}.root".format(
+                dcd = dcdir,
+                ptg = ptag(points, tags[0]),
+                asm = "exp" if asm else "obs",
+                sce = "_" + scenario if scenario != "" else "",
+            )
+            syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
+            workspace = newname
+    return workspace
+
+def make_best_fit(dcdir, workspace, point, asimov, strategy, ranges, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
 
     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
         dcd = workspace,
         bff = fname,
         stg = strategy,
-        prg = poi_range,
+        prg = ranges,
         asm = "-t -1" if asimov else "",
         wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
         prm = set_parameter(set_freeze, extopt, masks),
