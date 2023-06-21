@@ -13,7 +13,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, get_point, chunks, elementwise_add
-from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
+from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D, parse_args
@@ -65,21 +65,19 @@ def sensible_enough_pull(nuisance, mass):
     return isgood
 
 def single_point_scan(args):
-    gval, dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks = args
+    gval, dcdir, workspace, mstr, accuracies, strategy, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
 
     epsilon = 2.**-17
     nstep = 1
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-            "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-            "--singlePoint 1 {stg} {asm} {msk}".format(
+            "--setParameters g={gvl} --freezeParameters g {acc} --picky --singlePoint 1 {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 gst = gstr,
                 gvl = gval,
                 acc = accuracies,
-                prg = poi_range,
                 stg = strategy,
                 asm = "-t -1" if asimov else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
@@ -100,14 +98,12 @@ def single_point_scan(args):
         fgood = False
         for ii in range(1, nstep + 1):
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                    "--setParameters g={gvl} --freezeParameters g {acc} --picky {prg} "
-                    "--singlePoint 1 {stg} {asm} {msk}".format(
+                    "--setParameters g={gvl} --freezeParameters g {acc} --picky --singlePoint 1 {stg} {asm} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         gst = gstr + "eps",
                         gvl = gval + (ii * factor * epsilon),
                         acc = accuracies,
-                        prg = poi_range,
                         stg = strategy,
                         asm = "-t -1" if asimov else "",
                         msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
@@ -133,7 +129,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks = args
+    gvals, dcdir, workspace, mstr, accuracies, strategy, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -141,7 +137,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, poi_range, strategy, asimov, masks))
+        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, strategy, asimov, masks))
 
         if result is None:
             ii += 3
@@ -213,7 +209,6 @@ if __name__ == '__main__':
     mstr = str(point[1]).replace(".0", "")
     ptag = "{pnt}{tag}".format(pnt = args.point[0], tag = args.otag)
 
-    poi_range = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
@@ -228,6 +223,12 @@ if __name__ == '__main__':
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
     runprepost = "prepost" in modes or "corrmat" in modes
+
+    ranges = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
+    # parameter ranges for best fit file
+    ranges = ["r: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
+    if args.experimental:
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
@@ -266,9 +267,10 @@ if __name__ == '__main__':
         ))
 
     default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan")
-    workspace = glob.glob("{dcd}{ptg}_best-fit_{mod}*.root".format(
+    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}_{mod}*.root".format(
         dcd = dcdir,
         ptg = ptag,
+        asm = "exp" if args.asimov else "obs",
         mod = "one-poi" if args.onepoi else "g-scan"
     ))
     if args.defaultwsp:
@@ -276,9 +278,10 @@ if __name__ == '__main__':
     elif args.keepbest:
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{mod}*.root".format(
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}_{mod}*.root".format(
                 dcd = dcdir,
                 ptg = "{pnt}{tag}".format(pnt = args.point[0], tag = args.tag),
+                asm = "exp" if args.asimov else "obs",
                 mod = "one-poi" if args.onepoi else "g-scan"
             ))
 
@@ -288,24 +291,26 @@ if __name__ == '__main__':
             args.keepbest = False
 
     if not args.defaultwsp and not args.keepbest:
-        for onepoi in [not args.onepoi, args.onepoi]:
-            # ok there really isnt a best fit file, make one
-            print "\nsingle_point_ahtt :: making best fits"
-            workspace = make_best_fit(dcdir, dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan"), args.point[0],
-                                      args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
-                                      elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
-            syscall("rm robustHesse_*.root", False, True)
+        # ok there really isnt a best fit file, make one
+        print "\nsingle_point_ahtt :: making best fits"
+        for asimov in [not args.asimov, args.asimov]:
+            for onepoi in [not args.onepoi, args.onepoi]:
+                workspace = make_best_fit(dcdir, dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan"), args.point[0],
+                                          asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+                                          elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
+                syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_best-fit_{mod}{gvl}{rvl}{fix}.root".format(
-                dcd = dcdir,
-                ptg = ptag,
-                mod = "one-poi" if onepoi else "g-scan",
-                gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
-                rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
-                fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-            )
-            syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
-            workspace = newname
+                newname = "{dcd}{ptg}_best-fit_{asm}_{mod}{gvl}{rvl}{fix}.root".format(
+                    dcd = dcdir,
+                    ptg = ptag,
+                    asm = "exp" if args.asimov else "obs",
+                    mod = "one-poi" if onepoi else "g-scan",
+                    gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
+                    rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
+                    fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
+                )
+                syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
+                workspace = newname
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
@@ -313,11 +318,10 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
-            syscall("combineTool.py -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {prg} {acc} {stg} {asm} {msk}".format(
+            syscall("combineTool.py -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {acc} {stg} {asm} {msk}".format(
                 dcd = workspace,
                 mmm = mstr,
                 maxg = max_g,
-                prg = poi_range,
                 acc = accuracies,
                 stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1),
                 asm = "--run blind -t -1" if args.asimov else "",
@@ -346,7 +350,7 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, workspace, mstr, accuracies, poi_range, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
+            lll = dotty_scan((gvals, dcdir, workspace, mstr, accuracies, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
 
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -393,10 +397,9 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {prg} {asm} {prm} {ext}".format(
+        syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {prm} {ext}".format(
             dcd = workspace,
             mmm = mstr,
-            prg = poi_range,
             stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
             asm = "-t -1" if args.asimov else "",
             prm = set_parameter(set_freeze, args.extopt, masks),
@@ -407,10 +410,9 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
             for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [1, 2, 0] for itol in [0, -1, 1, -2, 2, -3, 3]]:
-                syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {prg} {asm} {nui} {prm} {ext}".format(
+                syscall("combineTool.py -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
-                    prg = poi_range,
                     stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
                     asm = "-t -1" if args.asimov else "",
                     nui = "--named '" + nuisance + "'" if nuisance != "" else "",
@@ -445,11 +447,10 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm} {ext}".format(
+                "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
                     stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                    prg = poi_range,
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt)

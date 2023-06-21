@@ -16,7 +16,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, pmfloat
-from utilscombine import max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_parameter, nonparametric_option
+from utilscombine import max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -189,7 +189,6 @@ if __name__ == '__main__':
     dcdir = args.basedir + "__".join(points) + args.tag + "/"
 
     mstr = str(get_point(points[0])[1]).replace(".0", "")
-    poi_range = "--setParameterRanges '" + ":".join(["g" + str(ii + 1) + "=0.,5." for ii, pp in enumerate(points)]) + "'"
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
@@ -220,6 +219,11 @@ if __name__ == '__main__':
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
+    # parameter ranges for best fit file
+    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+    if args.experimental:
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
+
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         make_datacard_with_args(scriptdir, args)
@@ -244,18 +248,20 @@ if __name__ == '__main__':
         ))
 
     default_workspace = dcdir + "workspace_twin-g.root"
-    workspace = glob.glob("{dcd}{ptg}_best-fit*.root".format(
+    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
         dcd = dcdir,
-        ptg = ptag
+        ptg = ptag,
+        asm = "exp" if args.asimov else "obs"
     ))
     if args.defaultwsp:
         workspace = default_workspace
     elif args.keepbest:
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit*.root".format(
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
                 dcd = dcdir,
                 ptg = "{pnt}{tag}".format(pnt = "__".join(points), tag = args.tag),
+                asm = "exp" if args.asimov else "obs"
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
@@ -265,20 +271,22 @@ if __name__ == '__main__':
 
     if not args.defaultwsp and not args.keepbest:
         # ok there really isnt a best fit file, make one
-        print "\ntwin_point_ahtt :: making best fit"
-        workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
-                                  args.asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), poi_range,
-                                  elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
-        syscall("rm robustHesse_*.root", False, True)
+        print "\ntwin_point_ahtt :: making best fits"
+        for asimov in [not args.asimov, args.asimov]:
+            workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
+                                      asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+                                      elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
+            syscall("rm robustHesse_*.root", False, True)
 
-        newname = "{dcd}{ptg}_best-fit{gvl}{fix}.root".format(
-            dcd = dcdir,
-            ptg = ptag,
-            gvl = "_" + gstr if gstr != "" else "",
-            fix = "_fixed" if args.fixpoi and gstr != "" else "",
-        )
-        syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
-        workspace = newname
+            newname = "{dcd}{ptg}_best-fit_{asm}{gvl}{fix}.root".format(
+                dcd = dcdir,
+                ptg = ptag,
+                asm = "exp" if args.asimov else "obs",
+                gvl = "_" + gstr if gstr != "" else "",
+                fix = "_fixed" if args.fixpoi and gstr != "" else "",
+            )
+            syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
+            workspace = newname
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
         if args.toyloc == "":
@@ -624,11 +632,10 @@ if __name__ == '__main__':
 
             print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
             syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                    "--plots -m {mmm} -n _prepost {stg} {prg} {asm} {prm} {ext} {opt}".format(
+                    "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {opt}".format(
                         dcd = workspace,
                         mmm = mstr,
                         stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                        prg = poi_range,
                         asm = "-t -1" if args.asimov else "",
                         prm = set_parameter(set_freeze, args.extopt, masks),
                         ext = nonparametric_option(args.extopt),
