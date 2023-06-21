@@ -158,6 +158,13 @@ def starting_poi(gvalues, fixpoi):
     return [setpar, frzpar]
 
 if __name__ == '__main__':
+    print "twin_point_ahtt :: called with the following arguments"
+    print sys.argv[1:]
+    print "\n"
+    print " ".join(sys.argv)
+    print "\n"
+    sys.stdout.flush()
+
     parser = ArgumentParser()
     common_point(parser)
     common_common(parser)
@@ -170,12 +177,6 @@ if __name__ == '__main__':
     parser.add_argument("--run-idx", help = combine_help_messages["--run-idx"], default = -1, dest = "runidx", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
     args = parse_args(parser)
-    print "twin_point_ahtt :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
-    sys.stdout.flush()
 
     points = args.point
     gvalues = args.gvalues

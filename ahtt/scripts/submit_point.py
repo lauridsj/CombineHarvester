@@ -21,6 +21,13 @@ from argumentative import common_point, common_common, common_fit_pure, common_f
 from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
+    print "submit_point :: called with the following arguments"
+    print sys.argv[1:]
+    print "\n"
+    print " ".join(sys.argv)
+    print "\n"
+    sys.stdout.flush()
+
     parser = ArgumentParser()
     common_point(parser, False)
     common_common(parser)
@@ -37,12 +44,6 @@ if __name__ == '__main__':
     parser.add_argument("--run-mc-stats", help = submit_help_messages["--run-mc-stats"], dest = "runbb", action = "store_true", required = False)
 
     args = parse_args(parser)
-    print "submit_point :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
-    sys.stdout.flush()
 
     remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))

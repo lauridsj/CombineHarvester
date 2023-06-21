@@ -132,6 +132,13 @@ def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_d
     return toylocs
 
 if __name__ == '__main__':
+    print "submit_twin :: called with the following arguments"
+    print sys.argv[1:]
+    print "\n"
+    print " ".join(sys.argv)
+    print "\n"
+    sys.stdout.flush()
+
     parser = ArgumentParser()
     common_common(parser)
     common_fit_pure(parser)
@@ -156,12 +163,6 @@ if __name__ == '__main__':
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
     args = parse_args(parser)
-    print "submit_twin :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
-    sys.stdout.flush()
 
     remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))

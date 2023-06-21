@@ -177,6 +177,13 @@ def starting_poi(onepoi, gvalue, rvalue, fixpoi):
     return [setpar, frzpar]
 
 if __name__ == '__main__':
+    print "single_point_ahtt :: called with the following arguments"
+    print sys.argv[1:]
+    print "\n"
+    print " ".join(sys.argv)
+    print "\n"
+    sys.stdout.flush()
+
     parser = ArgumentParser()
     common_point(parser)
     common_common(parser)
@@ -190,13 +197,6 @@ if __name__ == '__main__':
     parser.add_argument("--impact-nuisances", help = combine_help_messages["--impact-nuisances"], dest = "impactnui", default = "", required = False,
                         type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), ';' ))
     args = parse_args(parser)
-
-    print "single_point_ahtt :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
-    sys.stdout.flush()
 
     if len(args.point) != 1:
         raise RuntimeError("this script is to be used with exactly one A/H point!")
