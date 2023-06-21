@@ -106,12 +106,14 @@ def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, range
             (2, [["#cc0033", "#0033cc"], ["solid", "dashed"]]),
             (3, [["black", "#cc0033", "#0033cc"], ["solid", "dashed", "dotted"]]),
             (4, [["black", "#cc0033", "#0033cc", "#33cc00"], ["solid", "dashed", "dashdot", "dotted"]]),
+            (5, [["black", "#cc0033", "#0033cc", "#33cc00", "#9966cc"], ["solid", "dashed", "dashdot", (0, (3, 5, 1, 5)), (0, (1, 1))]]),
+            (6, [["black", "#cc0033", "#0033cc", "#33cc00", "#9966cc", "#555555"], ["solid", "dashed", (0, (1, 1)), (0, (3, 5, 1, 5)), "dashdot", (0, (1, 5))]]),
         ])
 
     ndir = len(directories)
-    if ndir < 5:
+    if ndir <= len(draw_nll.settings):
         colors, styles = draw_nll.settings[ndir]
-    elif ndir < 9:
+    elif ndir <= 2 * len(draw_nll.settings):
         if ndir % 2 == 0:
             colors = []
             styles = []
