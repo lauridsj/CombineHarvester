@@ -111,7 +111,7 @@ def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, mo
             keepormake = False
 
     if not usedefault and not keepormake:
-        # ok there really isnt a best fit file, make one
+        # ok there really isnt a best fit file, make them
         print "\nxxx_point_ahtt :: making best fits"
         for asm in [not asimov, asimov]:
             workspace = make_best_fit(dcdir, default, point, asm, strategy, ranges, set_freeze, extopt, masks)
@@ -119,7 +119,7 @@ def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, mo
 
             newname = "{dcd}{ptg}_best-fit_{asm}{sce}.root".format(
                 dcd = dcdir,
-                ptg = ptag(points, tags[0]),
+                ptg = ptag(point, tags[0]),
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
             )
