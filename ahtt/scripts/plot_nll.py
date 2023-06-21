@@ -45,9 +45,7 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
 
     for ii, (directory, scenario, tag) in enumerate(directories):
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}_*.root"
-        files = glob.glob(fexp)
-        files = [ifile if valid_1D_nll_fname(ifile) for ifile in files]
-        # valid 1D file only
+        files = [ifile for ifile in glob.glob(fexp) if valid_1D_nll_fname(ifile)]
 
         zero = None
         if zeropoint != "minimum":
@@ -67,16 +65,17 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
                 dfile.Close()
 
         originals = []
-        dfile = TFile.Open(files[0])
-        dtree = dfile.Get("limit")
+        for ifile in files:
+            dfile = TFile.Open(ifile)
+            dtree = dfile.Get("limit")
 
-        for i in dtree:
-            if dtree.quantileExpected >= 0.:
-                value = getattr(dtree, name)
-                dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
-                dnll *= 2.
-                originals.append((value, dnll))
-        dfile.Close()
+            for i in dtree:
+                if dtree.quantileExpected >= 0.:
+                    value = getattr(dtree, name)
+                    dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
+                    dnll *= 2.
+                    originals.append((value, dnll))
+            dfile.Close()
         originals = sorted(originals, key = lambda tup: tup[0])
         intx = []
         inty = []
