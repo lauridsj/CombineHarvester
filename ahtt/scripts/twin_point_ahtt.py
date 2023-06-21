@@ -666,7 +666,9 @@ if __name__ == '__main__':
             args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), nparam)]
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1])) for ii in range(nparam)]
 
+        nelement = 0
         for element in itertools.product(*interval):
+            nelement += 1
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
@@ -685,14 +687,24 @@ if __name__ == '__main__':
             if args.usehesse:
                 syscall("rm robustHesse_*.root", False, True)
 
-        syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
-            dcd = dcdir,
-            ptg = ptag,
-            exp = args.fcexp[0],
-            fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
-            par = "*".join(args.nllparam),
-            mmm = mstr
-        ))
+        if nelement > 1:
+            syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+                dcd = dcdir,
+                ptg = ptag,
+                exp = args.fcexp[0],
+                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                par = "*".join(args.nllparam),
+                mmm = mstr
+            ))
+        else:
+            syscall("mv higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root {dcd}{ptg}_nll_{exp}_{fit}.root".format(
+                dcd = dcdir,
+                ptg = ptag,
+                exp = args.fcexp[0],
+                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                par = "*".join(args.nllparam),
+                mmm = mstr
+            ))
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
