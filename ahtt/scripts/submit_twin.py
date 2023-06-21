@@ -14,7 +14,7 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, pmfloat
+from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, floattopm
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs
@@ -432,7 +432,7 @@ if __name__ == '__main__':
         elif runnll:
             minmax = [(values.split(",")[0], values.split(",")[1]) for values in args.nllwindow]
             jname = job_name + "_" + args.fcexp[0]
-            jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
+            jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
             if len(minmax) < len(args.nllparam):
                 jname += "_" + "_".join(args.nllparam[len(minmax):])
             logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")

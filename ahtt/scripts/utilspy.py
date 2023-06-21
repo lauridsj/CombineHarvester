@@ -21,8 +21,11 @@ def syscall(cmd, verbose = True, nothrow = False):
             print ("Tried to execute: %s" % cmd)
         raise RuntimeError("Command failed with exit code {ret}!".format(ret = retval))
 
-def pmfloat(value):
+def floattopm(value):
     return str(value).replace(".0", "").replace("-", "m") if math.floor(float(value)) == float(value) else str(value).replace(".", "p").replace("-", "m")
+
+def pmtofloat(string):
+    return float(string.replace("p", ".").replace("m", "-"))
 
 def get_point(sigpnt):
     pnt = sigpnt.split('_')

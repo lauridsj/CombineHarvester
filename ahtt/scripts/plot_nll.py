@@ -20,45 +20,60 @@ import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
+from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
+
+def valid_1D_nll_fname(fname):
+    fname = fname.split('/')[-1].split('_')
+    nvalidto = 0
+    for part in fname:
+        if "to" in part:
+            minmax = part.split('to')
+            for mm in minmax:
+                try:
+                    pmtofloat(mm)
+                    break
+                except ValueError:
+                    return False
+            nvalidto += 1
+    return nvalidto == 1
 
 def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint):
     result = []
     pstr = "__".join(points)
 
-    if zeropoint == "minimum":
-        zeros = None
-    else:
-        zeros = []
-        zeropoint = float(zeropoint)
+    for ii, (directory, scenario, tag) in enumerate(directories):
+        fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}_*.root"
+        files = glob.glob(fexp)
+        files = [ifile if valid_1D_nll_fname(ifile) for ifile in files]
+        # valid 1D file only
 
-        for ii, (directory, scenario, tag) in enumerate(directories):
-            files = glob.glob(f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}*.root") # FIXME this will barf if there are more than 1 file with the same param
+        zero = None
+        if zeropoint != "minimum":
+            zeropoint = float(zeropoint)
             zero = (sys.float_info.max, sys.float_info.max)
 
-            dfile = TFile.Open(files[0])
-            dtree = dfile.Get("limit")
+            for ifile in files:
+                dfile = TFile.Open(ifile)
+                dtree = dfile.Get("limit")
 
-            for i in dtree:
-                if dtree.quantileExpected >= 0.:
-                    value = getattr(dtree, name)
-                    delta = abs(value - zeropoint)
-                    if delta < zero[-1]:
-                        zero = (dtree.nll, delta)
-            zeros.append(zero)
-            dfile.Close()
+                for i in dtree:
+                    if dtree.quantileExpected >= 0.:
+                        value = getattr(dtree, name)
+                        delta = abs(value - zeropoint)
+                        if delta < zero[-1]:
+                            zero = (dtree.nll, delta)
+                dfile.Close()
 
-    for ii, (directory, scenario, tag) in enumerate(directories):
         originals = []
-        files = glob.glob(f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}*.root")
         dfile = TFile.Open(files[0])
         dtree = dfile.Get("limit")
 
         for i in dtree:
             if dtree.quantileExpected >= 0.:
                 value = getattr(dtree, name)
-                dnll = dtree.deltaNLL if zeros is None else dtree.deltaNLL + dtree.nll0 - zeros[ii][0]
+                dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
                 dnll *= 2.
                 originals.append((value, dnll))
         dfile.Close()

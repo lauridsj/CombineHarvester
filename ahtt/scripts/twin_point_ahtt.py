@@ -15,7 +15,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
-from utilspy import get_point, tuplize, stringify, g_in_filename, pmfloat
+from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -670,7 +670,7 @@ if __name__ == '__main__':
         for element in itertools.product(*interval):
             nelement += 1
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
-            nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = pmfloat(round(value, 5))) for param, value in zip(args.nllparam, element)])
+            nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{pnt}' {par} "
                     "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
@@ -692,7 +692,7 @@ if __name__ == '__main__':
                 dcd = dcdir,
                 ptg = ptag,
                 exp = args.fcexp[0],
-                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
                 par = "*".join(args.nllparam),
                 mmm = mstr
             ))
@@ -701,7 +701,7 @@ if __name__ == '__main__':
                 dcd = dcdir,
                 ptg = ptag,
                 exp = args.fcexp[0],
-                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = pmfloat(mm[0]), ma = pmfloat(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
                 par = "*".join(args.nllparam),
                 mmm = mstr
             ))
