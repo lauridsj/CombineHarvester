@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # utilities containing functions used throughout - combine file
 
+import glob
+import os
+
 from desalinator import remove_quotes, remove_spaces, tokenize_to_list
 from utilspy import syscall, right_now
-import glob
 
 from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
