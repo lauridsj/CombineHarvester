@@ -39,7 +39,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint):
+def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
     result = []
     pstr = "__".join(points)
 
@@ -81,15 +81,24 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
         inty = []
         dataset = []
 
-        if ii in smooth and kinks is not None:
+        if kinks is not None:
             for kink in kinks:
-                values = [vv for vv, dd in originals if not (kink[0] < vv < kink[1])]
-                dnlls = [dd for vv, dd in originals if not (kink[0] < vv < kink[1])]
+                if ii == kink[0]:
+                    values = []
+                    dnlls = []
+                    for dd, vv in originals:
+                        inkink = any([kink[1][i] < vv < kink[1][i + 1] for i in range(0, len(kink[1]), 2)])
+                        if not inkink:
+                            values.append(vv)
+                            dnlls.append(dd)
 
-                if len(values) > 6 and len(dnlls) == len(values):
-                    spline = UnivariateSpline(np.array(values), np.array(dnlls))
-                    intx += [vv for vv, dd in originals if kink[0] < vv < kink[1]]
-                    inty += [spline(vv) for vv, dd in originals if kink[0] < vv < kink[1]]
+                    if len(values) > 6 and len(dnlls) == len(values):
+                        spline = UnivariateSpline(np.array(values), np.array(dnlls))
+                        for dd, vv in originals:
+                            inkink = any([kink[1][i] < vv < kink[1][i + 1] for i in range(0, len(kink[1]), 2)])
+                            if inkink:
+                                intx.append(vv)
+                                inty.append(spline(vv))
 
         for value, dnll in originals:
             if rangex[0] <= value <= rangex[1]:
@@ -99,7 +108,7 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
         result.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -130,7 +139,7 @@ def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, range
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint)
+    nlls = read_nll(points, directories, name, rangex, rangey, kinks, zeropoint)
 
     for ii, nll in enumerate(nlls):
         color = colors[ii]
@@ -174,13 +183,12 @@ if __name__ == '__main__':
     parser.add_argument("--label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", required = False,
                         type = lambda s: tokenize_to_list(s, token = ';' ))
 
-    parser.add_argument("--smooth", help = "comma-separated zero-based indices of tags whose kinks are to be smoothed",
-                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = int ))
-    parser.add_argument("--kinks", help = "comma separated list of values to be used by --smooth. every 2 values are treated as min and max of kink range",
-                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list( remove_spaces_quotes(s), astype = float ) )
+    parser.add_argument("--kinks", help = "semicolon-separated list of kink to be smoothed. syntax: "
+                        "idx:min0,max0,min1,max1,... where idx is the zero-based curve index, min and max denote the xmin and xmax where the kinks happen.",
+                        default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list(remove_spaces_quotes(s), token = ';'))
 
     parser.add_argument("--x-name-label", help = "semicolon-separated parameter name and label on the x-axis. empty label means same as name for NPs.",
-                        dest = "namelabel", type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';'), default = ["g1"], required = False)
+                        dest = "namelabel", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), token = ';'), default = ["g1"], required = False)
     parser.add_argument("--x-range", help = "comma-separated min and max values in the x-axis", dest = "rangex",
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 2.], required = False)
     parser.add_argument("--y-range", help = "comma-separated min and max values in the y-axis", dest = "rangey",
@@ -206,12 +214,11 @@ if __name__ == '__main__':
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     if args.kinks is not None:
-        if len(args.kinks) % 2 == 1:
-            raise RuntimeError("kinks given don't correspond to list of minmaxes. aborting!")
+        args.kinks = [kk.split(':') for kk in args.kinks]
+        args.kinks = [[kk[0], kk[1].split(',')] for kk in args.kinks]
 
-        args.kinks = [[args.kinks[ii], args.kinks[ii + 1]] for ii in range(0, len(args.kinks), 2)]
-    else:
-        args.kinks = None
+        if any([len(kk[1]) % 2 == 1 for kk in args.kinks]):
+            raise RuntimeError("one or more of the kinks given don't correspond to list of minmaxes. aborting!")
 
     if len(args.namelabel) == 1 and args.namelabel[0] in ["g1", "g2"]:
         args.namelabel[1] = axes["coupling"] % str_point(points[0]) if args.namelabel[0] == "g1" else axes["coupling"] % str_point(points[1])
@@ -221,6 +228,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.smooth, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint,
+             points, dirs, args.label, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint,
              args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass
