@@ -16,7 +16,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, pmfloat
-from utilscombine import max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
+from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -248,45 +248,13 @@ if __name__ == '__main__':
         ))
 
     default_workspace = dcdir + "workspace_twin-g.root"
-    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
-        dcd = dcdir,
-        ptg = ptag,
-        asm = "exp" if args.asimov else "obs"
-    ))
-    if args.defaultwsp:
-        workspace = default_workspace
-    elif args.keepbest:
-        if len(workspace) == 0 or not os.path.isfile(workspace[0]):
-            # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
-                dcd = dcdir,
-                ptg = "{pnt}{tag}".format(pnt = "__".join(points), tag = args.tag),
-                asm = "exp" if args.asimov else "obs"
-            ))
-
-        if len(workspace) and os.path.isfile(workspace[0]):
-            workspace = workspace[0]
-        else:
-            args.keepbest = False
-
-    if not args.defaultwsp and not args.keepbest:
-        # ok there really isnt a best fit file, make one
-        print "\ntwin_point_ahtt :: making best fits"
-        for asimov in [not args.asimov, args.asimov]:
-            workspace = make_best_fit(dcdir, default_workspace, "__".join(points),
-                                      asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
-                                      elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
-            syscall("rm robustHesse_*.root", False, True)
-
-            newname = "{dcd}{ptg}_best-fit_{asm}{gvl}{fix}.root".format(
-                dcd = dcdir,
-                ptg = ptag,
-                asm = "exp" if args.asimov else "obs",
-                gvl = "_" + gstr if gstr != "" else "",
-                fix = "_fixed" if args.fixpoi and gstr != "" else "",
-            )
-            syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
-            workspace = newname
+    workspace = get_best_fit(
+        dcdir, "__".join(points), [args.otag, args.tag],
+        args.defaultwsp, args.keepbest, default_workspace, args.asimov, "",
+        "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+        fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+        elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+    )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
         if args.toyloc == "":
@@ -418,10 +386,19 @@ if __name__ == '__main__':
                 identifier = "_" + scenario[0]
                 parameters = [scenario[1]] if scenario[1] != "" else [] 
 
+                # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
+                fcwsp = get_best_fit(
+                    dcdir, "__".join(points), [args.otag, args.tag],
+                    args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "",
+                    "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+                    fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+                    elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+                )
+
                 for irobust, istrat, itol in never_gonna_give_you_up:
                     syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "{exp} {stg} {asm} {toy} {ext}".format(
-                                dcd = workspace,
+                                dcd = fcwsp,
                                 mmm = mstr,
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
@@ -669,6 +646,15 @@ if __name__ == '__main__':
         scenario = expected_scenario(args.fcexp[0], True)
         set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
+        # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
+        fcwsp = get_best_fit(
+            dcdir, "__".join(points), [args.otag, args.tag],
+            args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "",
+            "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+            elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+        )
+
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
         if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
@@ -686,7 +672,7 @@ if __name__ == '__main__':
 
             syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{pnt}' {par} "
                     "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
-                        dcd = workspace,
+                        dcd = fcwsp,
                         mmm = mstr,
                         snm = nllname,
                         pnt = nllpnt,

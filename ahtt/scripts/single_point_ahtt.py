@@ -13,7 +13,7 @@ import json
 from ROOT import TFile, TTree
 
 from utilspy import syscall, get_point, chunks, elementwise_add
-from utilscombine import min_g, max_g, make_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
+from utilscombine import min_g, max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D, parse_args
@@ -266,51 +266,19 @@ if __name__ == '__main__':
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
 
-    default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if args.onepoi else "g-scan")
-    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}_{mod}*.root".format(
-        dcd = dcdir,
-        ptg = ptag,
-        asm = "exp" if args.asimov else "obs",
-        mod = "one-poi" if args.onepoi else "g-scan"
-    ))
-    if args.defaultwsp:
-        workspace = default_workspace
-    elif args.keepbest:
-        if len(workspace) == 0 or not os.path.isfile(workspace[0]):
-            # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}_{mod}*.root".format(
-                dcd = dcdir,
-                ptg = "{pnt}{tag}".format(pnt = args.point[0], tag = args.tag),
-                asm = "exp" if args.asimov else "obs",
-                mod = "one-poi" if args.onepoi else "g-scan"
-            ))
-
-        if len(workspace) and os.path.isfile(workspace[0]):
-            workspace = workspace[0]
-        else:
-            args.keepbest = False
-
-    if not args.defaultwsp and not args.keepbest:
-        # ok there really isnt a best fit file, make one
-        print "\nsingle_point_ahtt :: making best fits"
-        for asimov in [not args.asimov, args.asimov]:
-            for onepoi in [not args.onepoi, args.onepoi]:
-                workspace = make_best_fit(dcdir, dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan"), args.point[0],
-                                          asimov, fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
-                                          elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks)
-                syscall("rm robustHesse_*.root", False, True)
-
-                newname = "{dcd}{ptg}_best-fit_{asm}_{mod}{gvl}{rvl}{fix}.root".format(
-                    dcd = dcdir,
-                    ptg = ptag,
-                    asm = "exp" if args.asimov else "obs",
-                    mod = "one-poi" if onepoi else "g-scan",
-                    gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
-                    rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
-                    fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-                )
-                syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
-                workspace = newname
+    for onepoi in [not args.onepoi, args.onepoi]:
+        default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan")
+        workspace = get_best_fit(
+            dcdir, args.point[0], [args.otag, args.tag],
+            args.defaultwsp, args.keepbest, default_workspace, args.asimov, "one-poi" if onepoi else "g-scan",
+            "{gvl}{rvl}{fix}".format(
+                gvl = "g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
+                rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
+                fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
+            ),
+            fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+            elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+        )
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
