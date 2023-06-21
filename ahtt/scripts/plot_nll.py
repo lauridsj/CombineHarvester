@@ -86,7 +86,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
                 if ii == kink[0]:
                     values = []
                     dnlls = []
-                    for dd, vv in originals:
+                    for vv, dd in originals:
                         inkink = any([kink[1][i] < vv < kink[1][i + 1] for i in range(0, len(kink[1]), 2)])
                         if not inkink:
                             values.append(vv)
@@ -94,7 +94,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
 
                     if len(values) > 6 and len(dnlls) == len(values):
                         spline = UnivariateSpline(np.array(values), np.array(dnlls))
-                        for dd, vv in originals:
+                        for vv, dd in originals:
                             inkink = any([kink[1][i] < vv < kink[1][i + 1] for i in range(0, len(kink[1]), 2)])
                             if inkink:
                                 intx.append(vv)
@@ -215,7 +215,7 @@ if __name__ == '__main__':
 
     if args.kinks is not None:
         args.kinks = [kk.split(':') for kk in args.kinks]
-        args.kinks = [[kk[0], kk[1].split(',')] for kk in args.kinks]
+        args.kinks = [[int(kk[0]), [float(mm) for mm in kk[1].split(',')]] for kk in args.kinks]
 
         if any([len(kk[1]) % 2 == 1 for kk in args.kinks]):
             raise RuntimeError("one or more of the kinks given don't correspond to list of minmaxes. aborting!")
