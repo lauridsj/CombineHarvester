@@ -99,7 +99,7 @@ def read_nll(points, directories, name, rangex, rangey, smooth, kinks, zeropoint
         result.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, rangex, rangey, zeropoint, legendloc, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -149,7 +149,8 @@ def draw_nll(oname, points, directories, labels, smooth, kinks, namelabel, range
     ax.margins(x = 0, y = 0)
 
     legend = ax.legend(first(handles), second(handles),
-	               loc = legendloc, ncol = 1 if ndir < 5 else 2, borderaxespad = 1., fontsize = 21, frameon = False)
+	               loc = legendloc, ncol = 1 if ndir < 5 else 2, borderaxespad = 1., fontsize = 21, frameon = False,
+                       title = legendtitle, title_fontsize = 21)
     ax.add_artist(legend)
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
@@ -188,6 +189,8 @@ if __name__ == '__main__':
                         default = "minimum", required = False)
     parser.add_argument("--legend-position", help = "where to put the legend. passed as-is to mpl loc.", dest = "legendloc",
                         default = "upper right", required = False, type = remove_quotes)
+    parser.add_argument("--legend-title", help = "where to put the legend. passed as-is to mpl.", dest = "legendtitle",
+                        default = "", required = False, type = remove_quotes)
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
@@ -218,5 +221,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.smooth, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint, args.legendloc, args.transparent, args.fmt)
+             points, dirs, args.label, args.smooth, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint,
+             args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass
