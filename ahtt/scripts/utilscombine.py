@@ -91,14 +91,15 @@ def nonparametric_option(extopt):
 def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, modifier, scenario, strategy, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tags[0])
 
-    workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
-        dcd = dcdir,
-        ptg = ptag(point, tags[0]),
-        asm = "exp" if asimov else "obs"
-    ))
     if usedefault:
-        workspace = default
-    elif keepormake:
+        return default
+    elif useexisting:
+        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
+            dcd = dcdir,
+            ptg = ptag(point, tags[0]),
+            asm = "exp" if asimov else "obs"
+        ))
+
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
             workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
@@ -108,11 +109,11 @@ def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, mo
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
-            workspace = workspace[0]
+            return workspace[0]
         else:
-            keepormake = False
+            useexisting = False
 
-    if not usedefault and not keepormake:
+    if not usedefault and not useexisting:
         # ok there really isnt a best fit file, make them
         print "\nxxx_point_ahtt :: making best fits"
         for asm in [not asimov, asimov]:
