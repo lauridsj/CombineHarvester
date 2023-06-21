@@ -88,7 +88,7 @@ def nonparametric_option(extopt):
 
     return " ".join(extopt)
 
-def get_best_fit(dcdir, point, tags, usedefault, keepormake, default, asimov, modifier, scenario, strategy, ranges, set_freeze, extopt = "", masks = []):
+def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, strategy, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tags[0])
 
     if usedefault:
