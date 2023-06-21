@@ -89,7 +89,7 @@ def chunks(lst, npart):
     split a list of length nlst into npart chunks roughly of length nlst / npart
     '''
     if npart < 1 or len(lst) // npart < 1:
-        print 'invalid chunk requested. setting npart = 1.'
+        print ('invalid chunk requested. setting npart = 1.')
         npart = 1
 
     neach = len(lst) // npart
