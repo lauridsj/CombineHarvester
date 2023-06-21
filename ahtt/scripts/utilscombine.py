@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # utilities containing functions used throughout - combine file
 
-from desalinator import remove_quotes, tokenize_to_list
+from desalinator import remove_quotes, remove_spaces, tokenize_to_list
 from utilspy import syscall, right_now
 
 from ROOT import TFile, gDirectory, TH1, TH1D
@@ -29,6 +29,16 @@ def problematic_datacard_log(logfile):
                     return True
         lf.close()
     return False
+
+def set_range(parameters):
+    '''
+    given a list of parameters, return the set of combine setting their ranges
+    parameter is a string in the following syntax: name[: min, max]
+    where the range in the square bracket is optional
+    when the range is not given, it defaults to -20, 20
+    '''
+    parameters = ['='.join(remove_spaces(param).split(':')) if ':' in param else param + '=-20,20' for param in parameters]
+    return "--setParameterRanges '{ranges}'".format(ranges = ':'.join(parameters))
 
 def set_parameter(set_freeze, extopt, masks):
     '''
