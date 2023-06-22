@@ -161,7 +161,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     ax.margins(x = 0, y = 0)
 
     legend = ax.legend(first(handles), second(handles),
-	               loc = legendloc, ncol = 1 if ndir <= len(draw_nll.settings) else 2, borderaxespad = 1., fontsize = 21, frameon = False,
+	               loc = legendloc, ncol = 1 if ndir <= len(draw_nll.settings) else 2, borderaxespad = 1., fontsize = 18, frameon = False,
                        title = legendtitle, title_fontsize = 21)
     ax.add_artist(legend)
     ax.minorticks_on()
