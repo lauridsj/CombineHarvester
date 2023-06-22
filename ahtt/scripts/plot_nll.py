@@ -39,7 +39,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
+def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
     result = []
     pstr = "__".join(points)
 
@@ -102,13 +102,16 @@ def read_nll(points, directories, name, rangex, rangey, kinks, zeropoint):
 
         for value, dnll in originals:
             if rangex[0] <= value <= rangex[1]:
+                if skip and value in intx:
+                    continue
+
                 data = inty[intx.index(value)] if value in intx else dnll
                 if rangey[0] <= data <= rangey[1]:
                     dataset.append((value, data))
         result.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -139,7 +142,7 @@ def draw_nll(oname, points, directories, labels, kinks, namelabel, rangex, range
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, rangex, rangey, kinks, zeropoint)
+    nlls = read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint)
 
     for ii, nll in enumerate(nlls):
         color = colors[ii]
@@ -186,6 +189,8 @@ if __name__ == '__main__':
     parser.add_argument("--kinks", help = "semicolon-separated list of kink to be smoothed. syntax: "
                         "idx:min0,max0,min1,max1,... where idx is the zero-based curve index, min and max denote the xmin and xmax where the kinks happen.",
                         default = "", required = False, type = lambda s: None if s == "" else tokenize_to_list(remove_spaces_quotes(s), token = ';'))
+    parser.add_argument("--skip", help = "skip points in kinks, rather than interpolating its value",
+                        dest = "skip", action = "store_true", required = False)
 
     parser.add_argument("--x-name-label", help = "semicolon-separated parameter name and label on the x-axis. empty label means same as name for NPs.",
                         dest = "namelabel", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), token = ';'), default = ["g1"], required = False)
@@ -228,6 +233,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.kinks, args.namelabel, args.rangex, args.rangey, args.zeropoint,
+             points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.zeropoint,
              args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass
