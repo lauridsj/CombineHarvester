@@ -86,6 +86,7 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pnt = pnt + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
+        mode = ""
         if rundc and os.path.isdir(pnt + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
@@ -93,6 +94,9 @@ if __name__ == '__main__':
                 rundc = False
             else:
                 continue
+
+        if mode == "":
+            mode = args.mode
 
         job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_name += "{mod}{gvl}{rvl}{fix}".format(

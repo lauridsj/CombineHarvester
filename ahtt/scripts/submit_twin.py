@@ -242,6 +242,7 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pstr = pstr + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pstr + args.tag))
 
+        mode = ""
         if rundc and os.path.isdir(pstr + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
@@ -249,6 +250,9 @@ if __name__ == '__main__':
                 rundc = False
             else:
                 continue
+
+        if mode == "":
+            mode = args.mode
 
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
