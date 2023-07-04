@@ -87,14 +87,14 @@ if __name__ == '__main__':
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
         if rundc and os.path.isdir(pnt + args.tag):
-            args.mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
+            mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
-            if args.mode != "":
+            if mode != "":
                 rundc = False
             else:
                 continue
 
-        job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(args.mode) ))
+        job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_name += "{mod}{gvl}{rvl}{fix}".format(
             mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
             gvl = "_g_" + str(args.setg).replace('.', 'p') if args.setg >= 0. else "",
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {prj} '
                    '{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {dbg} {bsd}').format(
                        pnt = pnt,
-                       mmm = args.mode,
+                       mmm = mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
                        inj = "--inject-signal " + args.inject if args.inject != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
