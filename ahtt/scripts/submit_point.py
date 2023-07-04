@@ -73,11 +73,12 @@ if __name__ == '__main__':
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pnt + args.tag + ".tar.gz"))
 
+        mode = ""
         hasworkspace = os.path.isfile(pnt + args.tag + "/workspace_g-scan.root") and os.path.isfile(pnt + args.tag + "/workspace_one-poi.root")
         if not rundc and not hasworkspace:
-            syscall("rm -r {ddd}".format(ddd = pnt + args.tag))
+            syscall("rm -r {ddd}".format(ddd = pnt + args.tag), True, True)
             rundc = True
-            args.mode = "datacard," + args.mode
+            mode = "datacard," + args.mode
 
         if os.path.isdir(pnt + args.tag):
             logs = glob.glob("single_point_" + pnt + args.tag + "_*.o*")
@@ -86,7 +87,6 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pnt = pnt + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
-        mode = ""
         if rundc and os.path.isdir(pnt + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 

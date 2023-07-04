@@ -229,9 +229,10 @@ if __name__ == '__main__':
         if not rundc and not os.path.isdir(pstr + args.tag) and os.path.isfile(pstr + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pstr + args.tag + ".tar.gz"))
 
+        mode = ""
         hasworkspace = os.path.isfile(pstr + args.tag + "/workspace_twin-g.root")
         if not rundc and not hasworkspace:
-            syscall("rm -r {ddd}".format(ddd = pstr + args.tag))
+            syscall("rm -r {ddd}".format(ddd = pstr + args.tag), True, True)
             rundc = True
             mode = "datacard," + args.mode
 
@@ -242,7 +243,6 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pstr = pstr + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pstr + args.tag))
 
-        mode = ""
         if rundc and os.path.isdir(pstr + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
