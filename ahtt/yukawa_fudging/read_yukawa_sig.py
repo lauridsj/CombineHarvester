@@ -13,8 +13,8 @@ parser.add_argument("inputtemplates")
 args = parser.parse_args()
 
 var_name = "EWK_yukawa"
-category = "em_2018"
-procs = ["TT", "TQ", "TB", "TW", "TTV", "VV", "DY"]
+category = "m4pj_2018"
+procs = ["TT", "TQ", "TB", "TW", "TTV", "VV", "DY", "EWQCD"]
 
 dyt_up = 0.11
 dyt_down = 0.12
@@ -30,10 +30,11 @@ templates_down = {}
 with uproot.open(args.inputtemplates) as rfile:
     rcat = rfile[category]
     for proc in procs:
-        templates[proc] = rcat[proc].values()
-        if proc + "_" + var_name + "Up" in rcat:
-            templates_up[proc] = rcat[proc + "_" + var_name + "Up"].values()
-            templates_down[proc] = rcat[proc + "_" + var_name + "Down"].values()
+        if proc in rcat:
+            templates[proc] = rcat[proc].values()
+            if proc + "_" + var_name + "Up" in rcat:
+                templates_up[proc] = rcat[proc + "_" + var_name + "Up"].values()
+                templates_down[proc] = rcat[proc + "_" + var_name + "Down"].values()
 
 interpolators = {}
 
@@ -72,7 +73,7 @@ def get_naive_events(yt):
     for proc in procs:
         if proc in interpolators:
             n_exp += interpolators[proc](yt)
-        else:
+        elif proc in templates:
             n_exp += templates[proc]
 
     return n_exp
@@ -81,7 +82,8 @@ def get_bg_events():
     n_exp = np.zeros(n_bins)
 
     for proc in procs:
-        n_exp += templates[proc]
+        if proc in templates:
+            n_exp += templates[proc]
 
     return n_exp
 
@@ -91,9 +93,8 @@ fig, (ax1, ax2) = plt.subplots(dpi=200, nrows=2)
 colors = plt.get_cmap("tab10")
 edges = np.arange(n_bins+1)
 
-for i, sigmayt in enumerate([-2, -1, -0.5, 0, 0.5, 1, 2]):
-    dyt = sigmayt * dyt_up if sigmayt >= 0 else sigmayt * dyt_down
-    yt = yt_nom + dyt
+for i, yt in enumerate([-6., -4., -2., -1., 0., 1., 2., 4., 6.]):
+    dyt = yt - yt_nom
     n_combine = get_combine_events(dyt)
     n_naive = get_naive_events(yt)
 
@@ -107,9 +108,9 @@ for i, sigmayt in enumerate([-2, -1, -0.5, 0, 0.5, 1, 2]):
 ax1.set_yscale("log")
 ax1.autoscale()
 ax2.autoscale()
-ax1.legend()
+ax1.legend(fontsize="xx-small")
 ax1.set_ylabel("event yield")
 ax2.set_ylabel("combine / naive")
-plt.title("gA = gH = 0")
-plt.savefig("yukawayields_sig.png")
+ax1.set_title("gA = gH = 0")
+plt.savefig("yukawayields_sig_l4pj.png")
 plt.close()

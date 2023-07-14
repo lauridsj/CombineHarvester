@@ -10,7 +10,7 @@ args = parser.parse_args()
 proc = "TT"
 var_name = "EWK_yukawa"
 
-channels = ["em", "ee", "mm"]
+channels = ["em", "ee", "mm", "e3j", "m3j", "e4pj", "m4pj"]
 years = ["2016pre", "2016post", "2017", "2018"]
 
 dyt_up = 0.11
@@ -79,10 +79,10 @@ for cat in templates.keys():
     # Add bin edges so that uproot saves it as a TH1D
     bin_edges = np.arange(len(templates[cat])+1)
 
-    output_templates[cat + "/EWK_quadpos"] = (b_pos, bin_edges)
-    output_templates[cat + "/EWK_quadneg"] = (b_neg, bin_edges)
-    output_templates[cat + "/EWK_linpos"] = (a_pos, bin_edges)
-    output_templates[cat + "/EWK_linneg"] = (a_neg, bin_edges)
+    output_templates[cat + "/EWK_TT_quad_pos"] = (b_pos, bin_edges)
+    output_templates[cat + "/EWK_TT_quad_neg"] = (b_neg, bin_edges)
+    output_templates[cat + "/EWK_TT_lin_pos"] = (a_pos, bin_edges)
+    output_templates[cat + "/EWK_TT_lin_neg"] = (a_neg, bin_edges)
 
 if args.plotout is not None:
     import os

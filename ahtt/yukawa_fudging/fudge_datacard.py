@@ -8,7 +8,7 @@ args = parser.parse_args()
 with open(args.datacard) as f:
     datacard = f.readlines()
 
-new_process_names = ["EWK_linpos", "EWK_linneg", "EWK_quadpos", "EWK_quadneg"]
+new_process_names = ["EWK_TT_lin_pos", "EWK_TT_lin_neg", "EWK_TT_quad_pos", "EWK_TT_quad_neg"]
 new_process_idx = [-6, -7, -8, -9]
 
 new_datacard = []
@@ -38,19 +38,19 @@ for l in datacard:
             had_first_bin_line = True
         else:
             bins = re.sub(' +', ' ', l.strip()).split(" ")[1:]
-            assert len(bins) == nproc_old * nbins
+            #assert len(bins) == nproc_old * nbins
             unique_bins = []
             for bin in bins:
                 if not bin in unique_bins:
                     unique_bins.append(bin)
             
             
-
+            new_bins = []
             for bin in unique_bins:
                 for i in range(len(new_process_names)):
-                    bins.append(bin)
+                    new_bins.append(bin)
                     
-            l = "bin " + " ".join(bins)
+            l += " " + " ".join(new_bins)
 
     elif l.startswith("process"):
         if not had_first_process_line:
@@ -75,7 +75,7 @@ for l in datacard:
     elif num_seperators == 4:
         if l.startswith("EWK_yukawa"):
             l = ""
-        elif "shape" in l or "lnN" in l:
+        elif ("shape" in l or "lnN" in l) and not ("group" in l):
             l += " -" * (nbins * len(new_process_names))
         elif "group" in l:
             l = l.replace(" EWK_yukawa", "")
