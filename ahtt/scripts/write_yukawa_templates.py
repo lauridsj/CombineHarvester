@@ -4,13 +4,14 @@ import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("inputtemplates")
+parser.add_argument("outputfile")
 parser.add_argument("--plotout", default=None)
 args = parser.parse_args()
 
 proc = "TT"
 var_name = "EWK_yukawa"
 
-channels = ["em", "ee", "mm", "e3j", "m3j", "e4pj", "m4pj"]
+channels = ["em", "ee", "mm", "e3jets", "mu3jets", "e4pjets", "mu4pjets"]
 years = ["2016pre", "2016post", "2017", "2018"]
 
 dyt_up = 0.11
@@ -28,9 +29,9 @@ with uproot.open(args.inputtemplates) as rfile:
     for channel in channels:
         for year in years:
             cat = channel + "_" + year
-            rcat = rfile[cat]
-            templates[cat] = rcat[proc].values()
-            if proc + "_" + var_name + "Up" in rcat:
+            if cat in rfile:
+                rcat = rfile[cat]
+                templates[cat] = rcat[proc].values()
                 templates_up[cat] = rcat[proc + "_" + var_name + "Up"].values()
                 templates_down[cat] = rcat[proc + "_" + var_name + "Down"].values()
 
@@ -98,14 +99,7 @@ if args.plotout is not None:
         plt.savefig(args.plotout + "/" + name.replace("/", "_") + ".png")
         plt.close()
 
-#oldfile = {}
-#with uproot.open(args.inputtemplates) as rfile:
-#    for key in rfile.keys():
-#        oldfile[key[:-2]] = rfile[key]
-#
-with uproot.update(args.inputtemplates) as rfile:
-    #for key, hist in oldfile.items():
-    #    rfile[key] = hist
+with uproot.recreate(args.outputfile) as rfile:
     for key, hist in output_templates.items():
         rfile[key] = hist
 
