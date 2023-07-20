@@ -1,6 +1,7 @@
 import uproot
 import argparse
 import numpy as np
+from collections import defaultdict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("inputtemplates")
@@ -14,6 +15,44 @@ var_name = "EWK_yukawa"
 channels = ["em", "ee", "mm", "e3jets", "mu3jets", "e4pjets", "mu4pjets"]
 years = ["2016pre", "2016post", "2017", "2018"]
 
+# Weight-based systematics to copy to the EWK templates
+# It is assumed that EWK_yukawa and the other nuisance are uncorellated. Since they are both
+# weight-based, the template for both systematics varied by 1sigma is then just
+# (EW_yukawa up/down) * (other up/down) / (nominal)
+# Then, the same quadratic equation is solved for the systematic as for the nominal to get
+# the variation templates for the EWK signal.
+
+systs_to_copy = [
+    "EWK_scheme",
+    "QCDscale_MEFac_TT",
+    "QCDscale_MERen_TT",
+    "CMS_PDF_alphaS",
+    "CMS_pileup",
+    "CMS_eff_e_reco",
+    "CMS_eff_e_id",
+    "CMS_eff_trigger_e",
+    "CMS_eff_m_reco",
+    "CMS_eff_m_id_syst",
+    "CMS_eff_m_iso_syst",
+    "CMS_eff_trigger_m_syst",
+    "CMS_fake_b_13TeV",
+    "CMS_eff_b_13TeV_JEC",
+    "CMS_eff_b_13TeV_Pileup",
+    "CMS_eff_b_13TeV_GluonSplitting",
+    "CMS_eff_b_13TeV_BottomFragmentation",
+    "CMS_eff_b_13TeV_BottomTemplateCorrection",
+    "CMS_eff_b_13TeV_CharmFragmentation",
+    "CMS_eff_b_13TeV_CharmTemplateCorrection",
+    "CMS_eff_b_13TeV_CharmToMuonBR",
+    "CMS_eff_b_13TeV_LightCharmRatio",
+    "CMS_eff_b_13TeV_VzeroParticles",
+    "CMS_eff_b_13TeV_MuonRelativePt",
+    "CMS_eff_b_13TeV_MuonPt",
+    "CMS_eff_b_13TeV_MuonDeltaR",
+    "CMS_eff_b_13TeV_AwayJetTag",
+    "CMS_eff_b_13TeV_JPCorrection",
+    "CMS_eff_b_13TeV_LifetimeOthers"]
+
 dyt_up = 0.11
 dyt_down = -0.12
 
@@ -21,19 +60,26 @@ yt_nom = 1.0
 yt_up = yt_nom + dyt_up
 yt_down = yt_nom + dyt_down
 
-templates = {}
-templates_up = {}
-templates_down = {}
+templates = defaultdict(dict)
+templates_yukawa_up = {}
+templates_yukawa_down = {}
 
 with uproot.open(args.inputtemplates) as rfile:
     for channel in channels:
         for year in years:
             cat = channel + "_" + year
+            print("Loading templates for " + cat)
             if cat in rfile:
                 rcat = rfile[cat]
-                templates[cat] = rcat[proc].values()
-                templates_up[cat] = rcat[proc + "_" + var_name + "Up"].values()
-                templates_down[cat] = rcat[proc + "_" + var_name + "Down"].values()
+                templates[cat]["nominal"] = rcat[proc].values()
+                templates_yukawa_up[cat] = rcat[proc + "_" + var_name + "Up"].values()
+                templates_yukawa_down[cat] = rcat[proc + "_" + var_name + "Down"].values()
+                for sys in systs_to_copy:
+                    for sysdir in ["Up", "Down"]:
+                        syskey = proc + "_" + sys + sysdir
+                        if syskey in rcat:
+                            templates[cat][sys + sysdir] = rcat[syskey].values()
+
 
 # We define dyt = yt - 1 and set for the yield:
 # N(EWK + TT) = N(TT) + a * dyt + b * dyt^2
@@ -51,54 +97,96 @@ output_templates = {}
 
 for cat in templates.keys():
 
-    dN_up = templates_up[cat] - templates[cat]
-    dN_down = templates_down[cat] - templates[cat]
+    for sys in templates[cat].keys():
 
-    denom = dyt_up * dyt_down * (dyt_up - dyt_down)
+        print("Calculating templates for " + cat + " " + sys)
 
-    a = (dN_down * dyt_up**2 - dN_up * dyt_down**2) / denom
-    b = -(dN_down * dyt_up - dN_up * dyt_down) / denom
+        template_yukawa_nominal = templates[cat][sys]
 
-    # we need to split a and b into negative and positive parts
+        template_yukawa_up = templates_yukawa_up[cat] * templates[cat][sys] / templates[cat]["nominal"]
+        template_yukawa_down = templates_yukawa_down[cat] * templates[cat][sys] / templates[cat]["nominal"]
 
-    a_pos = np.where(a>=0 , a, 0.)
-    a_neg = np.where(a<=0 , -a, 0.)
-    b_pos = np.where(b>=0 , b, 0.)
-    b_neg = np.where(b<=0 , -b, 0.)
+        dN_up = template_yukawa_up - template_yukawa_nominal
+        dN_down = template_yukawa_down - template_yukawa_nominal
 
-    # Check that this reproduces the input templates
+        denom = dyt_up * dyt_down * (dyt_up - dyt_down)
 
-    def predict_yukawa(dyt):
-        return templates[cat] + \
-            dyt * a_pos - dyt * a_neg + \
-            dyt**2 * b_pos - dyt**2 * b_neg
+        a = (dN_down * dyt_up**2 - dN_up * dyt_down**2) / denom
+        b = -(dN_down * dyt_up - dN_up * dyt_down) / denom
 
-    assert np.all(np.isclose(predict_yukawa(0.), templates[cat])) # nominal
-    assert np.all(np.isclose(predict_yukawa(dyt_up), templates_up[cat])) # up
-    assert np.all(np.isclose(predict_yukawa(dyt_down), templates_down[cat])) # down
+        # we need to split a and b into negative and positive parts
 
-    # Add bin edges so that uproot saves it as a TH1D
-    bin_edges = np.arange(len(templates[cat])+1)
+        a_pos = np.where(a>=0 , a, 0.)
+        a_neg = np.where(a<=0 , -a, 0.)
+        b_pos = np.where(b>=0 , b, 0.)
+        b_neg = np.where(b<=0 , -b, 0.)
 
-    output_templates[cat + "/EWK_TT_quad_pos"] = (b_pos, bin_edges)
-    output_templates[cat + "/EWK_TT_quad_neg"] = (b_neg, bin_edges)
-    output_templates[cat + "/EWK_TT_lin_pos"] = (a_pos, bin_edges)
-    output_templates[cat + "/EWK_TT_lin_neg"] = (a_neg, bin_edges)
+        # Check that this reproduces the input templates
+
+        def predict_yukawa(dyt):
+            return template_yukawa_nominal + \
+                dyt * a_pos - dyt * a_neg + \
+                dyt**2 * b_pos - dyt**2 * b_neg
+
+        assert np.all(np.isclose(predict_yukawa(0.), template_yukawa_nominal)) # nominal
+        assert np.all(np.isclose(predict_yukawa(dyt_up), template_yukawa_up)) # up
+        assert np.all(np.isclose(predict_yukawa(dyt_down), template_yukawa_down)) # down
+
+        # Add bin edges so that uproot saves it as a TH1D
+        bin_edges = np.arange(len(template_yukawa_nominal)+1)
+
+        syskey = "" if sys == "nominal" else "_" + sys
+
+        output_templates[cat + "/EWK_TT_quad_pos" + syskey] = (b_pos, bin_edges)
+        output_templates[cat + "/EWK_TT_quad_neg" + syskey] = (b_neg, bin_edges)
+        output_templates[cat + "/EWK_TT_lin_pos" + syskey] = (a_pos, bin_edges)
+        output_templates[cat + "/EWK_TT_lin_neg" + syskey] = (a_neg, bin_edges)
 
 if args.plotout is not None:
     import os
     import matplotlib.pyplot as plt
     import mplhep
+    import warnings
+    warnings.filterwarnings("ignore", "invalid value encountered in divide")
 
     if not os.path.isdir(args.plotout):
         os.makedirs(args.plotout)
-    for name, (hist, edges) in output_templates.items():
-        plt.figure(dpi=200)
-        mplhep.histplot(hist, edges)
-        plt.title(name)
-        plt.savefig(args.plotout + "/" + name.replace("/", "_") + ".png")
-        plt.close()
+    for cat in templates.keys():
+        for part in ["EWK_TT_quad_pos", "EWK_TT_quad_neg", "EWK_TT_lin_pos", "EWK_TT_lin_neg"]:
 
+            # nominal
+            name = cat + "/" + part
+            hist, edges = output_templates[name]
+
+            print("Plotting " + name)
+
+            plt.figure(dpi=200)
+            mplhep.histplot(hist, edges)
+            plt.title(name)
+            plt.savefig(args.plotout + "/" + name.replace("/", "_") + ".png")
+            plt.close()
+
+            # variations
+            for sys in systs_to_copy:
+                if name + "_" + sys + "Up" in output_templates:
+                    name_sys = name + "_" + sys
+                    hist_up, edges_up = output_templates[name_sys + "Up"]
+                    hist_down, edges_down = output_templates[name_sys + "Down"]
+
+                    ratio_up = np.nan_to_num(hist_up / hist, nan=1.)
+                    ratio_down = np.nan_to_num(hist_down / hist, nan=1.)
+
+                    plt.figure(dpi=200)
+                    mplhep.histplot(ratio_up, edges, edges=False, label="up", color="orangered")
+                    mplhep.histplot(ratio_down, edges, edges=False, label="down", color="royalblue")
+                    plt.legend()
+                    plt.title(name_sys)
+                    ratiolim = max(np.amax(np.abs(ratio_up - 1)), np.amax(np.abs(ratio_down - 1))) * 1.1
+                    plt.ylim(1-ratiolim, 1+ratiolim)
+                    plt.savefig(args.plotout + "/" + name_sys.replace("/", "_") + ".png")
+                    plt.close()
+
+print("Writing to disk")
 with uproot.recreate(args.outputfile) as rfile:
     for key, hist in output_templates.items():
         rfile[key] = hist
