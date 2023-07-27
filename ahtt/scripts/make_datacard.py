@@ -637,8 +637,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
     mstr = str( get_point(sigpnt[0])[1] )
     groups = {}
 
-    realsignal = sigpnt
-    notbackground = sigpnt
+    realsignal = [] + sigpnt
+    notbackground = [] + sigpnt
     if injsig is not None:
         notbackground += injsig
     if assig is not None:
