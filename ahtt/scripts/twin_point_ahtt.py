@@ -235,7 +235,7 @@ if __name__ == '__main__':
                     dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                     mmm = mstr,
                     pnt = ",".join(points),
-                    pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
+                    pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r", "yukawa"]]),
                     opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
                     ext = args.extopt
         ))

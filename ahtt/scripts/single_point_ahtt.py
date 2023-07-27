@@ -236,27 +236,27 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making workspaces"
         for onepoi in [True, False]:
-            if args.experimental:
-                syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                        "--PO 'signal={pnt}' {ver} {pos} {opt} {ext}".format(
-                            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-                            mod = "one-poi" if onepoi else "g-scan",
-                            mmm = mstr,
-                            pnt = args.point[0],
-                            ver = "--PO verbose",
-                            pos = "--PO no-r" if onepoi else "",
-                            opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
-                            ext = args.extopt
-                        ))
-            else:
-                syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy} {opt} {ext}".format(
-                    dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-                    mod = "one-poi" if onepoi else "g-scan",
-                    mmm = mstr,
-                    phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed",
-                    opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
-                    ext = args.extopt
-                ))
+            syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+                    "--PO 'signal={pnt}' {one} {pos} {opt} {ext}".format(
+                        dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                        mod = "one-poi" if onepoi else "g-scan",
+                        mmm = mstr,
+                        pnt = args.point[0],
+                        one = "--PO no-r" if onepoi else "",
+                        pos = " ".join(["--PO " + stuff for stuff in ["verbose", "yukawa"]]),
+                        opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
+                        ext = args.extopt
+                    ))
+
+            #if args.oldmodelnoyukawa:
+            #    syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy} {opt} {ext}".format(
+            #        dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+            #        mod = "one-poi" if onepoi else "g-scan",
+            #        mmm = mstr,
+            #        phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed",
+            #        opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
+            #        ext = args.extopt
+            #    ))
 
     if runvalid:
         print "\nsingle_point_ahtt :: validating datacard"

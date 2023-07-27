@@ -183,7 +183,7 @@ def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
 
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-            "{psd} {inj} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {cho} {rep} {rsd}".format(
+            "{psd} {inj} {ass} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {cho} {rep} {rsd}".format(
                 scr = scriptdir,
                 pnt = ','.join(args.point),
                 sig = args.signal,
@@ -192,6 +192,7 @@ def make_datacard_with_args(scriptdir, args):
                 yr = args.year,
                 psd = "--add-pseudodata" if args.asimov else "",
                 inj = "--inject-signal " + args.inject if args.inject != "" else "",
+                ass = "--as-signal " + args.assignal if args.assignal != "" else "",
                 tag = "--tag " + args.tag if args.tag != "" else "",
                 drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
                 kee = "--keep '" + args.keep + "'" if args.keep != "" else "",

@@ -94,6 +94,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
 
         if self.yukawa_signals:
+            # dyt = yt - 1 - see ahtt/scripts/write_yukawa_templates.py
             self.modelBuilder.doVar('dyt[0,-7,7]')
 
             self.modelBuilder.factory_('expr::mdyt("-@0", dyt)')

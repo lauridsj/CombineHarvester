@@ -37,9 +37,9 @@ def input_bkg(background, channels):
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append(input_base + "templates_ULFR2/unblind_230522/ll/bkg_ll_3D-33_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/unblind_230522/ll/bkg_ll_3D-33_rate_mtuX_pca_ewk_dyt.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
-        backgrounds.append(input_base + "templates_ULFR2/unblind_230522/lj/templates_lj_bkg_rate_mtuX_pca.root")
+        backgrounds.append(input_base + "templates_ULFR2/unblind_230522/lj/templates_lj_bkg_rate_mtuX_pca_ewk_dyt.root")
 
     return ','.join(backgrounds)
 

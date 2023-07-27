@@ -156,8 +156,8 @@ if args.plotout is not None:
                     hist_up, edges_up = output_templates[name_sys + "Up"]
                     hist_down, edges_down = output_templates[name_sys + "Down"]
 
-                    ratio_up = np.nan_to_num(hist_up / hist, nan=1.)
-                    ratio_down = np.nan_to_num(hist_down / hist, nan=1.)
+                    ratio_up = np.nan_to_num(hist_up / hist, nan = 1.)
+                    ratio_down = np.nan_to_num(hist_down / hist, nan = 1.)
 
                     plt.figure(dpi=200)
                     mplhep.histplot(ratio_up, edges, edges = False, label = "up", color = "orangered")

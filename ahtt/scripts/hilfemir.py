@@ -16,6 +16,7 @@ combine_help_messages = {
     "--sushi-kfactor": "apply nnlo kfactors computing using sushi on A/H signals",
     "--add-pseudodata": "add pseudodata into the template files for combine, using the sum of backgrounds, instead of using real data",
     "--inject-signal": "comma-separated list of signal points to inject into the pseudodata",
+    "--as-signal": "comma-separated list of processes in the background file to be treated as signal. substring of the process name is fine.",
 
     "--drop": "comma separated list of nuisances to be dropped in datacard mode. 'XX, YY' means all sources containing XX or YY are dropped. '*' to drop all",
     "--keep": "comma separated list of nuisances to be kept in datacard mode. same syntax as --drop. implies everything else is dropped",
