@@ -749,7 +749,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
-    parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = assignal, default = "", required = False,
+    parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = "assignal", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
