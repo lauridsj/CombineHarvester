@@ -263,7 +263,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         for key in keys:
             kname = key.GetName()
 
-            if pp + '_' in kname and kname.endswith("Up"):
+            if kname.startswith(pp + '_') and kname.endswith("Up"):
                 nn1 = "".join(kname.rsplit("Up", 1)).replace(pp + '_', "", 1)
                 if nn1 in read_category_process_nuisance.specials:
                     nn2 = nn1 if (year in read_category_process_nuisance.specials[nn1][0] or year in nn1) else nn1 + '_' + year
