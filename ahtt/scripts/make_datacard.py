@@ -637,13 +637,21 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
     mstr = str( get_point(sigpnt[0])[1] )
     groups = {}
 
+    realsignal = sigpnt
+    notbackground = sigpnt
+    if injsig is not None:
+        notbackground += injsig
+    if assig is not None:
+        notbackground += assig
+        realsignal += assig
+
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
         ii = iicc[0]
         cc = iicc[1]
 
-        sigs = [pp for pp in cpn[cc].keys() if any([ss in pp for ss in sigpnt + assig])]
-        bkgs = [pp for pp in cpn[cc].keys() if pp != "data_obs" and not any([ss in pp for ss in sigpnt + assig + injsig])]
+        sigs = [pp for pp in cpn[cc].keys() if any([ss in pp for ss in realsignal])]
+        bkgs = [pp for pp in cpn[cc].keys() if pp != "data_obs" and not any([ss in pp for ss in notbackground])]
         cb.AddProcesses([''], ["ahtt"], ["13TeV"], [""], sigs, [iicc], True)
         cb.AddProcesses(['*'], ["ahtt"], ["13TeV"], [""], bkgs, [iicc], False)
 
