@@ -11,6 +11,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         self.oner = False
         self.r_is_uninitialized = True
         self.printonce = True
+        self.yukawa_signals = False
         super(MultiInterferencePlusFixed, self).__init__()
 
     def setPhysicsOptions(self, physOptions):
@@ -51,6 +52,9 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.nsignal = len(signals)
                 for ss in signals:
                     self.add_poi_per_signal(ss)
+            if po == "yukawa":
+                self.yukawa_signals = True
+                self.pois.append('dyt')
 
             processed.append(po)
 
@@ -89,6 +93,14 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.modelBuilder.factory_('expr::g4_{ss}("(@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
                 self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
 
+        if self.yukawa_signals:
+            self.modelBuilder.doVar('dyt[0,-7,7]')
+
+            self.modelBuilder.factory_('expr::mdyt("-@0", dyt)')
+            self.modelBuilder.factory_('expr::dyt2("@0*@0", dyt)')
+            self.modelBuilder.factory_('expr::mdyt2("-@0*@0", dyt)')
+           
+
         self.modelBuilder.doSet('POI', ','.join(self.pois))
 
     def getPOIList(self):
@@ -97,6 +109,26 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
     def getYieldScale(self, bin, process):
         if not self.DC.isSignal[process]:
             return 1
+
+        if self.yukawa_signals and process.startswith("EWK"):
+            if "_lin_neg" in process:
+                if self.verbose:
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'dyt'
+                return 'mdyt'
+            elif "_lin_pos" in process:
+                if self.verbose:
+                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'dyt'
+                return 'dyt'
+            elif "_quad_pos" in process:
+                if self.verbose:
+                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'dyt', " squared"
+                return 'dyt2'
+            elif "_quad_neg" in process:
+                if self.verbose:
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'dyt', " squared"
+                return 'mdyt2'
+            else:
+                raise ValueError("Unknown process " + process)
 
         idx = process
         for sp in self.signal_parts:
