@@ -6,7 +6,7 @@ from collections import defaultdict
 parser = argparse.ArgumentParser()
 parser.add_argument("inputtemplates")
 parser.add_argument("outputfile")
-parser.add_argument("--plotout", default=None)
+parser.add_argument("--plotout", default = None)
 args = parser.parse_args()
 
 proc = "TT"
@@ -24,34 +24,20 @@ years = ["2016pre", "2016post", "2017", "2018"]
 
 systs_to_copy = [
     "EWK_scheme",
-    "QCDscale_MEFac_TT",
-    "QCDscale_MERen_TT",
-    "CMS_PDF_alphaS",
-    "CMS_pileup",
     "CMS_eff_e_reco",
     "CMS_eff_e_id",
-    "CMS_eff_trigger_e",
-    "CMS_eff_m_reco",
+    "CMS_eff_m_id_stat",
     "CMS_eff_m_id_syst",
+    "CMS_eff_m_iso_stat",
     "CMS_eff_m_iso_syst",
+    "CMS_eff_trigger_ee",
+    "CMS_eff_trigger_em",
+    "CMS_eff_trigger_mm",
+    "CMS_L1_prefire",
     "CMS_eff_trigger_m_syst",
-    "CMS_fake_b_13TeV",
-    "CMS_eff_b_13TeV_JEC",
-    "CMS_eff_b_13TeV_Pileup",
-    "CMS_eff_b_13TeV_GluonSplitting",
-    "CMS_eff_b_13TeV_BottomFragmentation",
-    "CMS_eff_b_13TeV_BottomTemplateCorrection",
-    "CMS_eff_b_13TeV_CharmFragmentation",
-    "CMS_eff_b_13TeV_CharmTemplateCorrection",
-    "CMS_eff_b_13TeV_CharmToMuonBR",
-    "CMS_eff_b_13TeV_LightCharmRatio",
-    "CMS_eff_b_13TeV_VzeroParticles",
-    "CMS_eff_b_13TeV_MuonRelativePt",
-    "CMS_eff_b_13TeV_MuonPt",
-    "CMS_eff_b_13TeV_MuonDeltaR",
-    "CMS_eff_b_13TeV_AwayJetTag",
-    "CMS_eff_b_13TeV_JPCorrection",
-    "CMS_eff_b_13TeV_LifetimeOthers"]
+    "CMS_eff_trigger_m_stat",
+    "CMS_eff_trigger_e",
+]
 
 dyt_up = 0.11
 dyt_down = -0.12
@@ -80,7 +66,6 @@ with uproot.open(args.inputtemplates) as rfile:
                         if syskey in rcat:
                             templates[cat][sys + sysdir] = rcat[syskey].values()
 
-
 # We define dyt = yt - 1 and set for the yield:
 # N(EWK + TT) = N(TT) + a * dyt + b * dyt^2
 # where a and b are input templates for the linear and quadratic parts
@@ -96,9 +81,7 @@ with uproot.open(args.inputtemplates) as rfile:
 output_templates = {}
 
 for cat in templates.keys():
-
     for sys in templates[cat].keys():
-
         print("Calculating templates for " + cat + " " + sys)
 
         template_yukawa_nominal = templates[cat][sys]
@@ -177,8 +160,8 @@ if args.plotout is not None:
                     ratio_down = np.nan_to_num(hist_down / hist, nan=1.)
 
                     plt.figure(dpi=200)
-                    mplhep.histplot(ratio_up, edges, edges=False, label="up", color="orangered")
-                    mplhep.histplot(ratio_down, edges, edges=False, label="down", color="royalblue")
+                    mplhep.histplot(ratio_up, edges, edges = False, label = "up", color = "orangered")
+                    mplhep.histplot(ratio_down, edges, edges = False, label = "down", color = "royalblue")
                     plt.legend()
                     plt.title(name_sys)
                     ratiolim = max(np.amax(np.abs(ratio_up - 1)), np.amax(np.abs(ratio_down - 1))) * 1.1
