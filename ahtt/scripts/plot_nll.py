@@ -106,8 +106,9 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
                     continue
 
                 data = inty[intx.index(value)] if value in intx else dnll
-                if rangey[0] <= data <= rangey[1]:
-                    dataset.append((value, data))
+                dataset.append((value, data))
+                #if rangey[0] <= data <= rangey[1]:
+                #    dataset.append((value, data))
         result.append(dataset)
     return result
 
