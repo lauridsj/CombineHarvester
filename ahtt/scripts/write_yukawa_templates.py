@@ -2,6 +2,7 @@ import uproot
 import argparse
 import numpy as np
 from collections import defaultdict
+import hist
 
 parser = argparse.ArgumentParser()
 parser.add_argument("inputtemplates")
@@ -120,10 +121,17 @@ for cat in templates.keys():
 
         syskey = "" if sys == "nominal" else "_" + sys
 
-        output_templates[cat + "/EWK_TT_quad_pos" + syskey] = (b_pos, bin_edges)
-        output_templates[cat + "/EWK_TT_quad_neg" + syskey] = (b_neg, bin_edges)
-        output_templates[cat + "/EWK_TT_lin_pos" + syskey] = (a_pos, bin_edges)
-        output_templates[cat + "/EWK_TT_lin_neg" + syskey] = (a_neg, bin_edges)
+        variances = np.zeros_like(a_pos)
+
+        hist_b_pos = hist.Hist(hist.axis.Variable(bin_edges), "Weight", data=np.stack([b_pos, variances], axis=-1))
+        hist_b_neg = hist.Hist(hist.axis.Variable(bin_edges), "Weight", data=np.stack([b_neg, variances], axis=-1))
+        hist_a_pos = hist.Hist(hist.axis.Variable(bin_edges), "Weight", data=np.stack([a_pos, variances], axis=-1))
+        hist_a_neg = hist.Hist(hist.axis.Variable(bin_edges), "Weight", data=np.stack([a_neg, variances], axis=-1))
+
+        output_templates[cat + "/EWK_TT_quad_pos" + syskey] = hist_b_pos
+        output_templates[cat + "/EWK_TT_quad_neg" + syskey] = hist_b_neg
+        output_templates[cat + "/EWK_TT_lin_pos" + syskey] = hist_a_pos
+        output_templates[cat + "/EWK_TT_lin_neg" + syskey] = hist_a_neg
 
 if args.plotout is not None:
     import os
