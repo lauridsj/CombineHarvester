@@ -60,7 +60,10 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                         ntoy = (contour["g-grid"][gv]["total"],) if gmode == "brim" else (0,)
                         gt = tuplize(gv)
                         if not any([gt == (ggt[0], ggt[1]) for ggt in g_grid]):
-                            g_grid.append(gt + ntoy)
+                            npass = contour["g-grid"][gv]["pass"]
+                            cuts = [npass > (25. / alpha) for alpha in generate_g_grid.alphas]
+                            if not any(cuts):
+                                g_grid.append(gt + ntoy)
 
             if gmode == "refine":
                 mintoy = sys.maxsize
@@ -68,9 +71,9 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
 
                 cuts = [mintoy > (9. / alpha) for alpha in generate_g_grid.alphas]
-                if sum([1 if cut else 0 for cut in cuts]) < 2:
+                if sum([1 if cut else 0 for cut in cuts]) < 1:
                     print "minimum toy count: " + str(mintoy)
-                    raise RuntimeError("minimum toys insufficient to determine 2 sigma contour!! likely unintended, recheck!!")
+                    raise RuntimeError("minimum toys insufficient to determine 1 sigma contour!! likely unintended, recheck!!")
 
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
