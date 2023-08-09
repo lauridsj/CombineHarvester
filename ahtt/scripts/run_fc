@@ -19,8 +19,8 @@ pairs='m400,m1000;w5p0;m400,m1000;w5p0'
 tag='lx'
 channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
 years='2016pre,2016post,2017,2018'
-ntoy='40'
-idxs='..25'
+ntoy='50'
+idxs='..10'
 exps='exp-b,exp-s,exp-01,exp-10'
 keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD'
 drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa'
@@ -41,6 +41,7 @@ drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa'
 condor_check . | tee /dev/tty | xargs rm
 
 #5 run the remaining LO points
+#5a use --fc-initial-distance to start with a different resolution than default of 0.5 (runs over more points initially, but less refine steps)
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" #--unblind
 #5a repeat step 4
 
@@ -50,7 +51,7 @@ condor_check . | tee /dev/tty | xargs rm
 #7 compile the available statistics - the non-shared toys are deleted, but all the relevant numbers we have gotten already
 ./../scripts/submit_twin.py --mode 'clean,compile' --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --delete-root --local --force #--unblind
 
-#8 only if extra toys are needed
+#8 when extra toys are needed
 #8a use this to add a fixed amount of toys = nidxs * ntoy
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add --fc-skip-data #--unblind
 #8b use this to add a variable number of toys per point, such that the sum for each point is about the same
