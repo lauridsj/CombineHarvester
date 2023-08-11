@@ -24,7 +24,7 @@ def scale(histogram, factor, epsilon = 1e-3):
 
 def zero_out(histogram, indices = None):
     for ii in range(1, histogram.GetNbinsX() + 1):
-        if histogram.GetBinContent(ii) < 0. or (indices is not None and ii in indices):
+        if (indices is None and histogram.GetBinContent(ii) < 0.) or (indices is not None and ii in indices):
             histogram.SetBinContent(ii, 0.)
             histogram.SetBinError(ii, 0.)
 
