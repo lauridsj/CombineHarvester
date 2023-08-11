@@ -7,7 +7,7 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
-from utilspy import right_now
+from utilspy import right_now, index_1n, index_n1
 
 def flat_reldev_wrt_nominal(varied, nominal, offset):
     for ii in range(1, nominal.GetNbinsX() + 1):
