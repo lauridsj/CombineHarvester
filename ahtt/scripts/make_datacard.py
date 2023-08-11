@@ -390,7 +390,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     scaleu = 1.
                     scaled = 1.
 
-                    hn = read_original_nominal(odir, pp)
+                    hn = read_original_nominal(odir, pp) # ifile.Get(idir + '/' + pp)
                     up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
                     down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
                     two_sided_smooth = up_norm_rdev / down_norm_rdev < 0.
@@ -405,8 +405,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         scaleu = chi2s[4] if keep_value else 0.
                         scaled = chi2s[5] if keep_value else 0.
 
-                        flat_reldev_wrt_nominal(hu, ifile.Get(idir + '/' + pp), scaleu)
-                        flat_reldev_wrt_nominal(hd, ifile.Get(idir + '/' + pp), scaled)
+                        flat_reldev_wrt_nominal(hu, hn, scaleu)
+                        flat_reldev_wrt_nominal(hd, hn, scaled)
 
                         if scaleu == 0. and scaled == 0.:
                             drop_nuisance = True
