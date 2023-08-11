@@ -16,7 +16,7 @@ from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, aggregate_submit, flush_jobs
 
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
@@ -114,8 +114,8 @@ if __name__ == '__main__':
                        inj = "--inject-signal " + args.inject if args.inject != "" else "",
                        ass = "--as-signal " + args.assignal if args.assignal != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
-                       drp = "--drop '" + args.drop + "'" if args.drop != "" else "",
-                       kee = "--keep '" + args.keep + "'" if args.keep != "" else "",
+                       drp = "--drop '" + remove_quotes(args.drop) + "'" if args.drop != "" else "",
+                       kee = "--keep '" + remove_quotes(args.keep) + "'" if args.keep != "" else "",
                        sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
                        bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
                        cha = "--channel " + args.channel,
@@ -124,18 +124,18 @@ if __name__ == '__main__':
                        lns = "--lnN-under-threshold" if args.lnNsmall else "",
                        shp = "--use-shape-always" if args.alwaysshape else "",
                        mcs = "--no-mc-stats" if not args.mcstat else "",
-                       rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
-                       msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
-                       igb = "--ignore-bin '" + args.ignorebin + "'" if args.ignorebin != "" else "",
-                       prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
-                       cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
-                       rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",
+                       rpr = "--float-rate '" + remove_quotes(args.rateparam) + "'" if args.rateparam != "" else "",
+                       msk = "--mask '" + remove_quotes(args.mask) + "'" if args.mask != "" else "",
+                       igb = "--ignore-bin '" + remove_quotes(args.ignorebin) + "'" if args.ignorebin != "" else "",
+                       prj = "--projection '" + remove_quotes(args.projection) + "'" if rundc and args.projection != "" else "",
+                       cho = "--chop-up '" + remove_quotes(args.chop) + "'" if args.chop != "" else "",
+                       rep = "--replace-nominal '" + remove_quotes(args.repnom) + "'" if args.repnom != "" else "",
                        fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
                        hes = "--use-hesse" if args.usehesse else "",
                        kbf = "--redo-best-fit" if not args.keepbest else "",
                        dws = "--default-workspace" if args.defaultwsp else "",
-                       fr0 = "--freeze-zero '" + args.frzzero + "'" if args.frzzero != "" else "",
-                       frp = "--freeze-post '" + args.frzpost + "'" if args.frzpost != "" else "",
+                       fr0 = "--freeze-zero '" + remove_quotes(args.frzzero) + "'" if args.frzzero != "" else "",
+                       frp = "--freeze-post '" + remove_quotes(args.frzpost) + "'" if args.frzpost != "" else "",
                        asm = "--unblind" if not args.asimov else "",
                        one = "--one-poi" if args.onepoi else "",
                        gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
