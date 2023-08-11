@@ -257,7 +257,7 @@ if __name__ == '__main__':
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
-        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {ass} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {prj} "
+        job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {ass} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
                    "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {rsd} {com} {dbg} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
@@ -277,6 +277,7 @@ if __name__ == '__main__':
             mcs = "--no-mc-stats" if not args.mcstat else "",
             rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
             msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
+            igb = "--ignore-bin '" + args.ignorebin + "'" if args.ignorebin != "" else "",
             prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
             cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
             rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",

@@ -40,14 +40,21 @@ combine_help_messages = {
     "and assigning the resulting template as the nominal template to be added to the pseudodata.\n"
     "p/s: does NOT support adding chopped up nuisances for the moment.",
 
+    "--ignore-bin":
+    "instruction to ignore certain bins in the search template of the form:\n"
+    "[instruction 0]:[instruction 1]:...:[instruction n] for n different channel_year combinations.\n"
+    "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn where:\n"
+    "ci are the channels the instruction is applicable to, bi are the (1-based) bin indices of the search template to set to 0.\n"
+    "this is done to all processes and NPs of the affected channel_year, before any projection. relevant only in datacard/workspace mode.",
+
     "--projection":
     "instruction to project multidimensional histograms, assumed to be unrolled such that dimension d0 is presented "
     "in slices of d1, which is in turn in slices of d2 and so on. the instruction is in the following syntax:\n"
     "[instruction 0]:[instruction 1]:...:[instruction n] for n different types of templates.\n"
     "each instruction has the following syntax: c0,c1,...,cn;b0,b1,...,bn;t0,t1,tm with m < n, where:\n"
-    "ci are the channels the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
-    "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll;20,3,3;0 "
-    "or a projection into 2D templates along 2nd and 3rd dimension: ll;20,3,3;1,2\n"
+    "ci are the channel_year combinations the instruction is applicable to, bi are the number of bins along each dimension, ti is the target projection index.\n"
+    "e.g. a channel ll with 3D templates of 20 x 3 x 3 bins, to be projected into the first dimension: ll_all;20,3,3;0 "
+    "or a projection into 2D templates along 2nd and 3rd dimension: ll_all;20,3,3;1,2\n"
     "indices are zero-based, and spaces are ignored. relevant only in datacard/workspace mode.",
 
     "--chop-up":
@@ -58,7 +65,7 @@ combine_help_messages = {
     "nuisances;subgroup a|c0a,c1a,...,ca|[index set a];subgroup b|c0b,c1b,...,cb|[index set b];...\n"
     "where nuisances is a comma-separated list of nuisance parameter names (after including _year where relevant),\n"
     "subgroup refers to a string such that the nuisance name is modified to nuisance_subgroup,\n"
-    "c0,c1,...ca refers to the channels (for all years) where the split (specified by the index set) is applicable to,\n"
+    "c0,c1,...ca refers to the channel_year combinations where the split (specified by the index set) is applicable to,\n"
     "and index set refers to bin indices (1-based per ROOT's TH1 convention) where the variations are kept, and the rest set to nominal.\n"
     "index set can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative\n"
     "where the comma separated integers are plainly the single indices and\n"

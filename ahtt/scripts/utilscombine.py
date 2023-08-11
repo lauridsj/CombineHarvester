@@ -183,7 +183,7 @@ def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
 
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-            "{psd} {inj} {ass} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {prj} {cho} {rep} {rsd}".format(
+            "{psd} {inj} {ass} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {igb} {prj} {cho} {rep} {rsd}".format(
                 scr = scriptdir,
                 pnt = ','.join(args.point),
                 sig = args.signal,
@@ -202,6 +202,7 @@ def make_datacard_with_args(scriptdir, args):
                 shp = "--use-shape-always" if args.alwaysshape else "",
                 mcs = "--no-mc-stats" if not args.mcstat else "",
                 rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
+                igb = "--ignore-bin '" + args.ignorebin + "'" if args.ignorebin != "" else "",
                 prj = "--projection '" + args.projection + "'" if args.projection != "" else "",
                 cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
                 rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",

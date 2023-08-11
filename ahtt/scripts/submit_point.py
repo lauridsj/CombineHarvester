@@ -106,7 +106,7 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
 
-        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {ass} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {prj} '
+        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {ass} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} '
                    '{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {dbg} {bsd}').format(
                        pnt = pnt,
                        mmm = mode,
@@ -126,6 +126,7 @@ if __name__ == '__main__':
                        mcs = "--no-mc-stats" if not args.mcstat else "",
                        rpr = "--float-rate '" + args.rateparam + "'" if args.rateparam != "" else "",
                        msk = "--mask '" + args.mask + "'" if args.mask != "" else "",
+                       igb = "--ignore-bin '" + args.ignorebin + "'" if args.ignorebin != "" else "",
                        prj = "--projection '" + args.projection + "'" if rundc and args.projection != "" else "",
                        cho = "--chop-up '" + args.chop + "'" if args.chop != "" else "",
                        rep = "--replace-nominal '" + args.repnom + "'" if args.repnom != "" else "",

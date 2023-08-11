@@ -22,6 +22,7 @@ import CombineHarvester.CombineTools.ch as ch
 
 from utilspy import syscall, get_point, index_list
 from utilslab import kfactor_file_name
+from utilscombine import update_mask
 from utilsroot import flat_reldev_wrt_nominal, scale, zero_out, project, add_scaled_nuisance, apply_relative_nuisance, chop_up, add_original_nominal, read_original_nominal
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -62,7 +63,7 @@ def get_lo_ratio(sigpnt, channel, mtop):
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
-                                   projection_rule = "", sigpnt = None, kfactor = False):
+                                   bin_masks = None, projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
         read_category_process_nuisance.aliases = OrderedDict([
@@ -189,6 +190,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     ofile.cd(odir)
 
                     hn = key.ReadObj()
+                    if bin_masks is not None:
+                        zero_out(hn, bin_masks)
                     if projection_rule != "":
                         hn = project(hn, projection_rule)
 
@@ -224,6 +227,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 processes.append((pnt, fname))
 
                 hn = ifile.Get(idir + '/' + pnt)
+                if bin_masks is not None:
+                    zero_out(hn, bin_masks)
                 if projection_rule != "":
                     hn = project(hn, projection_rule)
 
@@ -283,7 +288,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
                 hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
-                # project (ie integrate along some axes) if so requested
+                if bin_masks is not None:
+                    zero_out(hu, bin_masks)
+                    zero_out(hd, bin_masks)
                 if projection_rule != "":
                     hu = project(hu, projection_rule)
                     hd = project(hd, projection_rule)
@@ -458,12 +465,12 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     prechop_name, prechop_scale = nuisance.pop()
 
                     for chop in chops:
-                        nsci = tokenize_to_list(chop, ';') # nuisance subgroup channel index
+                        nsci = tokenize_to_list(chop, ';') # nuisance subgroup channel_year index
 
                         if nn2 in tokenize_to_list(nsci[0]) and len(nsci) > 1:
                             for ichop in range(1, len(nsci)):
                                 sci = tokenize_to_list(nsci[ichop], '|')
-                                if len(sci) == 3 and channel in tokenize_to_list(sci[1]):
+                                if len(sci) == 3 and odir in update_mask(tokenize_to_list(sci[1])):
                                     nn3 = nn2 + "_" + sci[0]
                                     nuisance.append((nn3, prechop_scale))
 
@@ -760,8 +767,11 @@ if __name__ == '__main__':
     parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = "assignal", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
+    parser.add_argument("--ignore-bin", help = combine_help_messages["--ignore-bin"], dest = "ignorebin", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
+
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
-                        type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+                        type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
 
     parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
@@ -783,10 +793,15 @@ if __name__ == '__main__':
         print "supported channels:", allchannels
         raise RuntimeError("unexpected channel is given. aborting.")
 
+    if not all([len(tokenize_to_list(pp, ';')) == 2 for pp in args.ignorebin]):
+        raise RuntimeError("unexpected bin masking syntax. aborting")
+    bms_summary = [tokenize_to_list(pp, ';') for bb in args.ignorebin]
+    bms_idxs = {tuple(tokenize_to_list(bb[0])): sorted([int(b) for b in tokenize_to_list(bb[1])]) for bb in bms_summary}
+
     if not all([len(tokenize_to_list(pp, ';')) == 3 for pp in args.projection]):
         raise RuntimeError("unexpected projection instruction syntax. aborting")
-    prjchan = [pp.split(';')[0].split(',') for pp in args.projection]
-    prjrule = [pp.split(';')[1:] for pp in args.projection]
+    prj_summary = [tokenize_to_list(pp, ';') for pp in args.projection]
+    prj_rules = {tuple(tokenize_to_list(pp[0])): pp[1:] for pp in prj_summary}
 
     if args.inject is not None:
         args.pseudodata = True
@@ -796,22 +811,30 @@ if __name__ == '__main__':
     cpn = OrderedDict()
     for yy in args.year:
         for cc in args.channel:
-            prule = ""
-            for pchan in prjchan:
-                if cc in pchan:
-                    prule = prjrule[prjchan.index(pchan)]
+            ccyy = cc + '_' + yy
+            bin_masks = None
+            for bc in bms_idxs:
+                if ccyy in update_mask(bc):
+                    bin_masks = bms_idxs[bc]
+                    break
+
+            projection_rule = ""
+            for pc in prj_rules:
+                if ccyy in update_mask(pc):
+                    projection_rule = prj_rules[pc]
+                    break
 
             read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule)
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule)
 
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule,
                                            args.point, args.kfactor)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                                   args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, prule,
+                                                   args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule,
                                                    remaining, args.kfactor)
 
     if args.pseudodata:
