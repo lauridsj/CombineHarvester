@@ -213,7 +213,9 @@ def update_mask(masks):
     new_masks = []
     for mask in masks:
         channel, year = mask.split("_")
-        if channel == "ll":
+        if channel == "lx":
+            channels = ["ee", "em", "mm", "e3j", "e4pj", "m3j", "m4pj"]
+        elif channel == "ll":
             channels = ["ee", "em", "mm"]
         elif channel == "sf":
             channels = ["ee", "mm"]
