@@ -390,7 +390,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     scaleu = 1.
                     scaled = 1.
 
-                    hn = ifile.Get(idir + '/' + pp)
+                    hn = ifile.Get(odir + '/' + pp)
                     up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
                     down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
                     two_sided_smooth = up_norm_rdev / down_norm_rdev < 0.
