@@ -286,6 +286,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 # obtain the actual up/down/chi2 templates
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
+                if not (hu and hd):
+                    continue
                 hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
                 if bin_masks is not None:
