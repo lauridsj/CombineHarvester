@@ -793,14 +793,14 @@ if __name__ == '__main__':
         print "supported channels:", allchannels
         raise RuntimeError("unexpected channel is given. aborting.")
 
-    if not all([len(tokenize_to_list(bb, ';')) == 2 for bb in args.ignorebin]):
+    bms_summary = [tokenize_to_list(bb, ';') for bb in args.ignorebin]
+    if not all([len(bb) == 2 for bb in bms_summary]):
         raise RuntimeError("unexpected bin masking syntax. aborting")
-    bms_summary = [tokenize_to_list(pp, ';') for bb in args.ignorebin]
     bms_idxs = {tuple(tokenize_to_list(bb[0])): index_list(bb[1], 1) for bb in bms_summary}
 
-    if not all([len(tokenize_to_list(pp, ';')) == 3 for pp in args.projection]):
-        raise RuntimeError("unexpected projection instruction syntax. aborting")
     prj_summary = [tokenize_to_list(pp, ';') for pp in args.projection]
+    if not all([len(pp) == 3 for pp in prj_summary]):
+        raise RuntimeError("unexpected projection instruction syntax. aborting")
     prj_rules = {tuple(tokenize_to_list(pp[0])): pp[1:] for pp in prj_summary}
 
     if args.inject is not None:
