@@ -768,7 +768,7 @@ if __name__ == '__main__':
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--ignore-bin", help = combine_help_messages["--ignore-bin"], dest = "ignorebin", default = "", required = False,
-                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
+                        type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
 
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False,
                         type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s), ':' )))
