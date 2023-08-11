@@ -435,7 +435,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
 
-                if "_neg" in pp and "EWK_" not in pp:
+                if "_neg" in pp and "EWK_TT" not in pp:
                     scale(hu, -1.)
                     scale(hd, -1.)
                 else:
