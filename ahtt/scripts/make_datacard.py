@@ -793,7 +793,7 @@ if __name__ == '__main__':
         print "supported channels:", allchannels
         raise RuntimeError("unexpected channel is given. aborting.")
 
-    if not all([len(tokenize_to_list(pp, ';')) == 2 for pp in args.ignorebin]):
+    if not all([len(tokenize_to_list(bb, ';')) == 2 for bb in args.ignorebin]):
         raise RuntimeError("unexpected bin masking syntax. aborting")
     bms_summary = [tokenize_to_list(pp, ';') for bb in args.ignorebin]
     bms_idxs = {tuple(tokenize_to_list(bb[0])): index_list(bb[1], 1) for bb in bms_summary}
