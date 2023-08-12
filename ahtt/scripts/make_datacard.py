@@ -388,11 +388,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if not alwaysshape and hc is not None:
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
-
-                    scaleu = 1.
-                    scaled = 1.
-
                     hn = read_original_nominal(odir, pp)
+                    if not sigpnt == None and kfactor and kfactors is not None:
+                        # remove the nominal k-factor as at this stage they are not yet included
+                        scale(hn, 1. / kfactors[172][0][0] if "_res" in pp else 1. / kfactors[172][0][1])
+
                     up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
                     down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
                     two_sided_smooth = up_norm_rdev / down_norm_rdev < 0.
