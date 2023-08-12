@@ -166,7 +166,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     kfactors = None
     loratios = None
 
-    if sigpnt == None:
+    if sigpnt is None:
         fname = ""
         for iname in inames:
             ifile = TFile.Open(iname, "read")
@@ -253,7 +253,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             kfactors = None
 
     for pp, ff in processes:
-        if not sigpnt == None:
+        if sigpnt is not None:
             sig = "_".join(pp.split("_")[:-1])
             if kfactor:
                 loratios = {mt: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
@@ -389,7 +389,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     # the values are smooth chi2 up, down, flat chi2 up, down and flat values up, down
                     chi2s = [hc.GetBinContent(ii) for ii in range(1, 7)]
                     hn = read_original_nominal(odir, pp)
-                    if not sigpnt == None and kfactor and kfactors is not None:
+                    if sigpnt is not None and kfactor and kfactors is not None:
                         # remove the nominal k-factor as at this stage they are not yet included
                         scale(hn, 1. / kfactors[172][0][0] if "_res" in pp else 1. / kfactors[172][0][1])
 
@@ -416,7 +416,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         if not drop_nuisance:
                             print("make_datacard :: " + str((pp, year, channel)) + " nuisance " + nn2 + " flattened with (up, down) scales of " + str((scaleu, scaled)))
 
-                if not sigpnt == None and kfactor and kfactors is not None:
+                if sigpnt is not None and kfactor and kfactors is not None:
                     # rescale uX varied LO to nominal - as the rate effect is accounted for in the kfactor
                     # also rescale mt variation (normalized to mt = 172 in the ME weights) to its proper LO rate
                     idxu = 1 if "_MEFac_" in nn2 else 3 if "_MERen_" in nn2 else 0
