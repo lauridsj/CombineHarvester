@@ -232,16 +232,16 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if projection_rule != "":
                     hn = project(hn, projection_rule)
 
+                if "_neg" in ss:
+                    scale(hn, -1.)
+                else:
+                    zero_out(hn)
+
                 if kfactor and kfactors is not None:
                     if ss == "_res":
                         scale(hn, kfactors[172][0][0])
                     else:
                         scale(hn, kfactors[172][0][1])
-
-                if "_neg" in ss:
-                    scale(hn, -1.)
-                else:
-                    zero_out(hn)
 
                 ofile.cd(odir)
                 hn.Write()
@@ -296,6 +296,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if projection_rule != "":
                     hu = project(hu, projection_rule)
                     hd = project(hd, projection_rule)
+
+                if "_neg" in pp and "EWK_TT" not in pp:
+                    scale(hu, -1.)
+                    scale(hd, -1.)
+                else:
+                    zero_out(hu)
+                    zero_out(hd)
 
                 # extra messing around for tmass
                 # also set the keys determining which kfactor to be read
@@ -436,13 +443,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
-
-                if "_neg" in pp and "EWK_TT" not in pp:
-                    scale(hu, -1.)
-                    scale(hd, -1.)
-                else:
-                    zero_out(hu)
-                    zero_out(hd)
 
                 if replaces is not None:
                     for rn in replaces:
