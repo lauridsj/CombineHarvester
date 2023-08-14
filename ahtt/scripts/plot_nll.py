@@ -26,7 +26,7 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 
 def get_interval(parameter, best_fit, points, delta = 1., epsilon = 1.e-3):
     islatexeqn = '$' in parameter
-    parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter '}')
+    parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter + '}')
 
     uncertainties = []
     for comparator in [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]:
