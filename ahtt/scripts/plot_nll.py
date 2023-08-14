@@ -24,6 +24,11 @@ from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
+def nice_number(value, epsilon):
+    if abs(value - int(value) - epsilon) < epsilon:
+        value = int(value)
+    return round(value, -math.ceil(math.log10(epsilon)))
+
 def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     islatexeqn = '$' in parameter
     parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter + '}')
@@ -36,9 +41,9 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
         uncertainties.append(abs(fit[0] - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
-        return f", ${parameter} = {round(best_fit[0], -math.ceil(math.log10(epsilon)))} \pm {round(uncertainties[0], -math.ceil(math.log10(epsilon)))}$"
+        return f", ${parameter} = {nice_number(best_fit[0])} \pm {round(uncertainties[0], -math.ceil(math.log10(epsilon)))}$"
     else:
-        result = f", ${parameter} = {round(best_fit[0], -math.ceil(math.log10(epsilon)))}"
+        result = f", ${parameter} = {nice_number(best_fit[0])}"
         for pos, sym, unc in zip(['_', '^'], ['-', '+'], uncertainties):
             result += "{0}".format(pos + '{' + sym + str(round(unc, -math.ceil(math.log10(epsilon)))) + '}') if unc is not None else "{0}".format(pos + '{' + sym + '\mathrm{inf}}')
         result += f"$"
