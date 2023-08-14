@@ -36,11 +36,11 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-3):
         uncertainties.append(abs(fit[0] - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
-        return f", ${parameter} \pm {round(uncertainties[0], -math.log(epsilon))}$"
+        return f", ${parameter} \pm {round(uncertainties[0], -math.ceil(math.log(epsilon)))}$"
     else:
         result = f", ${parameter}"
         for pos, sym, unc in zip(['_', '^'], ['-', '+'], uncertainties):
-            result += "{0}".format(pos + '{' + sym + str(round(unc, -math.log(epsilon))) + '}') if unc is not None else "{0}".format(pos + '{' + sym + '\mathrm{inf}}')
+            result += "{0}".format(pos + '{' + sym + str(round(unc, -math.ceil(math.log(epsilon)))) + '}') if unc is not None else "{0}".format(pos + '{' + sym + '\mathrm{inf}}')
         result += f"$"
 
         if any(sym in result for sym in ['-', '+']):
