@@ -24,6 +24,29 @@ from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
+def get_interval(parameter, best_fit, points, delta = 1., epsilon = 1.e-3):
+    islatexeqn = '$' in parameter
+    parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter '}')
+
+    uncertainties = []
+    for comparator in [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]:
+        side = [pnt for pnt in points if pnt[1] > best_fit[1] and comparator(pnt[0], best_fit[0])]
+        side = [(pnt[0], abs(pnt[1] - best_fit[1] - delta)) for pnt in side]
+        pnt = min(side, key = lambda p: p[1]) if len(side) else None
+        uncertainties.append(abs(pnt[0] - best_fit[0]) if pnt is not None else None)
+
+    if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
+        return f", ${parameter} \pm {round(uncertainties[0], -math.log(epsilon))}$"
+    else:
+        result = f", ${parameter}"
+        for pos, sym, unc in zip(['_', '^'], ['-', '+'], uncertainties):
+            result += "{0}".format(pos + '{' + sym + str(round(unc, -math.log(epsilon))) + '}') if unc is not None else "{0}".format(pos + '{' + sym + '\mathrm{inf}}')
+        result += f"$"
+
+        if any(sym in result for sym in ['-', '+']):
+            return result
+    return ""
+
 def valid_1D_nll_fname(fname):
     fname = fname.split('/')[-1].split('_')
     nvalidto = 0
@@ -40,12 +63,14 @@ def valid_1D_nll_fname(fname):
     return nvalidto == 1
 
 def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
-    result = []
+    result = [[], []]
+    best_fit, points = result
     pstr = "__".join(points)
 
     for ii, (directory, scenario, tag) in enumerate(directories):
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}_*.root"
         files = [ifile for ifile in glob.glob(fexp) if valid_1D_nll_fname(ifile)]
+        best_fit.append(None)
 
         zero = None
         if zeropoint != "minimum":
@@ -70,11 +95,14 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
             dtree = dfile.Get("limit")
 
             for i in dtree:
+                value = getattr(dtree, name)
+                dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
+                dnll *= 2.
+
                 if dtree.quantileExpected >= 0.:
-                    value = getattr(dtree, name)
-                    dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
-                    dnll *= 2.
                     originals.append((value, dnll))
+                elif best_fit[ii] is None and dtree.quantileExpected == -1.:
+                    best_fit[ii] = (value, dnll)
             dfile.Close()
         originals = sorted(originals, key = lambda tup: tup[0])
         intx = []
@@ -107,9 +135,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
 
                 data = inty[intx.index(value)] if value in intx else dnll
                 dataset.append((value, data))
-                #if rangey[0] <= data <= rangey[1]:
-                #    dataset.append((value, data))
-        result.append(dataset)
+        points.append(dataset)
     return result
 
 def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
@@ -145,14 +171,16 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
     nlls = read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint)
 
-    for ii, nll in enumerate(nlls):
-        color = colors[ii]
-        style = styles[ii]
-        label = labels[ii]
-        handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
+    for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
         dnlls = np.array([nn[1] for nn in nll])
         ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
+
+        measurement = get_interval(parameter = xlabel, best_fit = nlls[0][ii], points = nll)
+        color = colors[ii]
+        style = styles[ii]
+        label = labels[ii] + measurement
+        handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
 
     plt.ylim(rangey)
     #ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 1)
