@@ -24,16 +24,16 @@ from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
-def get_interval(parameter, best_fit, points, delta = 1., epsilon = 1.e-3):
+def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-3):
     islatexeqn = '$' in parameter
     parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter + '}')
 
     uncertainties = []
     for comparator in [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]:
-        side = [pnt for pnt in points if pnt[1] > best_fit[1] and comparator(pnt[0], best_fit[0])]
-        side = [(pnt[0], abs(pnt[1] - best_fit[1] - delta)) for pnt in side]
-        pnt = min(side, key = lambda p: p[1]) if len(side) else None
-        uncertainties.append(abs(pnt[0] - best_fit[0]) if pnt is not None else None)
+        side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
+        side = [(fit[0], abs(fit[1] - best_fit[1] - delta)) for fit in side]
+        fit = min(side, key = lambda p: p[1]) if len(side) else None
+        uncertainties.append(abs(fit[0] - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
         return f", ${parameter} \pm {round(uncertainties[0], -math.log(epsilon))}$"
@@ -64,7 +64,7 @@ def valid_1D_nll_fname(fname):
 
 def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
     result = [[], []]
-    best_fit, points = result
+    best_fit, fits = result
     pstr = "__".join(points)
 
     for ii, (directory, scenario, tag) in enumerate(directories):
@@ -135,7 +135,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
 
                 data = inty[intx.index(value)] if value in intx else dnll
                 dataset.append((value, data))
-        points.append(dataset)
+        fits.append(dataset)
     return result
 
 def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
