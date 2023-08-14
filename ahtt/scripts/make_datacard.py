@@ -321,9 +321,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if "_AH" in nn2:
                         hc = None
                         hah = read_original_nominal(odir, pp)
-                        if "_neg" in pp:
-                            scale(hah, -1.)
-
                         hsm = read_original_nominal(odir, "TT")
 
                         # get the SM shapes
