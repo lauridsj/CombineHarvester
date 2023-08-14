@@ -27,7 +27,7 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 def nice_number(value, epsilon):
     if abs(value - int(value) - epsilon) < epsilon:
         value = int(value)
-    return round(value, -math.ceil(math.log10(epsilon)))
+    return round(value, -math.ceil(math.log10(epsilon))) + 0.
 
 def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     islatexeqn = '$' in parameter
