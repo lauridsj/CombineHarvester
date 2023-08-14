@@ -174,12 +174,11 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
         dnlls = np.array([nn[1] for nn in nll])
-        ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
-
         measurement = get_interval(parameter = xlabel, best_fit = nlls[0][ii], points = nll)
         color = colors[ii]
         style = styles[ii]
         label = labels[ii] + measurement
+        ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
         handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
 
     plt.ylim(rangey)
