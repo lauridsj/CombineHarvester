@@ -174,7 +174,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
         dnlls = np.array([nn[1] for nn in nll])
-        measurement = get_interval(parameter = xlabel, best_fit = nlls[0][ii], points = nll)
+        measurement = get_interval(parameter = xlabel, best_fit = nlls[0][ii], fits = nll)
         color = colors[ii]
         style = styles[ii]
         label = labels[ii] + measurement
