@@ -232,12 +232,13 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: making workspaces"
         for ihsum in [True, False]:
             syscall("combineTool.py -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                    "--PO 'signal={pnt}' {pos} {opt} {whs} {ext}".format(
+                    "--PO 'signal={pnt}' {pos} {dyt} {opt} {whs} {ext}".format(
                         dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                         wst = "twin-g" if ihsum else "fitdiag",
                         mmm = mstr,
                         pnt = ",".join(points),
-                        pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r", "yukawa"]]),
+                        pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
+                        dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
                         opt = "--channel-masks --X-pack-asympows --optimize-simpdf-constraints=cms",
                         whs = "--no-wrappers --use-histsum" if ihsum else "",
                         ext = args.extopt
