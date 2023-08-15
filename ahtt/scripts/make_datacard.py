@@ -721,16 +721,15 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                     rpp = tokenize_to_list(rp, ':')
                     txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
 
-    ewkttbkg = any(["EWK_TT" in pp for pp in cpn.keys()]) and (assig is None or not any(["EWK_TT" in pp for pp in assig]))
+    ewkttbkg = any(["EWK_TT" in pp for pp in cpn[cc] for cc in cpn.keys()]) and (assig is None or not any(["EWK_TT" in pp for pp in assig]))
     if ewkttbkg:
         for tt in txts:
             with open(tt, 'a') as txt:
-                for rp in rateparam:
-                    txt.write("\ndyt rateParam * EWK_TT_lin_pos 0 [-1, 7]")
-                    txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
-                    txt.write("\ndyt2 rateParam * EWK_TT_quad_pos (@0*@0) dyt")
-                    txt.write("\nmdyt2 rateParam * EWK_TT_quad_neg (-@0*@0) dyt")
-                    #txt.write("\ndyt param 0 0.12")
+                txt.write("\ndyt rateParam * EWK_TT_lin_pos 0 [-1,7]")
+                txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
+                txt.write("\ndyt2 rateParam * EWK_TT_quad_pos (@0*@0) dyt")
+                txt.write("\nmdyt2 rateParam * EWK_TT_quad_neg (-@0*@0) dyt")
+                txt.write("\ndyt param 0 0.12/0.11\n")
 
     for tt in txts:
         cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
