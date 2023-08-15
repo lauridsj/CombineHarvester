@@ -729,7 +729,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                 txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
                 txt.write("\ndyt2 rateParam * EWK_TT_quad_pos (@0*@0) dyt")
                 txt.write("\nmdyt2 rateParam * EWK_TT_quad_neg (-@0*@0) dyt")
-                txt.write("\ndyt param 0 0.12/0.11\n")
+                txt.write("\ndyt param 0 -0.12/+0.11\n")
 
     for tt in txts:
         cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
