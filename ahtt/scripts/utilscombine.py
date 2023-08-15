@@ -94,18 +94,20 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
     if usedefault:
         return default
     elif useexisting:
-        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
+        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
             dcd = dcdir,
             ptg = ptag(point, tags[0]),
-            asm = "exp" if asimov else "obs"
+            asm = "exp" if asimov else "obs",
+            mod = "_" + modifier if modifier != "" else "",
         ))
 
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*.root".format(
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[1]),
-                asm = "exp" if asimov else "obs"
+                asm = "exp" if asimov else "obs",
+                mod = "_" + modifier if modifier != "" else "",
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
@@ -120,11 +122,12 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             workspace = make_best_fit(dcdir, default, point, asm, strategy, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_best-fit_{asm}{sce}.root".format(
+            newname = "{dcd}{ptg}_best-fit_{asm}{sce}{mod}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
+                mod = "_" + modifier if modifier != "" else "",
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
