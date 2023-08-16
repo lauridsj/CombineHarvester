@@ -221,7 +221,7 @@ if __name__ == '__main__':
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
     # parameter ranges for best fit file
-    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]] + ["dyt: -1, 7"]
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
@@ -678,6 +678,8 @@ if __name__ == '__main__':
         )
 
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
+        unconstrain = ",".join([param if args.nllunconstrain and not isg for param, isg in zip(args.nllparam, isgah)])
+
         if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
@@ -687,6 +689,7 @@ if __name__ == '__main__':
             args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), nparam)]
             args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), nparam)]
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1])) for ii in range(nparam)]
+        nllparam = " ".join(["-P {param}".format(param = param) for param in args.nllparam])
 
         nelement = 0
         for element in itertools.product(*interval):
@@ -694,13 +697,14 @@ if __name__ == '__main__':
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
-            syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{pnt}' {par} "
+            syscall("combineTool.py -v -1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
                     "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
                         dcd = fcwsp,
                         mmm = mstr,
                         snm = nllname,
                         pnt = nllpnt,
-                        par = "--redefineSignalPOIs '{param}'".format(param = ",".join(args.nllparam)),
+                        par = nllparam,
+                        uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrain) if len(unconstrain) else "",
                         exp = set_parameter(set_freeze, args.extopt, masks),
                         stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
                         asm = "-t -1" if args.fcexp[0] != "obs" else "",

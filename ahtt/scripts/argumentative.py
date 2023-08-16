@@ -97,6 +97,7 @@ def common_2D(parser):
                         type = lambda s: [] if s == "" else [int(npnt) for npnt in tokenize_to_list(remove_spaces_quotes(s))])
     parser.add_argument("--nll-interval", help = combine_help_messages["--nll-interval"], dest = "nllwindow", default = "", required = False,
                         type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s), ";"))
+    parser.add_argument("--nll-unconstrained", help = combine_help_messages["--nll-unconstrained"], dest = "nllunconstrained", action = "store_true", required = False)
     return parser
 
 def common_submit(parser):

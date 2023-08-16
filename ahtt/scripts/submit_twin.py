@@ -452,10 +452,11 @@ if __name__ == '__main__':
                     continue
 
             jarg = job_arg
-            jarg += " {par} {win} {pnt}".format(
+            jarg += " {par} {win} {pnt} {uco}".format(
                 par = "--nll-parameter '" + ",".join(args.nllparam) + "'",
                 win = "--nll-interval='" + ";".join(args.nllwindow) + "'" if args.nllwindow != [] else "",
                 pnt = "--nll-npoint '" + ",".join([str(npnt) for npnt in args.nllnpnt]) + "'" if args.nllnpnt != [] else "",
+                uco = "--nll-unconstrained" if args.nllunconstrained else "",
             )
 
             submit_job(agg, jname, jarg, args.jobtime, 1, "",
