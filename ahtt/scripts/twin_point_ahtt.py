@@ -678,7 +678,7 @@ if __name__ == '__main__':
         )
 
         isgah = [param in ["g1", "g2"] for param in args.nllparam]
-        unconstrain = ",".join([param for param, isg in zip(args.nllparam, isgah) if args.nllunconstrain and not isg])
+        unconstrained = ",".join([param for param, isg in zip(args.nllparam, isgah) if args.nllunconstrained and not isg])
 
         if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
@@ -704,7 +704,7 @@ if __name__ == '__main__':
                         snm = nllname,
                         pnt = nllpnt,
                         par = nllparam,
-                        uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrain) if len(unconstrain) else "",
+                        uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
                         exp = set_parameter(set_freeze, args.extopt, masks),
                         stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
                         asm = "-t -1" if args.fcexp[0] != "obs" else "",
