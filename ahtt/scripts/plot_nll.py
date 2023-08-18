@@ -38,7 +38,7 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
         side = [(fit[0], abs(fit[1] - best_fit[1] - delta)) for fit in side]
         fit = min(side, key = lambda p: p[1]) if len(side) else None
-        fit = fit if fit[1] < delta / 10. else None
+        fit = fit if fit is not None and fit[1] < delta / 10. else None
         uncertainties.append(abs(fit[0] - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
