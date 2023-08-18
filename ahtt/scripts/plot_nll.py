@@ -38,7 +38,7 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
         side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
         side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
-        fit = [min(ss, key = lambda p: p[1]) for ss in side if len(ss) else None]
+        fit = [min(ss, key = lambda p: p[1]) if len(ss) else None for ss in side]
         fit = None if None in fit else ((fit[0][0] * fit[0][1]) + (fit[1][0] * fit[1][1])) / (fit[0][1] + fit[1][1])
         #side = [(fit[0], abs(fit[1] - best_fit[1] - delta)) for fit in side]
         #fit = min(side, key = lambda p: p[1]) if len(side) else None
