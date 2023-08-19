@@ -152,29 +152,21 @@ def dotty_scan(args):
     return results
 
 def starting_poi(onepoi, gvalue, rvalue, fixpoi):
-    setpar = []
-    frzpar = []
+    setfrzpar = [[], []]
+    setpar, frzpar = setfrzpar
 
-    if onepoi:
-        if gvalue >= 0.:
-            setpar.append('r=' + str(gvalue))
-
+    if gvalue >= 0.:
+        setpar.append('g=' + str(gvalue))
         if fixpoi:
-            frzpar.append('r')
-    else:
-        if gvalue >= 0.:
-            setpar.append('g=' + str(gvalue))
+            frzpar.append('g')
 
-            if fixpoi:
-                frzpar.append('g')
-
+    if not onepoi:
         if rvalue >= 0.:
             setpar.append('r=' + str(rvalue))
-
             if fixpoi:
                 frzpar.append('r')
 
-    return [setpar, frzpar]
+    return setfrzpar
 
 if __name__ == '__main__':
     print "single_point_ahtt :: called with the following arguments"
@@ -212,7 +204,7 @@ if __name__ == '__main__':
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
-    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact", "prepost", "corrmat"]
+    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -222,11 +214,10 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
-    runprepost = "prepost" in modes or "corrmat" in modes
 
-    ranges = "--setParameterRanges 'r=0.,5.'" if args.onepoi else "--setParameterRanges 'r=0.,2.:g=0.,5.'"
     # parameter ranges for best fit file
-    ranges = ["r: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
+    ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
+    ranges += ["dyt: -1, 7"]
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
@@ -237,13 +228,14 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: making workspaces"
         for onepoi in [True, False]:
             syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                    "--PO 'signal={pnt}' {one} {pos} {opt} {ext}".format(
+                    "--PO 'signal={pnt}' {one} {vbs} {opt} {dyt} {ext}".format(
                         dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                         mod = "one-poi" if onepoi else "g-scan",
                         mmm = mstr,
                         pnt = args.point[0],
                         one = "--PO no-r" if onepoi else "",
-                        pos = " ".join(["--PO " + stuff for stuff in ["verbose", "yukawa"]]),
+                        vbs = "--PO verbose",
+                        dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
                         opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
                         ext = args.extopt
                     ))
@@ -409,35 +401,6 @@ if __name__ == '__main__':
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
-
-    if runprepost:
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
-
-        print "\nsingle_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
-                    dcd = workspace,
-                    mmm = mstr,
-                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                    asm = "-t -1" if args.asimov else "",
-                    prm = set_parameter(set_freeze, args.extopt, masks),
-                    ext = nonparametric_option(args.extopt)
-        ))
-
-        syscall("rm *_th1x_*.png", False, True)
-        syscall("rm covariance_fit_?.png", False, True)
-        syscall("rm higgsCombine_prepost*.root", False, True)
-        syscall("rm combine_logger.out", False, True)
-        syscall("rm robustHesse_*.root", False, True)
-
-        syscall("mv fitDiagnostics_prepost.root {dcd}{ptg}_fitdiagnostics_{mod}{gvl}{rvl}{fix}.root".format(
-            dcd = dcdir,
-            ptg = ptag,
-            mod = "one-poi" if args.onepoi else "g-scan",
-            gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
-            rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-        ), False)
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
