@@ -615,45 +615,41 @@ if __name__ == '__main__':
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
-        for scenario in [(("0.", "0."), True, "--skipBOnlyFit", "b"), (gvalues, args.fixpoi, "--skipBOnlyFit", "s")]:
-            gtofit, fixpoi, fitopt, fittag = scenario
-            gfit = g_in_filename(gtofit)
-            set_freeze = elementwise_add([starting_poi(gtofit, fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        gfit = g_in_filename(gvalues)
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
-            print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
-            syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                    "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {opt}".format(
-                        dcd = fitdiag_workspace,
-                        mmm = mstr,
-                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                        asm = "-t -1" if args.asimov else "",
-                        prm = set_parameter(set_freeze, args.extopt, masks),
-                        ext = nonparametric_option(args.extopt),
-                        opt = fitopt
-                    ))
+        print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
+        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+                "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
+                    dcd = fitdiag_workspace,
+                    mmm = mstr,
+                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
+                    asm = "-t -1" if args.asimov else "",
+                    prm = set_parameter(set_freeze, args.extopt, masks),
+                    ext = nonparametric_option(args.extopt)
+                ))
 
-            syscall("rm *_th1x_*.png", False, True)
-            syscall("rm covariance_fit_?.png", False, True)
-            syscall("rm higgsCombine_prepost*.root", False, True)
-            syscall("rm combine_logger.out", False, True)
-            syscall("rm robustHesse_*.root", False, True)
+        syscall("rm *_th1x_*.png", False, True)
+        syscall("rm covariance_fit_?.png", False, True)
+        syscall("rm higgsCombine_prepost*.root", False, True)
+        syscall("rm combine_logger.out", False, True)
+        syscall("rm robustHesse_*.root", False, True)
 
-            fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}_{ftg}{gvl}{fix}.root".format(
-                dcd = dcdir,
-                ptg = ptag,
-                fdo = fdoutput,
-                ftg = fittag,
-                gvl = "_" + gfit if gfit != "" else "",
-                fix = "_fixed" if fixpoi and gfit != "" else "",
-            ) for fdoutput in ["result", "shape"]]
-            syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
+        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}_{gvl}{fix}.root".format(
+            dcd = dcdir,
+            ptg = ptag,
+            fdo = fdoutput,
+            gvl = "_" + gfit if gfit != "" else "",
+            fix = "_fixed" if fixpoi and gfit != "" else "",
+        ) for fdoutput in ["result", "shape"]]
+        syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
-            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-proc-errs --total-shapes -f {fdr}:fit_s".format(
-                dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-                fdw = fitdiag_workspace,
-                fds = fitdiag_shape,
-                fdr = fitdiag_result,
-            ))
+        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-proc-errs --total-shapes -f {fdr}:fit_s".format(
+            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+            fdw = fitdiag_workspace,
+            fds = fitdiag_shape,
+            fdr = fitdiag_result,
+        ))
 
     if runnll:
         if len(args.nllparam) < 1:
