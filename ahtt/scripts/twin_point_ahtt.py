@@ -652,6 +652,7 @@ if __name__ == '__main__':
                 fdr = fitdiag_result,
                 ftp = ftype
             ))
+            print "\n\n\n"
 
     if runnll:
         if len(args.nllparam) < 1:
