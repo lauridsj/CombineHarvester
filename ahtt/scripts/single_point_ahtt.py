@@ -72,7 +72,7 @@ def single_point_scan(args):
     nstep = 1
 
     syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-            "--setParameters g={gvl} --freezeParameters g {acc} --picky --singlePoint 1 {stg} {asm} {msk}".format(
+            "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
                 gst = gstr,
@@ -98,7 +98,7 @@ def single_point_scan(args):
         fgood = False
         for ii in range(1, nstep + 1):
             syscall("combineTool.py -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
-                    "--setParameters g={gvl} --freezeParameters g {acc} --picky --singlePoint 1 {stg} {asm} {msk}".format(
+                    "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
                         gst = gstr + "eps",
