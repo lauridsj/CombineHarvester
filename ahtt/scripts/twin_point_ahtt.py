@@ -609,7 +609,7 @@ if __name__ == '__main__':
     if runprepost:
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
-            args.defaultwsp, args.keepbest, dcdir + "workspace_twin-g.root", args.asimov, "fitdiag",
+            args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
@@ -618,7 +618,7 @@ if __name__ == '__main__':
         gfit = g_in_filename(gvalues)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
-        print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices (" + fittag + ")"
+        print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                 "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
                     dcd = fitdiag_workspace,
