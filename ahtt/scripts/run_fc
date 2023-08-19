@@ -15,7 +15,7 @@ source /afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/condorUtil.s
 #masses='m400,m500,m650,m800,m1000'
 #widths='w1p0,w2p5,w5p0,w10p0,w25p0'
 #pairs="${masses};${widths};${masses};${widths}"
-pairs='m400,m1000;w5p0;m400,m1000;w5p0'
+pairs='m400;w5p0;m400;w5p0'
 tag='lx'
 channels='ee,em,mm,e3j,e4pj,m3j,m4pj'
 years='2016pre,2016post,2017,2018'
