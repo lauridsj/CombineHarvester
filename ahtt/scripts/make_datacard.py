@@ -724,6 +724,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
     ewkttbkg = any(["EWK_TT" in pp for pp in cpn[cc] for cc in cpn.keys()]) and (assig is None or not any(["EWK_TT" in pp for pp in assig]))
     if ewkttbkg:
         for tt in txts:
+            cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
+            groups[cc]["theory"].append("dyt")
             with open(tt, 'a') as txt:
                 txt.write("\ndyt rateParam * EWK_TT_lin_pos 0 [-1,7]")
                 txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
