@@ -635,7 +635,7 @@ if __name__ == '__main__':
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
-        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}_{gvl}{fix}.root".format(
+        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}.root".format(
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
