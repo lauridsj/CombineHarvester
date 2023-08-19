@@ -640,7 +640,7 @@ if __name__ == '__main__':
             ptg = ptag,
             fdo = fdoutput,
             gvl = "_" + gfit if gfit != "" else "",
-            fix = "_fixed" if fixpoi and gfit != "" else "",
+            fix = "_fixed" if args.fixpoi and gfit != "" else "",
         ) for fdoutput in ["result", "shape"]]
         syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
