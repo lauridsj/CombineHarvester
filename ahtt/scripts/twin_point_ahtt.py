@@ -644,12 +644,14 @@ if __name__ == '__main__':
         ) for fdoutput in ["result", "shape"]]
         syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
-        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-proc-errs --total-shapes -f {fdr}:fit_s".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            fdw = fitdiag_workspace,
-            fds = fitdiag_shape,
-            fdr = fitdiag_result,
-        ))
+        for ftype in ['s', 'b']:
+            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
+                dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                fdw = fitdiag_workspace,
+                fds = fitdiag_shape.replace(".root", '_' + ftype + ".root"),
+                fdr = fitdiag_result,
+                ftp = ftype
+            ))
 
     if runnll:
         if len(args.nllparam) < 1:
