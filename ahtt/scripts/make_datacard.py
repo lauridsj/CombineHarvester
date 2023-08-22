@@ -88,14 +88,14 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("QCDscale_ISR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("EWK_yukawa",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("EWK_scheme",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_PDF_alphaS",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_PDF_hessian",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
-
-            ("QCDscale_ISR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
-            ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -107,6 +107,24 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("tmass_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)), # gaussian prior
             #("tmass_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
+
+            ("QCDscale_MEFac_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_ISR_TQ",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_TQ",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_MEFac_TW",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_TW",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_ISR_TW",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_TW",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_MEFac_TB",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_TB",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_ISR_TB",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_TB",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_pileup",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -273,9 +291,15 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if nn1 in read_category_process_nuisance.specials:
                     nn2 = nn1 if (year in read_category_process_nuisance.specials[nn1][0] or year in nn1) else nn1 + '_' + year
 
-                    # split all A/H QCDscale variations (uX, I/FSR) into uncorrelated NPs for res and int
-                    if "QCDscale_" in nn2 and "_AH" in nn2:
-                        nn2 = nn2 + "_res" if "_res" in pp else nn2 + "_int"
+                    # all A/H QCDscale variations (uX, I/FSR)
+                    if "QCDscale_" in nn2:
+                        # ...split into uncorrelated NPs for res and int
+                        if "_AH" in nn2:
+                            nn2 = nn2 + "_res" if "_res" in pp else nn2 + "_int"
+                        # merged into a common TX NP
+                        if any([tx in nn2 for tx in ["_TQ", "_TW", "_TB"]]):
+                            for tx in ["_TQ", "_TW", "_TB"]:
+                                nn2.replace(tx, "_TX")
                 else:
                     nn2 = nn1 if year in nn1 else nn1 + '_' + year
 
