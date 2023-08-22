@@ -299,7 +299,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         # merged into a common TX NP
                         if any([tx in nn2 for tx in ["_TQ", "_TW", "_TB"]]):
                             for tx in ["_TQ", "_TW", "_TB"]:
-                                nn2.replace(tx, "_TX")
+                                nn2 = nn2.replace(tx, "_TX")
                 else:
                     nn2 = nn1 if year in nn1 else nn1 + '_' + year
 
