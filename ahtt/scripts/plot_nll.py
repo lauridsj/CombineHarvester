@@ -114,6 +114,7 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
                 elif best_fit[ii] is None and dtree.quantileExpected == -1.:
                     best_fit[ii] = (value, dnll)
             dfile.Close()
+        originals.append(best_fit[ii])
         originals = sorted(originals, key = lambda tup: tup[0])
         intx = []
         inty = []
