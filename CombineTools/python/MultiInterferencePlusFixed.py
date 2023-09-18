@@ -111,7 +111,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if not self.DC.isSignal[process]:
             return 1
 
-        if self.yukawa_signals and process.startswith("EWK"):
+        if self.yukawa_signals and process.startswith("EWK_TT"):
             if "_lin_neg" in process:
                 if self.verbose:
                     print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'dyt'
