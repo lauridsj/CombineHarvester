@@ -106,13 +106,14 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
 
-        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {ass} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} '
+        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {ass} {exc} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} '
                    '{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {dbg} {bsd}').format(
                        pnt = pnt,
                        mmm = mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
                        inj = "--inject-signal " + args.inject if args.inject != "" else "",
                        ass = "--as-signal " + args.assignal if args.assignal != "" else "",
+                       exc = "--exclude-process " + args.excludeproc if args.excludeproc != "" else "",
                        tag = "--tag " + args.tag if args.tag != "" else "",
                        drp = "--drop '" + remove_quotes(args.drop) + "'" if args.drop != "" else "",
                        kee = "--keep '" + remove_quotes(args.keep) + "'" if args.keep != "" else "",
