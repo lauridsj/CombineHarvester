@@ -63,7 +63,7 @@ def get_lo_ratio(sigpnt, channel, mtop):
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
-                                   bin_masks = None, projection_rule = "", sigpnt = None, kfactor = False):
+                                   excludeproc = None, bin_masks = None, projection_rule = "", sigpnt = None, kfactor = False):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
         read_category_process_nuisance.aliases = OrderedDict([
@@ -84,6 +84,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_FSR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("tmass_AH",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("bindingEnergy_EtaT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("tmass_EtaT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -204,20 +207,20 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             if not kname.endswith("Up") and not kname.endswith("Down") and not kname.endswith("_chi2"):
                 if kname != "data_obs" or not pseudodata:
-                    processes.append((kname, fname))
-                    ofile.cd(odir)
+                    if excludeproc is None or not any([ex in kname for ex in excludeproc]):
+                        processes.append((kname, fname))
+                        ofile.cd(odir)
 
-                    hn = key.ReadObj()
-                    if bin_masks is not None:
-                        zero_out(hn, bin_masks)
-                    if projection_rule != "":
-                        hn = project(hn, projection_rule)
+                        hn = key.ReadObj()
+                        if bin_masks is not None:
+                            zero_out(hn, bin_masks)
+                        if projection_rule != "":
+                            hn = project(hn, projection_rule)
 
-                    zero_out(hn)
-                    hn.Write()
+                        zero_out(hn)
+                        hn.Write()
 
-                    add_original_nominal(hn, odir, kname)
-
+                        add_original_nominal(hn, odir, kname)
         ifile.Close()
         ifile = None
 
@@ -242,6 +245,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             for ss in ["_res", "_pos", "_neg"]:
                 pnt = sig + ss
+                if excludeproc is not None and any([ex in pnt for ex in excludeproc]):
+                    continue
+
                 processes.append((pnt, fname))
 
                 hn = ifile.Get(idir + '/' + pnt)
@@ -378,8 +384,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     hu.SetName(nu)
                     hd.SetName(nd)
 
-                    # remove process tag - correlating the NP A/H and SM
-                    nn2 = nn2.replace("_TT", "").replace("_AH", "")
+                    # remove process tag - correlating the tmass NPs
+                    nn2 = nn2.replace("_TT", "").replace("_AH", "").replace("_EtaT", "")
                     mtu = 173
                     mtn = 172
                     mtd = 171
@@ -533,9 +539,10 @@ def make_pseudodata(ofile, cpn, replaces, injsig = None, assig = None, seed = No
         dd = None
         for pp in processes.keys():
             # meh let's just hack it
-            issig = any([ss in pp for ss in ["_res", "_pos", "_neg", "_quad", "_lin"]]) or (assig is not None and any([ss in pp for ss in assig]))
+            isah = any([ss in pp for ss in ["A_m", "H_m"]])
+            issig = isah or (assig is not None and any([ss in pp for ss in assig]))
             hh = ofile.Get(category + '/' + pp).Clone("hhtmphh")
-            if "_neg" in pp:
+            if isah and "_neg" in pp:
                 scale(hh, -1.)
 
             if not issig or (issig and injsig is not None and any([ss in pp for ss in injsig])):
@@ -745,17 +752,35 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                     rpp = tokenize_to_list(rp, ':')
                     txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
 
-    ewkttbkg = any(["EWK_TT" in pp for pp in cpn[cc] for cc in cpn.keys()]) and (assig is None or not any(["EWK_TT" in pp for pp in assig]))
-    if ewkttbkg:
+    ewkttbkg = set([pp if "EWK_TT" in pp and not pp in assig for pp in cpn[cc] for cc in cpn.keys()])
+    if len(ewkttbkg) == 6:
         for tt in txts:
             cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
             groups[cc]["theory"].append("dyt")
+            groups[cc]["norm"].append("constewk")
             with open(tt, 'a') as txt:
-                txt.write("\ndyt rateParam * EWK_TT_lin_pos 0 [-1,7]")
+                txt.write("\ndyt param 1 -0.12/+0.11")
+                txt.write("\ndyt rateParam * EWK_TT_lin_pos 1 [0,5]")
                 txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
                 txt.write("\ndyt2 rateParam * EWK_TT_quad_pos (@0*@0) dyt")
                 txt.write("\nmdyt2 rateParam * EWK_TT_quad_neg (-@0*@0) dyt")
-                txt.write("\ndyt param 0 -0.12/+0.11\n")
+                txt.write("\n")
+                txt.write("\nconstewk param 1 0.02")
+                txt.write("\nnuisance edit freeze constewk")
+                txt.write("\nconstewk rateParam * EWK_TT_const_pos 1 [0,2]")
+                txt.write("\nmconstewk rateParam * EWK_TT_const_neg (-@0) constewk")
+                txt.write("\n")
+
+    # note: this is not done using the lnN approach because of the normal +-1 prior
+    etatbkg = any(["EtaT" in cpn[cc] for cc in cpn.keys()])
+    if etatbkg:
+        for tt in txts:
+            cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
+            groups[cc]["norm"].append("CMS_EtaT_norm_13TeV")
+            with open(tt, 'a') as txt:
+                txt.write("\nCMS_EtaT_norm_13TeV param 1 1")
+                txt.write("\nCMS_EtaT_norm_13TeV rateParam * EtaT 1 [-5,5]")
+                txt.write("\n")
 
     for tt in txts:
         cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
@@ -801,6 +826,8 @@ if __name__ == '__main__':
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = "assignal", default = "", required = False,
+                        type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--exclude-process", help = combine_help_messages["--exclude-process"], dest = "excludeproc", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--ignore-bin", help = combine_help_messages["--ignore-bin"], dest = "ignorebin", default = "", required = False,
@@ -861,17 +888,18 @@ if __name__ == '__main__':
                     break
 
             read_category_process_nuisance(output, args.background, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule)
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall,
+                                           args.excludeproc, bin_masks, projection_rule)
 
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule,
-                                           args.point, args.kfactor)
+                                           args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall,
+                                           args.excludeproc, bin_masks, projection_rule, args.point, args.kfactor)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
-                                                   args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall, bin_masks, projection_rule,
-                                                   remaining, args.kfactor)
+                                                   args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall,
+                                                   args.excludeproc, bin_masks, projection_rule, remaining, args.kfactor)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"
