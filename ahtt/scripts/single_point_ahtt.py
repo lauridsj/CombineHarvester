@@ -217,7 +217,6 @@ if __name__ == '__main__':
 
     # parameter ranges for best fit file
     ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
-    ranges += ["dyt: -1, 7"]
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 

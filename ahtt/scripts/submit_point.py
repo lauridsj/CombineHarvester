@@ -197,7 +197,7 @@ if __name__ == '__main__':
                 with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                     nparts = fexp.readlines()
                     nparts = [et.rstrip() for et in nparts]
-                    nparts = [np for np in nparts if np not in ["mdyt", "dyt2", "mdyt2"]]
+                    nparts = [np for np in nparts if ne not in np or ne == np for ne in ["EWK_yukawa", "EWK_const"]]
                     nsplit = (len(nparts) // args.nnuisance) + 1
                     nparts = chunks(nparts, nsplit)
 

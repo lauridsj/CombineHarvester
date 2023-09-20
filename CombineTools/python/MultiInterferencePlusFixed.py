@@ -54,7 +54,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                     self.add_poi_per_signal(ss)
             if po == "yukawa":
                 self.yukawa_signals = True
-                self.pois.append('dyt')
+                self.pois.append('EWK_yukawa')
 
             processed.append(po)
 
@@ -94,12 +94,11 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
 
         if self.yukawa_signals:
-            # dyt = yt - 1: see ahtt/scripts/write_yukawa_templates.py
-            self.modelBuilder.doVar('dyt[0,-1,7]')
+            self.modelBuilder.doVar('EWK_yukawa[0,-1,7]')
 
-            self.modelBuilder.factory_('expr::mdyt("-@0", dyt)')
-            self.modelBuilder.factory_('expr::dyt2("@0*@0", dyt)')
-            self.modelBuilder.factory_('expr::mdyt2("-@0*@0", dyt)')
+            self.modelBuilder.factory_('expr::mEWK_yukawa("-@0", EWK_yukawa)')
+            self.modelBuilder.factory_('expr::EWK_yukawa2("@0*@0", EWK_yukawa)')
+            self.modelBuilder.factory_('expr::mEWK_yukawa2("-@0*@0", EWK_yukawa)')
            
 
         self.modelBuilder.doSet('POI', ','.join(self.pois))
@@ -114,20 +113,20 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
         if self.yukawa_signals and process.startswith("EWK_TT"):
             if "_lin_neg" in process:
                 if self.verbose:
-                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'dyt'
-                return 'mdyt'
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'EWK_yukawa'
+                return 'mEWK_yukawa'
             elif "_lin_pos" in process:
                 if self.verbose:
-                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'dyt'
-                return 'dyt'
+                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'EWK_yukawa'
+                return 'EWK_yukawa'
             elif "_quad_pos" in process:
                 if self.verbose:
-                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'dyt', " squared"
-                return 'dyt2'
+                    print 'Scaling', process, 'in bin', bin, 'with positive coupling modifier', 'EWK_yukawa', " squared"
+                return 'EWK_yukawa2'
             elif "_quad_neg" in process:
                 if self.verbose:
-                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'dyt', " squared"
-                return 'mdyt2'
+                    print 'Scaling', process, 'in bin', bin, 'with negative coupling modifier', 'EWK_yukawa', " squared"
+                return 'mEWK_yukawa2'
             else:
                 raise ValueError("Unknown process " + process)
 

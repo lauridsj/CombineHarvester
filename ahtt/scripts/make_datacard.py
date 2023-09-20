@@ -756,19 +756,19 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
     if len(ewkttbkg) == 6:
         for tt in txts:
             cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
-            groups[cc]["theory"].append("dyt")
-            groups[cc]["norm"].append("constewk")
+            groups[cc]["theory"].append("EWK_yukawa")
+            groups[cc]["norm"].append("EWK_const")
             with open(tt, 'a') as txt:
-                txt.write("\ndyt param 1 -0.12/+0.11")
-                txt.write("\ndyt rateParam * EWK_TT_lin_pos 1 [0,5]")
-                txt.write("\nmdyt rateParam * EWK_TT_lin_neg (-@0) dyt")
-                txt.write("\ndyt2 rateParam * EWK_TT_quad_pos (@0*@0) dyt")
-                txt.write("\nmdyt2 rateParam * EWK_TT_quad_neg (-@0*@0) dyt")
+                txt.write("\nEWK_yukawa param 1 -0.12/+0.11")
+                txt.write("\nEWK_yukawa rateParam * EWK_TT_lin_pos 1 [0,5]")
+                txt.write("\nmEWK_yukawa rateParam * EWK_TT_lin_neg (-@0) EWK_yukawa")
+                txt.write("\nEWK_yukawa2 rateParam * EWK_TT_quad_pos (@0*@0) EWK_yukawa")
+                txt.write("\nmEWK_yukawa2 rateParam * EWK_TT_quad_neg (-@0*@0) EWK_yukawa")
                 txt.write("\n")
-                txt.write("\nconstewk param 1 0.02")
-                txt.write("\nnuisance edit freeze constewk")
-                txt.write("\nconstewk rateParam * EWK_TT_const_pos 1 [0,2]")
-                txt.write("\nmconstewk rateParam * EWK_TT_const_neg (-@0) constewk")
+                txt.write("\nEWK_const param 1 0.02")
+                txt.write("\nnuisance edit freeze EWK_const")
+                txt.write("\nEWK_const rateParam * EWK_TT_const_pos 1 [0,2]")
+                txt.write("\nmEWK_const rateParam * EWK_TT_const_neg (-@0) EWK_const")
                 txt.write("\n")
 
     # note: this is not done using the lnN approach because of the normal +-1 prior

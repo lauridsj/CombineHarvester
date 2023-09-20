@@ -221,7 +221,7 @@ if __name__ == '__main__':
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
     # parameter ranges for best fit file
-    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]] + ["dyt: -1, 7"]
+    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
