@@ -142,7 +142,7 @@ def make_best_fit(dcdir, workspace, point, asimov, strategy, ranges, set_freeze,
         stg = strategy,
         prg = ranges,
         asm = "-t -1" if asimov else "",
-        wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL --saveSpecifiedFunc=EWK_yukawa,EWK_const", # FIXME hack, rateParams don't count as NPs in the SpecifiedNuis sense
+        wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
         prm = set_parameter(set_freeze, extopt, masks),
         ext = nonparametric_option(extopt)
     ))
