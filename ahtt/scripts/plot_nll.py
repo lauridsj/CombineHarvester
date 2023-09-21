@@ -40,9 +40,6 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
         side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
         fit = [min(ss, key = lambda p: p[1]) if len(ss) else None for ss in side]
         fit = None if None in fit else ((fit[0][0] * fit[0][1]) + (fit[1][0] * fit[1][1])) / (fit[0][1] + fit[1][1])
-        #side = [(fit[0], abs(fit[1] - best_fit[1] - delta)) for fit in side]
-        #fit = min(side, key = lambda p: p[1]) if len(side) else None
-        #fit = fit if fit is not None and fit[1] < delta / 10. else None
         uncertainties.append(abs(fit - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
