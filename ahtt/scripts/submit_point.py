@@ -192,7 +192,7 @@ if __name__ == '__main__':
                             dcd = pnt + args.tag,
                             ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                             nui = "ahtt_nuisance.txt",
-                            prm = r"'param '"
+                            prm = r"'param '",
                             awk = r"'{print $1}'"
                         ))
 
