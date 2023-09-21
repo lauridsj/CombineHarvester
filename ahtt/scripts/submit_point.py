@@ -186,18 +186,18 @@ if __name__ == '__main__':
             if args.runexpth:
                 syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
                         "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
-                        "> {dcd}/{nui} && grep rateParam {dcd}/ahtt_{ch}.txt | awk {awk} | sort -u >> {dcd}/{nui}".format(
+                        "> {dcd}/{nui} && grep {prm} {dcd}/ahtt_{ch}.txt | awk {awk} | sort -u >> {dcd}/{nui}".format(
                             cms = r'${CMSSW_BASE}',
                             dcd = pnt + args.tag,
                             ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                             nui = "ahtt_nuisance.txt",
+                            prm = r"'param '"
                             awk = r"'{print $1}'"
                         ))
 
                 with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                     nparts = fexp.readlines()
                     nparts = [et.rstrip() for et in nparts]
-                    nparts = [np for np in nparts if ne not in np or ne == np for ne in ["EWK_yukawa", "EWK_const"]]
                     nsplit = (len(nparts) // args.nnuisance) + 1
                     nparts = chunks(nparts, nsplit)
 
