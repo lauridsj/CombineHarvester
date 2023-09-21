@@ -187,7 +187,7 @@ if __name__ == '__main__':
                 syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
                         "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
                         "> {dcd}/{nui} && grep {prm} {dcd}/ahtt_{ch}.txt | awk {awk} | sort -u >> {dcd}/{nui} && "
-                        "grep rateParam {dcd}/ahtt_{ch}.txt | awk {awk} | grep -v '@' | sort -u >> {dcd}/{nui}".format(
+                        "grep rateParam {dcd}/ahtt_{ch}.txt | grep -v '@' | awk {awk} | sort -u >> {dcd}/{nui}".format(
                             cms = r'${CMSSW_BASE}',
                             dcd = pnt + args.tag,
                             ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
