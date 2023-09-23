@@ -73,7 +73,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
     def doParametersOfInterest(self):
         for ii, signal in enumerate(self.signals):
             ii0 = ii + 1 if self.nsignal > 1 else ''
-            self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii0))
+            self.modelBuilder.doVar('g{ss}[0,0,5]'.format(ss = ii0))
 
             if self.nor:
                 self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g{ss})'.format(ss = ii0))
@@ -94,7 +94,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
                 self.modelBuilder.factory_('expr::mg4_{ss}("(-@0*@0*@0*@0)*@1", g{ss}, r{tt})'.format(ss = ii0, tt = ii1))
 
         if self.yukawa_signals:
-            self.modelBuilder.doVar('EWK_yukawa[0,-1,7]')
+            self.modelBuilder.doVar('EWK_yukawa[1,0,5]')
 
             self.modelBuilder.factory_('expr::mEWK_yukawa("-@0", EWK_yukawa)')
             self.modelBuilder.factory_('expr::EWK_yukawa2("@0*@0", EWK_yukawa)')
