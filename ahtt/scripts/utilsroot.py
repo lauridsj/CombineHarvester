@@ -3,9 +3,10 @@
 
 import math
 
-from ROOT import TFile, gDirectory, TH1, TH1D
+from ROOT import TFile, gDirectory, TH1, TH1D, gErrorIgnoreLevel, kBreak
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
+gErrorIgnoreLevel = kBreak
 
 from utilspy import right_now, index_1n, index_n1
 
