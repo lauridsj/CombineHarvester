@@ -69,7 +69,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
+def read_nll(points, directories, name, kinks, skip, zeropoint):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -137,12 +137,11 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
                                 inty.append(spline(vv))
 
         for value, dnll in originals:
-            if rangex[0] <= value <= rangex[1]:
-                if skip and value in intx:
-                    continue
+            if skip and value in intx:
+                continue
 
-                data = inty[intx.index(value)] if value in intx else dnll
-                dataset.append((value, data))
+            data = inty[intx.index(value)] if value in intx else dnll
+            dataset.append((value, data))
         fits.append(dataset)
     return result
 
@@ -177,7 +176,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint)
+    nlls = read_nll(points, directories, name, kinks, skip, zeropoint)
 
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
@@ -189,6 +188,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
         ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
         handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
 
+    plt.xlim(rangex)
     plt.ylim(rangey)
     #ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 1)
     plt.xlabel(xlabel, fontsize = 21, loc = "right")
