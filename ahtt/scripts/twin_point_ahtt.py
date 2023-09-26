@@ -223,7 +223,7 @@ if __name__ == '__main__':
     # parameter ranges for best fit file
     ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
     if args.experimental:
-        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
 
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
