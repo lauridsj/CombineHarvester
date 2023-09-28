@@ -45,7 +45,9 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
 
         values0 = [ss[0] for ss in side]
         values1 = [ss[1] for ss in side]
-        spline = UnivariateSpline(np.array(reversed(values0) if icompare == 0 else values0), np.array(reversed(values1) if icompare == 0 else values1))
+        spline = UnivariateSpline(np.array(reversed(values0) if icompare == 0 else values0),
+                                  np.array(reversed(values1) if icompare == 0 else values1)
+                                  k = min(3, len(side) - 1))
         uncertainties.append(spline(delta))
 
         #side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
