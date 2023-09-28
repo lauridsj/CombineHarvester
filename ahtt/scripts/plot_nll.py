@@ -43,7 +43,11 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
             uncertainties.append(None)
             continue
 
-        values = [[ss[0] for ss in side], [ss[1] for ss in side]]
+        values = [[], []]
+        for ss in side:
+            if len(values[0]) == 0 or comparator(ss[1], values[1][-1]):
+                values[0].append(ss[0])
+                values[1].append(ss[1])
         if icompare == 0:
             values = [list(reversed(vv)) for vv in values]
 
