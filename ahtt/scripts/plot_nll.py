@@ -45,10 +45,10 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
 
         values = [[ss[0] for ss in side], [ss[1] for ss in side]]
         if icompare == 0:
-            values = [reversed(vv) for vv in values]
+            values = [list(reversed(vv)) for vv in values]
 
         spline = UnivariateSpline(np.array(values[1]), np.array(values[0]), k = min(3, len(side) - 1))
-        uncertainties.append(spline(delta))
+        uncertainties.append(float(spline(delta)) - best_fit[0])
 
         #side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
         #side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
