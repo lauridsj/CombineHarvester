@@ -32,15 +32,27 @@ def nice_number(value, epsilon):
 def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     islatexeqn = '$' in parameter
     parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter + '}')
+    ndelta = (math.sqrt(delta) + 1.) ** 2
+    pdelta = (math.sqrt(delta) - 1.) ** 2
 
     uncertainties = []
-    for comparator in [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]:
+    for icompare, comparator in enumerate([lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
-        side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
-        side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
-        fit = [min(ss, key = lambda p: p[1]) if len(ss) else None for ss in side]
-        fit = None if None in fit else ((fit[0][0] * fit[0][1]) + (fit[1][0] * fit[1][1])) / (fit[0][1] + fit[1][1])
-        uncertainties.append(abs(fit - best_fit[0]) if fit is not None else None)
+        side = [ss for ss in side if 0.5 * (pdelta + delta) < ss[1] < 0.5 * (ndelta + delta)]
+        if len(side) < 2:
+            uncertainties.append(None)
+            continue
+
+        values0 = [ss[0] for ss in side]
+        values1 = [ss[1] for ss in side]
+        spline = UnivariateSpline(np.array(reversed(values0) if icompare == 0 else values0), np.array(reversed(values1) if icompare == 0 else values1))
+        uncertainties.append(spline(delta))
+
+        #side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
+        #side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
+        #fit = [min(ss, key = lambda p: p[1]) if len(ss) else None for ss in side]
+        #fit = None if None in fit else ((fit[0][0] * fit[0][1]) + (fit[1][0] * fit[1][1])) / (fit[0][1] + fit[1][1])
+        #uncertainties.append(abs(fit - best_fit[0]) if fit is not None else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
         return f", ${parameter} = {nice_number(best_fit[0], epsilon)} \pm {round(uncertainties[0], -math.ceil(math.log10(epsilon)))}$"
