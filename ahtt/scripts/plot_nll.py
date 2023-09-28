@@ -39,15 +39,15 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     for icompare, comparator in enumerate([lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
         side = [ss for ss in side if pdelta < ss[1] < ndelta]
-        if len(side) < 2:
-            uncertainties.append(None)
-            continue
-
         values = [[], []]
         for ss in side:
             if len(values[0]) == 0 or comparator(ss[1], values[1][-1]):
                 values[0].append(ss[0])
                 values[1].append(ss[1])
+
+        if len(values[0]) < 2:
+            uncertainties.append(None)
+            continue
         if icompare == 0:
             values = [list(reversed(vv)) for vv in values]
 
