@@ -50,9 +50,6 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
             continue
         if icompare == 0:
             values = [list(reversed(vv)) for vv in values]
-
-        print(icompare, values)
-        print('\n', flush = True)
         spline = UnivariateSpline(np.array(values[1]), np.array(values[0]), k = min(3, len(side) - 1))
         uncertainties.append(abs(float(spline(delta)) - best_fit[0]))
 
