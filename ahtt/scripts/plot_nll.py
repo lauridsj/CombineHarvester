@@ -51,7 +51,8 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
         if icompare == 0:
             values = [list(reversed(vv)) for vv in values]
         spline = UnivariateSpline(np.array(values[1]), np.array(values[0]), k = min(3, len(side) - 1))
-        uncertainties.append(abs(float(spline(delta)) - best_fit[0]))
+        estimate = spline(delta)
+        uncertainties.append(abs(float(spline(delta)) - best_fit[0]) if estimate > values[0] else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
         return f", ${parameter} = {nice_number(best_fit[0], epsilon)} \pm {round(uncertainties[0], -math.ceil(math.log10(epsilon)))}$"
