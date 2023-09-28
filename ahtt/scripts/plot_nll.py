@@ -38,7 +38,7 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     uncertainties = []
     for icompare, comparator in enumerate([lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
-        side = [ss for ss in side if 0.5 * (pdelta + delta) < ss[1] < 0.5 * (ndelta + delta)]
+        side = [ss for ss in side if pdelta < ss[1] < ndelta]
         if len(side) < 2:
             uncertainties.append(None)
             continue
@@ -48,7 +48,7 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
             values = [list(reversed(vv)) for vv in values]
 
         spline = UnivariateSpline(np.array(values[1]), np.array(values[0]), k = min(3, len(side) - 1))
-        uncertainties.append(float(spline(delta)) - best_fit[0])
+        uncertainties.append(abs(float(spline(delta)) - best_fit[0]))
 
         #side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
         #side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
