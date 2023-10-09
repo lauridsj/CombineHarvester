@@ -455,7 +455,7 @@ if __name__ == '__main__':
             jarg = job_arg
             jarg += " {par} {win} {pnt} {uco}".format(
                 par = clamp_with_quote(string = ",".join(args.nllparam), prefix = '--nll-parameter '),
-                win = clamp_with_quote(string = ";".join(args.nllwindow), prefix = '--nll-interval= '),
+                win = clamp_with_quote(string = ";".join(args.nllwindow), prefix = '--nll-interval='),
                 pnt = clamp_with_quote(string = ",".join([str(npnt) for npnt in args.nllnpnt]), prefix = '--nll-npoint '),
                 uco = "--nll-unconstrained" if args.nllunconstrained else "",
             )
