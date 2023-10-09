@@ -6,7 +6,7 @@ def remove_quotes(string):
     return string.replace('"',  '').replace("'",  "")
 
 def remove_consecutive_quotes(string):
-    result = None
+    result = string
     quotes = ['"', "'"]
     for q0 in quotes:
         for q1 in quotes:
