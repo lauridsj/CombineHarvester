@@ -10,7 +10,7 @@ def remove_consecutive_quotes(string):
     quotes = ['"', "'"]
     for q0 in quotes:
         for q1 in quotes:
-        result = result.replace(q0 + q1, '')
+            result = result.replace(q0 + q1, '')
     return result
 
 def remove_spaces(string):
