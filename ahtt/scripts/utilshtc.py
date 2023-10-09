@@ -33,10 +33,10 @@ def make_submission_script_header():
     return script
     
 def make_submission_script_single(name, directory, executable, arguments, cpus = None, runtime = None, memory = None, runtmp = False, writelog = True):
-    script = """
+    script = '''
 batch_name = {name}
-arguments = {executable} {args}
-"""
+arguments = "{executable} {args}"
+'''
 
     script = script.format(name = name, directory = directory, executable = executable, args = ' '.join(arguments.split()))
     if writelog:

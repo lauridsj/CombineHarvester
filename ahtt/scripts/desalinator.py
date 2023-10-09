@@ -33,8 +33,9 @@ def clamp_with_quote(string, prefix = "", suffix = ""):
     if string == "":
         return string
     clean = remove_consecutive_quotes(string)
-    q = '"' if "'" in clean else "'"
-    opencloseq = any([clean.startswith(qq) and clean.endswith(qq) for qq in ['"', "'"]])
+    clean = clean.replace('"', "'")
+    q = "'"
+    opencloseq = clean.startswith(q) and clean.endswith(q)
     if not opencloseq:
         return prefix + q + clean + q + suffix
     else:
