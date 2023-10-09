@@ -16,7 +16,7 @@ from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, aggregate_submit, flush_jobs
 
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes, clamp_with_quote
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
@@ -111,40 +111,40 @@ if __name__ == '__main__':
                        pnt = pnt,
                        mmm = mode,
                        sus = "--sushi-kfactor" if args.kfactor else "",
-                       inj = "--inject-signal " + args.inject if args.inject != "" else "",
-                       ass = "--as-signal " + args.assignal if args.assignal != "" else "",
-                       exc = "--exclude-process " + args.excludeproc if args.excludeproc != "" else "",
-                       tag = "--tag " + args.tag if args.tag != "" else "",
-                       drp = "--drop '" + remove_quotes(args.drop) + "'" if args.drop != "" else "",
-                       kee = "--keep '" + remove_quotes(args.keep) + "'" if args.keep != "" else "",
+                       inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
+                       ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
+                       exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process '),
+                       tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
+                       drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
+                       kee = clamp_with_quote(string = args.keep, prefix = '--keep '),
                        sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
                        bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
                        cha = "--channel " + args.channel,
                        yyy = "--year " + args.year,
-                       thr = "--threshold " + args.threshold if args.threshold != "" else "",
+                       thr = clamp_with_quote(string = args.threshold, prefix = '--threshold '),
                        lns = "--lnN-under-threshold" if args.lnNsmall else "",
                        shp = "--use-shape-always" if args.alwaysshape else "",
                        mcs = "--no-mc-stats" if not args.mcstat else "",
-                       rpr = "--float-rate '" + remove_quotes(args.rateparam) + "'" if args.rateparam != "" else "",
-                       msk = "--mask '" + remove_quotes(args.mask) + "'" if args.mask != "" else "",
-                       igb = "--ignore-bin '" + remove_quotes(args.ignorebin) + "'" if args.ignorebin != "" else "",
-                       prj = "--projection '" + remove_quotes(args.projection) + "'" if rundc and args.projection != "" else "",
-                       cho = "--chop-up '" + remove_quotes(args.chop) + "'" if args.chop != "" else "",
-                       rep = "--replace-nominal '" + remove_quotes(args.repnom) + "'" if args.repnom != "" else "",
+                       rpr = clamp_with_quote(string = args.rateparam, prefix = '--float-rate '),
+                       msk = clamp_with_quote(string = args.mask, prefix = '--mask '),
+                       igb = clamp_with_quote(string = args.ignorebin, prefix = '--ignore-bin '),
+                       prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
+                       cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
+                       rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
                        fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
                        hes = "--use-hesse" if args.usehesse else "",
                        kbf = "--redo-best-fit" if not args.keepbest else "",
                        dws = "--default-workspace" if args.defaultwsp else "",
-                       fr0 = "--freeze-zero '" + remove_quotes(args.frzzero) + "'" if args.frzzero != "" else "",
-                       frp = "--freeze-post '" + remove_quotes(args.frzpost) + "'" if args.frzpost != "" else "",
+                       fr0 = clamp_with_quote(string = args.frzzero, prefix = '--freeze-zero '),
+                       frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
+                       rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
                        asm = "--unblind" if not args.asimov else "",
                        one = "--one-poi" if args.onepoi else "",
                        gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
                        rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
                        fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-                       ext = '--extra-option{s}'.format(s = '=' if args.extopt[0] == '-' else ' ') + r'\"' + args.extopt + r'\"' if args.extopt != "" else "",
-                       otg = "--output-tag " + args.otag if args.otag != "" else "",
-                       rsd = "--seed " + args.seed if args.seed != "" else "",
+                       ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt[0] == '-' else ' ')),
+                       otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
                        com = "--compress" if rundc else "",
                        dbg = "--experimental" if args.experimental else "",
                        bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
@@ -209,8 +209,8 @@ if __name__ == '__main__':
                 syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
             if args.runbb:
-                for cc in args.channel.replace(" ", "").split(','):
-                    for yy in args.year.replace(" ", "").split(','):
+                for cc in remove_spaces(args.channel).split(','):
+                    for yy in remove_spaces(args.year).split(','):
                         if cc + "_" + yy in args.mask:
                             continue
 

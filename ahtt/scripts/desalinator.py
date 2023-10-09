@@ -5,6 +5,14 @@
 def remove_quotes(string):
     return string.replace('"',  '').replace("'",  "")
 
+def remove_consecutive_quotes(string):
+    result = None
+    quotes = ['"', "'"]
+    for q0 in quotes:
+        for q1 in quotes:
+        result = result.replace(q0 + q1, '')
+    return result
+
 def remove_spaces(string):
     return string.replace(" ", "")
 
@@ -20,3 +28,14 @@ def prepend_if_not_empty(string, token = "_"):
 
 def append_if_not_empty(string, token = "/"):
     return string + token if string != "" and not string.endswith(token) else string
+
+def clamp_with_quote(string, prefix = "", suffix = ""):
+    if string == "":
+        return string
+    clean = remove_consecutive_quotes(string)
+    q = '"' if "'" in clean else "'"
+    opencloseq = any([clean.startswith(qq) and clean.endswith(qq) for qq in ['"', "'"]])
+    if not opencloseq:
+        return prefix + q + clean + q + suffix
+    else:
+        return prefix + clean + suffix
