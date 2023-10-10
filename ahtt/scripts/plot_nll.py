@@ -46,7 +46,7 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
                 values[0].append(ss[0])
                 values[1].append(ss[1])
 
-        if len(values[0]) < 2:
+        if len(values[0]) < 4:
             uncertainties.append(None)
             continue
         if icompare == 0:
