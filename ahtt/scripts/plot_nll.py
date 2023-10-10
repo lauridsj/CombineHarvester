@@ -83,7 +83,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, kinks, skip, zeropoint):
+def read_nll(points, directories, name, kinks, skip, zeropoint, insidex = False):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -153,13 +153,16 @@ def read_nll(points, directories, name, kinks, skip, zeropoint):
         for value, dnll in originals:
             if skip and value in intx:
                 continue
+            if insidex and not (rangex[0] <= value <= rangex[1]):
+                continue
 
             data = inty[intx.index(value)] if value in intx else dnll
             dataset.append((value, data))
         fits.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
+             rangex, rangey, insidex, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -190,7 +193,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, kinks, skip, zeropoint)
+    nlls = read_nll(points, directories, name, kinks, skip, zeropoint, insidex)
 
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
@@ -248,6 +251,8 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 2.], required = False)
     parser.add_argument("--y-range", help = "comma-separated min and max values in the y-axis", dest = "rangey",
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 36.], required = False)
+    parser.add_argument("--inside-x-range", help = "consider only points within the specified x range",
+                        dest = "insidex", action = "store_true", required = False)
     parser.add_argument("--zero-point", help = "point to mark as 0 on the 2dNLL axis. can be the 2dNLL minimum, or a given value value on the x axis.", dest = "zeropoint",
                         default = "minimum", required = False)
     parser.add_argument("--legend-position", help = "where to put the legend. passed as-is to mpl loc.", dest = "legendloc",
@@ -283,6 +288,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.zeropoint,
+             points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.insidex, args.zeropoint,
              args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass
