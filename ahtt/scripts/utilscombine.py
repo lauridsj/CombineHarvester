@@ -206,7 +206,7 @@ def make_datacard_with_args(scriptdir, args):
                 shp = "--use-shape-always" if args.alwaysshape else "",
                 mcs = "--no-mc-stats" if not args.mcstat else "",
                 rpr = clamp_with_quote(string = args.rateparam, prefix = '--float-rate '),
-                msk = clamp_with_quote(string = args.mask, prefix = '--mask '),
+                msk = clamp_with_quote(string = ','.join(args.mask), prefix = '--mask '),
                 igb = clamp_with_quote(string = args.ignorebin, prefix = '--ignore-bin '),
                 prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
                 cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
