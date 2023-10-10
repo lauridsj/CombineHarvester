@@ -143,7 +143,7 @@ if __name__ == '__main__':
                        gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
                        rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
                        fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-                       ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt[0] == '-' else ' ')),
+                       ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') == '-' else ' ')),
                        otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
                        com = "--compress" if rundc else "",
                        dbg = "--experimental" if args.experimental else "",

@@ -299,7 +299,7 @@ if __name__ == '__main__':
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = "--g-values{s}'".format(s = '=' if args.gvalues[0][0] == "-" else " ") + ','.join(args.gvalues) + "'" if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
-            ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt[0] == '-' else ' ')),
+            ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') else ' ')),
             otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
             exp = "--{fn}-expect{s}'".format(
                 fn = "fc" if runfc or runcompile else "nll",
