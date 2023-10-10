@@ -193,7 +193,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, kinks, skip, insidex, zeropoint)
+    nlls = read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
