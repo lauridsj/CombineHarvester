@@ -83,7 +83,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, kinks, skip, zeropoint, insidex = False):
+def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -193,7 +193,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, kinks, skip, zeropoint, insidex)
+    nlls = read_nll(points, directories, name, kinks, skip, insidex, zeropoint)
 
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
