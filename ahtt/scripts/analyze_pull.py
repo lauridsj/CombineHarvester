@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def measurement_format(central, upper, lower):
-    vlog = int(abs(math.floor(min(math.log10(upper), math.log10(lower)))))
+    vlog = int(abs(math.floor(min(math.log10(upper) - 1, math.log10(lower) - 1))))
     return "{cc} +{uu} -{ll}".format(cc = round(central, vlog), uu = round(upper, vlog), ll = round(lower, vlog))
 
 def names_and_values(results, key):
