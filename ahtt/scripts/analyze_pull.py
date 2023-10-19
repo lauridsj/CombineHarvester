@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def measurement_format(central, upper, lower):
-    vlog = int(abs(math.floor(min(math.log10(upper), math.log10(lower)))))
+    vlog = int(abs(math.floor(min(math.log10(upper) - 1, math.log10(lower) - 1))))
     return "{cc} +{uu} -{ll}".format(cc = round(central, vlog), uu = round(upper, vlog), ll = round(lower, vlog))
 
 def names_and_values(results, key):
@@ -39,7 +39,7 @@ def names_and_values(results, key):
 
     return [allnames, values]
 
-def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
+def report_discrepancy_wrt_reference(directories, parameters, always_print = False, threshold = 3):
     tags = ["/".join(directory) for directory in directories]
     names, values = parameters
 
@@ -51,7 +51,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
 
             if None not in [v0, u0, l0]:
                 large = (v0 < 0. and abs(v0) / u0 > threshold) or (v0 > 0. and abs(v0) / l0 > threshold)
-                if large:
+                if always_print or large:
                     print("analyze_pull :: {pp} in tag {t0} = {m0} deviates by {th} sigma from 0.".format(
                         pp = name,
                         t0 = tag0,
@@ -67,7 +67,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
 
                         if None not in [v1, u1, l1]:
                             discrepant = (v1 > v0 and abs(v1 - v0) / threshold > u0) or (v1 < v0 and abs(v1 - v0) / threshold > l0)
-                            if discrepant:
+                            if always_print or discrepant:
                                 print("analyze_pull :: {pp} with tag {t1} = {m1} differ by {th} sigma wrt tag {t0} = {m0}".format(
                                     pp = name,
                                     t1 = tag1,
@@ -77,7 +77,7 @@ def report_discrepancy_wrt_reference(directories, parameters, threshold = 3):
                                     m0 = measurement_format(v0, u0, l0),
                                 ))
 
-def analyze(directories, onepoi, gvalue, rvalue, fixpoi, otag):
+def analyze(directories, onepoi, gvalue, rvalue, fixpoi, otag, always_print_poi = False):
     results = []
     for directory, tag in directories:
         iname = "{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}_{otg}.json".format(
@@ -96,7 +96,7 @@ def analyze(directories, onepoi, gvalue, rvalue, fixpoi, otag):
 
     print("analyze_pull :: checking POIs")
     pois = names_and_values(results, "POIs")
-    report_discrepancy_wrt_reference(directories, pois)
+    report_discrepancy_wrt_reference(directories, pois, always_print_poi)
     sys.stdout.flush()
     print("\n\nanalyze_pull :: checking NPs")
     nuisances = names_and_values(results, "params")
@@ -125,6 +125,9 @@ if __name__ == '__main__':
     parser.add_argument("--fix-poi", help = "fix pois in the fit, through --g-value and/or --r-value",
                         dest = "fixpoi", action = "store_true", required = False)
 
+    parser.add_argument("--always-print-poi", help = "always print poi value, regardless of deviation",
+                        dest = "alwayspoi", action = "store_true", required = False)
+
     args = parser.parse_args()
     dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
-    analyze(dirs, args.onepoi, args.setg, args.setr, args.fixpoi, args.otag)
+    analyze(dirs, args.onepoi, args.setg, args.setr, args.fixpoi, args.otag, args.alwayspoi)

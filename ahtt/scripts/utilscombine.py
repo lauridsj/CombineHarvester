@@ -4,7 +4,7 @@
 import glob
 import os
 
-from desalinator import remove_quotes, remove_spaces, tokenize_to_list
+from desalinator import remove_quotes, remove_spaces, tokenize_to_list, clamp_with_quote
 from utilspy import syscall, right_now
 
 from ROOT import TFile, gDirectory, TH1, TH1D
@@ -194,23 +194,24 @@ def make_datacard_with_args(scriptdir, args):
                 ch = args.channel,
                 yr = args.year,
                 psd = "--add-pseudodata" if args.asimov else "",
-                inj = "--inject-signal " + args.inject if args.inject != "" else "",
-                ass = "--as-signal " + args.assignal if args.assignal != "" else "",
-                exc = "--exclude-process " + args.excludeproc if args.excludeproc != "" else "",
-                tag = "--tag " + args.tag if args.tag != "" else "",
-                drp = "--drop '" + remove_quotes(args.drop) + "'" if args.drop != "" else "",
-                kee = "--keep '" + remove_quotes(args.keep) + "'" if args.keep != "" else "",
+                inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
+                ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
+                exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process '),
+                tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
+                drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
+                kee = clamp_with_quote(string = args.keep, prefix = '--keep '),
                 kfc = "--sushi-kfactor" if args.kfactor else "",
-                thr = "--threshold " + args.threshold if args.threshold != "" else "",
+                thr = clamp_with_quote(string = args.threshold, prefix = '--threshold '),
                 lns = "--lnN-under-threshold" if args.lnNsmall else "",
                 shp = "--use-shape-always" if args.alwaysshape else "",
                 mcs = "--no-mc-stats" if not args.mcstat else "",
-                rpr = "--float-rate '" + remove_quotes(args.rateparam) + "'" if args.rateparam != "" else "",
-                igb = "--ignore-bin '" + remove_quotes(args.ignorebin) + "'" if args.ignorebin != "" else "",
-                prj = "--projection '" + remove_quotes(args.projection) + "'" if args.projection != "" else "",
-                cho = "--chop-up '" + remove_quotes(args.chop) + "'" if args.chop != "" else "",
-                rep = "--replace-nominal '" + remove_quotes(args.repnom) + "'" if args.repnom != "" else "",
-                rsd = "--seed " + args.seed if args.seed != "" else ""
+                rpr = clamp_with_quote(string = args.rateparam, prefix = '--float-rate '),
+                msk = clamp_with_quote(string = ','.join(args.mask), prefix = '--mask '),
+                igb = clamp_with_quote(string = args.ignorebin, prefix = '--ignore-bin '),
+                prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
+                cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
+                rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
+                rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
             ))
 
 def update_mask(masks):

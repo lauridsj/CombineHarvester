@@ -32,15 +32,29 @@ def nice_number(value, epsilon):
 def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
     islatexeqn = '$' in parameter
     parameter = parameter.replace('$', '') if islatexeqn else "\mathrm{0}".format('{' + parameter + '}')
+    ndelta = (math.sqrt(delta) + 2.) ** 2
+    pdelta = (math.sqrt(delta) - 1.) ** 2
 
+    comparators = [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]
     uncertainties = []
-    for comparator in [lambda v0, v1: v0 < v1, lambda v0, v1: v0 > v1]:
+    for icompare, comparator in enumerate(comparators):
         side = [fit for fit in fits if fit[1] > best_fit[1] and comparator(fit[0], best_fit[0])]
-        side = [(fit[0], abs(fit[1] - best_fit[1] - delta), 1 if fit[1] - best_fit[1] - delta > 0. else -1) for fit in side]
-        side = [[fit for fit in side if fit[2] > 0], [fit for fit in side if fit[2] < 0]]
-        fit = [min(ss, key = lambda p: p[1]) if len(ss) else None for ss in side]
-        fit = None if None in fit else ((fit[0][0] * fit[0][1]) + (fit[1][0] * fit[1][1])) / (fit[0][1] + fit[1][1])
-        uncertainties.append(abs(fit - best_fit[0]) if fit is not None else None)
+        side = [ss for ss in side if pdelta < ss[1] < ndelta]
+        values = [[], []]
+        for ss in side:
+            if len(values[0]) == 0 or comparator(ss[1], values[1][-1]):
+                values[0].append(ss[0])
+                values[1].append(ss[1])
+
+        if len(values[0]) < 4:
+            uncertainties.append(None)
+            continue
+        if icompare == 0:
+            values = [list(reversed(vv)) for vv in values]
+        spline = UnivariateSpline(np.array(values[1]), np.array(values[0]), k = min(3, len(side) - 1))
+        estimate = float(spline(delta))
+        legit = comparators[1 if icompare == 0 else 0](estimate, values[0][-1])
+        uncertainties.append(abs(estimate - best_fit[0]) if legit else None)
 
     if None not in uncertainties and abs(uncertainties[0] - uncertainties[1]) < epsilon:
         return f", ${parameter} = {nice_number(best_fit[0], epsilon)} \pm {round(uncertainties[0], -math.ceil(math.log10(epsilon)))}$"
@@ -69,7 +83,7 @@ def valid_1D_nll_fname(fname):
             nvalidto += 1
     return nvalidto == 1
 
-def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
+def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -137,16 +151,18 @@ def read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint):
                                 inty.append(spline(vv))
 
         for value, dnll in originals:
-            if rangex[0] <= value <= rangex[1]:
-                if skip and value in intx:
-                    continue
+            if skip and value in intx:
+                continue
+            if insidex and not (rangex[0] <= value <= rangex[1]):
+                continue
 
-                data = inty[intx.index(value)] if value in intx else dnll
-                dataset.append((value, data))
+            data = inty[intx.index(value)] if value in intx else dnll
+            dataset.append((value, data))
         fits.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex, rangey, zeropoint, legendloc, legendtitle, transparent, plotformat):
+def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
+             rangex, rangey, insidex, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
             (1, [["black"], ["solid"]]),
@@ -177,7 +193,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
     fig, ax = plt.subplots()
     handles = []
     name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
-    nlls = read_nll(points, directories, name, rangex, rangey, kinks, skip, zeropoint)
+    nlls = read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
     for ii, nll in enumerate(nlls[1]):
         values = np.array([nn[0] for nn in nll])
@@ -189,6 +205,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel, rangex,
         ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
         handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
 
+    plt.xlim(rangex)
     plt.ylim(rangey)
     #ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 1)
     plt.xlabel(xlabel, fontsize = 21, loc = "right")
@@ -234,6 +251,8 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 2.], required = False)
     parser.add_argument("--y-range", help = "comma-separated min and max values in the y-axis", dest = "rangey",
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), astype = float), default = [0., 36.], required = False)
+    parser.add_argument("--inside-x-range", help = "consider only points within the specified x range",
+                        dest = "insidex", action = "store_true", required = False)
     parser.add_argument("--zero-point", help = "point to mark as 0 on the 2dNLL axis. can be the 2dNLL minimum, or a given value value on the x axis.", dest = "zeropoint",
                         default = "minimum", required = False)
     parser.add_argument("--legend-position", help = "where to put the legend. passed as-is to mpl loc.", dest = "legendloc",
@@ -269,6 +288,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
-             points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.zeropoint,
+             points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.insidex, args.zeropoint,
              args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass
