@@ -129,6 +129,12 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_ISR_TB",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_TB",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("QCDscale_MEFac_DY",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MERen_DY",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+
+            ("QCDscale_ISR_DY",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_DY",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("CMS_pileup",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_eff_e_reco",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -769,7 +775,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                 txt.write("\nEWK_yukawa2 rateParam * EWK_TT_quad_pos (@0*@0) EWK_yukawa")
                 txt.write("\nmEWK_yukawa2 rateParam * EWK_TT_quad_neg (-@0*@0) EWK_yukawa")
                 txt.write("\n")
-                txt.write("\nEWK_const param 1 0.02")
+                txt.write("\nEWK_const param 1 0.0001")
                 txt.write("\nnuisance edit freeze EWK_const")
                 txt.write("\nEWK_const rateParam * EWK_TT_const_pos 1 [0,2]")
                 txt.write("\nmEWK_const rateParam * EWK_TT_const_neg (-@0) EWK_const")
