@@ -79,37 +79,36 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         read_category_process_nuisance.specials = OrderedDict([
             ("QCDscale_MEFac_AH",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_AH",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
-
             ("QCDscale_ISR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
-
             ("tmass_AH",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("bindingEnergy_EtaT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("tmass_EtaT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_MEFac_EtaT",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_ISR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
-
             ("QCDscale_ISR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("tmass_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)), # gaussian prior
+            #("tmass_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
             ("EWK_yukawa",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("EWK_scheme",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("CMS_PDF_alphaS",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_PDF_hessian",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
-
-            ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_UEtune_13TeV",                   (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_ERD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_QCD_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
-
-            ("tmass_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)), # gaussian prior
-            #("tmass_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
             ("QCDscale_MEFac_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
