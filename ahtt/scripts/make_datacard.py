@@ -320,8 +320,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         nn2 = nn2.replace(c2, c1)
 
                 #  FIXME for now only include these NPs for EtaT (as well as norm, below)
-                if pp == "EtaT" and not any([ne in nn2 for ne in ["bindingEnergy", "tmass"]]):
-                    continue
+                #if pp == "EtaT" and not any([ne in nn2 for ne in ["bindingEnergy", "tmass"]]):
+                #    continue
 
                 # obtain the actual up/down/chi2 templates
                 hu = key.ReadObj()
