@@ -384,7 +384,7 @@ if __name__ == '__main__':
                     break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui}".format(
+        syscall("combineTool.py -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui} {ext}".format(
             dcd = dcdir,
             wsp = workspace,
             mod = "one-poi" if args.onepoi else "g-scan",
@@ -394,7 +394,8 @@ if __name__ == '__main__':
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
             grp = group,
-            nui = "--named '" + ','.join(nuisances) + "'" if args.impactnui is not None else ""
+            nui = "--named '" + ','.join(nuisances) + "'" if args.impactnui is not None else "",
+            ext = nonparametric_option(args.extopt)
         ))
 
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
