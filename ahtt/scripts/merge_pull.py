@@ -38,7 +38,7 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, keeps, drops, otag):
                 names = None
                 if len(keeps) > 0:
                     names = [param["name"] for param in result["params"] for nuisance in keeps if nuisance in param["name"]]
-                    names = [name if drop not in name for drop in drops for name in names]
+                    names = [name for name in names for drop in drops if drop not in name]
                     names = set(names)
                 params = [param for param in result["params"] if names is None or param["name"] in names]
 
