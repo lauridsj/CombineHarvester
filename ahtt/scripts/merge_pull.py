@@ -14,7 +14,7 @@ import json
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
-def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
+def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, keeps, drops, otag):
     for directory, tag in directories:
         pulls = OrderedDict()
 
@@ -36,8 +36,9 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, nuisances, otag):
                     result = json.load(ff)
 
                 names = None
-                if len(nuisances) > 0:
-                    names = [param["name"] for param in result["params"] for nuisance in nuisances if nuisance in param["name"]]
+                if len(keeps) > 0:
+                    names = [param["name"] for param in result["params"] for nuisance in keeps if nuisance in param["name"]]
+                    names = [name if drop not in name for drop in drops for name in names]
                     names = set(names)
                 params = [param for param in result["params"] if names is None or param["name"] in names]
 
@@ -72,9 +73,11 @@ if __name__ == '__main__':
                         "so e.g. when there are 2 tags: 't1:o1;t2:o2...", dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
-    parser.add_argument("--nuisances", help = "comma-separated list of nuisances to consider. greedy matching: XX,YY means any nuisances containing "
+    parser.add_argument("--keep", help = "comma-separated list of nuisances to consider. greedy matching: XX,YY means any nuisances containing "
                         "either XX or YY in the name is included.",
-                        dest = "nuisance", default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+                        dest = "keep", default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
+    parser.add_argument("--drop", help = "comma-separated list of nuisances to drop. greedy matching. dominates over --keep.",
+                        dest = "drop", default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ))
     parser.add_argument("--impact-tag", help = "tag to attach to the merged impact json file",
                         dest = "otag", default = "all", required = False)
 
@@ -92,4 +95,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
-    dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi, args.nuisance, args.otag)
+    dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi, args.keep, args.drop, args.otag)
