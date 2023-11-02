@@ -211,6 +211,7 @@ if __name__ == '__main__':
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
     runprepost = "prepost" in modes or "corrmat" in modes
+    runpsfromws = "psfromws" in modes
     runnll = "nll" in modes or "likelihood" in modes
 
     if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
@@ -606,7 +607,7 @@ if __name__ == '__main__':
 
         directory_to_delete(location = None, flush = True)
 
-    if runprepost:
+    if runprepost or runpsfromws:
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
@@ -615,6 +616,15 @@ if __name__ == '__main__':
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
+        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}.root".format(
+            dcd = dcdir,
+            ptg = ptag,
+            fdo = fdoutput,
+            gvl = "_" + gfit if gfit != "" else "",
+            fix = "_fixed" if args.fixpoi and gfit != "" else "",
+        ) for fdoutput in ["result", "shape"]]
+
+    if runprepost:
         gfit = g_in_filename(gvalues)
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
@@ -634,25 +644,19 @@ if __name__ == '__main__':
         syscall("rm higgsCombine_prepost*.root", False, True)
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
-
-        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}.root".format(
-            dcd = dcdir,
-            ptg = ptag,
-            fdo = fdoutput,
-            gvl = "_" + gfit if gfit != "" else "",
-            fix = "_fixed" if args.fixpoi and gfit != "" else "",
-        ) for fdoutput in ["result", "shape"]]
         syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
+    if runpsfromws:
+        # TODO option to sum up sublist of channels
         for ftype in ['s', 'b']:
-            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
+            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
                 dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                 fdw = fitdiag_workspace,
                 fds = fitdiag_shape.replace(".root", '_' + ftype + ".root"),
                 fdr = fitdiag_result,
                 ftp = ftype
             ))
-            print "\n\n\n"
+            print "\n"
 
     if runnll:
         if len(args.nllparam) < 1:
