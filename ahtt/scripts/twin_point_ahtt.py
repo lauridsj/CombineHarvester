@@ -608,6 +608,8 @@ if __name__ == '__main__':
         directory_to_delete(location = None, flush = True)
 
     if runprepost or runpsfromws:
+        gfit = g_in_filename(gvalues)
+        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
@@ -625,9 +627,6 @@ if __name__ == '__main__':
         ) for fdoutput in ["result", "shape"]]
 
     if runprepost:
-        gfit = g_in_filename(gvalues)
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
-
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                 "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
