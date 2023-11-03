@@ -196,7 +196,7 @@ if __name__ == '__main__':
     allmodes = ["datacard", "workspace", "validate",
                 "generate", "gof", "fc-scan", "contour",
                 "hadd", "merge", "compile",
-                "prepost", "corrmat",
+                "prepost", "corrmat", "psfromws",
                 "nll", "likelihood"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
