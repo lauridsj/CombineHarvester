@@ -628,22 +628,28 @@ if __name__ == '__main__':
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
-                "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext}".format(
-                    dcd = fitdiag_workspace,
-                    mmm = mstr,
-                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
-                    asm = "-t -1" if args.asimov else "",
-                    prm = set_parameter(set_freeze, args.extopt, masks),
-                    ext = nonparametric_option(args.extopt)
-                ))
+        for ftype in ['s', 'b']:
+            startpoi = starting_poi(gvalues, args.fixpoi) if ftype == 's' else starting_poi(["0.", "0."], True)
+            set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
+            fitopt = "--skipBOnlyFit" if ftype == 's' else "--customStartingPoint --skipSBFit"
 
-        syscall("rm *_th1x_*.png", False, True)
-        syscall("rm covariance_fit_?.png", False, True)
-        syscall("rm higgsCombine_prepost*.root", False, True)
-        syscall("rm combine_logger.out", False, True)
-        syscall("rm robustHesse_*.root", False, True)
-        syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
+            syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+                    "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
+                        dcd = fitdiag_workspace,
+                        mmm = mstr,
+                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse),
+                        asm = "-t -1" if args.asimov else "",
+                        prm = set_parameter(set_freeze, args.extopt, masks),
+                        ext = nonparametric_option(args.extopt),
+                        fop = fitopt
+                    ))
+
+            syscall("rm *_th1x_*.png", False, True)
+            syscall("rm covariance_fit_?.png", False, True)
+            syscall("rm higgsCombine_prepost*.root", False, True)
+            syscall("rm combine_logger.out", False, True)
+            syscall("rm robustHesse_*.root", False, True)
+            syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result.replace(".root", "_" + ftype + ".root")), False)
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
@@ -651,8 +657,8 @@ if __name__ == '__main__':
             syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
                 dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                 fdw = fitdiag_workspace,
-                fds = fitdiag_shape.replace(".root", '_' + ftype + ".root"),
-                fdr = fitdiag_result,
+                fds = fitdiag_shape.replace(".root", "_" + ftype + ".root"),
+                fdr = fitdiag_result.replace(".root", "_" + ftype + ".root"),
                 ftp = ftype
             ))
             print "\n"
