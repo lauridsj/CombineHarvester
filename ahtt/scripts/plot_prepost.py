@@ -16,13 +16,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
+plt.rcParams['figure.max_open_warning'] = False
 from matplotlib.transforms import Bbox
 
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
-
 import ROOT
-from ROOT import TFile
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
@@ -31,13 +30,13 @@ parser.add_argument("--ifile", help = "input file", default = "", required = Tru
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
-parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag",
-                    default = "", required = False, type = prepend_if_not_empty)
-parser.add_argument("--each", help = "plot also each channel x year combination", action = "store_true", required = False)
-parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet",
-                    dest = "plotupper", action = "store_false", required = False)
+parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
+parser.add_argument("--each", help = "plot each channel x year combination", action = "store_true", required = False)
+parser.add_argument("--skip-batch", help = "skip plotting sums of channels x year combinations", action = "store_false", dest = "batch", required = False)
+parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
+
 
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -114,6 +113,7 @@ datastyle = dict(
 )
 
 
+
 def get_g_values(fname, signals):
     twing = len(signals) == 2
     onepoi = "one-poi" in fname
@@ -121,12 +121,12 @@ def get_g_values(fname, signals):
     if not twing and not onepoi:
         raise NotImplementedError()
 
-    ffile = TFile.Open(fname, "read")
+    ffile = ROOT.TFile.Open(fname, "read")
     fres = ffile.Get("fit_s")
     signals = list(signals.keys())
 
     if onepoi:
-        return {signals[0]: round(fres.floatParsFinal().getRealValue('r'), 2)}
+        return {signals[0]: round(fres.floatParsFinal().getRealValue('g'), 2)}
     else:
         return {
             signals[0]: round(fres.floatParsFinal().getRealValue('g1'), 2),
@@ -181,6 +181,7 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log):
     ax.set_ylabel("<Events / GeV>")
     if log:
         ax.set_yscale("log")
+
 
 
 def plot_ratio(ax, bins, centers, data, total, signals, fit):
@@ -256,25 +257,10 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
     ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.03, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
-def plot(
-        channel,
-        year,
-        fit,
-        smhists,
-        datavalues,
-        total,
-        signals,
-        gvalues,
-        datahist_errors,
-        binning,
-        num_extrabins,
-        extra_axes,
-        first_ax_binning,
-        first_ax_width,
-        bins,
-        centers,
-        log):
 
+def plot(channel, year, fit,
+         smhists, datavalues, total, signals, gvalues, datahist_errors,
+         binning, num_extrabins, extra_axes, first_ax_binning, first_ax_width, bins, centers, log):
     if len(smhists) == 0:
         return
 
@@ -335,6 +321,8 @@ def plot(
     fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True, bbox_inches = extent)
     fig.clf()
 
+
+
 def sum_kwargs(channel, year, *summands):
     ret = summands[0].copy()
     ret["channel"] = channel
@@ -348,8 +336,8 @@ def sum_kwargs(channel, year, *summands):
     return ret
 
 
-signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 
+signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
 with uproot.open(args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
@@ -428,22 +416,24 @@ with uproot.open(args.ifile) as f:
         if args.each:
             plot(**kwargs)
 
-        if (channel, fit) in year_summed:
-            this_year = year_summed[(channel, fit)]
-            year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
-        else:
-            year_summed[(channel, fit)] = kwargs
+        if args.batch:
+            if (channel, fit) in year_summed:
+                this_year = year_summed[(channel, fit)]
+                year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
+            else:
+                year_summed[(channel, fit)] = kwargs
 
 batches = {
     r"$\ell\ell$": ["ee", "em", "mm"],
     r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
-    #r"ej":         ["e4pj", "e3j"],
-    #r"mj":         ["e4pj", "m3j"],
+    r"ej":         ["e4pj", "e3j"],
+    r"mj":         ["e4pj", "m3j"],
     r"$\ell$3j":   ["e3j", "m3j"],
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
-for cltx, channels in batches.items():
-    for fit in fits:
-        has_channel = all([(channel, fit) in year_summed for channel in channels])
-        if has_channel:
-            plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels)))
+if args.batch:
+    for cltx, channels in batches.items():
+        for fit in fits:
+            has_channel = all([(channel, fit) in year_summed for channel in channels])
+            if has_channel:
+                plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels)))
