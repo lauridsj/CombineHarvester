@@ -33,11 +33,10 @@ parser.add_argument("--odir", help = "output directory to dump plots in", defaul
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--each", help = "plot each channel x year combination", action = "store_true", required = False)
 parser.add_argument("--skip-batch", help = "skip plotting sums of channels x year combinations", action = "store_false", dest = "batch", required = False)
+parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
-
-
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
 years = ["2016pre", "2016post", "2017", "2018"]
@@ -50,7 +49,13 @@ sm_procs = {
     "TB": "tX",
     "TQ": "tX",
     "DY": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
-    "TT": r"$\mathrm{t}\bar{\mathrm{t}}$"
+    "TT": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_const_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_const_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_lin_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_lin_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_quad_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EWK_TT_quad_neg": r"$\mathrm{t}\bar{\mathrm{t}}$"
 }
 sm_colors = {
     "tX": "C0",
@@ -341,6 +346,8 @@ signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
 with uproot.open(args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
+        if fit == "p" and not args.prefit:
+            continue
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
