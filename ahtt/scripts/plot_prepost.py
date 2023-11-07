@@ -129,6 +129,8 @@ def get_g_values(fname, signals):
     ffile = ROOT.TFile.Open(fname, "read")
     fres = ffile.Get("fit_s")
     signals = list(signals.keys())
+    if fres is None:
+        return {sig: 0 for sig in signals}
 
     if onepoi:
         return {signals[0]: round(fres.floatParsFinal().getRealValue('g'), 2)}
