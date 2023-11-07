@@ -631,7 +631,7 @@ if __name__ == '__main__':
         for ftype in ['s', 'b']:
             startpoi = starting_poi(gvalues, args.fixpoi) if ftype == 's' else starting_poi(["0.", "0."], True)
             set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
-            fitopt = "--skipBOnlyFit" if ftype == 's' else "--customStartingPoint --skipSBFit"
+            fitopt = "--justFit" if ftype == 's' else "--customStartingPoint --skipSBFit"
 
             syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                     "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
