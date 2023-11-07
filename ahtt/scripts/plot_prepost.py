@@ -127,10 +127,11 @@ def get_g_values(fname, signals):
         raise NotImplementedError()
 
     ffile = ROOT.TFile.Open(fname, "read")
+    if "fit_s" not in ffile.GetListOfKeys():
+        return {sig: 0 for sig, whatever in signals.items()}
+
     fres = ffile.Get("fit_s")
     signals = list(signals.keys())
-    if fres is None:
-        return {sig: 0 for sig in signals}
 
     if onepoi:
         return {signals[0]: round(fres.floatParsFinal().getRealValue('g'), 2)}
