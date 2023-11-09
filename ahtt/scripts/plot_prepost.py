@@ -22,6 +22,7 @@ from matplotlib.transforms import Bbox
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
 import ROOT
+import math
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
@@ -31,8 +32,8 @@ parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", re
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
-parser.add_argument("--each", help = "plot each channel x year combination", action = "store_true", required = False)
-parser.add_argument("--skip-batch", help = "skip plotting sums of channels x year combinations", action = "store_false", dest = "batch", required = False)
+parser.add_argument("--skip-each", help = "plot each channel x year combination", action = "store_false", dest = "each", required = False)
+parser.add_argument("--batch", help = "skip plotting sums of channels x year combinations", action = "store_true", dest = "batch", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
@@ -142,6 +143,7 @@ def get_g_values(fname, signals):
         }
 
 
+
 def full_extent(ax, pad = 0.0):
     """
     get the full extent of an axes, including axes labels, tick labels, and titles.
@@ -153,6 +155,8 @@ def full_extent(ax, pad = 0.0):
     items += [ax, ax.title]
     bbox = Bbox.union([item.get_window_extent() for item in items])
     return bbox.expanded(1.0 + pad, 1.0 + pad)
+
+
 
 def plot_eventperbin(ax, bins, centers, smhists, data, log):
     total = None
@@ -216,6 +220,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
     ax.set_ylabel(ratiolabels[fit].format(
         signal = "A + H" if len(signals) == 2 and sorted([signals[0][0], signals[1][0]]) == ["A", "H"] else f"{signals[0][0]}({signals[0][1]}, {signals[0][2]}%)"
     ))
+
+
 
 def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
     total = None
@@ -345,6 +351,16 @@ def sum_kwargs(channel, year, *summands):
 
 
 
+def add_covariance(histogram, matrix):
+    # still good ol when it comes to direct fudging
+    roo = TH1D("", "", len(histogram.values()), 0., len(histogram.values()))
+    for ibin in range(len(histogram.values())):
+        roo.SetBinContent(ibin + 1, histogram[ibin])
+        roo.SetBinError(ibin + 1, math.sqrt(matrix[ibin][ibin]))
+    return roo.to_hist()
+
+
+
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
 with uproot.open(args.ifile) as f:
@@ -401,6 +417,8 @@ with uproot.open(args.ifile) as f:
             signals[("Total", None, None)] = total
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total"].to_hist()[:len(centers)]
+        covariance = directory["total_covar"].to_hist()[:len(centers)][:len(centers)]
+        total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
 
         kwargs = {
