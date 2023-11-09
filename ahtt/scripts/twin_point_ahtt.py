@@ -631,6 +631,7 @@ if __name__ == '__main__':
         for ftype in ['s', 'b']:
             startpoi = starting_poi(gvalues, args.fixpoi) if ftype == 's' else starting_poi(["0.", "0."], True)
             set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
+            fitopt = "--skipBOnlyFit" if ftype == 's' else '--customStartingPoint --skipSBFit'
 
             syscall("combine -v -1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                     "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
@@ -640,7 +641,7 @@ if __name__ == '__main__':
                         asm = "-t -1" if args.asimov else "",
                         prm = set_parameter(set_freeze, args.extopt, masks),
                         ext = nonparametric_option(args.extopt),
-                        fop = "--skipBOnlyFit" # force gs = 0 and do s fit - yes this is a hack. combine. \_-_-_/
+                        fop = fitopt
                     ))
 
             syscall("rm *_th1x_*.png", False, True)
@@ -653,11 +654,12 @@ if __name__ == '__main__':
     if runpsfromws:
         # TODO option to sum up sublist of channels
         for ftype in ['s', 'b']:
-            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_s".format(
+            syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
                 dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                 fdw = fitdiag_workspace,
                 fds = fitdiag_shape.replace(".root", "_" + ftype + ".root"),
-                fdr = fitdiag_result.replace(".root", "_" + ftype + ".root")
+                fdr = fitdiag_result.replace(".root", "_" + ftype + ".root"),
+                ftp = ftype
             ))
             print "\n"
 
