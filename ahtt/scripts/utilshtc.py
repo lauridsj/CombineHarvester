@@ -135,7 +135,7 @@ def flush_jobs(job_agg):
 
 def common_job(args):
     argstr = (" {sus} {inj} {ass} {exc} {tag} {drp} {kee} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
-              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {asm} {com} {dbg} {ext} {otg} {exp} {bsd}").format(
+              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
                   sus = "--sushi-kfactor" if args.kfactor else "",
                   inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
                   ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
