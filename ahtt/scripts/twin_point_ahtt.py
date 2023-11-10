@@ -652,11 +652,14 @@ if __name__ == '__main__':
         syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
         if not args.usehesse:
-            with TFile.Open(fitdiag_result, "read") as fdr:
-                fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
-                if fit_result.covQual() < 3:
-                    syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
-                    raise RuntimeError("fit results in a bad covariance matrix, giving up. try to get a good fit, with --use-hesse, freezing parameters, etc.")
+            fdr = TFile.Open(fitdiag_result, "read"):
+            fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
+            fit_quality = fit_result.covQual()
+            fdr.Close()
+
+            if fit_quality < 3:
+                syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
+                raise RuntimeError("fit results in a bad covariance matrix, giving up. try to get a good fit, with --use-hesse, freezing parameters, etc.")
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
