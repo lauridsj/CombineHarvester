@@ -262,7 +262,7 @@ if __name__ == '__main__':
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_arg = ("--point {pnt} --mode {mmm} {sus} {inj} {ass} {exc} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
-                   "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {rsd} {com} {dbg} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {bsd}").format(
+                   "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {rsd} {com} {dbg} {rmr} {igp} {gvl} {fix} {ext} {otg} {exp} {ppf} {bsd}").format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
             sus = "--sushi-kfactor" if args.kfactor else "",
@@ -306,6 +306,7 @@ if __name__ == '__main__':
                 fn = "fc" if runfc or runcompile else "nll",
                 s = '=' if args.fcexp[0][0] == "-" else " "
             ) + ";".join(args.fcexp) + "'" if runfc or runnll or runcompile else "",
+            ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '),
             bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
         )
 

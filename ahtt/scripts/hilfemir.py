@@ -121,6 +121,8 @@ combine_help_messages = {
     "--fc-nuisance-mode": "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
     "WARNING: profile mode is deprecated!!",
 
+    "--prepost-fit": "type of fit to run in prepost and psfromws modes; s or b",
+
     "--nll-parameter": "comma-separated list of parameters to evaluate the NLL for.",
     "--nll-npoint": "comma-separated list of number of points to sample equidistantly along each parameter.\n"
     "if not given, defaults to a scan with roughly 200 points total, finer in g than NPs.",
