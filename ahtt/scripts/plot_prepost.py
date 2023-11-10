@@ -357,7 +357,7 @@ def add_covariance(histogram, matrix):
     for ibin in range(len(histogram.values())):
         roo.SetBinContent(ibin + 1, histogram.values()[ibin])
         roo.SetBinError(ibin + 1, math.sqrt(matrix.values()[ibin, ibin]))
-    return roo.to_hist()
+    return uproot.pyroot.from_pyroot(roo).to_hist()
 
 
 
