@@ -479,8 +479,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
 
                 if nn1 == "tmass_AH":
-                    up_norm_rdev = (hu.Integral() - hn.Integral()) / hah.Integral()
-                    down_norm_rdev = (hd.Integral() - hn.Integral()) / hah.Integral()
+                    up_norm_rdev = (hu.Integral() - hah.Integral()) / hah.Integral()
+                    down_norm_rdev = (hd.Integral() - hah.Integral()) / hah.Integral()
                     two_sided_base = up_norm_rdev / down_norm_rdev < 0.
 
                     if not two_sided_base:
