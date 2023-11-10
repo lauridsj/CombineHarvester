@@ -9,25 +9,26 @@ from numpy import random as rng
 
 from utilspy import syscall, right_now
 from utilslab import cluster, condorrun
+from desalinator import clamp_with_quote
 
 def make_submission_script_header():
     script = "Job_Proc_ID = $(Process) + 1 \n"
-    script += "executable = {script}\n".format(script=condorrun)
+    script += "executable = {script}\n".format(script = condorrun)
     script += "notification = error\n"
     script += 'requirements = (OpSysAndVer == "CentOS7")\n'
 
     if cluster == "naf":
         script += "universe = vanilla\n"
         script += "getenv = true\n"
-        script += 'environment = "LD_LIB_PATH={ldpath} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(ldpath=os.getenv('LD_LIBRARY_PATH'))
+        script += 'environment = "LD_LIB_PATH={ldpath} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(ldpath = os.getenv('LD_LIBRARY_PATH'))
 
     elif cluster == "lxplus":
-        script += 'environment = "cmssw_base={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw=os.getenv('CMSSW_BASE'))
+        script += 'environment = "cmssw_base={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw = os.getenv('CMSSW_BASE'))
 
         # Afiq's Special Treatment
         if os.getlogin() == 'afiqaize':
             grp = 'group_u_CMST3.all' if rng.binomial(1, 0.9) else 'group_u_CMS.u_zh.users'
-            script += '+AccountingGroup = "{grp}"\n'.format(grp=grp)
+            script += '+AccountingGroup = "{grp}"\n'.format(grp = grp)
 
     script += "\n"
     return script
@@ -130,3 +131,45 @@ def flush_jobs(job_agg):
         current_submissions = []
     else:
         print("Nothing to submit.")
+
+def common_job(args):
+    argstr = (" {sus} {inj} {ass} {exc} {tag} {drp} {kee} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
+              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {asm} {com} {dbg} {ext} {otg} {exp} {bsd}").format(
+                  sus = "--sushi-kfactor" if args.kfactor else "",
+                  inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
+                  ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
+                  exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process '),
+                  tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
+                  drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
+                  kee = clamp_with_quote(string = args.keep, prefix = '--keep '),
+                  bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
+                  cha = "--channel " + args.channel,
+                  yyy = "--year " + args.year,
+                  thr = clamp_with_quote(string = args.threshold, prefix = '--threshold '),
+                  lns = "--lnN-under-threshold" if args.lnNsmall else "",
+                  shp = "--use-shape-always" if args.alwaysshape else "",
+                  mcs = "--no-mc-stats" if not args.mcstat else "",
+                  rpr = clamp_with_quote(string = args.rateparam, prefix = '--float-rate '),
+                  msk = clamp_with_quote(string = args.mask, prefix = '--mask '),
+                  igb = clamp_with_quote(string = args.ignorebin, prefix = '--ignore-bin '),
+                  prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
+                  cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
+                  rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
+                  fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
+                  hes = "--use-hesse" if args.usehesse else "",
+                  kbf = "--redo-best-fit" if not args.keepbest else "",
+                  dws = "--default-workspace" if args.defaultwsp else "",
+                  fr0 = clamp_with_quote(string = args.frzzero, prefix = '--freeze-zero '),
+                  frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
+                  rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
+                  asm = "--unblind" if not args.asimov else "",
+                  com = "--compress" if rundc else "",
+                  dbg = "--experimental" if args.experimental else "",
+                  ext = clamp_with_quote(
+                      string = args.extopt,
+                      prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') else ' ')
+                  ),
+                  otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
+                  bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
+              )
+    return argstr

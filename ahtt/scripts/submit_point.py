@@ -14,9 +14,9 @@ from utilspy import syscall, chunks, index_list
 from utilslab import input_base, input_bkg, input_sig, remove_mjf
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
-from utilshtc import submit_job, aggregate_submit, flush_jobs
+from utilshtc import submit_job, aggregate_submit, flush_jobs, common_job
 
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes, clamp_with_quote
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
 
@@ -106,49 +106,16 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
 
-        job_arg = ('--point {pnt} --mode {mmm} {sus} {inj} {ass} {exc} {tag} {drp} {kee} {sig} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} '
-                   '{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {asm} {one} {gvl} {rvl} {fix} {ext} {otg} {rsd} {com} {dbg} {bsd}').format(
-                       pnt = pnt,
-                       mmm = mode,
-                       sus = "--sushi-kfactor" if args.kfactor else "",
-                       inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
-                       ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
-                       exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process '),
-                       tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
-                       drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
-                       kee = clamp_with_quote(string = args.keep, prefix = '--keep '),
-                       sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
-                       bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
-                       cha = "--channel " + args.channel,
-                       yyy = "--year " + args.year,
-                       thr = clamp_with_quote(string = args.threshold, prefix = '--threshold '),
-                       lns = "--lnN-under-threshold" if args.lnNsmall else "",
-                       shp = "--use-shape-always" if args.alwaysshape else "",
-                       mcs = "--no-mc-stats" if not args.mcstat else "",
-                       rpr = clamp_with_quote(string = args.rateparam, prefix = '--float-rate '),
-                       msk = clamp_with_quote(string = args.mask, prefix = '--mask '),
-                       igb = clamp_with_quote(string = args.ignorebin, prefix = '--ignore-bin '),
-                       prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
-                       cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
-                       rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
-                       fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
-                       hes = "--use-hesse" if args.usehesse else "",
-                       kbf = "--redo-best-fit" if not args.keepbest else "",
-                       dws = "--default-workspace" if args.defaultwsp else "",
-                       fr0 = clamp_with_quote(string = args.frzzero, prefix = '--freeze-zero '),
-                       frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
-                       rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
-                       asm = "--unblind" if not args.asimov else "",
-                       one = "--one-poi" if args.onepoi else "",
-                       gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
-                       rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
-                       fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-                       ext = clamp_with_quote(string = args.extopt, prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') else ' ')),
-                       otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
-                       com = "--compress" if rundc else "",
-                       dbg = "--experimental" if args.experimental else "",
-                       bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
-                   )
+        job_arg = "--point {pnt} --mode {mmm} {sig} {one} {gvl} {rvl} {fix}".format(
+            pnt = pnt,
+            mmm = mode,
+            sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
+            one = "--one-poi" if args.onepoi else "",
+            gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
+            rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
+            fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
+        )
+        job_arg += common_job(args)
 
         if runlimit and not args.onepoi:
             if args.nchunk < 0:
