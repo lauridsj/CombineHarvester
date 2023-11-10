@@ -171,6 +171,6 @@ def common_job(args):
                       prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') else ' ')
                   ),
                   otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
-                  bsd = "" if rundc else "--base-directory " + os.path.abspath("./")
+                  bsd = "" if args.rundc else "--base-directory " + os.path.abspath("./")
               )
     return argstr
