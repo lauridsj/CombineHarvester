@@ -71,7 +71,7 @@ def single_point_scan(args):
     epsilon = 2.**-17
     nstep = 1
 
-    syscall("combineTool.py -v 1 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+    syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
             "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
@@ -97,7 +97,7 @@ def single_point_scan(args):
     for factor in [1., -1.]:
         fgood = False
         for ii in range(1, nstep + 1):
-            syscall("combineTool.py -v 1 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
                     "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
@@ -226,7 +226,7 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: making workspaces"
         for onepoi in [True, False]:
-            syscall("combineTool.py -v 1 -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+            syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
                     "--PO 'signal={pnt}' {one} {vbs} {opt} {dyt} {ext}".format(
                         dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                         mod = "one-poi" if onepoi else "g-scan",
@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
-            syscall("combineTool.py -v 1 -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {acc} {stg} {asm} {msk}".format(
+            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {acc} {stg} {asm} {msk}".format(
                 dcd = workspace,
                 mmm = mstr,
                 maxg = max_g,
@@ -288,7 +288,7 @@ if __name__ == '__main__':
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
-            syscall("combineTool.py -v 1 -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{ptg}_limits_one-poi.json && "
+            syscall("combineTool.py -v 0 -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{ptg}_limits_one-poi.json && "
                     "rm higgsCombine_limit.AsymptoticLimits.mH*.root".format(
                         dcd = dcdir,
                         mmm = mstr,
@@ -356,7 +356,7 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -v 1 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {prm} {ext}".format(
+        syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {prm} {ext}".format(
             dcd = workspace,
             mmm = mstr,
             stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
@@ -369,7 +369,7 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
             for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [1, 2, 0] for itol in [0, -1, 1, -2, 2, -3, 3]]:
-                syscall("combineTool.py -v 1 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
+                syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
                     stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
@@ -384,7 +384,7 @@ if __name__ == '__main__':
                     break
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -v 1 -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui} {ext}".format(
+        syscall("combineTool.py -v 0 -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui} {ext}".format(
             dcd = dcdir,
             wsp = workspace,
             mod = "one-poi" if args.onepoi else "g-scan",

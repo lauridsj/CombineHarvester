@@ -232,7 +232,7 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: making workspaces"
         for ihsum in [True, False]:
-            syscall("combineTool.py -v 1 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+            syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
                     "--PO 'signal={pnt}' {pos} {dyt} {opt} {whs} {ext}".format(
                         dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
                         wst = "twin-g" if ihsum else "fitdiag",
@@ -269,7 +269,7 @@ if __name__ == '__main__':
 
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
-        syscall("combine -v 1 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
+        syscall("combine -v 0 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
                     dcd = workspace,
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
@@ -316,7 +316,7 @@ if __name__ == '__main__':
             scan_name = "gof-saturated_obs"
 
             for irobust, istrat, itol in never_gonna_give_you_up:
-                syscall("combine -v 1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
+                syscall("combine -v 0 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
                     snm = scan_name,
@@ -345,7 +345,7 @@ if __name__ == '__main__':
             scan_name = "gof-saturated_toys"
             scan_name += "_" + str(args.runidx) if args.runidx > -1 else ""
 
-            syscall("combine -v 1 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt} {prm} {ext}".format(
+            syscall("combine -v 0 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {toy} {opd} {svt} {prm} {ext}".format(
                 dcd = workspace,
                 mmm = mstr,
                 snm = scan_name,
@@ -402,7 +402,7 @@ if __name__ == '__main__':
                 )
 
                 for irobust, istrat, itol in never_gonna_give_you_up:
-                    syscall("combineTool.py -v 1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
+                    syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                             "{exp} {stg} {asm} {toy} {ext}".format(
                                 dcd = fcwsp,
                                 mmm = mstr,
@@ -437,7 +437,7 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
             setpar, frzpar = ([], [])
-            syscall("combineTool.py -v 1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
+            syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                     "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {ext} {opd} {svt}".format(
                         dcd = workspace,
                         mmm = mstr,
@@ -633,7 +633,7 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
         fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
 
-        syscall("combine -v 1 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
+        syscall("combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes --saveOverallShapes "
                 "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
                     dcd = fitdiag_workspace,
                     mmm = mstr,
@@ -711,7 +711,7 @@ if __name__ == '__main__':
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
-            syscall("combineTool.py -v 1 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
+            syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
                     "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
                         dcd = fcwsp,
                         mmm = mstr,

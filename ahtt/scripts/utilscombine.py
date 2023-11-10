@@ -136,7 +136,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
 def make_best_fit(dcdir, workspace, point, asimov, strategy, ranges, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
 
-    syscall("combineTool.py -v 1 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
+    syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
         dcd = workspace,
         bff = fname,
         stg = strategy,
