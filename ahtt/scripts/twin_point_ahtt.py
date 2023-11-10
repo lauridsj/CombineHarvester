@@ -618,12 +618,13 @@ if __name__ == '__main__':
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
-        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}.root".format(
+        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}_{ftp}.root".format(
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
             gvl = "_" + gfit if gfit != "" else "",
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
+            ftp = args.prepostfit
         ) for fdoutput in ["result", "shape"]]
 
     if runprepost:
@@ -648,15 +649,22 @@ if __name__ == '__main__':
         syscall("rm higgsCombine_prepost*.root", False, True)
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
-        syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result.replace(".root", "_" + args.prepostfit + ".root")), False)
+        syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
+
+        if not args.usehesse:
+            with TFile.Open(fitdiag_result, "read") as fdr:
+                fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
+                if fit_result.covQual() < 3:
+                    syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
+                    raise RuntimeError("fit results in a bad covariance matrix, giving up. try to get a good fit, with --use-hesse, freezing parameters, etc.")
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
         syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
             dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
             fdw = fitdiag_workspace,
-            fds = fitdiag_shape.replace(".root", "_" + args.prepostfit + ".root"),
-            fdr = fitdiag_result.replace(".root", "_" + args.prepostfit + ".root"),
+            fds = fitdiag_shape,
+            fdr = fitdiag_result,
             ftp = args.prepostfit
         ))
         print "\n"
