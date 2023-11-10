@@ -164,7 +164,7 @@ def common_job(args):
                   frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
                   rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
                   asm = "--unblind" if not args.asimov else "",
-                  com = "--compress" if rundc else "",
+                  com = "--compress" if args.rundc else "",
                   dbg = "--experimental" if args.experimental else "",
                   ext = clamp_with_quote(
                       string = args.extopt,
