@@ -652,7 +652,7 @@ if __name__ == '__main__':
         syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
         if not args.usehesse:
-            fdr = TFile.Open(fitdiag_result, "read"):
+            fdr = TFile.Open(fitdiag_result, "read")
             fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
             fit_quality = fit_result.covQual()
             fdr.Close()
