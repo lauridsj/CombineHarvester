@@ -142,7 +142,7 @@ def common_job(args):
                   tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
                   drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
                   kee = clamp_with_quote(string = args.keep, prefix = '--keep '),
-                  bkg = "--background " + input_bkg(args.background, args.channel) if rundc else "",
+                  bkg = "--background " + input_bkg(args.background, args.channel) if args.rundc else "",
                   cha = "--channel " + args.channel,
                   yyy = "--year " + args.year,
                   thr = clamp_with_quote(string = args.threshold, prefix = '--threshold '),

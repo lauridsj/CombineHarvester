@@ -115,6 +115,7 @@ if __name__ == '__main__':
             rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
             fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
+        args.rundc = rundc
         job_arg += common_job(args)
 
         if runlimit and not args.onepoi:

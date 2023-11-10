@@ -281,6 +281,7 @@ if __name__ == '__main__':
             ) if runfc or runnll or runcompile else "",
             ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit ')
         )
+        args.rundc = rundc
         job_arg += common_job(args)
 
         if rungen or rungof or runfc:
