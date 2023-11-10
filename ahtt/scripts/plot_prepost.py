@@ -355,8 +355,8 @@ def add_covariance(histogram, matrix):
     # still good ol when it comes to direct fudging
     roo = ROOT.TH1D("", "", len(histogram.values()), 0., len(histogram.values()))
     for ibin in range(len(histogram.values())):
-        roo.SetBinContent(ibin + 1, histogram[ibin])
-        roo.SetBinError(ibin + 1, math.sqrt(matrix[ibin][ibin]))
+        roo.SetBinContent(ibin + 1, histogram.values()[ibin])
+        roo.SetBinError(ibin + 1, math.sqrt(matrix.values()[ibin, ibin]))
     return roo.to_hist()
 
 
