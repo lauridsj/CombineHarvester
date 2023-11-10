@@ -278,8 +278,7 @@ if __name__ == '__main__':
                     fn = "fc" if runfc or runcompile else "nll",
                     s = '=' if args.fcexp[0][0] == "-" else " "
                 )
-            ) if runfc or runnll or runcompile else "",
-            ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit ')
+            ) if runfc or runnll or runcompile else ""
         )
         args.rundc = rundc
         job_arg += common_job(args)
@@ -436,6 +435,14 @@ if __name__ == '__main__':
                 uco = "--nll-unconstrained" if args.nllunconstrained else "",
             )
 
+            submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
+                       True, args.runlocal, args.writelog)
+
+        elif runprepost or runpsfromws:
+            jname = job_name + "_" + args.prepostfit
+            jarg = job_arg
+            jarg += " {ppf}".format(ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '))
             submit_job(agg, jname, jarg, args.jobtime, 1, "",
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
