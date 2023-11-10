@@ -477,6 +477,15 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     # NOTE if instead the uX varied LO xsec is desired, comment the loratios uX scaling above
                     # NOTE and use 0 instead of idxu/idxp for kfactors
 
+
+                if nn1 == "tmass_AH":
+                    up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
+                    down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
+                    two_sided_base = up_norm_rdev / down_norm_rdev < 0.
+
+                    if not two_sided_base:
+                        drop_nuisance = True
+
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
 
