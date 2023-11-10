@@ -269,12 +269,12 @@ if __name__ == '__main__':
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = clamp_with_quote(
                 string = ','.join(args.gvalues),
-                prefix = "--g-values{s}'".format(s = '=' if args.gvalues[0][0] == "-" else " ")
+                prefix = "--g-values{s}".format(s = '=' if args.gvalues[0][0] == "-" else " ")
             ) if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             exp = clamp_with_quote(
                 string = ";".join(args.fcexp),
-                prefix = "--{fn}-expect{s}'".format(
+                prefix = "--{fn}-expect{s}".format(
                     fn = "fc" if runfc or runcompile else "nll",
                     s = '=' if args.fcexp[0][0] == "-" else " "
                 )
