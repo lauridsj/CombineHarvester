@@ -261,7 +261,7 @@ if __name__ == '__main__':
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
 
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
-        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {igp} {gvl} {fix} {exp} {ppf}".format(
+        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {igp} {gvl} {fix} {exp}".format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
             sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year) if rundc else "",
