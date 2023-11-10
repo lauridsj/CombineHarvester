@@ -15,7 +15,7 @@ import math
 from datetime import datetime
 
 from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, floattopm
-from utilslab import input_base, input_bkg, input_sig, remove_mjf
+from utilslab import input_base, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, aggregate_submit, flush_jobs, common_job
 

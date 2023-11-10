@@ -8,8 +8,9 @@ from datetime import datetime
 from numpy import random as rng
 
 from utilspy import syscall, right_now
-from utilslab import cluster, condorrun
+from utilslab import cluster, condorrun, input_bkg
 from desalinator import clamp_with_quote
+
 
 def make_submission_script_header():
     script = "Job_Proc_ID = $(Process) + 1 \n"
