@@ -178,26 +178,16 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
         color = colors
     )
 
-    vhi = (total.values() + total.variances() ** .5) / width
-    vlo = (total.values() - total.variances() ** .5) / width
-    ax.fill_between(
-        bins,
-        np.r_[vhi[0], vhi],
-        np.r_[vlo[0], vlo],
-        step = "mid",
-        label = f"{fstage}-fit{ftype}uncertainty",
-        **hatchstyle)
-
-    #for ibin in range(len(bins) - 1):
-    #    vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
-    #    vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
-    #    ax.fill_between(
-    #        bins[ibin : ibin + 2],
-    #        np.array(vhi, vhi),
-    #        np.array(vlo, vlo),
-    #        step = "mid",
-    #        label = f"{fstage}-fit{ftype}uncertainty" if ibin == 0 else None,
-    #        **hatchstyle)
+    for ibin in range(len(bins) - 1):
+        vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
+        vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
+        ax.fill_between(
+            bins[ibin : ibin + 2],
+            np.array(vhi, vhi),
+            np.array(vlo, vlo),
+            step = "mid",
+            label = f"{fstage}-fit{ftype}uncertainty" if ibin == 0 else None,
+            **hatchstyle)
     ax.errorbar(
         centers,
         data[0] / width,
