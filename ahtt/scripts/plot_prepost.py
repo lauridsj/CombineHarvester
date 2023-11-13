@@ -417,8 +417,8 @@ with uproot.open(args.ifile) as f:
             signals[("Total", None, None)] = total
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total"].to_hist()[:len(centers)]
-        covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
-        total = add_covariance(total, covariance)
+        #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
+        #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
 
         kwargs = {
