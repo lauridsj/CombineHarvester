@@ -164,7 +164,7 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
         ftype = " "
     else:
         fstage = "Post"
-        ftype = "(s + b)" if fit == "s" else "(b)"
+        ftype = " (s + b) " if fit == "s" else " (b) "
 
     total = None
     for hist in smhists.values():
