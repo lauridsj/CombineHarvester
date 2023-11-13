@@ -17,7 +17,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
 plt.rcParams['figure.max_open_warning'] = False
-plt.rcParams["font.size"] = 13.0
+plt.rcParams["font.size"] = 15.0
 from matplotlib.transforms import Bbox
 
 import uproot  # noqa:E402
@@ -284,7 +284,7 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
             zorder = signal_zorder[symbol]
         )
     ax.set_ylabel("<(Data - SM) / GeV>")
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.06, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
 
@@ -334,7 +334,7 @@ def plot(channel, year, fit,
     ax1.set_xlabel("")
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
-    hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = "medium")
+    hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
     fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
