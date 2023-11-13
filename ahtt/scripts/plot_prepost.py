@@ -241,7 +241,8 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
     ax.errorbar(
         centers,
         (data[0] - total.values()) / width,
-        ((data[1] ** 2 + total.variances()) ** .5) / width,
+        #((data[1] ** 2 + total.variances()) ** .5) / width,
+        data[1] / width, # cant add the errors as if uncorr, the total is already from a fit to the data
         **datastyle
     )
     err = total.variances() ** .5
