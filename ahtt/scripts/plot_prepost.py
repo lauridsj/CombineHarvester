@@ -158,7 +158,14 @@ def full_extent(ax, pad = 0.0):
 
 
 
-def plot_eventperbin(ax, bins, centers, smhists, data, log):
+def plot_eventperbin(ax, bins, centers, smhists, data, fit):
+    if fit == "p":
+        fstage = "Pre"
+        ftype = " "
+    else:
+        fstage = "Post"
+        ftype = "(s + b)" if fit == "s" else "(b)"
+
     total = None
     for hist in smhists.values():
         if total is None:
@@ -181,7 +188,7 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log):
         (total.values() + total.variances() ** .5) / width,
         (total.values() - total.variances() ** .5) / width,
         step = "mid",
-        label = "Post-fit uncertainty",
+        label = f"{fstage}-fit{ftype}uncertainty",
         **hatchstyle)
     ax.errorbar(
         centers,
@@ -285,7 +292,7 @@ def plot(channel, year, fit,
         figsize = (10.5, 5.5)
     )
     ax0.set_axis_off()
-    plot_eventperbin(ax1, bins, centers, smhists, (datavalues, datahist_errors), log)
+    plot_eventperbin(ax1, bins, centers, smhists, (datavalues, datahist_errors), log, fit)
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
