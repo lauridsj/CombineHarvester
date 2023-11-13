@@ -158,7 +158,7 @@ def full_extent(ax, pad = 0.0):
 
 
 
-def plot_eventperbin(ax, bins, centers, smhists, data, fit):
+def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
     if fit == "p":
         fstage = "Pre"
         ftype = " "
