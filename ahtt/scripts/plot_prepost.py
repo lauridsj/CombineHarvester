@@ -335,7 +335,7 @@ def plot(channel, year, fit,
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     fig.set_size_inches(w = 25.6, h = 2 * fig.get_figheight())
-    fig.set_dpi(300)
+    fig.set_dpi(450)
     extent = None if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
