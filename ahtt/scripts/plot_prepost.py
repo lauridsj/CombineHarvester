@@ -284,7 +284,7 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
             zorder = signal_zorder[symbol]
         )
     ax.set_ylabel("<(Data - SM) / GeV>")
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.04, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.06, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
 
