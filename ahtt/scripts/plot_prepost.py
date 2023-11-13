@@ -183,13 +183,14 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
         label = smhists.keys(),
         color = colors
     )
-    ax.fill_between(
-        total.axes[0].centers,
-        (total.values() + total.variances() ** .5) / width,
-        (total.values() - total.variances() ** .5) / width,
-        step = "mid",
-        label = f"{fstage}-fit{ftype}uncertainty",
-        **hatchstyle)
+    for ibin in range(len(bins)):
+        ax.fill_between(
+            bins[ibin : ibin + 1],
+            (total.values()[ibin : ibin + 1] + total.variances()[ibin : ibin + 1] ** .5) / width,
+            (total.values()[ibin : ibin + 1] - total.variances()[ibin : ibin + 1] ** .5) / width,
+            step = "mid",
+            label = f"{fstage}-fit{ftype}uncertainty",
+            **hatchstyle)
     ax.errorbar(
         centers,
         data[0] / width,
