@@ -334,7 +334,7 @@ def plot(channel, year, fit,
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    fig.set_figwidth(12.8)
+    fig.set_figwidth(25.6)
     fig.set_dpi(300)
     extent = None if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
