@@ -99,13 +99,6 @@ lumis = {
     "2018": "59.9",
     "Run 2": "138",
 }
-
-hatchstyle = dict(
-    hatch = "///",
-    facecolor = "none",
-    edgecolor = "black",
-    linewidth = 0,
-)
 hatchstyle = dict(
     color = "black",
     alpha = 0.3,
@@ -113,8 +106,8 @@ hatchstyle = dict(
 )
 datastyle = dict(
     marker = "o",
-    markersize = 2,
-    elinewidth = 0.6,
+    markersize = 2.5,
+    elinewidth = 0.7,
     linestyle = "none",
     color = "black"
 )
@@ -184,16 +177,27 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
         label = smhists.keys(),
         color = colors
     )
-    for ibin in range(len(bins) - 1):
-        vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
-        vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
-        ax.fill_between(
-            bins[ibin : ibin + 2],
-            np.array(vhi, vhi),
-            np.array(vlo, vlo),
-            step = "mid",
-            label = f"{fstage}-fit{ftype}uncertainty" if ibin == 0 else None,
-            **hatchstyle)
+
+    vhi = (total.values() + total.variances() ** .5) / width
+    vlo = (total.values() - total.variances() ** .5) / width
+    ax.fill_between(
+        bins,
+        np.r_[vhi[0], vhi],
+        np.r_[vlo[0], vlo],
+        step = "mid",
+        label = f"{fstage}-fit{ftype}uncertainty",
+        **hatchstyle)
+
+    #for ibin in range(len(bins) - 1):
+    #    vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
+    #    vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
+    #    ax.fill_between(
+    #        bins[ibin : ibin + 2],
+    #        np.array(vhi, vhi),
+    #        np.array(vlo, vlo),
+    #        step = "mid",
+    #        label = f"{fstage}-fit{ftype}uncertainty" if ibin == 0 else None,
+    #        **hatchstyle)
     ax.errorbar(
         centers,
         data[0] / width,
@@ -280,7 +284,7 @@ def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
             zorder = signal_zorder[symbol]
         )
     ax.set_ylabel("<(Data - SM) / GeV>")
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.03, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.04, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
 
