@@ -638,40 +638,45 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
         fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
         fitstrats = [0, 1, 2] if args.fitstrat == -1 and not args.usehesse else [args.fitstrat if args.fitstrat > -1 else 0]
+        robusts = [True, False] if not args.usehesse else [True]
 
         for fstrat in fitstrats:
-            syscall("combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
-                    "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
-                        dcd = fitdiag_workspace,
-                        mmm = mstr,
-                        stg = fit_strategy(strategy = fstrat, optimize = False, robust = True, use_hesse = args.usehesse),
-                        asm = "-t -1" if args.asimov else "",
-                        prm = set_parameter(set_freeze, args.extopt, masks),
-                        ext = nonparametric_option(args.extopt),
-                        fop = fitopt
-                    ))
+            for irobust in robusts:
+                syscall("combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
+                        "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
+                            dcd = fitdiag_workspace,
+                            mmm = mstr,
+                            stg = fit_strategy(
+                                strategy = fstrat, optimize = False,
+                                robust = irobust, use_hesse = irobust and args.usehesse
+                            ),
+                            asm = "-t -1" if args.asimov else "",
+                            prm = set_parameter(set_freeze, args.extopt, masks),
+                            ext = nonparametric_option(args.extopt),
+                            fop = fitopt
+                        ))
 
-            syscall("rm *_th1x_*.png", False, True)
-            syscall("rm covariance_fit_?.png", False, True)
-            syscall("rm higgsCombine_prepost*.root", False, True)
-            syscall("rm combine_logger.out", False, True)
-            syscall("rm robustHesse_*.root", False, True)
-            syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
+                syscall("rm *_th1x_*.png", False, True)
+                syscall("rm covariance_fit_?.png", False, True)
+                syscall("rm higgsCombine_prepost*.root", False, True)
+                syscall("rm combine_logger.out", False, True)
+                syscall("rm robustHesse_*.root", False, True)
+                syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
-            if not args.usehesse:
-                fdr = TFile.Open(fitdiag_result, "read")
-                fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
-                fit_quality = fit_result.covQual()
-                fdr.Close()
+                if not args.usehesse:
+                    fdr = TFile.Open(fitdiag_result, "read")
+                    fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
+                    fit_quality = fit_result.covQual()
+                    fdr.Close()
 
-                if fit_quality < 3:
-                    syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
-                    print "fit results in a bad covariance matrix of status {fql}".format(fql = fit_quality)
+                    if fit_quality < 3:
+                        syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
+                        print "fit results in a bad covariance matrix of status {fql}".format(fql = fit_quality)
 
-                    if fstrat == fitstrats[-1]:
-                        raise RuntimeError("giving up. get a good fit with --use-hesse, freezing parameters, etc.")
-                    else:
-                        print "retrying with a different strategy... \n\n"
+                        if fstrat == fitstrats[-1] and irobust == robusts[-1]:
+                            raise RuntimeError("giving up. get a good fit with --use-hesse, freezing parameters, etc.")
+                        else:
+                            print "retrying with a different strategy... \n\n"
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
