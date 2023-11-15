@@ -152,7 +152,7 @@ def full_extent(ax, pad = 0.0):
 
 
 
-def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
+def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
     if fit == "p":
         fstage = "Pre"
         ftype = " "
@@ -160,12 +160,6 @@ def plot_eventperbin(ax, bins, centers, smhists, data, log, fit):
         fstage = "Post"
         ftype = " (s + b) " if fit == "s" else " (b) "
 
-    total = None
-    for hist in smhists.values():
-        if total is None:
-            total = hist.copy()
-        else:
-            total += hist
     width = np.diff(bins)
     colors = [sm_colors[k] for k in smhists.keys()]
     hep.histplot(
@@ -228,13 +222,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
 
 
 
-def plot_diff(ax, bins, centers, data, smhists, signals, gvalues, fit):
-    total = None
-    for hist in smhists.values():
-        if total is None:
-            total = hist.copy()
-        else:
-            total += hist
+def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
     width = np.diff(bins)
     ax.errorbar(
         centers,
@@ -291,13 +279,13 @@ def plot(channel, year, fit,
         figsize = (10.5, 5.5)
     )
     ax0.set_axis_off()
-    plot_eventperbin(ax1, bins, centers, smhists, (datavalues, datahist_errors), log, fit)
+    plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit)
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, signals, fit)
     elif args.lower == "diff":
-        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), smhists, signals, gvalues, fit)
+        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, signals, gvalues, fit)
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
@@ -414,15 +402,9 @@ with uproot.open(args.ifile) as f:
                     signals[(match.group(1), mass, width)] = hist
         gvalues = get_g_values(args.ifile, signals)
         if len(signals) > 1:
-            total = None
-            for hist in signals.values():
-                if total is None:
-                    total = hist.copy()
-                else:
-                    total += hist
-            signals[("Total", None, None)] = total
+            signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
         datavalues = directory["data"].values()[1][:len(centers)]
-        total = directory["total"].to_hist()[:len(centers)]
+        total = directory["total_background"].to_hist()[:len(centers)]
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
