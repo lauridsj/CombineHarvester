@@ -168,18 +168,19 @@ def starting_nuisance(freeze_zero, freeze_post):
 
     return set_freeze
 
-def fit_strategy(strat, robust = False, use_hesse = False, tolerance_level = 0):
-    fstr = "--X-rtd OPTIMIZE_BOUNDS=0"
-    fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE --X-rtd MINIMIZER_MaxCalls=9999999"
-    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strat)
-    fstr += ":{tolerance} --cminDefaultMinimizerTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 4))
+def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, tolerance = 0):
+    fstr = "--X-rtd OPTIMIZE_BOUNDS=0 --X-rtd MINIMIZER_MaxCalls=9999999"
+    if optimize:
+        fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE"
+    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strategy)
+    fstr += ":{tol} --cminDefaultMinimizerTolerance {tolerance}".format(tol = 2.**(tolerance - 4))
 
     if robust:
         fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {t0} {t1} {t2} {hh}".format(
-            ss = strat,
-            t0 = "--setRobustFitTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 4)),
-            t1 = "--stepSize {tolerance}".format(tolerance = 2.**(tolerance_level - 6)),
-            t2 = "--setCrossingTolerance {tolerance}".format(tolerance = 2.**(tolerance_level - 8)),
+            ss = strategy,
+            t0 = "--setRobustFitTolerance {tol}".format(tol = 2.**(tolerance - 4)),
+            t1 = "--stepSize {tol}".format(tol = 2.**(tolerance - 6)),
+            t2 = "--setCrossingTolerance {tol}".format(tol = 2.**(tolerance - 8)),
             hh = "--robustHesse 1" if use_hesse else ""
         )
     return fstr

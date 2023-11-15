@@ -240,8 +240,8 @@ if __name__ == '__main__':
                         pnt = ",".join(points),
                         pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
                         dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
-                        opt = "--channel-masks --X-pack-asympows --optimize-simpdf-constraints=cms",
-                        whs = "--no-wrappers --use-histsum" if ihsum else "",
+                        opt = "--channel-masks",
+                        whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
                         ext = args.extopt
                     ))
 
@@ -258,7 +258,8 @@ if __name__ == '__main__':
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov, "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-        fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+        fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
+        set_range(ranges),
         elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
     )
 
@@ -274,7 +275,7 @@ if __name__ == '__main__':
                     mmm = mstr,
                     snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                     par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
+                    stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                     toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
                 ))
 
@@ -320,7 +321,7 @@ if __name__ == '__main__':
                     dcd = workspace,
                     mmm = mstr,
                     snm = scan_name,
-                    stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
+                    stg = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and args.usehesse, tolerance = itol),
                     msk = ",".join(masks) if len(masks) > 0 else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt),
@@ -349,7 +350,7 @@ if __name__ == '__main__':
                 dcd = workspace,
                 mmm = mstr,
                 snm = scan_name,
-                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                 opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                 svt = "--saveToys" if args.savetoy else "",
@@ -397,7 +398,8 @@ if __name__ == '__main__':
                     dcdir, "__".join(points), [args.otag, args.tag],
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-                    fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+                    fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
+                    set_range(ranges),
                     elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
                 )
 
@@ -409,7 +411,8 @@ if __name__ == '__main__':
                                 snm = scan_name + identifier,
                                 par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                                 exp = "--setParameters '" + ",".join(parameters + masks) + "'" if len(parameters + masks) > 0 else "",
-                                stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
+                                stg = fit_strategy(strategy = istrat, robust = irobust,
+                                                   use_hesse = irobust and args.usehesse, tolerance = itol),
                                 asm = "-t -1" if fcexp != "obs" else "",
                                 toy = "-s -1",
                                 ext = nonparametric_option(args.extopt),
@@ -446,7 +449,7 @@ if __name__ == '__main__':
                         msk = "," + ",".join(masks) if len(masks) > 0 else "",
                         nus = "",
                         nuf = "",
-                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0),
+                        stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         ext = nonparametric_option(args.extopt),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
@@ -614,7 +617,9 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-            fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2,
+                         optimize = False, robust = True, use_hesse = args.usehesse),
+            set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
@@ -637,7 +642,8 @@ if __name__ == '__main__':
                 "--plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
                     dcd = fitdiag_workspace,
                     mmm = mstr,
-                    stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
+                    stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0,
+                                       optimize = False, robust = True, use_hesse = args.usehesse),
                     asm = "-t -1" if args.asimov else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt),
@@ -691,7 +697,8 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-            fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
+            set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
@@ -724,7 +731,8 @@ if __name__ == '__main__':
                         par = nllparam,
                         uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
                         exp = set_parameter(set_freeze, args.extopt, masks),
-                        stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1, True, args.usehesse),
+                        stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1,
+                                           robust = True, use_hesse = args.usehesse),
                         asm = "-t -1" if args.fcexp[0] != "obs" else "",
                         ext = nonparametric_option(args.extopt),
                     ))

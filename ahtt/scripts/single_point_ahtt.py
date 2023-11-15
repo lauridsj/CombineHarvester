@@ -267,7 +267,8 @@ if __name__ == '__main__':
                 rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
                 fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
             ),
-            fit_strategy(args.fitstrat if args.fitstrat > -1 else 2, True, args.usehesse), set_range(ranges),
+            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
+            set_range(ranges),
             elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
@@ -282,7 +283,7 @@ if __name__ == '__main__':
                 mmm = mstr,
                 maxg = max_g,
                 acc = accuracies,
-                stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 1),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
                 asm = "--run blind -t -1" if args.asimov else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
@@ -309,8 +310,10 @@ if __name__ == '__main__':
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
-            lll = dotty_scan((gvals, dcdir, workspace, mstr, accuracies, fit_strategy(args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks))
-
+            lll = dotty_scan(
+                (gvals, dcdir, workspace, mstr, accuracies,
+                 fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks)
+            )
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
             print gvals
@@ -359,7 +362,7 @@ if __name__ == '__main__':
         syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {prm} {ext}".format(
             dcd = workspace,
             mmm = mstr,
-            stg = fit_strategy(args.fitstrat if args.fitstrat > -1 else 0, True, args.usehesse),
+            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0, robust = True, use_hesse = args.usehesse),
             asm = "-t -1" if args.asimov else "",
             prm = set_parameter(set_freeze, args.extopt, masks),
             ext = nonparametric_option(args.extopt)
@@ -372,7 +375,7 @@ if __name__ == '__main__':
                 syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
-                    stg = fit_strategy(istrat, irobust, irobust and args.usehesse, itol),
+                    stg = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and args.usehesse, tolerance = itol),
                     asm = "-t -1" if args.asimov else "",
                     nui = "--named '" + nuisance + "'" if nuisance != "" else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
