@@ -171,7 +171,6 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
         label = smhists.keys(),
         color = colors
     )
-
     for ibin in range(len(bins) - 1):
         vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
         vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
@@ -231,14 +230,23 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
         data[1] / width, # cant add the errors as if uncorr, the total is already from a fit to the data
         **datastyle
     )
-    err = total.variances() ** .5
-    ax.fill_between(
-        bins,
-        np.r_[err[0], err] / np.r_[width[0], width],
-        - np.r_[err[0], err] / np.r_[width[0], width],
-        step = "pre",
-        **hatchstyle
-    )
+    for ibin in range(len(bins) - 1):
+        vhi = (total.variances()[ibin] ** .5) / width[ibin]
+        vlo = (total.variances()[ibin] ** .5) / -width[ibin]
+        ax.fill_between(
+            bins[ibin : ibin + 2],
+            np.array(vhi, vhi),
+            np.array(vlo, vlo),
+            step = "pre",
+            **hatchstyle)
+    #err = total.variances() ** .5
+    #ax.fill_between(
+    #    bins,
+    #    np.r_[err[0], err] / np.r_[width[0], width],
+    #    - np.r_[err[0], err] / np.r_[width[0], width],
+    #    step = "pre",
+    #    **hatchstyle
+    #)
     for key, signal in signals.items():
         symbol, mass, decaywidth = key
         if symbol == "Total":
