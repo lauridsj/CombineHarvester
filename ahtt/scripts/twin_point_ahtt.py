@@ -659,7 +659,8 @@ if __name__ == '__main__':
 
             if fit_quality < 3:
                 syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
-                raise RuntimeError("fit results in a bad covariance matrix, giving up. try to get a good fit, with --use-hesse, freezing parameters, etc.")
+                raise RuntimeError("fit results in a bad covariance matrix of status {fql}, giving up. try to get a good fit, "
+                                   "with --use-hesse, freezing parameters, etc.".format(fql = fit_quality))
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
