@@ -23,7 +23,7 @@ ntoy='50'
 idxs='..10'
 exps='exp-b,exp-s,exp-01,exp-10'
 keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK_scheme,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD'
-drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa',bindingEnergy
+drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa,bindingEnergy'
 
 #2 make the datacard
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}"
