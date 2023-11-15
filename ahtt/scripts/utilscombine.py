@@ -179,8 +179,8 @@ def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, t
         fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {t0} {t1} {t2} {hh}".format(
             ss = strategy,
             t0 = "--setRobustFitTolerance {tol}".format(tol = 2.**(tolerance - 4)),
-            t1 = "--stepSize {tol}".format(tol = 2.**(tolerance - 6)),
-            t2 = "--setCrossingTolerance {tol}".format(tol = 2.**(tolerance - 8)),
+            t1 = "--stepSize {tol}".format(tol = 2.**(tolerance - 4)),
+            t2 = "--setCrossingTolerance {tol}".format(tol = 2.**(tolerance - 12)),
             hh = "--robustHesse 1" if use_hesse else ""
         )
     return fstr
