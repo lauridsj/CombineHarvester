@@ -668,15 +668,23 @@ if __name__ == '__main__':
                     fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
                     fit_quality = fit_result.covQual()
                     fdr.Close()
+                    print "\ntwin_point_ahtt :: prepost fit with a covariance matrix of status {fql}".format(fql = fit_quality)
+                    sys.stdout.flush()
 
                     if fit_quality < 3:
                         syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
-                        print "fit results in a bad covariance matrix of status {fql}".format(fql = fit_quality)
+                        print "twin_point_ahtt :: matrix is bad."
+                        sys.stdout.flush()
 
                         if fstrat == fitstrats[-1] and irobust == robusts[-1]:
-                            raise RuntimeError("giving up. get a good fit with --use-hesse, freezing parameters, etc.")
+                            raise RuntimeError("twin_point_ahtt :: giving up. try with --use-hesse, freezing parameters, etc.")
                         else:
-                            print "retrying with a different strategy... \n\n"
+                            print "twin_point_ahtt :: retrying with a different strategy... \n\n"
+                            sys.stdout.flush()
+                    else:
+                        print "twin_point_ahtt :: matrix is good. exiting."
+                        sys.stdout.flush()
+                        break
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
