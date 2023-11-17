@@ -635,8 +635,9 @@ if __name__ == '__main__':
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
         startpoi = starting_poi(gvalues, args.fixpoi) if args.prepostfit == 's' else starting_poi(["0.", "0."], True)
+        startpoi = starting_poi(["1.", "1."], False) if args.prepostfit == 's' and startpoi == [[], []]
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
-        fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
+        fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
         fitstrats = [0, 1, 2] if args.fitstrat == -1 and not args.usehesse else [args.fitstrat if args.fitstrat > -1 else 0]
         robusts = [True, False] if not args.usehesse else [True]
 
