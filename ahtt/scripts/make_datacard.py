@@ -796,7 +796,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
             cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
             groups[cc]["norm"].append("CMS_EtaT_norm_13TeV")
             with open(tt, 'a') as txt:
-                txt.write("\nCMS_EtaT_norm_13TeV param 1 1")
+                txt.write("\nCMS_EtaT_norm_13TeV param 0 1")
                 txt.write("\nCMS_EtaT_norm_13TeV rateParam * EtaT 1 [-5,5]")
                 txt.write("\n")
 
