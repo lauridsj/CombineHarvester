@@ -403,7 +403,7 @@ with uproot.open(args.ifile) as f:
                 if fit == "p" and args.ipf != "":
                     ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
                     with uproot.open(f"{ipf}") as ipf:
-                        hist = ipf[dname][key].to_hist()[:len(centers)]
+                        hist = ipf[f"{channel}_{year}"][key].to_hist()[:len(centers)]
                 else:
                     hist = directory[key].to_hist()[:len(centers)]
 
