@@ -93,6 +93,7 @@ binnings = {
 ratiolabels = {
     "b": "Data / SM",
     "s": "Data / SM + {signal}",
+    "p": "Data / SM + {signal}",
 }
 lumis = {
     "2016pre": "19.5",
