@@ -406,7 +406,7 @@ with uproot.open(args.ifile) as f:
                     with uproot.open(f"{ipf}") as ipf:
                         hist = ipf[f"{channel}_{year}"][key].to_hist()[:len(centers)]
                         if "_neg" in key:
-                            hist = -hist
+                            hist.values() = -hist.values()
                 else:
                     hist = directory[key].to_hist()[:len(centers)]
 
