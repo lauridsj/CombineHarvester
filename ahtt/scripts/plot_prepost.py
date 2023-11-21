@@ -92,8 +92,8 @@ binnings = {
 }
 ratiolabels = {
     "b": "Data / SM",
-    "s": "Data / SM + {signal}",
-    "p": "Data / SM + {signal}",
+    "s": "Data / SM",
+    "p": "Data / SM",
 }
 lumis = {
     "2016pre": "19.5",
@@ -213,14 +213,34 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
         step = "pre",
         **hatchstyle
     )
+    for key, signal in signals.items():
+        symbol, mass, decaywidth = key
+        if symbol == "Total":
+            signal_label = "A + H"
+        else:
+            signal_label = f"{symbol}({mass}, {decaywidth}%)"
+        if key in gvalues and gvalues[key] is not None:
+            if fit == "s":
+                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+            elif fit == "b":
+                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = 0$"
+        hep.histplot(
+            (total.values() + signal.values()),
+            bins = bins,
+            yerr = np.zeros(len(signal.axes[0])),
+            ax = ax,
+            histtype = "step",
+            color = signal_colors[symbol],
+            linewidth = 1.25,
+            label = signal_label,
+            zorder = signal_zorder[symbol]
+        )
     for pos in [0.8, 0.9, 1.1, 1.2]:
         ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     ax.set_ylim(0.75, 1.25)
-    signals = list(signals.keys())
-    ax.set_ylabel(ratiolabels[fit].format(
-        signal = "A + H" if len(signals) == 2 and sorted([signals[0][0], signals[1][0]]) == ["A", "H"] else f"{signals[0][0]}({signals[0][1]}, {signals[0][2]}%)"
-    ))
+    ax.set_ylabel(ratiolabels[fit])
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
 
