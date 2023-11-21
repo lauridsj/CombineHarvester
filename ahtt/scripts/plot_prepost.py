@@ -203,8 +203,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
         data[1] / total.values(),
         **datastyle
     )
-    err_up = 1 + data[1][1] / data[0]
-    err_down = 1 - data[1][0] / data[0]
+    err_up = 1 + (total.variances() ** .5) / total.values()
+    err_down = 1 - (total.variances() ** .5) / total.values()
     ax.fill_between(
         bins,
         np.r_[err_up[0], err_up],
