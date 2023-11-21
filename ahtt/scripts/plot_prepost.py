@@ -28,7 +28,7 @@ import math
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 parser = ArgumentParser()
-parser.add_argument("--ifile", help = "input file", default = "", required = True)
+parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
@@ -36,6 +36,8 @@ parser.add_argument("--plot-tag", help = "extra tag to append to plot names", de
 parser.add_argument("--skip-each", help = "plot each channel x year combination", action = "store_false", dest = "each", required = False)
 parser.add_argument("--batch", help = "skip plotting sums of channels x year combinations", action = "store_true", dest = "batch", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
+parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
+                    default = "", dest = "ipf", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 args = parser.parse_args()
@@ -212,7 +214,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
     )
     for pos in [0.8, 0.9, 1.1, 1.2]:
         ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
-    ax.axhline(y = 1, linestyle = "--", linewidth = 0.5, color = "black")
+    ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     ax.set_ylim(0.75, 1.25)
     signals = list(signals.keys())
     ax.set_ylabel(ratiolabels[fit].format(
@@ -239,14 +241,6 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
             np.array(vlo, vlo),
             step = "pre",
             **hatchstyle)
-    #err = total.variances() ** .5
-    #ax.fill_between(
-    #    bins,
-    #    np.r_[err[0], err] / np.r_[width[0], width],
-    #    - np.r_[err[0], err] / np.r_[width[0], width],
-    #    step = "pre",
-    #    **hatchstyle
-    #)
     for key, signal in signals.items():
         symbol, mass, decaywidth = key
         if symbol == "Total":
@@ -270,6 +264,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
             zorder = signal_zorder[symbol]
         )
     ax.set_ylabel("<(Data - SM) / GeV>")
+    #ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
 
@@ -403,7 +398,14 @@ with uproot.open(args.ifile) as f:
                 width = float(match.group(3).replace("p", "."))
                 if width % 1 == 0:
                     width = int(width)
-                hist = directory[key].to_hist()[:len(centers)]
+
+                # hack to get around combine's behavior of signal POIs
+                if fit == "p" and args.ipf != "":
+                    with uproot.open(f"{os.path.dirname(args.ifile)/ahtt_input.root if args.ipf == 'default' else args.ipf") as ipf:
+                        hist = ipf[dname][key].to_hist()[:len(centers)]
+                else:
+                    hist = directory[key].to_hist()[:len(centers)]
+
                 if (match.group(1), mass, width) in signals:
                     signals[(match.group(1), mass, width)] += hist
                 else:
