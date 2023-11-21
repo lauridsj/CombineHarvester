@@ -225,7 +225,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
             elif fit == "b":
                 signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = 0$"
         hep.histplot(
-            (total.values() + signal.values()),
+            (total.values() + signal.values()) / total.values(),
             bins = bins,
             yerr = np.zeros(len(signal.axes[0])),
             ax = ax,
