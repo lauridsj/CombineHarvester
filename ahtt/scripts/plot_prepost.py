@@ -401,7 +401,7 @@ with uproot.open(args.ifile) as f:
 
                 # hack to get around combine's behavior of signal POIs
                 if fit == "p" and args.ipf != "":
-                    with uproot.open(f"{os.path.dirname(args.ifile)/ahtt_input.root if args.ipf == 'default' else args.ipf") as ipf:
+                    with uproot.open(f"{os.path.dirname(args.ifile)/ahtt_input.root if args.ipf == 'default' else args.ipf}") as ipf:
                         hist = ipf[dname][key].to_hist()[:len(centers)]
                 else:
                     hist = directory[key].to_hist()[:len(centers)]
