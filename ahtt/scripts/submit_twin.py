@@ -34,6 +34,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
+        generate_g_grid.nomore = 25. # n passing toys (divided by alphas) above which we declare the point is 'confidently' inside
+        generate_g_grid.atleast = 4. # n total toys (divided by alphas) below which we consider it unreliable to say a point is in/outside
 
     g_grid = []
 
@@ -61,7 +63,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                         gt = tuplize(gv)
                         if not any([gt == (ggt[0], ggt[1]) for ggt in g_grid]):
                             npass = contour["g-grid"][gv]["pass"]
-                            cuts = [npass > (25. / alpha) for alpha in generate_g_grid.alphas]
+                            cuts = [npass > (generate_g_grid.nomore / alpha) for alpha in generate_g_grid.alphas]
                             if not any(cuts):
                                 g_grid.append(gt + ntoy)
 
@@ -70,7 +72,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 for gv in contour["g-grid"].keys():
                     mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
 
-                cuts = [mintoy > (9. / alpha) for alpha in generate_g_grid.alphas]
+                cuts = [mintoy > (generate_g_grid.atleast / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cut else 0 for cut in cuts]) < 1:
                     print "minimum toy count: " + str(mintoy)
                     raise RuntimeError("minimum toys insufficient to determine 1 sigma contour!! likely unintended, recheck!!")
