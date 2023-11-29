@@ -36,10 +36,10 @@ drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa,bindingEnergy'
 ./../scripts/submit_twin.py --mode generate --point "${pairs}" --tag "${tag}" --g-values '0.0,0.0' --n-toy "${ntoy}" --run-idxs "${idxs}" --toy-location <directory of shared toys> --unblind
 
 #4 run the (0, 0) point, which can use shared toys
-#4a only relevant if shared toys have been made - otherwise skip to #6
+#4a only relevant if shared toys have been made / are needed - otherwise skip to #6
 #4b this submits N jobs based on ${idxs}, each running ${ntoy} toys
 #4c indexing can either be individually enumerated 'i1,i2,...,iN' or deduced 'init..final' (two dots!!); with init defaulting to 0 if omitted
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --g-values '0.0,0.0' --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-single-point --toy-location <directory of shared toys> --unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --g-values '0.0,0.0' --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-single-point --toy-location <directory of shared toys> --unblind #--save-toy
 
 #5 check if the jobs ran fine and delete the faulty logs
 #5a if this command outputs anything on the screen, repeat the previous step you were running immediately
