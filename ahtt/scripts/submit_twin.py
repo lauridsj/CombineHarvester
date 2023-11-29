@@ -34,8 +34,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
-        generate_g_grid.nomore = 25. # n passing toys (divided by alphas) above which we declare the point is 'confidently' inside
-        generate_g_grid.atleast = 4. # n total toys (divided by alphas) below which we consider it unreliable to say a point is in/outside
+        generate_g_grid.nomore = 25 # n passing toys above which we declare the point is 'confidently' inside
+        generate_g_grid.atleast = 4 # n total toys (divided by alphas) below which we consider it unreliable to say a point is in/outside
 
     g_grid = []
 
@@ -63,8 +63,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                         gt = tuplize(gv)
                         if not any([gt == (ggt[0], ggt[1]) for ggt in g_grid]):
                             npass = contour["g-grid"][gv]["pass"]
-                            cuts = [npass > (generate_g_grid.nomore / alpha) for alpha in generate_g_grid.alphas]
-                            if not any(cuts):
+                            if npass < generate_g_grid.nomore:
                                 g_grid.append(gt + ntoy)
 
             if gmode == "refine":
