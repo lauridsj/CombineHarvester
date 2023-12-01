@@ -69,4 +69,4 @@ condor_check . | tee /dev/tty | xargs rm
 #10a always do #7 and #8 every time after #9 and #10
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode refine --unblind --no-log
 #10b repeat step #5 and go back to #7
-#10c rule of thumb: use --no-log when more than ~2k points are submitted, or always if the jobs usually succeed, and the logs aren't needed
+#10c rule of thumb: use --no-log when more than ~2k jobs per A/H pair are submitted, or always if the jobs usually succeed, and the logs aren't needed
