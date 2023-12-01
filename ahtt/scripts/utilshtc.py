@@ -71,7 +71,7 @@ arguments = "{executable} {args}"
 
 # Array to store all buffered submission scripts
 current_submissions = []
-max_jobs_per_submit = 4000
+max_jobs_per_submit = 500
 
 def aggregate_submit():
     return 'conSub_' + right_now() + '.txt'
