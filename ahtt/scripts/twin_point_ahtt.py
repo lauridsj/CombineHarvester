@@ -569,7 +569,12 @@ if __name__ == '__main__':
                     g2 = pnt[1],
                     exp = scenario[0]
                 ))
-                ename = ename[0] if len(ename) else ""
+                ename = ename[0] if len(ename) else "{ptg}_fc-scan_pnt_g1_{g1}_g2_{g2}_{exp}.root".format(
+                    ptg = ptag,
+                    g1 = pnt[0],
+                    g2 = pnt[1],
+                    exp = scenario[0]
+                )
                 current_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'])
                 expected_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'], False)
 
@@ -586,7 +591,12 @@ if __name__ == '__main__':
                     print "first result ", best_fit
                     sys.stdout.flush()
 
-                tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))[0]
+                tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))
+                if len(tname):
+                    tname = tname[0]
+                else:
+                    raise raise RuntimeError("failed getting the merged toy file for point " + gv + ". aborting.")
+
                 gg = get_toys(tname, expected_fit)
                 if args.rmroot:
                     directory_to_delete(location = ename)
