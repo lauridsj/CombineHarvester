@@ -595,7 +595,7 @@ if __name__ == '__main__':
                 if len(tname):
                     tname = tname[0]
                 else:
-                    raise raise RuntimeError("failed getting the merged toy file for point " + gv + ". aborting.")
+                    raise RuntimeError("failed getting the merged toy file for point " + gv + ". aborting.")
 
                 gg = get_toys(tname, expected_fit)
                 if args.rmroot:
