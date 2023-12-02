@@ -120,14 +120,15 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                     if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid]):
                                         tmpgrid.append(half + (0,))
 
-                if len(tmpgrid) == 0 and ndivision <= 15:
+                if len(tmpgrid) == 0 and ndivision <= 31:
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
+                    # 31 is NNLO, if we have nothing within 1 sigma at 0.125 granularity uh oh that's a lot of points to scan
                     for gv in contour["g-grid"].keys():
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
                             tmpgrid.append(gt + (0,))
-                    tmpgrid = list(set(make_initial_grid( ((ndivision - 1) * 2) + 1 )) - set(tmpgrid))
+                    tmpgrid = list(set(make_initial_grid( ((ndivision - 1) * 2) + 1 )) - set(tmpgrid) - set(g_grid))
                 g_grid += tmpgrid
 
         return g_grid
