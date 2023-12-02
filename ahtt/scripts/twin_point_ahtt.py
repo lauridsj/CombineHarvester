@@ -568,7 +568,8 @@ if __name__ == '__main__':
                     g1 = pnt[0],
                     g2 = pnt[1],
                     exp = scenario[0]
-                ))[0]
+                ))
+                ename = ename[0] if len(ename) else ""
                 current_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'])
                 expected_fit = get_fit(ename, ['g1', 'g2', 'deltaNLL'], False)
 
