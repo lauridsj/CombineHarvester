@@ -49,7 +49,7 @@ condor_check . | tee /dev/tty | xargs rm
 
 #6 run the remaining LO points
 #6a use --fc-initial-distance to start with a different resolution than default of 0.5 (runs over more points initially, but less refine steps)
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --unblind --no-log
 #6b repeat step 5
 
 #7 merge the toy files
@@ -60,9 +60,9 @@ condor_check . | tee /dev/tty | xargs rm
 
 #9 when extra toys are needed
 #9a use this to add a fixed amount of toys = nidxs * ntoy
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add --fc-skip-data --unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode add --fc-skip-data --unblind --no-log
 #9b use this to add a variable number of toys per point, such that the sum for each point is about the same
-./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim --fc-skip-data --unblind
+./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --fc-mode brim --fc-skip-data --unblind --no-log
 #9c repeat step #5 and go back to #7/#8, whichever of --fc-mode add/brim is used
 
 #10 if enough toys are made for each point, refine the grid
