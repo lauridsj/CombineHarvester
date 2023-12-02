@@ -592,13 +592,10 @@ if __name__ == '__main__':
                     sys.stdout.flush()
 
                 tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))
-                if len(tname):
-                    tname = tname[0]
-                else:
-                    raise RuntimeError("failed getting the merged toy file for point " + gv + ". aborting.")
+                tname = tname[0] if len(tname) else ""
 
                 gg = get_toys(tname, expected_fit)
-                if args.rmroot:
+                if gg is not None and args.rmroot:
                     directory_to_delete(location = ename)
                     syscall("rm " + ename, False, True)
                     if fcexp == args.fcexp[-1]:
