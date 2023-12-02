@@ -30,6 +30,14 @@ sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 
+def make_initial_grid(ndivision):
+    grid = []
+    gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
+    for ig1 in gvls[0]:
+        for ig2 in gvls[1]:
+            grid.append( (ig1, ig2, 0) )
+    return grid
+
 def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
@@ -79,6 +87,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
+                tmpgrid = []
                 for gt, eff in zip(gts, effs):
                     unary_sqd = lambda pp: sqd(pp[0], gt)
 
@@ -108,17 +117,23 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                 halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
 
                                 for half in halfsies:
-                                    if not any([half == (ggt[0], ggt[1]) for ggt in g_grid]):
-                                        g_grid.append(half + (0,))
+                                    if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid]):
+                                        tmpgrid.append(half + (0,))
+
+                if len(tmpgrid) == 0 and ndivision <= 15:
+                    # if we cant refine the grid, it can only mean nothing belongs to the contour
+                    # the bane of good sensitivity - can only regenerate LO, but with a finer comb
+                    for gv in contour["g-grid"].keys():
+                        if contour["g-grid"][gv] is not None:
+                            gt = tuplize(gv)
+                            tmpgrid.append(gt + (0,))
+                    tmpgrid = list(set(make_initial_grid( ((ndivision - 1) * 2) + 1 )) - set(tmpgrid))
+                g_grid += tmpgrid
+
         return g_grid
 
     # default LO case
-    gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
-    for ig1 in gvls[0]:
-        for ig2 in gvls[1]:
-            g_grid.append( (ig1, ig2, 0) )
-
-    return g_grid
+    return make_initial_grid(ndivision)
 
 def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_dir):
     toylocs = []
