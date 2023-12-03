@@ -407,14 +407,14 @@ if __name__ == '__main__':
                         jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
                         fmatches = ["_toys" + sdx]  if args.ntoy > 0 and not firstjob else ["_" + fcexp for fcexp in args.fcexp]
-                        fmatches = ["{pdir}_fc-scan_pnt{snm}{sfx}.root".format(
-                            pdir = pstr + args.tag, pstr + args.otag,
+                        fmatches = ["{ptg}_fc-scan_pnt{snm}{sfx}.root".format(
+                            ptg = pstr + args.otag,
                             snm = scan_name,
                             sfx = suffix
                         ) for suffix in roots]
                         roots = []
                         for fmatch in fmatches:
-                            roots += recursive_glob(fmatch)
+                            roots += recursive_glob(pstr + args.tag, fmatch)
                         fcrundat = args.fcrundat and firstjob
 
                         if not (args.runlocal and args.forcelocal):
