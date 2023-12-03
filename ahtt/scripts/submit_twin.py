@@ -411,7 +411,7 @@ if __name__ == '__main__':
                             ptg = pstr + args.otag,
                             snm = scan_name,
                             sfx = suffix
-                        ) for suffix in roots]
+                        ) for suffix in fmatches]
                         roots = []
                         for fmatch in fmatches:
                             roots += recursive_glob(pstr + args.tag, fmatch)
