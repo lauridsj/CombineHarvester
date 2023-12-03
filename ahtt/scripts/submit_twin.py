@@ -406,7 +406,8 @@ if __name__ == '__main__':
                         sdx = '_' + str(idx) if idx != -1 else ''
                         jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
-                        fmatches = ["_toys" + sdx]  if args.ntoy > 0 and not firstjob else ["_" + fcexp for fcexp in args.fcexp]
+                        fcrundat = args.fcrundat and firstjob
+                        fmatches = ["_" + fcexp for fcexp in args.fcexp] if fcrundat else ["_toys" + sdx]
                         fmatches = ["{ptg}_fc-scan_pnt{snm}{sfx}.root".format(
                             ptg = pstr + args.otag,
                             snm = scan_name,
@@ -415,10 +416,9 @@ if __name__ == '__main__':
                         roots = []
                         for fmatch in fmatches:
                             roots += recursive_glob(pstr + args.tag, fmatch)
-                        fcrundat = args.fcrundat and firstjob
-
                         if not (args.runlocal and args.forcelocal):
-                            if len(logs) > 0 or len(roots) > 0:
+                            hasroots = len(roots) >= len(args.fcexp) if fcrundat else len(roots) > 0
+                            if len(logs) > 0 or hasroots:
                                 continue
 
                         jarg = job_arg
