@@ -139,7 +139,7 @@ def common_job(args):
                   sus = "--sushi-kfactor" if args.kfactor else "",
                   inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
                   ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
-                  exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process '),
+                  exc = clamp_with_quote(string = args.excludeproc, prefix = '--exclude-process ', skipempty = False),
                   tag = clamp_with_quote(string = args.tag, prefix = '--tag '),
                   drp = clamp_with_quote(string = args.drop, prefix = '--drop '),
                   kee = clamp_with_quote(string = args.keep, prefix = '--keep '),

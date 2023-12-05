@@ -29,8 +29,8 @@ def prepend_if_not_empty(string, token = "_"):
 def append_if_not_empty(string, token = "/"):
     return string + token if string != "" and not string.endswith(token) else string
 
-def clamp_with_quote(string, prefix = "", suffix = ""):
-    if string == "":
+def clamp_with_quote(string, prefix = "", suffix = "", skipempty = True):
+    if skipempty and string == "":
         return string
     clean = remove_consecutive_quotes(string)
     clean = clean.replace('"', "'")
