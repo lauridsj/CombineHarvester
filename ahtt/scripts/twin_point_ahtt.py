@@ -327,7 +327,7 @@ if __name__ == '__main__':
                     ext = nonparametric_option(args.extopt),
                 ),
                 post_conditions = [
-                    [lambda fexp, attrs, qem1: return get_fit(glob.glob(fexp)[0], attrs, qem1),
+                    [lambda fexp, attrs, qem1: get_fit(glob.glob(fexp)[0], attrs, qem1),
                      "higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr),
                      ['limit'],
                      True]
@@ -426,7 +426,7 @@ if __name__ == '__main__':
                     fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
 
                     post_conditions = [
-                        [lambda fexp, attrs, qem1: return get_fit(glob.glob(fexp)[0], attrs, qem1),
+                        [lambda fexp, attrs, qem1: get_fit(glob.glob(fexp)[0], attrs, qem1),
                          "higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
                              snm = scan_name + identifier,
                              mmm = mstr),
