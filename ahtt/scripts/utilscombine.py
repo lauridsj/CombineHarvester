@@ -185,6 +185,68 @@ def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, t
         )
     return fstr
 
+def is_good_fit(fit_fname, fit_names):
+    '''
+    checks if fit is good
+    fit_fname is the filename of the file containing buncha RooFitResults to be checked
+    fit_names is an iterable containing the names of said RooFitResults
+    returns True if all fit_names are good, otherwise False
+    '''
+    ffile = TFile.Open(fit_fname, "read")
+    fgood = []
+    for fname in fit_names:
+        fresult = ffile.Get("{fname}".format(fname = fname))
+        fit_quality = fit_result.covQual()
+        print "\nxxx_point_ahtt :: fit with name {fname} has a covariance matrix of status {fql}".format(fname = fname, fql = fit_quality)
+        sys.stdout.flush()
+        fgood.append(fit_quality != 3)
+    ffile.Close()
+
+    all_good = all(fgood)
+    if not all_good:
+        syscall("rm {ffn}".format(ffn = fit_fname), False, True)
+        print "xxx_point_ahtt :: one of the matrices is bad."
+        sys.stdout.flush()
+
+    return all_good
+
+def never_gonna_give_you_up(command, fit_result_names = None, post_conditions = [], failure_followups = [], usehesse = False):
+    '''
+    run fits with multiple settings until one works
+    command: command to run. should contain a {strategy} in there to be substituted in
+
+    fit_result_names: a list where first element is the name of the file containing the fit result,
+    and the second the list of fit result names to run is_good_fit on. pass None to skip running it
+
+    post_condition: a list of lists where each inner list is the function to run,
+    and arguments to be passed to it. said function should return a truthy value
+
+    fit is accepted if is_good_fit and all of post_conditions are true
+
+    failure_followups has the same syntax as post_conditions, but the functions do not need to return a truthy value
+    they are steps to be run when a fit is not accepted
+
+    the function returns true when a fit is accepted
+    '''
+    all_strategies = [(irobust, istrat, itol) for irobust in [True, False] for istrat in range(3) for itol in range(2)]
+    for irobust, istrat, itol in all_strategies:
+        syscall(command.format(
+            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and usehesse, tolerance = itol),
+        ))
+
+        fgood = True if fit_result_names is None else is_good_fit(*fit_result_names)
+        pgood = all([pc[0](*pc[1:]) for pc in post_conditions])
+
+        if irobust and usehesse:
+            syscall("rm robustHesse_*.root", False, True)
+
+        if fgood and pgood:
+            return True
+        else:
+            for ff in failure_followups:
+                ff[0](*ff[1:])
+    return False
+
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
             "{psd} {inj} {ass} {exc} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {igb} {prj} {cho} {rep} {rsd}".format(

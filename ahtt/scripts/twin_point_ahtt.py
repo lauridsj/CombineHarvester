@@ -17,6 +17,7 @@ from ROOT import TFile, TTree
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
+from utilscombine import is_good_fit, never_gonna_give_you_up
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -291,7 +292,6 @@ if __name__ == '__main__':
         ), False)
 
     if rungof or runfc:
-        never_gonna_give_you_up = [(irobust, istrat, itol) for irobust in [False, True] for istrat in [0, 1, 2] for itol in range(4)]
         readtoy = args.toyloc.endswith(".root") and not args.savetoy
         if readtoy:
             for ftoy in reversed(args.toyloc.split("_")):
@@ -316,23 +316,28 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
             scan_name = "gof-saturated_obs"
 
-            for irobust, istrat, itol in never_gonna_give_you_up:
-                syscall("combine -v 0 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
+            never_gonna_give_you_up(
+                command = "combine -v 0 -M GoodnessOfFit --algo=saturated -d {dcd} -m {mmm} -n _{snm} {stg} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
                     snm = scan_name,
-                    stg = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and args.usehesse, tolerance = itol),
+                    stg = "{fit_strategy}",
                     msk = ",".join(masks) if len(masks) > 0 else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt),
-                ))
-                if irobust and args.usehesse:
-                    syscall("rm robustHesse_*.root", False, True)
+                ),
+                post_conditions = [
+                    [lambda fexp, attrs, qem1: return get_fit(glob.glob(fexp)[0], attrs, qem1),
+                     "higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr),
+                     ['limit'],
+                     True]
+                ],
+                failure_followups = [
+                    [syscall, "rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False]
+                ],
 
-                if get_fit(glob.glob("higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr))[0], ['limit'], True):
-                    break
-                else:
-                    syscall("rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False)
+                usehesse = args.usehesse
+            )
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
                 dcd = args.resdir,
@@ -403,30 +408,38 @@ if __name__ == '__main__':
                     elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
                 )
 
-                for irobust, istrat, itol in never_gonna_give_you_up:
-                    syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                            "{exp} {stg} {asm} {toy} {ext}".format(
-                                dcd = fcwsp,
-                                mmm = mstr,
-                                snm = scan_name + identifier,
-                                par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                                exp = "--setParameters '" + ",".join(parameters + masks) + "'" if len(parameters + masks) > 0 else "",
-                                stg = fit_strategy(strategy = istrat, robust = irobust,
-                                                   use_hesse = irobust and args.usehesse, tolerance = itol),
-                                asm = "-t -1" if fcexp != "obs" else "",
-                                toy = "-s -1",
-                                ext = nonparametric_option(args.extopt),
-                                #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
-                            ))
-                    if irobust and args.usehesse:
-                        syscall("rm robustHesse_*.root", False, True)
+                never_gonna_give_you_up(
+                    command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
+                    "{exp} {stg} {asm} {toy} {ext} --saveFitResult".format(
+                        dcd = fcwsp,
+                        mmm = mstr,
+                        snm = scan_name + identifier,
+                        par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
+                        exp = "--setParameters '" + ",".join(parameters + masks) + "'" if len(parameters + masks) > 0 else "",
+                        stg = "{fit_strategy}",
+                        asm = "-t -1" if fcexp != "obs" else "",
+                        toy = "-s -1",
+                        ext = nonparametric_option(args.extopt),
+                        #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
+                    ),
 
-                    if all([get_fit(glob.glob("higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
-                            snm = scan_name + identifier,
-                            mmm = mstr))[0], ['g1', 'g2', 'deltaNLL'], ff) is not None for ff in [True, False]]):
-                        break
-                    else:
-                        syscall("rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False)
+                    fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
+
+                    post_conditions = [
+                        [lambda fexp, attrs, qem1: return get_fit(glob.glob(fexp)[0], attrs, qem1),
+                         "higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
+                             snm = scan_name + identifier,
+                             mmm = mstr),
+                         ['g1', 'g2', 'deltaNLL'],
+                         ff] for ff in [True, False]
+                    ],
+
+                    failure_followups = [
+                        [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False]
+                    ],
+
+                    usehesse = args.usehesse
+                )
 
                 syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
                     dcd = args.resdir,
@@ -672,23 +685,14 @@ if __name__ == '__main__':
                 syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
 
                 if not args.usehesse:
-                    fdr = TFile.Open(fitdiag_result, "read")
-                    fit_result = fdr.Get("fit_{ftp}".format(ftp = args.prepostfit))
-                    fit_quality = fit_result.covQual()
-                    fdr.Close()
-                    print "\ntwin_point_ahtt :: prepost fit with a covariance matrix of status {fql}".format(fql = fit_quality)
-                    sys.stdout.flush()
-
-                    if fit_quality < 3:
-                        syscall("rm {fdr}".format(fdr = fitdiag_result), False, True)
-                        print "twin_point_ahtt :: matrix is bad."
-                        sys.stdout.flush()
-
+                    good_fit = is_good_fit(fitdiag_result, ["fit_{ftp}".format(ftp = args.prepostfit)])
+                    if not good_fit:
                         if fstrat == fitstrats[-1] and irobust == robusts[-1]:
                             raise RuntimeError("twin_point_ahtt :: giving up. try with --use-hesse, freezing parameters, etc.")
                         else:
                             print "twin_point_ahtt :: retrying with a different strategy... \n\n"
                             sys.stdout.flush()
+                        pass
                     else:
                         print "twin_point_ahtt :: matrix is good. exiting."
                         sys.stdout.flush()
@@ -748,22 +752,29 @@ if __name__ == '__main__':
             nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
             nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
 
-            syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
-                    "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
-                        dcd = fcwsp,
-                        mmm = mstr,
-                        snm = nllname,
-                        pnt = nllpnt,
-                        par = nllparam,
-                        uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
-                        exp = set_parameter(set_freeze, args.extopt, masks),
-                        stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1,
-                                           robust = True, use_hesse = args.usehesse),
-                        asm = "-t -1" if args.fcexp[0] != "obs" else "",
-                        ext = nonparametric_option(args.extopt),
-                    ))
-            if args.usehesse:
-                syscall("rm robustHesse_*.root", False, True)
+            never_gonna_give_you_up(
+                command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
+                "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --saveFitResult".format(
+                    dcd = fcwsp,
+                    mmm = mstr,
+                    snm = nllname,
+                    pnt = nllpnt,
+                    par = nllparam,
+                    uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
+                    exp = set_parameter(set_freeze, args.extopt, masks),
+                    stg = "{fit_strategy}",
+                    asm = "-t -1" if args.fcexp[0] != "obs" else "",
+                    ext = nonparametric_option(args.extopt),
+                ),
+
+                fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
+
+                failure_followups = [
+                    [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
+                ],
+
+                usehesse = args.usehesse
+            )
 
         if nelement > 1:
             syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(

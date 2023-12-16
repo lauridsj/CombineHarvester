@@ -14,6 +14,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, get_point, chunks, elementwise_add
 from utilscombine import min_g, max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
+from utilscombine import is_good_fit, never_gonna_give_you_up
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_1D, parse_args
@@ -67,11 +68,12 @@ def sensible_enough_pull(nuisance, mass):
 def single_point_scan(args):
     gval, dcdir, workspace, mstr, accuracies, strategy, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
+    fresult = "asymptoticlimits_limit_g-scan_{gstr}.POINT.1.root".format(gstr = gstr)
 
     epsilon = 2.**-17
-    nstep = 1
+    nstep = 3
 
-    syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+    syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} --saveFitResult "
             "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                 dcd = dcdir,
                 mmm = mstr,
@@ -87,17 +89,19 @@ def single_point_scan(args):
         mmm = mstr,
         gstr = gstr,
     ))
+    fgood = is_good_fit(fresult, ["fit_observed", "fit_expected_runlimit"]) and all([ll >= 0. for qq, ll in limit.items()])
 
-    if all([ll >= 0. for qq, ll in limit.items()]):
+    if fgood:
         return [gval, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     geps = 0.
     syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
+    syscall("rm {fres}".format(fres = fresult), False, True)
 
     for factor in [1., -1.]:
         fgood = False
         for ii in range(1, nstep + 1):
-            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} --saveFitResult "
                     "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                         dcd = dcdir,
                         mmm = mstr,
@@ -113,7 +117,7 @@ def single_point_scan(args):
                 mmm = mstr,
                 gstr = gstr + "eps",
             ))
-            fgood = all([ll >= 0. for qq, ll in leps.items()])
+            fgood = is_good_fit(fresult.replace(gstr, gstr + "eps"), ["fit_observed", "fit_expected_runlimit"]) and all([ll >= 0. for qq, ll in leps.items()])
 
             if fgood:
                 geps = (ii * factor * epsilon)
