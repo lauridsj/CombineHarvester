@@ -410,7 +410,7 @@ if __name__ == '__main__':
 
                 never_gonna_give_you_up(
                     command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
-                    "{exp} {stg} {asm} {toy} {ext} --saveFitResult".format(
+                    "{exp} {stg} {asm} {toy} {ext}".format(
                         dcd = fcwsp,
                         mmm = mstr,
                         snm = scan_name + identifier,
@@ -423,7 +423,7 @@ if __name__ == '__main__':
                         #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                     ),
 
-                    fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
+                    #fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
 
                     post_conditions = [
                         [lambda fexp, attrs, qem1: get_fit(glob.glob(fexp)[0], attrs, qem1),
@@ -754,7 +754,7 @@ if __name__ == '__main__':
 
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
-                "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --saveFitResult".format(
+                "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
                     dcd = fcwsp,
                     mmm = mstr,
                     snm = nllname,
@@ -767,7 +767,7 @@ if __name__ == '__main__':
                     ext = nonparametric_option(args.extopt),
                 ),
 
-                fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
+                #fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
 
                 failure_followups = [
                     [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
