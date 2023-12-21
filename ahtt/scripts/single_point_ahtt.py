@@ -66,58 +66,41 @@ def sensible_enough_pull(nuisance, mass):
     return isgood
 
 def single_point_scan(args):
-    gval, dcdir, workspace, mstr, accuracies, strategy, asimov, masks = args
+    gval, dcdir, workspace, mstr, accuracies, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
-    fresult = "asymptoticlimits_limit_g-scan_{gstr}.POINT.1.root".format(gstr = gstr)
-
+    fname = "higgsCombine_limit_g-scan_{gst}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr, gst = gstr)
     epsilon = 2.**-17
     nstep = 3
-
-    syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} --saveFitResult "
-            "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
-                dcd = dcdir,
-                mmm = mstr,
-                gst = gstr,
-                gvl = gval,
-                acc = accuracies,
-                stg = strategy,
-                asm = "-t -1" if asimov else "",
-                msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
-            ))
-
-    limit = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
-        mmm = mstr,
-        gstr = gstr,
-    ))
-    fgood = is_good_fit(fresult, ["fit_observed", "fit_expected_runlimit"]) and all([ll >= 0. for qq, ll in limit.items()])
-
-    if fgood:
-        return [gval, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
-
     geps = 0.
-    syscall("rm higgsCombine_limit_g-scan_{gstr}.POINT.1.*AsymptoticLimits*.root".format(gstr = gstr), False, True)
-    syscall("rm {fres}".format(fres = fresult), False, True)
+    syscall("rm {fname}".format(fname = fname), False, True)
 
-    for factor in [1., -1.]:
+    for factor in [0., 1., -1.]:
         fgood = False
-        for ii in range(1, nstep + 1):
-            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} --saveFitResult "
-                    "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
-                        dcd = dcdir,
-                        mmm = mstr,
-                        gst = gstr + "eps",
-                        gvl = gval + (ii * factor * epsilon),
-                        acc = accuracies,
-                        stg = strategy,
-                        asm = "-t -1" if asimov else "",
-                        msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
-                    ))
 
-            leps = get_limit("higgsCombine_limit_g-scan_{gstr}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(
-                mmm = mstr,
-                gstr = gstr + "eps",
-            ))
-            fgood = is_good_fit(fresult.replace(gstr, gstr + "eps"), ["fit_observed", "fit_expected_runlimit"]) and all([ll >= 0. for qq, ll in leps.items()])
+        for ii in range(1, nstep + 1 if factor != 0 else 2):
+            never_gonna_give_you_up(
+                command = "combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+                "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
+                    dcd = dcdir,
+                    mmm = mstr,
+                    gst = gstr,
+                    gvl = gval + (ii * factor * epsilon),
+                    acc = accuracies,
+                    stg = "{fit_strategy}",
+                    asm = "-t -1" if asimov else "",
+                    msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
+                ),
+
+                post_condition = [
+                    [lambda result: all([ll >= 0. for qq, ll in get_limit(result).items()]), fname]
+                ],
+
+                strategies = [0],
+                robustness = [False]
+            )
+
+            leps = get_limit(fname)
+            fgood = all([ll >= 0. for qq, ll in leps.items()])
 
             if fgood:
                 geps = (ii * factor * epsilon)
@@ -133,7 +116,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, workspace, mstr, accuracies, strategy, asimov, masks = args
+    gvals, dcdir, workspace, mstr, accuracies, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -141,7 +124,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, strategy, asimov, masks))
+        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, asimov, masks))
 
         if result is None:
             ii += 3
@@ -271,7 +254,6 @@ if __name__ == '__main__':
                 rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
                 fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
             ),
-            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
             set_range(ranges),
             elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
@@ -287,7 +269,7 @@ if __name__ == '__main__':
                 mmm = mstr,
                 maxg = max_g,
                 acc = accuracies,
-                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 asm = "--run blind -t -1" if args.asimov else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
             ))
@@ -315,8 +297,7 @@ if __name__ == '__main__':
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
             lll = dotty_scan(
-                (gvals, dcdir, workspace, mstr, accuracies,
-                 fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1), args.asimov, masks)
+                (gvals, dcdir, workspace, mstr, accuracies, args.asimov, masks)
             )
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -375,20 +356,23 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
-            for irobust, istrat, itol in [(irobust, istrat, itol) for irobust in [True, False] for istrat in [1, 2, 0] for itol in [0, -1, 1, -2, 2, -3, 3]]:
-                syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
+            never_gonna_give_you_up(
+                command = "combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
-                    stg = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and args.usehesse, tolerance = itol),
+                    stg = "{fit_strategy}",
                     asm = "-t -1" if args.asimov else "",
                     nui = "--named '" + nuisance + "'" if nuisance != "" else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt)
-                ))
-                syscall("rm robustHesse_*.root", False, True)
+                ),
 
-                if nuisance == "" or sensible_enough_pull(nuisance, mstr):
-                    break
+                post_conditions = [
+                    [lambda nn, mm: nn == "" or sensible_enough_pull(nn, mm), nuisance, mstr]
+                ],
+
+                usehesse = args.usehesse
+            )
 
         print "\nsingle_point_ahtt :: collecting impact results"
         syscall("combineTool.py -v 0 -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui} {ext}".format(

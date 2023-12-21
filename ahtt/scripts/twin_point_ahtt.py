@@ -259,7 +259,6 @@ if __name__ == '__main__':
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov, "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-        fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
         set_range(ranges),
         elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
     )
@@ -332,7 +331,7 @@ if __name__ == '__main__':
                      ['limit'],
                      True]
                 ],
-                failure_followups = [
+                failure_cleanups = [
                     [syscall, "rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False]
                 ],
 
@@ -403,7 +402,6 @@ if __name__ == '__main__':
                     dcdir, "__".join(points), [args.otag, args.tag],
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-                    fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
                     set_range(ranges),
                     elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
                 )
@@ -423,8 +421,6 @@ if __name__ == '__main__':
                         #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                     ),
 
-                    #fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
-
                     post_conditions = [
                         [lambda fexp, attrs, qem1: get_fit(glob.glob(fexp)[0], attrs, qem1),
                          "higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
@@ -434,7 +430,7 @@ if __name__ == '__main__':
                          ff] for ff in [True, False]
                     ],
 
-                    failure_followups = [
+                    failure_cleanups = [
                         [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False]
                     ],
 
@@ -638,8 +634,6 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2,
-                         optimize = False, robust = True, use_hesse = args.usehesse),
             set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
@@ -658,45 +652,32 @@ if __name__ == '__main__':
         startpoi = starting_poi(gvalues, args.fixpoi) if args.prepostfit == 's' else starting_poi(["0.", "0."], True)
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
         fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
-        fitstrats = [0, 1, 2] if args.fitstrat == -1 and not args.usehesse else [args.fitstrat if args.fitstrat > -1 else 0]
-        robusts = [True, False] if not args.usehesse else [True]
 
-        for fstrat in fitstrats:
-            for irobust in robusts:
-                syscall("combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
-                        "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
-                            dcd = fitdiag_workspace,
-                            mmm = mstr,
-                            stg = fit_strategy(
-                                strategy = fstrat, optimize = False,
-                                robust = irobust, use_hesse = irobust and args.usehesse
-                            ),
-                            asm = "-t -1" if args.asimov else "",
-                            prm = set_parameter(set_freeze, args.extopt, masks),
-                            ext = nonparametric_option(args.extopt),
-                            fop = fitopt
-                        ))
+        never_gonna_give_you_up(
+            command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
+            "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
+                dcd = fitdiag_workspace,
+                mmm = mstr,
+                stg = "{fit_strategy}"),
+                asm = "-t -1" if args.asimov else "",
+                prm = set_parameter(set_freeze, args.extopt, masks),
+                ext = nonparametric_option(args.extopt),
+                fop = fitopt
+            ),
 
-                syscall("rm *_th1x_*.png", False, True)
-                syscall("rm covariance_fit_?.png", False, True)
-                syscall("rm higgsCombine_prepost*.root", False, True)
-                syscall("rm combine_logger.out", False, True)
-                syscall("rm robustHesse_*.root", False, True)
-                syscall("mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False)
+            followups = [
+                [syscall, "rm *_th1x_*.png", False, True],
+                [syscall, "rm covariance_fit_?.png", False, True],
+                [syscall, "rm higgsCombine_prepost*.root", False, True],
+                [syscall, "rm combine_logger.out", False, True],
+                [syscall, "mv fitDiagnostics_prepost.root {fdr}".format(fdr = fitdiag_result), False]
+            ],
 
-                if not args.usehesse:
-                    good_fit = is_good_fit(fitdiag_result, ["fit_{ftp}".format(ftp = args.prepostfit)])
-                    if not good_fit:
-                        if fstrat == fitstrats[-1] and irobust == robusts[-1]:
-                            raise RuntimeError("twin_point_ahtt :: giving up. try with --use-hesse, freezing parameters, etc.")
-                        else:
-                            print "twin_point_ahtt :: retrying with a different strategy... \n\n"
-                            sys.stdout.flush()
-                        pass
-                    else:
-                        print "twin_point_ahtt :: matrix is good. exiting."
-                        sys.stdout.flush()
-                        break
+            fit_result_names = [fitdiag_result, ["fit_{ftp}".format(ftp = args.prepostfit)]],
+
+            optimize = False,
+            usehesse = args.usehesse
+        )
 
     if runpsfromws:
         # TODO option to sum up sublist of channels
@@ -727,7 +708,6 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-            fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 2, robust = True, use_hesse = args.usehesse),
             set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
@@ -767,9 +747,7 @@ if __name__ == '__main__':
                     ext = nonparametric_option(args.extopt),
                 ),
 
-                #fit_result_names = ["multidimfit_{snm}.root", ["fit_mdf"]],
-
-                failure_followups = [
+                failure_cleanups = [
                     [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
                 ],
 

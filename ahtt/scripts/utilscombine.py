@@ -88,7 +88,7 @@ def nonparametric_option(extopt):
 
     return " ".join(extopt)
 
-def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, strategy, ranges, set_freeze, extopt = "", masks = []):
+def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
     if usedefault:
@@ -119,7 +119,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
         # ok there really isnt a best fit file, make them
         print "\nxxx_point_ahtt :: making best fits"
         for asm in [not asimov, asimov]:
-            workspace = make_best_fit(dcdir, default, point, asm, strategy, ranges, set_freeze, extopt, masks)
+            workspace = make_best_fit(dcdir, default, point, asm, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
             newname = "{dcd}{ptg}_best-fit_{asm}{sce}{mod}.root".format(
@@ -132,22 +132,6 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
     return workspace
-
-def make_best_fit(dcdir, workspace, point, asimov, strategy, ranges, set_freeze, extopt = "", masks = []):
-    fname = point + "_best_fit_" + right_now()
-
-    syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
-        dcd = workspace,
-        bff = fname,
-        stg = strategy,
-        prg = ranges,
-        asm = "-t -1" if asimov else "",
-        wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
-        prm = set_parameter(set_freeze, extopt, masks),
-        ext = nonparametric_option(extopt)
-    ))
-    syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
-    return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)
 
 def starting_nuisance(freeze_zero, freeze_post):
     set_freeze = [[], []]
@@ -172,7 +156,7 @@ def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, t
     fstr = "--X-rtd OPTIMIZE_BOUNDS=0 --X-rtd MINIMIZER_MaxCalls=9999999"
     if optimize:
         fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE"
-    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Migrad --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo Minuit2,Simplex,{ss}".format(ss = strategy)
+    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Combined --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo GSLMultiMin,BFGS2,{ss}".format(ss = strategy)
     fstr += ":{tol} --cminDefaultMinimizerTolerance {tol}".format(tol = 2.**(tolerance - 4))
 
     if robust:
@@ -210,42 +194,79 @@ def is_good_fit(fit_fname, fit_names):
 
     return all_good
 
-def never_gonna_give_you_up(command, fit_result_names = None, post_conditions = [], failure_followups = [], usehesse = False):
+def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result_names = None, post_conditions = [], failure_cleanups = [],
+                            usehesse = False, robustness = [True, False], strategies = list(range(3)), tolerances = list(range(2))):
     '''
     run fits with multiple settings until one works
     command: command to run. should contain a {strategy} in there to be substituted in
 
-    fit_result_names: a list where first element is the name of the file containing the fit result,
-    and the second the list of fit result names to run is_good_fit on. pass None to skip running it
+    optimize is just an extra flag for fit strategy, due to prepost needing it to be False, and elsewhere True
 
-    post_condition: a list of lists where each inner list is the function to run,
-    and arguments to be passed to it. said function should return a truthy value
+    followups: a list of lists where each inner list is the function to run
+    and arguments to be passed to it
+
+    fit_result_names: a list where first element is the name of the file containing the fit result,
+    and the second the list of fit result names to run is_good_fit() on. pass None to skip running it
+
+    post_condition: like followups, but said function should return a truthy value
 
     fit is accepted if is_good_fit and all of post_conditions are true
 
-    failure_followups has the same syntax as post_conditions, but the functions do not need to return a truthy value
+    failure_cleanups has the same syntax as post_conditions, but the functions do not need to return a truthy value
     they are steps to be run when a fit is not accepted
 
-    the function returns true when a fit is accepted
+    the function throws if no fit is accepted
     '''
-    all_strategies = [(irobust, istrat, itol) for irobust in [True, False] for istrat in range(3) for itol in range(2)]
+    all_strategies = [(irobust, istrat, itol) for irobust in robustness for istrat in strategies for itol in tolerances]
     for irobust, istrat, itol in all_strategies:
+        if usehesse and not irobust:
+            continue
+        robusthesse = irobust and usehesse
+
         syscall(command.format(
-            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = irobust and usehesse, tolerance = itol),
+            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = robusthesse, tolerance = itol, optimize = optimize),
         ))
 
-        fgood = True if fit_result_names is None else is_good_fit(*fit_result_names)
+        for fu in followups:
+            fu[0](*fu[1:])
+
+        fgood = True if fit_result_names is None or robusthesse else is_good_fit(*fit_result_names)
         pgood = all([pc[0](*pc[1:]) for pc in post_conditions])
 
-        if irobust and usehesse:
+        if robusthesse:
             syscall("rm robustHesse_*.root", False, True)
 
         if fgood and pgood:
-            return True
+            return None
         else:
-            for ff in failure_followups:
-                ff[0](*ff[1:])
-    return False
+            for fc in failure_cleanups:
+                fc[0](*fc[1:])
+
+    print "never_gonna_give_you_up :: argument and state variables:"
+    print locals()
+    sys.stdout.flush()
+    raise RuntimeError("never_gonna_give_you_up :: unfortunately, with this set, the function has to give up...")
+
+def make_best_fit(dcdir, workspace, point, asimov, ranges, set_freeze, extopt = "", masks = []):
+    fname = point + "_best_fit_" + right_now()
+    never_gonna_give_you_up(
+        command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
+            dcd = workspace,
+            bff = fname,
+            stg = "{fit_strategy}",
+            prg = ranges,
+            asm = "-t -1" if asimov else "",
+            wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
+            prm = set_parameter(set_freeze, extopt, masks),
+            ext = nonparametric_option(extopt)
+        ),
+
+        failure_followups = [
+            [syscall, "rm higgsCombine*{bff}.MultiDimFit*.root".format(bff = fname), False]
+        ]
+    )
+    syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
+    return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)
 
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
