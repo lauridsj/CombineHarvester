@@ -65,9 +65,12 @@ def sensible_enough_pull(nuisance, mass):
     lfile.Close()
     return isgood
 
-def is_good_limit(limit):
+def is_acceptable(limit):
+    epsilon = 2.**-17
     cls = [ll for qq, ll in limit.items()]
-    return all([cc >= 0. for cc in cls]) and len(cls) == len(set(cls))
+    gte0 = all([cc >= 0. for cc in cls])
+    obs0exp1 = limit["obs"] < epsilon and all([abs(ll - 1.) < epsilon for qq, ll in limit.items() if "exp" in qq])
+    return gte0 and not obs0exp1
 
 def single_point_scan(args):
     gval, workspace, mstr, accuracies, asimov, masks = args
@@ -96,7 +99,7 @@ def single_point_scan(args):
                 ),
 
                 post_conditions = [
-                    [lambda fn: is_good_limit(get_limit(fn)), fname]
+                    [lambda fn: is_acceptable(get_limit(fn)), fname]
                 ],
                 failure_cleanups = [
                     [syscall, "rm {fn}".format(fn = fname), False]
@@ -107,7 +110,7 @@ def single_point_scan(args):
             )
 
             limit = get_limit(fname)
-            if is_good_limit(limit):
+            if is_acceptable(limit):
                 geps = (ii * factor * epsilon)
                 return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
     return None
