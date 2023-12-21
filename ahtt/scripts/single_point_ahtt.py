@@ -98,6 +98,9 @@ def single_point_scan(args):
                 post_conditions = [
                     [lambda fn: is_good_limit(get_limit(fn)), fname]
                 ],
+                failure_cleanups = [
+                    [syscall, "rm {fn}".format(fn = fname), False]
+                ],
 
                 robustness = [False],
                 throw_upon_failure = False
@@ -364,6 +367,9 @@ if __name__ == '__main__':
                 post_conditions = [
                     [lambda nn, mm: nn == "" or sensible_enough_pull(nn, mm), nuisance, mstr]
                 ],
+                #failure_cleanups = [
+                #    [syscall, "rm {fn}".format(fn = fname), False]
+                #],
 
                 usehesse = args.usehesse
             )
