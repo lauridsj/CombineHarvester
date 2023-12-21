@@ -91,7 +91,7 @@ def single_point_scan(args):
                     msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
                 ),
 
-                post_condition = [
+                post_conditions = [
                     [lambda result: all([ll >= 0. for qq, ll in get_limit(result).items()]), fname]
                 ],
 
