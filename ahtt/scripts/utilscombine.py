@@ -195,7 +195,8 @@ def is_good_fit(fit_fname, fit_names):
     return all_good
 
 def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result_names = None, post_conditions = [], failure_cleanups = [],
-                            usehesse = False, robustness = [True, False], strategies = list(range(3)), tolerances = list(range(2))):
+                            usehesse = False, robustness = [True, False], strategies = list(range(3)), tolerances = list(range(2)),
+                            throw_upon_failure = True):
     '''
     run fits with multiple settings until one works
     command: command to run. should contain a {strategy} in there to be substituted in
@@ -242,10 +243,12 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             for fc in failure_cleanups:
                 fc[0](*fc[1:])
 
-    print "never_gonna_give_you_up :: argument and state variables:"
+    print "never_gonna_give_you_up :: no accepted fit found. argument and state variables:"
     print locals()
+    print "\n\n"
     sys.stdout.flush()
-    raise RuntimeError("never_gonna_give_you_up :: unfortunately, with this set, the function has to give up...")
+    if throw_upon_failure:
+        raise RuntimeError("never_gonna_give_you_up :: unfortunately, with this set, the function has to give up...")
 
 def make_best_fit(dcdir, workspace, point, asimov, ranges, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()

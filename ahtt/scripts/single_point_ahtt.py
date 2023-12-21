@@ -65,6 +65,10 @@ def sensible_enough_pull(nuisance, mass):
     lfile.Close()
     return isgood
 
+def is_good_limit(limit):
+    cls = [ll for qq, ll in limit.items()]
+    return all([cc >= 0. for cc in cls]) and len(cls) == len(set(cls))
+
 def single_point_scan(args):
     gval, workspace, mstr, accuracies, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
@@ -72,16 +76,14 @@ def single_point_scan(args):
     epsilon = 2.**-17
     nstep = 3
     geps = 0.
-    leps = None
+    limit = None
     syscall("rm {fname}".format(fname = fname), False, True)
 
     for factor in [0., 1., -1.]:
-        fgood = False
-
         for ii in range(1, nstep + 1 if factor != 0 else 2):
-            leps = None
+            limit = None
             never_gonna_give_you_up(
-                command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} "
+                command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} --strictBounds "
                 "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                     wsp = workspace,
                     mmm = mstr,
@@ -94,25 +96,17 @@ def single_point_scan(args):
                 ),
 
                 post_conditions = [
-                    [lambda result: all([ll >= 0. for qq, ll in get_limit(result).items()]), fname]
+                    [lambda fn: is_good_limit(get_limit(fn)), fname]
                 ],
 
-                strategies = [0],
-                robustness = [False]
+                robustness = [False],
+                throw_upon_failure = False
             )
 
-            leps = get_limit(fname)
-            fgood = all([ll >= 0. for qq, ll in leps.items()])
-
-            if fgood:
+            limit = get_limit(fname)
+            if is_good_limit(limit):
                 geps = (ii * factor * epsilon)
-                break
-        if fgood:
-            break
-
-    if all([ll >= 0. for qq, ll in leps.items()]):
-        return [gval + geps, leps, min([(abs(ll - 0.05), ll) for qq, ll in leps.items()])[1]] # third being the closest cls to 0.05 among the quantiles
-
+                return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
     return None
 
 def dotty_scan(args):
@@ -260,7 +254,7 @@ if __name__ == '__main__':
 
     if runlimit:
         print "\nsingle_point_ahtt :: computing limit"
-        accuracies = '--rRelAcc 0.005 --rAbsAcc 0'
+        accuracies = '--rRelAcc 0.01 --rAbsAcc 0.001'
 
         if args.onepoi:
             syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
