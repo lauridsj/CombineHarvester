@@ -3,6 +3,7 @@
 
 import glob
 import os
+import sys
 
 from desalinator import remove_quotes, remove_spaces, tokenize_to_list, clamp_with_quote
 from utilspy import syscall, right_now
@@ -243,7 +244,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             for fc in failure_cleanups:
                 fc[0](*fc[1:])
 
-    print "never_gonna_give_you_up :: no accepted fit found. argument and state variables:"
+    print "\nnever_gonna_give_you_up :: no accepted fit found. argument and state variables:"
     print locals()
     print "\n\n"
     sys.stdout.flush()
