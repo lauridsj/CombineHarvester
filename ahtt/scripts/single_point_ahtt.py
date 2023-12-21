@@ -72,12 +72,14 @@ def single_point_scan(args):
     epsilon = 2.**-17
     nstep = 3
     geps = 0.
+    leps = None
     syscall("rm {fname}".format(fname = fname), False, True)
 
     for factor in [0., 1., -1.]:
         fgood = False
 
         for ii in range(1, nstep + 1 if factor != 0 else 2):
+            leps = None
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
                 "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
@@ -110,8 +112,8 @@ def single_point_scan(args):
         if fgood:
             break
 
-    if all([ll >= 0. for qq, ll in limit.items()]):
-        return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
+    if all([ll >= 0. for qq, ll in leps.items()]):
+        return [gval + geps, leps, min([(abs(ll - 0.05), ll) for qq, ll in leps.items()])[1]] # third being the closest cls to 0.05 among the quantiles
 
     return None
 
