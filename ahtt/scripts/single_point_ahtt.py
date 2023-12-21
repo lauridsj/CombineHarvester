@@ -66,7 +66,7 @@ def sensible_enough_pull(nuisance, mass):
     return isgood
 
 def single_point_scan(args):
-    gval, dcdir, workspace, mstr, accuracies, asimov, masks = args
+    gval, workspace, mstr, accuracies, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
     fname = "higgsCombine_limit_g-scan_{gst}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr, gst = gstr)
     epsilon = 2.**-17
@@ -81,9 +81,9 @@ def single_point_scan(args):
         for ii in range(1, nstep + 1 if factor != 0 else 2):
             leps = None
             never_gonna_give_you_up(
-                command = "combineTool.py -v 0 -M AsymptoticLimits -d {dcd}workspace_g-scan.root -m {mmm} -n _limit_g-scan_{gst} "
+                command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} "
                 "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
-                    dcd = dcdir,
+                    wsp = workspace,
                     mmm = mstr,
                     gst = gstr,
                     gvl = gval + (ii * factor * epsilon),
@@ -116,7 +116,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, dcdir, workspace, mstr, accuracies, asimov, masks = args
+    gvals, workspace, mstr, accuracies, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -124,7 +124,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], dcdir, workspace, mstr, accuracies, asimov, masks))
+        result = single_point_scan((gvals[ii], workspace, mstr, accuracies, asimov, masks))
 
         if result is None:
             ii += 3
@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
             lll = dotty_scan(
-                (gvals, dcdir, workspace, mstr, accuracies, args.asimov, masks)
+                (gvals, workspace, mstr, accuracies, args.asimov, masks)
             )
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
