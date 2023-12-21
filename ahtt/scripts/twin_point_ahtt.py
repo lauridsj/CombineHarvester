@@ -658,7 +658,7 @@ if __name__ == '__main__':
             "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
                 dcd = fitdiag_workspace,
                 mmm = mstr,
-                stg = "{fit_strategy}"),
+                stg = "{fit_strategy}",
                 asm = "-t -1" if args.asimov else "",
                 prm = set_parameter(set_freeze, args.extopt, masks),
                 ext = nonparametric_option(args.extopt),
