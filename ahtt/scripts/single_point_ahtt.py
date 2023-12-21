@@ -106,8 +106,6 @@ def single_point_scan(args):
 
             if fgood:
                 geps = (ii * factor * epsilon)
-                for quantile in leps.keys():
-                    limit[quantile] = leps[quantile]
                 break
         if fgood:
             break
