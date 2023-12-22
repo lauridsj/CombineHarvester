@@ -21,6 +21,9 @@ from argumentative import common_point, common_common, common_fit_pure, common_f
 from hilfemir import combine_help_messages
 
 def get_limit(lfile):
+    if not os.path.isfile(lfile):
+        return None
+
     lfile = TFile.Open(lfile)
     ltree = lfile.Get("limit")
     limit = OrderedDict()
@@ -44,8 +47,12 @@ def get_limit(lfile):
     return limit
 
 def sensible_enough_pull(nuisance, mass):
+    lfile = "higgsCombine_paramFit__pull_{nui}.MultiDimFit.mH{mmm}.root".format(nui = nuisance, mmm = mass)
+    if not os.path.isfile(lfile):
+        return None
+
     # really just the existence of up/down - two-sidedness seems too strong a constraint
-    lfile = TFile.Open("higgsCombine_paramFit__pull_{nui}.MultiDimFit.mH{mmm}.root".format(nui = nuisance, mmm = mass))
+    lfile = TFile.Open(lfile)
     ltree = lfile.Get("limit")
 
     central, band, isgood = False, 0, False
@@ -66,6 +73,8 @@ def sensible_enough_pull(nuisance, mass):
     return isgood
 
 def is_acceptable(limit):
+    if limit is None:
+        return False
     epsilon = 2.**-17
     cls = [ll for qq, ll in limit.items()]
     gte0 = all([cc >= 0. for cc in cls])
