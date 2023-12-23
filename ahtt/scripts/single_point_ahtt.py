@@ -86,13 +86,13 @@ def single_point_scan(args):
     gstr = str(round(gval, 3)).replace('.', 'p')
     fname = "higgsCombine_limit_g-scan_{gst}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr, gst = gstr)
     epsilon = 2.**-17
-    nstep = 3
+    nstep = 1
     geps = 0.
     limit = None
     syscall("rm {fname}".format(fname = fname), False, True)
 
     for factor in [0., 1., -1.]:
-        for ii in range(1, nstep + 1 if factor != 0 else 2):
+        for ii in range(1, nstep + 1 if factor != 0. else 2):
             limit = None
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} --strictBounds "
@@ -135,15 +135,11 @@ def dotty_scan(args):
     while ii < len(gvals):
         result = single_point_scan((gvals[ii], workspace, mstr, accuracies, asimov, masks))
 
-        if result is None:
-            ii += 3
-            continue
-
-        if (0.0125 < result[2] < 0.2):
+        if result is not None and (0.0125 < result[2] < 0.2):
             ii += 1
         else:
             ii += 2
-
+            continue
         results.append(result)
     return results
 
