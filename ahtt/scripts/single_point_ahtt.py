@@ -114,7 +114,7 @@ def single_point_scan(args):
                     [syscall, "rm {fn}".format(fn = fname), False]
                 ],
 
-                robustness = [False],
+                all_strategies = [(False, 0, 0), (False, 0, 1), (False, 1, 1), (False, 2, 1)],
                 throw_upon_failure = False
             )
 

@@ -197,7 +197,7 @@ def is_good_fit(fit_fname, fit_names):
 
 def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result_names = None, post_conditions = [], failure_cleanups = [],
                             usehesse = False, robustness = [True, False], strategies = list(range(3)), tolerances = list(range(2)),
-                            throw_upon_failure = True):
+                            all_strategies = None, throw_upon_failure = True):
     '''
     run fits with multiple settings until one works
     command: command to run. should contain a {strategy} in there to be substituted in
@@ -218,8 +218,10 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
     they are steps to be run when a fit is not accepted
 
     the function throws if no fit is accepted
+
+    the rest of the args are bunch of fit settings to try
     '''
-    all_strategies = [(irobust, istrat, itol) for irobust in robustness for istrat in strategies for itol in tolerances]
+    all_strategies = [(irobust, istrat, itol) for irobust in robustness for istrat in strategies for itol in tolerances] if all_strategies is None else all_strategies
     for irobust, istrat, itol in all_strategies:
         if usehesse and not irobust:
             continue
