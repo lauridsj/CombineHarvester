@@ -239,7 +239,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             syscall("rm robustHesse_*.root", False, True)
 
         if fgood and pgood:
-            return None
+            return True
         else:
             for fc in failure_cleanups:
                 fc[0](*fc[1:])
@@ -250,6 +250,8 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
     sys.stdout.flush()
     if throw_upon_failure:
         raise RuntimeError("never_gonna_give_you_up :: unfortunately, with this set, the function has to give up...")
+    else:
+        return False
 
 def make_best_fit(dcdir, workspace, point, asimov, ranges, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
