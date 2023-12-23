@@ -313,15 +313,19 @@ if __name__ == '__main__':
                     limits[ll[0]] = ll[1]
             limits = OrderedDict(sorted(limits.items()))
 
-            syscall("hadd {dcd}{ptg}_limits_g-scan_{nch}_{idx}.root higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root && "
-                    "rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root".format(
-                        dcd = dcdir,
-                        ptg = ptag,
-                        nch = "n" + str(args.nchunk),
-                        idx = "i" + str(args.ichunk)
-                    ))
-            with open("{dcd}{ptg}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, ptg = ptag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
-                json.dump(limits, jj, indent = 1)
+            fexp = "higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root"
+            ofiles = glob.glob(fexp)
+            if len(ofiles) > 0:
+                ofile = "{dcd}{ptg}_limits_g-scan_{nch}_{idx}.root".format(
+                    dcd = dcdir,
+                    ptg = ptag,
+                    nch = "n" + str(args.nchunk),
+                    idx = "i" + str(args.ichunk)
+                )
+                cmd = "hadd {ofile} {fexp} && rm {fexp}" if len(ofiles) > 1 else "mv {fexp} {ofile}"
+                syscall(cmd.format(fexp = fexp, ofile = ofile))
+                with open("{dcd}{ptg}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, ptg = ptag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
+                    json.dump(limits, jj, indent = 1)
 
     if runpull:
         group = ""
