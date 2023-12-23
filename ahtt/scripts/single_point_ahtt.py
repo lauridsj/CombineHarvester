@@ -85,7 +85,7 @@ def single_point_scan(args):
     gval, workspace, mstr, accuracies, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
     fname = "higgsCombine_limit_g-scan_{gst}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr, gst = gstr)
-    epsilon = 2.**-17
+    epsilon = 2.**-13
     nstep = 1
     geps = 0.
     limit = None
