@@ -137,10 +137,13 @@ def dotty_scan(args):
     while ii < len(gvals):
         result = single_point_scan((gvals[ii], workspace, mstr, accuracies, asimov, masks))
 
-        if result is not None and (0.0125 < result[2] < 0.2):
-            ii += 1
+        if result is not None:
+            if (0.0125 < result[2] < 0.2):
+                ii += 1
+            else:
+                ii += 2
         else:
-            ii += 2
+            ii += 3
             continue
         results.append(result)
     return results
