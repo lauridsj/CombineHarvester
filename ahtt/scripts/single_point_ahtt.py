@@ -10,6 +10,7 @@ import glob
 from collections import OrderedDict
 import json
 
+from numpy import random as rng
 from ROOT import TFile, TTree
 
 from utilspy import syscall, get_point, chunks, elementwise_add
@@ -91,16 +92,17 @@ def single_point_scan(args):
     limit = None
     syscall("rm {fname}".format(fname = fname), False, True)
 
-    for factor in [0., 1., -1.]:
+    for factor in [0., 1.]:
         for ii in range(1, nstep + 1 if factor != 0. else 2):
             limit = None
+            sign = -1. if gval != 0. and rng.binomial(1, 0.5) else 1.
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} --strictBounds "
                 "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
                     wsp = workspace,
                     mmm = mstr,
                     gst = gstr,
-                    gvl = gval + (ii * factor * epsilon),
+                    gvl = gval + (ii * sign * factor * epsilon),
                     acc = accuracies,
                     stg = "{fit_strategy}",
                     asm = "-t -1" if asimov else "",
@@ -120,7 +122,7 @@ def single_point_scan(args):
 
             limit = get_limit(fname)
             if is_acceptable(limit):
-                geps = (ii * factor * epsilon)
+                geps = (ii * sign * factor * epsilon)
                 return [gval + geps, limit, min([(abs(ll - 0.05), ll) for qq, ll in limit.items()])[1]] # third being the closest cls to 0.05 among the quantiles
     return None
 
