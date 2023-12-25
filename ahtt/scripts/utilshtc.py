@@ -132,7 +132,7 @@ def flush_jobs():
         for cs in current_submissions:
             print("Submitting {njobs} jobs".format(njobs = len(cs)))
             header = make_submission_script_header()
-            script = header + "\n" + "\n".join(current_submissions)
+            script = header + "\n" + "\n".join(cs)
             with open(flush_jobs.aggregate, "w") as f:
                 f.write(script)
 
