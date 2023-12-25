@@ -17,7 +17,7 @@ from datetime import datetime
 from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, floattopm
 from utilslab import input_base, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
-from utilshtc import submit_job, aggregate_submit, flush_jobs, common_job
+from utilshtc import submit_job, flush_jobs, common_job
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes, clamp_with_quote
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D
@@ -241,9 +241,7 @@ if __name__ == '__main__':
         args.fcexp.append("obs")
 
     for pair, ggrid in zip(pairs, ggrids):
-        # generate an aggregate submission file name
-        agg = aggregate_submit()
-
+        flush_jobs()
         points = pair.split(',')
         pstr = '__'.join(points)
 
@@ -323,7 +321,7 @@ if __name__ == '__main__':
                         opd = "--toy-location " + toylocs[ii] if toylocs[ii] != "" else ""
                     )
 
-                    submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                    submit_job(jname, jarg, args.jobtime, 1, "",
                                "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if rungof:
@@ -363,7 +361,7 @@ if __name__ == '__main__':
 
                     if not ("--gof-skip-data" in jarg and "--n-toy 0" in jarg):
                         expnres += 2 if firstjob and gofrundat else 2 if writelog else 1
-                        submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                        submit_job(jname, jarg, args.jobtime, 1, "",
                                    "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if runfc:
@@ -437,7 +435,7 @@ if __name__ == '__main__':
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             expnres += 2 * len(args.fcexp) if firstjob and fcrundat else 2 if writelog else 1
-                            submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                            submit_job(jname, jarg, args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
         elif runnll:
@@ -460,7 +458,7 @@ if __name__ == '__main__':
                 uco = "--nll-unconstrained" if args.nllunconstrained else "",
             )
 
-            submit_job(agg, jname, jarg, args.jobtime, 1, "",
+            submit_job(jname, jarg, args.jobtime, 1, "",
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
 
@@ -474,7 +472,7 @@ if __name__ == '__main__':
             jarg = job_arg
             jarg += " {ppf}".format(ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '))
 
-            submit_job(agg, jname, jarg, args.jobtime, 1, "",
+            submit_job(jname, jarg, args.jobtime, 1, "",
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
         else:
@@ -501,8 +499,7 @@ if __name__ == '__main__':
             job_mem = ""
 
             if len([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm and mm != ""]) > 0:
-                submit_job(agg, job_name, job_arg, args.jobtime, 1, job_mem,
+                submit_job(job_name, job_arg, args.jobtime, 1, job_mem,
                            "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                            True, runcompile or args.runlocal, args.writelog)
-
-    flush_jobs(agg)
+    flush_jobs()

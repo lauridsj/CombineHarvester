@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from numpy import random as rng
 
-from utilspy import syscall, right_now
+from utilspy import syscall, right_now, chunks
 from utilslab import cluster, condorrun, input_bkg
 from desalinator import clamp_with_quote
 
@@ -72,11 +72,12 @@ arguments = "{executable} {args}"
 # Array to store all buffered submission scripts
 current_submissions = []
 max_jobs_per_submit = 500
+max_jobs_per_session = 5000 if cluster == "naf" else 9999999
 
 def aggregate_submit():
     return 'conSub_' + right_now() + '.txt'
 
-def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False, writelog = True):
+def submit_job(job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executable, runtmp = False, runlocal = False, writelog = True):
     global current_submissions
     if not hasattr(submit_job, "firstjob"):
         submit_job.firstjob = True
@@ -115,19 +116,29 @@ def submit_job(job_agg, job_name, job_arg, job_time, job_cpu, job_mem, job_dir, 
         current_submissions.append(sub_script)
 
         if len(current_submissions) >= max_jobs_per_submit:
-            flush_jobs(job_agg)
+            flush_jobs()
 
-def flush_jobs(job_agg):
+def flush_jobs():
+    if not hasattr(flush_jobs, "aggregate"):
+        flush_jobs.aggregate = aggregate_submit()
+
     global current_submissions
     if len(current_submissions) > 0:
-        print("Submitting {njobs} jobs".format(njobs = len(current_submissions)))
-        header = make_submission_script_header()
-        script = header + "\n" + "\n".join(current_submissions)
-        with open(job_agg, "w") as f:
-            f.write(script)
+        if len(current_submissions) <= max_jobs_per_session:
+            current_submissions = [current_submissions]
+        else:
+            current_submissions = chunks(current_submissions, max_jobs_per_session // max_jobs_per_submit)
 
-        syscall("condor_submit {job_agg}".format(job_agg = job_agg), False)
-        os.remove(job_agg)
+        for cs in current_submissions:
+            print("Submitting {njobs} jobs".format(njobs = len(cs)))
+            header = make_submission_script_header()
+            script = header + "\n" + "\n".join(current_submissions)
+            with open(flush_jobs.aggregate, "w") as f:
+                f.write(script)
+
+            syscall("condor_submit {job_aggregate}".format(job_aggregate = flush_jobs.aggregate), False)
+            os.remove(flush_jobs.aggregate)
+            flush_jobs.aggregate = aggregate_submit()
 
         current_submissions = []
     else:

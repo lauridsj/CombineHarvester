@@ -14,7 +14,7 @@ from utilspy import syscall, chunks, index_list
 from utilslab import input_base, input_sig, remove_mjf
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
-from utilshtc import submit_job, aggregate_submit, flush_jobs, common_job
+from utilshtc import submit_job, flush_jobs, common_job
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
@@ -66,10 +66,8 @@ if __name__ == '__main__':
     runlimit = "limit" in args.mode
     runpull = "pull" in args.mode or "impact" in args.mode
 
-    # generate an aggregate submission file name
-    agg = aggregate_submit()
-
     for pnt in points:
+        flush_jobs()
         if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pnt + args.tag + ".tar.gz"))
 
@@ -144,7 +142,7 @@ if __name__ == '__main__':
                     idx = "--raster-i " + str(idx)
                 )
 
-                submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                submit_job(jname, jarg, args.jobtime, 1, "",
                            "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         elif runpull:
             if args.nnuisance < 0:
@@ -202,7 +200,7 @@ if __name__ == '__main__':
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
-                submit_job(agg, jname, jarg, args.jobtime, 1, "",
+                submit_job(jname, jarg, args.jobtime, 1, "",
                            "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
@@ -211,7 +209,6 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-            submit_job(agg, job_name, job_arg, args.jobtime, 1, "",
+            submit_job(job_name, job_arg, args.jobtime, 1, "",
                        "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
-
-    flush_jobs(agg)
+    flush_jobs()
