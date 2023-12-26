@@ -269,7 +269,7 @@ def make_best_fit(dcdir, workspace, point, asimov, ranges, set_freeze, extopt = 
             ext = nonparametric_option(extopt)
         ),
 
-        failure_followups = [
+        failure_cleanups = [
             [syscall, "rm higgsCombine*{bff}.MultiDimFit*.root".format(bff = fname), False]
         ]
     )
