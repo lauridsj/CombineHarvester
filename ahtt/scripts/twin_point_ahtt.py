@@ -335,7 +335,7 @@ if __name__ == '__main__':
                     [syscall, "rm higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root".format(snm = scan_name, mmm = mstr), False]
                 ],
 
-                tolerances = list(range(3)),
+                tolerances = list(range(4)),
                 usehesse = args.usehesse
             )
 
@@ -435,7 +435,7 @@ if __name__ == '__main__':
                         [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = scan_name + identifier, mmm = mstr), False]
                     ],
 
-                    tolerances = list(range(3)),
+                    tolerances = list(range(4)),
                     usehesse = args.usehesse
                 )
 
