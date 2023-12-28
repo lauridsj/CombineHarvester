@@ -99,7 +99,7 @@ def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
                     dcd = dcd,
                     pnt = '_'.join(dcd.split('_')[:3]),
                     tag = otags[tt]))
-                chunks.sort()
+                chunks.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
                 for nn in chunks:
                     with open(nn) as ff:
                         result = json.load(ff)
