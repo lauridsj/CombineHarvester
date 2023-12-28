@@ -329,7 +329,7 @@ if __name__ == '__main__':
                 )
                 cmd = "hadd {ofile} {fexp} && rm {fexp}" if len(ofiles) > 1 else "mv {fexp} {ofile}"
                 syscall(cmd.format(fexp = fexp, ofile = ofile))
-                with open("{dcd}{ptg}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, ptg = ptag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
+                with open(ofile.replace(".root", ".json"), "w") as jj:
                     json.dump(limits, jj, indent = 1)
             else:
                 syscall("rm {fexp}".format(fexp = fexp), False, True)
