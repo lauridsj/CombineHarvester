@@ -157,8 +157,10 @@ def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, t
     fstr = "--X-rtd OPTIMIZE_BOUNDS=0 --X-rtd MINIMIZER_MaxCalls=9999999"
     if optimize:
         fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE"
-    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Combined --cminDefaultMinimizerStrategy {ss} --cminFallbackAlgo GSLMultiMin,BFGS2,{ss}".format(ss = strategy)
-    fstr += ":{tol} --cminDefaultMinimizerTolerance {tol}".format(tol = 2.**(tolerance - 4))
+    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Combined --cminDefaultMinimizerStrategy {ss}".format(ss = strategy)
+    fstr += " --cminDefaultMinimizerTolerance {tol}".format(tol = 2.**(tolerance - 4))
+    for algos in ["Minuit2,Simplex", "GSLMultiMin,BFGS2"]:
+        fstr += " --cminFallbackAlgo {aa},{ss}:{tol}".format(aa = algo, ss = strategy, tol = 2.**(tolerance - 4))
 
     if robust:
         fstr += " --robustFit 1 --setRobustFitAlgo Minuit2 --maxFailedSteps 9999999 --setRobustFitStrategy {ss} {t0} {t1} {t2} {hh}".format(
