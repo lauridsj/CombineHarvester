@@ -285,8 +285,8 @@ if __name__ == '__main__':
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
-            syscall("combineTool.py -v 0 -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH*.root -m {mmm} -o {dcd}{ptg}_limits_one-poi.json && "
-                    "rm higgsCombine_limit.AsymptoticLimits.mH*.root".format(
+            syscall("combineTool.py -v 0 -M CollectLimits higgsCombine_limit.AsymptoticLimits.mH{mmm}.root -m {mmm} -o {dcd}{ptg}_limits_one-poi.json && "
+                    "rm higgsCombine_limit.AsymptoticLimits.mH{mmm}.root".format(
                         dcd = dcdir,
                         mmm = mstr,
                         ptg = ptag
@@ -318,7 +318,7 @@ if __name__ == '__main__':
                     limits[ll[0]] = ll[1]
             limits = OrderedDict(sorted(limits.items()))
 
-            fexp = "higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits*.root"
+            fexp = "higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr)
             ofiles = glob.glob(fexp)
             if len(ofiles) > 0:
                 ofile = "{dcd}{ptg}_limits_g-scan_{nch}_{idx}.root".format(
