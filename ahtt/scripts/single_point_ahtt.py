@@ -297,12 +297,13 @@ if __name__ == '__main__':
             if args.ichunk < 0 or args.ichunk >= args.nchunk:
                 args.ichunk = 0
 
+            fexp = "higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr)
             syscall("rm {dcd}{ptg}_limits_g-scan_{nch}_{idx}.root {dcd}{ptg}_limits_g-scan_{nch}_{idx}.json ".format(
                 dcd = dcdir,
                 ptg = ptag,
                 nch = "n" + str(args.nchunk),
                 idx = "i" + str(args.ichunk)), False, True)
-            syscall("rm higgsCombine_limit_g-scan_*POINT.1.*AsymptoticLimits*.root", False, True)
+            syscall("rm {fexp}".format(fexp = fexp), False, True)
             limits = OrderedDict()
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
@@ -318,9 +319,8 @@ if __name__ == '__main__':
                     limits[ll[0]] = ll[1]
             limits = OrderedDict(sorted(limits.items()))
 
-            fexp = "higgsCombine_limit_g-scan_*POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr)
             ofiles = glob.glob(fexp)
-            if len(ofiles) > 0:
+            if len(ofiles) > 0 and len(limits):
                 ofile = "{dcd}{ptg}_limits_g-scan_{nch}_{idx}.root".format(
                     dcd = dcdir,
                     ptg = ptag,
@@ -331,6 +331,8 @@ if __name__ == '__main__':
                 syscall(cmd.format(fexp = fexp, ofile = ofile))
                 with open("{dcd}{ptg}_limits_g-scan_{nch}_{idx}.json".format(dcd = dcdir, ptg = ptag, nch = "n" + str(args.nchunk), idx = "i" + str(args.ichunk)), "w") as jj:
                     json.dump(limits, jj, indent = 1)
+            else:
+                syscall("rm {fexp}".format(fexp = fexp), False, True)
 
     if runpull:
         group = ""
