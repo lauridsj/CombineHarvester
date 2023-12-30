@@ -74,11 +74,11 @@ def read_previous_best_fit(gname):
         result = json.load(ff, object_pairs_hook = OrderedDict)
     return tuple(result["best_fit_g1_g2_dnll"])
 
-def read_previous_grid(points, prev_best_fit, gname):
+def read_previous_grid(points, prev_best_fit, gname, epsilon = 2.**-9):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
 
-    if result["points"] == points and result["best_fit_g1_g2_dnll"] == list(prev_best_fit):
+    if result["points"] == points and all([abs(now - prev) < epsilon for now, prev in zip(result["best_fit_g1_g2_dnll"], list(prev_best_fit))]):
         return result["g-grid"]
     else:
         print "\ninconsistent previous grid, ignoring the previous grid..."
