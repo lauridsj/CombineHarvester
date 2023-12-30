@@ -12,6 +12,7 @@ from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_em
 max_nfile_per_dir = 4000
 
 def syscall(cmd, verbose = True, nothrow = False):
+    cmd = " && ".join(["set -o pipefail", cmd])
     if verbose:
         print ("Executing: %s" % cmd)
         sys.stdout.flush()
