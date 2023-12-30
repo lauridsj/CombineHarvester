@@ -74,7 +74,7 @@ def read_previous_best_fit(gname):
         result = json.load(ff, object_pairs_hook = OrderedDict)
     return tuple(result["best_fit_g1_g2_dnll"])
 
-def read_previous_grid(points, prev_best_fit, gname, epsilon = 2.**-9):
+def read_previous_grid(points, prev_best_fit, gname, epsilon = 2.**-4):
     with open(gname) as ff:
         result = json.load(ff, object_pairs_hook = OrderedDict)
 
