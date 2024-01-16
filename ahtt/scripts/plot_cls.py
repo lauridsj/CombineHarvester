@@ -12,8 +12,9 @@ import glob
 from collections import OrderedDict
 import json
 import matplotlib
+import matplotlib.pyplot as plt
 
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def read_cls(directory, otag):
@@ -23,18 +24,18 @@ def read_cls(directory, otag):
         tag = otag))
     chunks.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
 
+    limit = OrderedDict([
+        ("exp-2", []),
+        ("exp-1", []),
+        ("exp0", []),
+        ("exp+1", []),
+        ("exp+2", []),
+        ("obs", [])
+    ])
+
     for nn in chunks:
         with open(nn) as ff:
             result = json.load(ff)
-
-        limit = OrderedDict([
-            ("exp-2", []),
-            ("exp-1", []),
-            ("exp0", []),
-            ("exp+1", []),
-            ("exp+2", []),
-            ("obs", [])
-        ])
 
         for g, lmt in result.items():
             # FIXME in some cases combine gives strange cls values
@@ -47,30 +48,33 @@ def read_cls(directory, otag):
 
 def draw_cls(odir, directories, tags, xaxis, transparent, plotformat):
     stuff = OrderedDict([
-        ("exp-2", (r"Expected $-2\sigma$"), "cornflowerblue"),
-        ("exp+2", (r"Expected $+2\sigma$"), "lightcoral"),
-        ("exp-1", (r"Expected $-1\sigma$"), "darkblue"),
-        ("exp+1", (r"Expected $+1\sigma$"), "darkred"),
-        ("exp0", (r"Expected"), "dimgrey"),
-        ("obs", ("Observed"), "black")
+        ("exp-2", (r"Expected $-2\sigma$", "cornflowerblue")),
+        ("exp+2", (r"Expected $+2\sigma$", "lightcoral")),
+        ("exp-1", (r"Expected $-1\sigma$", "darkblue")),
+        ("exp+1", (r"Expected $+1\sigma$", "darkred")),
+        ("exp0", (r"Expected", "dimgrey")),
+        ("obs", ("Observed", "black"))
     ])
 
     for tt, directory in enumerate(directories):
         for jj, dcd in enumerate(directory):
             limits = read_cls(dcd, tags[tt])
-
             fig, ax = plt.subplots()
 
             ax.plot(np.array([min_g, max_g]), np.array([0.05, 0.05]), color = 'darkolivegreen', linestyle = '--', linewidth = 1.5)
             for quantile, cls in limits.items():
                 ax.plot(np.array([g for g, c in cls]), np.array([c for g, c in cls]), label = stuff[quantile][0],
-                        color = stuff[quantile][1], linestyle = '--', marker = 'x', linewidth = 1.5)
+                        color = stuff[quantile][1], linestyle = '--', marker = 'x', markersize = 1, linewidth = 1.5)
 
-            ax.set(xlabel = xaxis, ylabel = r"$\mathrm{CL}_{\mathrm{s}}$")
+            plt.xlim((min_g, max_g))
+            plt.xlabel(xaxis, fontsize = 13, loc = "right")
+            plt.ylabel(r"$\mathrm{CL}_{\mathrm{s}}$", fontsize = 13, loc = "top")
+            ax.set_yscale('log')
+            ax.legend(title = str_point('_'.join(dcd.split('_')[:3])))
             fig.tight_layout()
             fig.savefig("{ooo}/{pnt}_{tag}_cls{fmt}".format(
                 ooo = odir,
-                pnt = '_'.join(directory.split('_')[:3]),
+                pnt = '_'.join(dcd.split('_')[:3]),
                 tag = tags[tt],
                 fmt = plotformat
             ), transparent = transparent)

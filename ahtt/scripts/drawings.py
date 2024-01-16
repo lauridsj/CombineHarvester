@@ -20,4 +20,4 @@ def get_point(sigpnt):
 
 def str_point(sigpnt):
     pnt = sigpnt.split('_')
-    return pnt[0][0] + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)' 
+    return pnt[0][0] + '(' + pnt[1][1:] + ', ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' %)'
