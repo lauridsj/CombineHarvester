@@ -305,7 +305,7 @@ def make_datacard_with_args(scriptdir, args):
                 prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
                 cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
                 rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
-                rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
+                rsd = clamp_with_quote(string = str(args.seed), prefix = '--seed '),
             ))
 
 def update_mask(masks):

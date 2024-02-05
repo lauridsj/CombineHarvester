@@ -9,6 +9,10 @@ import fnmatch
 from datetime import datetime
 from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
 
+import numpy as np
+from np import random as rng
+rng.seed(None)
+
 max_nfile_per_dir = 4000
 
 def syscall(cmd, verbose = True, nothrow = False):
@@ -21,6 +25,17 @@ def syscall(cmd, verbose = True, nothrow = False):
         if not verbose:
             print ("Tried to execute: %s" % cmd)
         raise RuntimeError("Command failed with exit code {ret}!".format(ret = retval))
+
+def rng_seeder(seed):
+    default_seed = 2072745073
+    rng.seed(default_seed if seed < 0 else seed if seed > 0 else None)
+
+def uniform(imin, imax):
+    delta = imax - imin
+    return (delta * rng.random_sample()) + imin
+
+def coinflip(probability = 0.5):
+    return rng.binomial(1, probability)
 
 def floattopm(value):
     return str(value).replace(".0", "").replace("-", "m") if math.floor(float(value)) == float(value) else str(value).replace(".", "p").replace("-", "m")

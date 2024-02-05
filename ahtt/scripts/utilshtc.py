@@ -5,9 +5,8 @@ import os
 import sys
 
 from datetime import datetime
-from numpy import random as rng
 
-from utilspy import syscall, right_now, chunks
+from utilspy import syscall, right_now, chunks, coinflip
 from utilslab import cluster, condorrun, input_bkg
 from desalinator import clamp_with_quote
 
@@ -28,7 +27,7 @@ def make_submission_script_header():
 
         # Afiq's Special Treatment
         if os.getlogin() == 'afiqaize':
-            grp = 'group_u_CMST3.all' if rng.binomial(1, 0.9) else 'group_u_CMS.u_zh.users'
+            grp = 'group_u_CMST3.all' if coinflip(0.9) else 'group_u_CMS.u_zh.users'
             script += '+AccountingGroup = "{grp}"\n'.format(grp = grp)
 
     script += "\n"
@@ -173,7 +172,7 @@ def common_job(args):
                   dws = "--default-workspace" if args.defaultwsp else "",
                   fr0 = clamp_with_quote(string = args.frzzero, prefix = '--freeze-zero '),
                   frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
-                  rsd = clamp_with_quote(string = args.seed, prefix = '--seed '),
+                  rsd = clamp_with_quote(string = str(args.seed), prefix = '--seed '),
                   asm = "--unblind" if not args.asimov else "",
                   com = "--compress" if args.rundc else "",
                   dbg = "--experimental" if args.experimental else "",

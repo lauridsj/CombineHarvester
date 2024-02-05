@@ -17,10 +17,9 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
-from numpy import random as rng
 import CombineHarvester.CombineTools.ch as ch
 
-from utilspy import syscall, get_point, index_list
+from utilspy import syscall, get_point, index_list, rng
 from utilslab import kfactor_file_name
 from utilscombine import update_mask
 from utilsroot import flat_reldev_wrt_nominal, scale, zero_out, project, add_scaled_nuisance, apply_relative_nuisance, chop_up, add_original_nominal, read_original_nominal
@@ -861,7 +860,6 @@ if __name__ == '__main__':
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
-    parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     args = parser.parse_args()
 
     allyears = ["2016pre", "2016post", "2017", "2018"]

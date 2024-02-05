@@ -10,10 +10,9 @@ import glob
 from collections import OrderedDict
 import json
 
-from numpy import random as rng
 from ROOT import TFile, TTree
 
-from utilspy import syscall, get_point, chunks, elementwise_add
+from utilspy import syscall, get_point, chunks, elementwise_add, coinflip
 from utilscombine import min_g, max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
 from utilscombine import is_good_fit, never_gonna_give_you_up
 
@@ -95,7 +94,7 @@ def single_point_scan(args):
     for factor in [0., 1.]:
         for ii in range(1, nstep + 1 if factor != 0. else 2):
             limit = None
-            sign = -1. if gval != 0. and rng.binomial(1, 0.5) else 1.
+            sign = -1. if gval != 0. and coinflip() else 1.
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M AsymptoticLimits -d {wsp} -m {mmm} -n _limit_g-scan_{gst} --strictBounds "
                 "--setParameters g={gvl} --freezeParameters g {acc} --picky --redefineSignalPOIs r --singlePoint 1 {stg} {asm} {msk}".format(
