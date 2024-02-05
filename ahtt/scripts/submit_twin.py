@@ -202,7 +202,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (16, 2.**-6, 2.**-1),
-                        dest = "fcrandminmax", required = False, type = lambda s: tuple(tokenize_to_list( remove_spaces_quotes(s))))
+                        dest = "fcrandnminmax", required = False, type = lambda s: tuple(tokenize_to_list( remove_spaces_quotes(s))))
 
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
