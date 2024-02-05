@@ -91,12 +91,12 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 tmpgrid = []
                 nnearest = 3
                 for gt, eff in zip(gts, effs):
-                    unary_q1sqd = lambda pp: q1sqd(pp[0], gt)
+                    unary_q1sqd = lambda pp: q1sqd(gt, pp[0])
 
                     gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
-                    q1nearest = [gxy[0] if len(gxy) > 0 else None]
+                    q1nearest = [gxy[1] if len(gxy) > 1 else None]
 
-                    for igxy in range(1, len(gxy)):
+                    for igxy in range(2, len(gxy)):
                         if all([abs(angle(gxy[igxy][0], gg[0])) > math.pi / 16. for gg in q1nearest]):
                             q1nearest.append(gxy[igxy])
                         if len(q1nearest) >= nnearest:
@@ -109,12 +109,12 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                             differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in q1nearest]
                             if any(differences):
                                 halfsies = []
-                                for g1 in q1nearest:
+                                for ig1, g1 in enumerate(q1nearest):
                                     if g1 is None:
                                         continue
 
-                                    for g2 in q1nearest:
-                                        if g2 is None or g2 == g1:
+                                    for ig2, g2 in enumerate(q1nearest):
+                                        if ig2 <= ig1 or g2 is None:
                                             continue
 
                                         halfsies.append((g1[0], gt))
