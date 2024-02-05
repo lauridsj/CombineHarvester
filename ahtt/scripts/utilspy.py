@@ -9,8 +9,7 @@ import fnmatch
 from datetime import datetime
 from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
 
-import numpy as np
-from np import random as rng
+from numpy import random as rng
 rng.seed(None)
 
 max_nfile_per_dir = 4000
