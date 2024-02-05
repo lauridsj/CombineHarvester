@@ -68,7 +68,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
             if gmode == "random":
                 best_fit = contour["best_fit_g1_g2_dnll"]
-                npoint = randnminmax[0] if randnminmax[0] > 0 else 16
+                npoint = int(randnminmax[0]) if randnminmax[0] > 0 else 16
                 imin, imax = randnminmax[1], randnminmax[2]
                 if imax <= imin:
                     imin, imax = 2.**-6, 2.**-1
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (16, 2.**-6, 2.**-1),
-                        dest = "fcrandnminmax", required = False, type = lambda s: tuple(tokenize_to_list( remove_spaces_quotes(s))))
+                        dest = "fcrandnminmax", required = False, type = lambda s: tuple(map( float, tokenize_to_list( remove_spaces_quotes(s))) ))
 
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
