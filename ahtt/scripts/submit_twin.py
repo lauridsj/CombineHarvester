@@ -120,7 +120,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                         halfsies.append((g1[0], gt))
                                         halfsies.append((g1[0], g2[0]))
                                 halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
-                                halfsies = [half if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid]) for half in halfsies]
+                                halfsies = [half for half in halfsies if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid])]
 
                                 for half in halfsies:
                                     tmpgrid.append(half + (0,))
