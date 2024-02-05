@@ -26,9 +26,10 @@ from hilfemir import combine_help_messages, submit_help_messages
 
 from twin_point_ahtt import expected_scenario
 
-sqd = lambda p1, p2: sum([(pp1 - pp2)**2. for pp1, pp2 in zip(p1, p2)], 0.)
-
+sqd = lambda p1, p2: sum([(pp2 - pp1)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
+angle = lambda p1, p2: math.atan2(p2[1] - p1[1], p2[0] - p1[0])
+q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else sys.float_info.max
 
 def make_initial_grid(ndivision):
     grid = []
@@ -88,42 +89,46 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
                 tmpgrid = []
+                nnearest = 3
                 for gt, eff in zip(gts, effs):
-                    unary_sqd = lambda pp: sqd(pp[0], gt)
+                    unary_q1sqd = lambda pp: q1sqd(pp[0], gt)
 
-                    gx = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] == gt[1] and gg[0] > gt[0]]
-                    gy = [(gg, ee) for gg, ee in zip(gts, effs) if gg[0] == gt[0] and gg[1] > gt[1]]
-                    gxy = [(gg, ee) for gg, ee in zip(gts, effs) if gg[1] > gt[1] and gg[0] > gt[0]]
+                    gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
+                    q1nearest = [gxy[0] if len(gxy) > 0 else None]
 
-                    gx = min(gx, key = unary_sqd) if len(gx) > 0 else None
-                    gy = min(gy, key = unary_sqd) if len(gy) > 0 else None
-                    gxy = min(gxy, key = unary_sqd) if len(gxy) > 0 else None
+                    for igxy in range(1, len(gxy)):
+                        if all([abs(angle(gxy[igxy], gg)) > math.pi / 16. for gg in q1nearest]):
+                            q1nearest.append(gxy[igxy])
+                        if len(q1nearest) >= nnearest:
+                            break
+                    while len(q1nearest) < nnearest:
+                        q1nearest.append(None)
 
                     for cut, alpha in zip(cuts, generate_g_grid.alphas):
                         if cut:
-                            differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in [gx, gy, gxy]]
+                            differences = [gg is not None and ((gg[1] > alpha and eff < alpha) or (gg[1] < alpha and eff > alpha)) for gg in q1nearest]
                             if any(differences):
                                 halfsies = []
-                                for g1 in [gx, gy, gxy]:
+                                for g1 in q1nearest:
                                     if g1 is None:
                                         continue
 
-                                    for g2 in [gx, gy, gxy]:
+                                    for g2 in q1nearest:
                                         if g2 is None or g2 == g1:
                                             continue
 
                                         halfsies.append((g1[0], gt))
                                         halfsies.append((g1[0], g2[0]))
                                 halfsies = [halfway(p1, p2) for p1, p2 in halfsies]
+                                halfsies = [half if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid]) for half in halfsies]
 
                                 for half in halfsies:
-                                    if not any([half == (ggt[0], ggt[1]) for ggt in tmpgrid]):
-                                        tmpgrid.append(half + (0,))
+                                    tmpgrid.append(half + (0,))
 
                 if len(tmpgrid) == 0 and ndivision <= 31:
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
-                    # 31 is NNLO, if we have nothing within 1 sigma at 0.125 granularity uh oh that's a lot of points to scan
+                    # 31 is NNLO, if we have nothing within 2 sigma at 0.125 granularity uh oh that's a lot of points to scan
                     for gv in contour["g-grid"].keys():
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
