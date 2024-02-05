@@ -40,7 +40,7 @@ def make_initial_grid(ndivision):
             grid.append( (ig1, ig2, 0) )
     return grid
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7, randnminmax = (16, 2.**-6, 2.**-1)):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7, randaround = (-1., -1.), randnminmax = (32, 2.**-6, 2.**-1)):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -68,7 +68,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
             if gmode == "random":
                 best_fit = contour["best_fit_g1_g2_dnll"]
-                npoint = int(randnminmax[0]) if randnminmax[0] > 0 else 16
+                around = [best_fit[0] if randaround[0] < 0. else randaround[0], best_fit[1] if randaround[1] < 0. else randaround[1]]
+                npoint = int(randnminmax[0]) if randnminmax[0] > 0 else 32
                 imin, imax = randnminmax[1], randnminmax[2]
                 if imax <= imin:
                     imin, imax = 2.**-6, 2.**-1
@@ -77,7 +78,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gstorun = [round(gvalue + (delta * sign), 5) for gvalue, delta, sign in zip(best_fit[:2], deltas, signs)]
+                    gstorun = [round(gvalue + (delta * sign), 5) for gvalue, delta, sign in zip(around, deltas, signs)]
                     if all([min_g <= gvalue <= max_g for gvalue in gstorun]):
                         g_grid.append( tuple(gstorun) + (0,) )
                         ipoint += 1
@@ -201,7 +202,10 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
-    parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (16, 2.**-6, 2.**-1),
+
+    parser.add_argument("--fc-random-around", help = combine_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
+                        required = False, type = lambda s: tuple([float(ss) for ss in tokenize_to_list( remove_spaces_quotes(s) )]))
+    parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (32, 2.**-6, 2.**-1),
                         dest = "fcrandnminmax", required = False, type = lambda s: tuple(map( float, tokenize_to_list( remove_spaces_quotes(s))) ))
 
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
@@ -405,7 +409,7 @@ if __name__ == '__main__':
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
                                               int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7,
-                                              args.fcrandnminmax)
+                                              args.fcrandaround, args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
