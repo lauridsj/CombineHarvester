@@ -14,7 +14,8 @@ import json
 import math
 from datetime import datetime
 
-from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, make_timestamp_dir, directory_to_delete, max_nfile_per_dir, floattopm
+from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, floattopm, uniform, coinflip
+from utilspy import make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilslab import input_base, input_sig, remove_mjf
 from utilscombine import problematic_datacard_log, min_g, max_g
 from utilshtc import submit_job, flush_jobs, common_job
@@ -39,7 +40,7 @@ def make_initial_grid(ndivision):
             grid.append( (ig1, ig2, 0) )
     return grid
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7, randnminmax = (16, 2.**-6, 2.**-1)):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -64,6 +65,22 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 print "in grid: ", contour["points"]
                 print "currently expected: ", pair
                 return g_grid
+
+            if gmode == "random":
+                best_fit = contour["best_fit_g1_g2_dnll"]
+                npoint = randminmax[0] if randminmax[0] > 0 else 16
+                imin, imax = randminmax[1], randminmax[2]
+                if imax <= imin:
+                    imin, imax = 2.**-6, 2.**-1
+                ipoint = 0
+
+                while ipoint < npoint:
+                    deltas = [uniform(imin, imax), uniform(imin, imax)]
+                    signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
+                    gstorun = [round(gvalue + (delta * sign), 5) for gvalue, delta, sign in zip(best_fit[:2], deltas, signs)]
+                    if all([min_g <= gvalue <= max_g for gvalue in gstorun]):
+                        g_grid.append( tuple(gstorun) + (0,) )
+                        ipoint += 1
 
             if gmode == "add" or gmode == "brim":
                 for gv in contour["g-grid"].keys():
@@ -128,7 +145,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 if len(tmpgrid) == 0 and ndivision <= 31:
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
-                    # 31 is NNLO, if we have nothing within 2 sigma at 0.125 granularity uh oh that's a lot of points to scan
+                    # 31 is NNLO, if we have nothing within max sigma at 0.125 granularity uh oh that's a lot of points to scan
                     for gv in contour["g-grid"].keys():
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
@@ -184,11 +201,12 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
+    parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (16, 2.**-6, 2.**-1),
+                        dest = "fcrandminmax", required = False, type = lambda s: tuple(tokenize_to_list( remove_spaces_quotes(s))))
 
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
     args = parse_args(parser)
-
     remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -386,7 +404,8 @@ if __name__ == '__main__':
                     toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
-                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7)
+                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7,
+                                              args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
