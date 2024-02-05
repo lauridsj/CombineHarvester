@@ -203,7 +203,7 @@ if __name__ == '__main__':
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
 
-    parser.add_argument("--fc-random-around", help = combine_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
+    parser.add_argument("--fc-random-around", help = submit_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
                         required = False, type = lambda s: tuple([float(ss) for ss in tokenize_to_list( remove_spaces_quotes(s) )]))
     parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = (32, 2.**-6, 2.**-1),
                         dest = "fcrandnminmax", required = False, type = lambda s: tuple(map( float, tokenize_to_list( remove_spaces_quotes(s))) ))
