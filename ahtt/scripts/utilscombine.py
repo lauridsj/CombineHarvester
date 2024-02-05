@@ -202,7 +202,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
                             all_strategies = None, throw_upon_failure = True):
     '''
     run fits with multiple settings until one works
-    command: command to run. should contain a {strategy} in there to be substituted in
+    command: command to run. should contain a {fit_strategy} in there to be substituted in
 
     optimize is just an extra flag for fit strategy, due to prepost needing it to be False, and elsewhere True
 
@@ -229,8 +229,9 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             continue
         robusthesse = irobust and usehesse
 
-        syscall(command.format(
-            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = robusthesse, tolerance = itol, optimize = optimize),
+        syscall(command.replace(
+            '{fit_strategy}',
+            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = robusthesse, tolerance = itol, optimize = optimize)
         ))
 
         for fu in followups:
