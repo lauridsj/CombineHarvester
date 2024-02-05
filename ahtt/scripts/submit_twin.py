@@ -68,8 +68,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
             if gmode == "random":
                 best_fit = contour["best_fit_g1_g2_dnll"]
-                npoint = randminmax[0] if randminmax[0] > 0 else 16
-                imin, imax = randminmax[1], randminmax[2]
+                npoint = randnminmax[0] if randnminmax[0] > 0 else 16
+                imin, imax = randnminmax[1], randnminmax[2]
                 if imax <= imin:
                     imin, imax = 2.**-6, 2.**-1
                 ipoint = 0
