@@ -451,7 +451,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         keep_value = above_threshold and threshold_is_sensible and two_sided_flat
 
                         scaleu = chi2s[4] if keep_value else 0.
-                        scaled = scaleu if is_oneside else chi2s[5] if keep_value else 0.
+                        scaled = -1. * scaleu if is_oneside else chi2s[5] if keep_value else 0.
 
                         flat_reldev_wrt_nominal(hu, hn, scaleu)
                         flat_reldev_wrt_nominal(hd, hn, scaled)
