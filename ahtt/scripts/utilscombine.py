@@ -231,7 +231,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
 
         syscall(command.replace(
             '{fit_strategy}',
-            fit_strategy = fit_strategy(strategy = istrat, robust = irobust, use_hesse = robusthesse, tolerance = itol, optimize = optimize)
+            fit_strategy(strategy = istrat, robust = irobust, use_hesse = robusthesse, tolerance = itol, optimize = optimize)
         ))
 
         for fu in followups:
