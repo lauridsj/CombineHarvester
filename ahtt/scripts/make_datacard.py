@@ -179,6 +179,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         for c1, c2 in read_category_process_nuisance.aliases.items():
             read_category_process_nuisance.specials[c2 + '_shape_EWQCD'] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
+    if not hasattr(read_category_process_nuisance, "onesides"):
+        read_category_process_nuisance.onesides = ["EWK_scheme", "CR_ERD_TT", "CR_QCD_TT", "CR_Gluon_TT"]
+
     processes = []
     nuisances = []
 
@@ -441,13 +444,14 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                     # use smooth if it is two-sided and its chi2 is better than flat in both up and down
                     if not two_sided_smooth or chi2s[2] < chi2s[0] or chi2s[3] < chi2s[1]:
-                        above_threshold = lnNsmall or (abs(chi2s[4]) > threshold and abs(chi2s[5]) > threshold)
-                        threshold_is_sensible = (1. > abs(chi2s[4]) > 1e-5 and 1. > abs(chi2s[5]) > 1e-5)
-                        two_sided_flat = chi2s[4] / chi2s[5] < 0.
+                        is_oneside = nn2 in read_category_process_nuisance.onesides
+                        above_threshold = lnNsmall or (abs(chi2s[4]) > threshold and (is_oneside or abs(chi2s[5]) > threshold))
+                        threshold_is_sensible = (1. > abs(chi2s[4]) > 1e-5 and (is_oneside or 1. > abs(chi2s[5]) > 1e-5))
+                        two_sided_flat = is_oneside or chi2s[4] / chi2s[5] < 0.
                         keep_value = above_threshold and threshold_is_sensible and two_sided_flat
 
                         scaleu = chi2s[4] if keep_value else 0.
-                        scaled = chi2s[5] if keep_value else 0.
+                        scaled = scaleu if is_oneside else chi2s[5] if keep_value else 0.
 
                         flat_reldev_wrt_nominal(hu, hn, scaleu)
                         flat_reldev_wrt_nominal(hd, hn, scaled)
