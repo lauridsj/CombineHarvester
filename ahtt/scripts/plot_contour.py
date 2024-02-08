@@ -55,9 +55,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     if not hasattr(draw_contour, "colors"):
         draw_contour.colors = OrderedDict([
             (1    , ["0"]),
-            (2    , ["#cc0033", "#0033cc"]),
-            (3    , ["0", "#cc0033", "#0033cc"]),
-            (4    , ["0", "#cc0033", "#0033cc", "#33cc00"]),
+            (2    , reversed(["0", "#cc0033"])),
+            (3    , reversed(["0", "#cc0033", "#0033cc"])),
+            (4    , reversed(["0", "#cc0033", "#0033cc", "#33cc00"])),
         ])
         draw_contour.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
 
@@ -67,9 +67,11 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     sigmas = []
 
     for ic, contour in enumerate(contours):
+        colortouse = draw_contour.colors[len(contours)][ic]
+
         if bestfit:
             ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
-                    marker = 'X', markersize = 10.0, color = draw_contour.colors[len(contours)][ic])
+                    marker = 'X', markersize = 10.0, color = colortouse)
             if ic == 0:
                 sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
@@ -85,7 +87,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
                 xs.sort()
 
                 ax.plot(np.array(xs), np.array(ys),
-                        marker = '.', ls = '', lw = 0., color = draw_contour.colors[len(contours)][ic], alpha = 0.5)
+                        marker = '.', ls = '', lw = 0., color = colortouse, alpha = 0.5)
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
@@ -104,11 +106,11 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
             if drawcontour:
                 ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
-                              levels = np.array([alpha, 2.]), colors = draw_contour.colors[len(contours)][ic],
+                              levels = np.array([alpha, 2.]), colors = colortouse,
                               linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = draw_contour.colors[len(contours)][ic], linestyle = 'solid', linewidth = 2), labels[ic]))
+                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), labels[ic]))
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
