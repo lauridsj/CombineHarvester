@@ -104,30 +104,35 @@ def points_to_compile(points, expfits, gname):
                 gpoints.append(tuplize(gv))
     return sorted(list(set(gpoints)))
 
-def get_toys(tname, best_fit, whatever_else = None):
-    if not os.path.isfile(tname):
+def get_toys(toy_name, best_fit, keep_reduced = False, strict_preservation = False, whatever_else = None):
+    if not os.path.isfile(toy_name):
         return None
 
-    pval = OrderedDict()
+    vname = toy_name.replace("toys.root", "dnll.root")
+    syscall("rooteventselector --recreate -e '*' -i '{branches}' -s 'quantileExpected >= 0 && deltaNLL >= 0' {tn}:limit {vn}".format(
+        branches = "deltaNLL,quantileExpected",
+        tn = toy_name,
+        vn = vname
+    ))
 
-    tfile = TFile.Open(tname)
-    ttree = tfile.Get("limit")
+    pval = OrderedDict()
+    vfile = TFile.Open(vname)
+    vtree = vfile.Get("limit")
 
     isum = 0
     ipas = 0
-
-    for i in ttree:
-        if ttree.quantileExpected >= 0. and ttree.deltaNLL >= 0.:
-            isum += 1
-            if ttree.deltaNLL > best_fit[2]:
-                ipas += 1
-
-    tfile.Close()
+    for i in vtree:
+        isum += 1
+        ipas += 1 if vtree.deltaNLL > best_fit[2] else 0
+    vfile.Close()
+    if not strict_preservation:
+        syscall("mv {vn} {tn}".format(vn = vname, tn = toy_name))
+    if not keep_reduced:
+        syscall("rm {vn}".format(vn = vname), False, True)
 
     pval["dnll"] = best_fit[2]
     pval["total"] = isum
     pval["pass"] = ipas
-
     return pval
 
 def sum_up(g1, g2):
@@ -605,7 +610,7 @@ if __name__ == '__main__':
                 tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))
                 tname = tname[0] if len(tname) else ""
 
-                gg = get_toys(tname, expected_fit)
+                gg = get_toys(toy_name = tname, best_fit = expected_fit, keep_reduced = args.collectoy and fcexp == args.fcexp[-1])
                 if gg is not None and args.rmroot:
                     directory_to_delete(location = ename)
                     syscall("rm " + ename, False, True)
