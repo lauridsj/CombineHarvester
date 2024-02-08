@@ -80,7 +80,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gstorun = [round(gvalue + (delta * sign), 5) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    gstorun = [round(gvalue + (delta * sign), 11) for gvalue, delta, sign in zip(around, deltas, signs)]
                     if all([min_g <= gvalue <= max_g for gvalue in gstorun]):
                         g_grid.append( tuple(gstorun) + (0,) )
                         ipoint += 1
@@ -109,7 +109,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
                 # add the best fit point into list of grid points, by construction the 0 sigma point
-                gts.append((round(best_fit[0], 5), round(best_fit[1], 5)))
+                gts.append((round(best_fit[0], 11), round(best_fit[1], 11)))
                 effs.append(1.)
 
                 tmpgrid = []
