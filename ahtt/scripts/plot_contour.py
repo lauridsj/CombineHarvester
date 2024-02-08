@@ -243,7 +243,7 @@ if __name__ == '__main__':
                         idx = '_' + fcexp.split(':')[2] if len(fcexp.split(':')) > 2 else idx
 
                     ggg = glob.glob(pstr + tag.split('/')[0] + "/" + pstr + otg + "_fc-scan_" + exp + idx + ".json")
-                    ggg.sort(key = os.path.getmtime)
+                    ggg.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
                     contour.append(ggg[-1])
         else:
             contour = contours

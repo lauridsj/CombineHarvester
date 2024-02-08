@@ -555,7 +555,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
             scenario = expected_scenario(fcexp)
-            print "\ntwin_point_ahtt :: compiling scenario {sc}...\n".format(sc = scenario)
+            print "\ntwin_point_ahtt :: compiling scenario {sc}...".format(sc = scenario)
             sys.stdout.flush()
 
             expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = scenario[0]))
@@ -566,7 +566,7 @@ if __name__ == '__main__':
                 ptg = ptag,
                 exp = scenario[0]
             ))
-            previous_grids.sort(key = os.path.getmtime)
+            previous_grids.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
             no_previous = args.ignoreprev or len(previous_grids) == 0
 
             if len(expfits) == 0 and no_previous:
