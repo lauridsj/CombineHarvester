@@ -555,7 +555,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
             scenario = expected_scenario(fcexp)
-            print "\ntwin_point_ahtt :: compiling scenario {sc}...n".format(sc = scenario)
+            print "\ntwin_point_ahtt :: compiling scenario {sc}...\n".format(sc = scenario)
 
             expfits = recursive_glob(dcdir, "{ptg}_fc-scan_*_{exp}.root".format(ptg = ptag, exp = scenario[0]))
             expfits.sort()
