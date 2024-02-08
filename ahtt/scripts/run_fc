@@ -48,7 +48,7 @@ drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa,bindingEnergy'
 condor_check . | tee /dev/tty | xargs rm
 
 #6 run the remaining LO points
-#6a use --fc-initial-distance to start with a different resolution than default of 0.5 (runs over more points initially, but less refine steps)
+#6a use --fc-initial-distance to start with a different resolution than default of 1.0 (runs over more points initially, but less refine steps)
 ./../scripts/submit_twin.py --mode contour --point "${pairs}" --tag "${tag}" --fc-expect "${exps}" --n-toy "${ntoy}" --run-idxs "${idxs}" --unblind --no-log
 #6b repeat step 5
 
