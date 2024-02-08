@@ -610,7 +610,7 @@ if __name__ == '__main__':
                 tname = recursive_glob(dcdir, os.path.basename(ename).replace("{exp}.root".format(exp = scenario[0]), "toys.root"))
                 tname = tname[0] if len(tname) else ""
 
-                gg = get_toys(toy_name = tname, best_fit = expected_fit, keep_reduced = args.collectoy and fcexp == args.fcexp[-1])
+                gg = get_toys(toy_name = tname, best_fit = expected_fit, keep_reduced = args.collecttoy and fcexp == args.fcexp[-1])
                 if gg is not None and args.rmroot:
                     directory_to_delete(location = ename)
                     syscall("rm " + ename, False, True)
