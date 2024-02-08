@@ -32,6 +32,7 @@ sqd = lambda p1, p2: sum([(pp2 - pp1)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 angle = lambda p1, p2: math.atan2(p2[1] - p1[1], p2[0] - p1[0])
 q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else sys.float_info.max
+default_ndivision = 4 # i.e. in step of 1
 
 def make_initial_grid(ndivision):
     grid = []
@@ -41,7 +42,7 @@ def make_initial_grid(ndivision):
             grid.append( (ig1, ig2, 0) )
     return grid
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = 7, randaround = (-1., -1.), randnminmax = (32, 2.**-6, 2.**-1)):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = default_ndivision, randaround = (-1., -1.), randnminmax = (32, 2.**-6, 2.**-1)):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -67,8 +68,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 print "currently expected: ", pair
                 return g_grid
 
+            best_fit = contour["best_fit_g1_g2_dnll"]
             if gmode == "random":
-                best_fit = contour["best_fit_g1_g2_dnll"]
                 around = [best_fit[0] if randaround[0] < 0. else randaround[0], best_fit[1] if randaround[1] < 0. else randaround[1]]
                 npoint = int(randnminmax[0]) if randnminmax[0] > 0 else 32
                 imin, imax = randnminmax[1], randnminmax[2]
@@ -107,11 +108,14 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
+                # add the best fit point into list of grid points, by construction the 0 sigma point
+                gts.append((best_fit[0], best_fit[1]))
+                effs.append(1.)
+
                 tmpgrid = []
                 nnearest = 3
                 for gt, eff in zip(gts, effs):
                     unary_q1sqd = lambda pp: q1sqd(gt, pp[0])
-
                     gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
                     q1nearest = [gxy[1] if len(gxy) > 1 else None]
 
@@ -422,7 +426,7 @@ if __name__ == '__main__':
                     toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
                     gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
-                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else 7,
+                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else default_ndivision,
                                               args.fcrandaround, args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
