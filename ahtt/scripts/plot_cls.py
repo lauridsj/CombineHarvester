@@ -64,13 +64,13 @@ def draw_cls(odir, directories, tags, xaxis, transparent, plotformat):
             ax.plot(np.array([min_g, max_g]), np.array([0.05, 0.05]), color = 'darkolivegreen', linestyle = '--', linewidth = 1.5)
             for quantile, cls in limits.items():
                 ax.plot(np.array([g for g, c in cls]), np.array([c for g, c in cls]), label = stuff[quantile][0],
-                        color = stuff[quantile][1], linestyle = '--', marker = 'x', markersize = 1, linewidth = 1.5)
+                        color = stuff[quantile][1], linestyle = '--', marker = 'o', markersize = 1, linewidth = 1.5)
 
             plt.xlim((min_g, max_g))
             plt.xlabel(xaxis, fontsize = 13, loc = "right")
             plt.ylabel(r"$\mathrm{CL}_{\mathrm{s}}$", fontsize = 13, loc = "top")
             ax.set_yscale('log')
-            ax.legend(title = str_point('_'.join(dcd.split('_')[:3])))
+            ax.legend(title = "${point}$".format(point = str_point('_'.join(dcd.split('_')[:3]))))
             fig.tight_layout()
             fig.savefig("{ooo}/{pnt}_{tag}_cls{fmt}".format(
                 ooo = odir,
