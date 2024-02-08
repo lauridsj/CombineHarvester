@@ -7,6 +7,7 @@ import sys
 import glob
 import numpy as np
 import copy
+import re
 
 from random import shuffle
 from collections import OrderedDict
