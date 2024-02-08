@@ -202,6 +202,8 @@ if __name__ == '__main__':
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
     parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
                         type = lambda s: float(remove_spaces_quotes(s)))
+    parser.add_argument("--fc-submit-also", help = submit_help_messages["--fc-submit-also"], default = "", dest = "fcsubalso", required = False,
+                        type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
 
     parser.add_argument("--fc-random-around", help = submit_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
                         required = False, type = lambda s: tuple([float(ss) for ss in tokenize_to_list( remove_spaces_quotes(s) )]))
@@ -248,6 +250,7 @@ if __name__ == '__main__':
         ggrids = ["" for pair in pairs]
 
     rundc = "datacard" in args.mode or "workspace" in args.mode
+    runclean = "clean" in args.mode
     rungen = "generate" in args.mode
     rungof = "gof" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
@@ -255,7 +258,6 @@ if __name__ == '__main__':
     runcompile = "compile" in args.mode
     runprepost = "prepost" in args.mode or "corrmat" in args.mode
     runpsfromws = "psfromws" in args.mode
-    runclean = "clean" in args.mode
     runnll = "nll" in args.mode or "likelihood" in args.mode
 
     if runcompile and (rundc or runfc or runhadd):
@@ -297,17 +299,28 @@ if __name__ == '__main__':
             else:
                 continue
 
-        if mode == "":
-            mode = args.mode
+        if runclean:
+            for job in ["generate", "gof", "contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
+                syscall("find {pnt}{tag} -type f -name 'twin_point_{pnt}{otg}_*{job}*.o*.*' | xargs rm".format(
+                    pnt = pstr,
+                    tag = args.tag,
+                    otg = args.otag,
+                    job = job), False, True)
+            for tmps in ["fc-result", "toys"]:
+                tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
+                for tm in tmp:
+                    directory_to_delete(location = tm)
+            directory_to_delete(location = None, flush = True)
 
+        mode = mode if mode != "" else args.mode
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
-
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
-        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {igp} {gvl} {fix} {exp}".format(
+        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {clt} {igp} {gvl} {fix} {exp}".format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
             sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year) if rundc else "",
             rmr = "--delete-root" if args.rmroot else "",
+            clt = "--collect-toy" if args.collecttoy else "",
             igp = "--ignore-previous" if args.ignoreprev else "",
             gvl = clamp_with_quote(
                 string = ','.join(args.gvalues),
@@ -315,7 +328,7 @@ if __name__ == '__main__':
             ) if valid_g and not runfc else "",
             fix = "--fix-poi" if valid_g and args.fixpoi else "",
             exp = clamp_with_quote(
-                string = ";".join(args.fcexp),
+                string = ";".join(args.fcexp + args.fcsubalso) if runfc or runcompile else ";".join(args.fcexp),
                 prefix = "--{fn}-expect{s}".format(
                     fn = "fc" if runfc or runcompile else "nll",
                     s = '=' if args.fcexp[0][0] == "-" else " "
@@ -433,7 +446,7 @@ if __name__ == '__main__':
                         jname = job_name + scan_name + sdx
                         logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
                         fcrundat = args.fcrundat and firstjob
-                        fmatches = ["_" + fcexp for fcexp in args.fcexp] if fcrundat else ["_toys" + sdx]
+                        fmatches = ["_" + expected_scenario(fcexp)[0] for fcexp in args.fcexp + args.fcsubalso] if fcrundat else ["_toys" + sdx]
                         fmatches = ["{ptg}_fc-scan_pnt{snm}{sfx}.root".format(
                             ptg = pstr + args.otag,
                             snm = scan_name,
@@ -443,7 +456,7 @@ if __name__ == '__main__':
                         for fmatch in fmatches:
                             roots += recursive_glob(pstr + args.tag, fmatch)
                         if not (args.runlocal and args.forcelocal):
-                            hasroots = len(roots) >= len(args.fcexp) if fcrundat else len(roots) > 0
+                            hasroots = len(roots) >= len(args.fcexp + args.fcsubalso) if fcrundat else len(roots) > 0
                             if len(logs) > 0 or hasroots:
                                 continue
 
@@ -462,7 +475,7 @@ if __name__ == '__main__':
                                 jarg += " --save-toy"
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
-                            expnres += 2 * len(args.fcexp) if firstjob and fcrundat else 2 if writelog else 1
+                            expnres += 2 * len(args.fcexp + args.fcsubalso) if firstjob and fcrundat else 2 if writelog else 1
                             submit_job(jname, jarg, args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
@@ -504,19 +517,6 @@ if __name__ == '__main__':
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
         else:
-            if runclean:
-                for job in ["generate", "gof", "contour_g1_*_g2_*", "fc-scan_g1_*_g2*", "merge", "hadd", "compile"]:
-                    syscall("find {pnt}{tag} -type f -name 'twin_point_{pnt}{otg}_*{job}*.o*.*' | xargs rm".format(
-                        pnt = pstr,
-                        tag = args.tag,
-                        otg = args.otag,
-                        job = job), False, True)
-                # FIXME buggy in current state since it indiscriminately cleans, even dirs that are to be used for future output
-                #for tmps in ["fc-result", "toys"]:
-                #    tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
-                #    for tm in tmp:
-                #        directory_to_delete(location = tm)
-
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
 
             if not (args.runlocal and args.forcelocal):

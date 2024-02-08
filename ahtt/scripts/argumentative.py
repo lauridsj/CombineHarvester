@@ -91,6 +91,7 @@ def common_2D(parser):
     parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
 
     parser.add_argument("--delete-root", help = combine_help_messages["--delete-root"], dest = "rmroot", action = "store_true", required = False)
+    parser.add_argument("--collect-toy", help = combine_help_messages["--collect-toy"], dest = "collecttoy", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = combine_help_messages["--ignore-previous"], dest = "ignoreprev", action = "store_true", required = False)
 
     parser.add_argument("--prepost-fit", help = combine_help_messages["--prepost-fit"], dest = "prepostfit", default = "s", required = False, choices = ['s', 'b'], type = remove_spaces_quotes)
