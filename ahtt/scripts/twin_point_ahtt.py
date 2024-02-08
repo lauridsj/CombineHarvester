@@ -566,7 +566,7 @@ if __name__ == '__main__':
                 ptg = ptag,
                 exp = scenario[0]
             ))
-            previous_grids.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
+            previous_grids.sort(key = lambda name: int(name.split('_')[-1].split('.')[0]))
             no_previous = args.ignoreprev or len(previous_grids) == 0
 
             if len(expfits) == 0 and no_previous:
