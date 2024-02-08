@@ -113,7 +113,7 @@ def get_toys(toy_name, best_fit, keep_reduced = False, strict_preservation = Fal
         branches = "deltaNLL,quantileExpected",
         tn = toy_name,
         vn = vname
-    ))
+    ), False)
 
     pval = OrderedDict()
     vfile = TFile.Open(vname)
@@ -126,7 +126,7 @@ def get_toys(toy_name, best_fit, keep_reduced = False, strict_preservation = Fal
         ipas += 1 if vtree.deltaNLL > best_fit[2] else 0
     vfile.Close()
     if not strict_preservation:
-        syscall("mv {vn} {tn}".format(vn = vname, tn = toy_name))
+        syscall("mv {vn} {tn}".format(vn = vname, tn = toy_name), False)
     if not keep_reduced:
         syscall("rm {vn}".format(vn = vname), False, True)
 
