@@ -109,7 +109,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
                 # add the best fit point into list of grid points, by construction the 0 sigma point
-                gts.append((best_fit[0], best_fit[1]))
+                gts.append((round(best_fit[0], 5), round(best_fit[1], 5)))
                 effs.append(1.)
 
                 tmpgrid = []
