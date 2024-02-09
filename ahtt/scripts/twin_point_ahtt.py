@@ -108,7 +108,7 @@ def get_toys(toy_name, best_fit, keep_reduced = False, strict_preservation = Fal
     if not os.path.isfile(toy_name):
         return None
 
-    vname = toy_name.replace("toys.root", "dnll.root")
+    vname = toy_name.replace("toys.root", "reduced.root")
     syscall("rooteventselector --recreate -e '*' -i '{branches}' -s 'quantileExpected >= 0 && deltaNLL >= 0' {tn}:limit {vn}".format(
         branches = "deltaNLL,quantileExpected",
         tn = toy_name,
@@ -162,6 +162,65 @@ def starting_poi(gvalues, fixpoi):
     frzpar = ['g' + str(ii + 1) for ii, gg in enumerate(gvalues) if float(gg) >= 0.] if fixpoi else []
 
     return [setpar, frzpar]
+
+def hadd_files(dcdir, point_tag, fileexp, direxp):
+    '''
+    fileexp: a list of file expressions to glob, in order: source, merged
+    direxp: a list of directory expressions to glob, in order: source, merged
+    source directory is the directory containing source files, ditto for merged
+    '''
+
+    fsrc, fmrg = fileexp
+    dsrc, dmrg = direxp
+    files = recursive_glob(dcdir, "{ptg}_*_{src}.root".format(ptg = ptag, src = fsrc))
+
+    if len(files) > 0:
+        print "\ntwin_point_ahtt :: source files with expression '{src}' detected, merging them...".format(src = fsrc)
+        files = set([os.path.basename(re.sub(fsrc.replace('*', '.*'), fmrg, ff)) for ff in files])
+
+        mrgdir = ""
+        for ii, ff in enumerate(files):
+            if ii % max_nfile_per_dir == 0:
+                mrgdir = make_timestamp_dir(base = dcdir, prefix = dmrg)
+                directory_to_delete(location = mrgdir)
+
+            tomerge = recursive_glob(dcdir, ff)
+            if len(tomerge) > 0:
+                syscall("mv {ff} {fg}".format(ff = tomerge[0], fg = ff.replace(fmrg, fmrg.replace(".root", "_x.root"))), False, True)
+                for tm in tomerge:
+                    directory_to_delete(location = tm)
+
+            tomerge = recursive_glob(dcdir, ff.replace(fmrg, fsrc))
+            for tm in tomerge:
+                if dsrc in tm:
+                    directory_to_delete(location = tm)
+
+            jj = 0
+            while len(tomerge) > 0:
+                if len(tomerge) > 1:
+                    about_right = 200 # arbitrary, only to prevent commands getting too long
+                    tomerge = chunks(tomerge, len(tomerge) // about_right)
+                    merged = []
+
+                    for itm, tm in enumerate(tomerge):
+                        mname = mrgdir + ff.replace(fmrg, fmrg.replace(".root", "_{jj}-{itm}.root".format(jj = jj, itm = itm)))
+                        while os.path.isfile(mname):
+                            jj += 1
+                            mname = mrgdir + ff.replace(fmrg, fmrg.replace(".root", "_{jj}-{itm}.root".format(jj = jj, itm = itm)))
+                        syscall("hadd {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
+                        merged.append(mname)
+
+                    jj += 1
+                    tomerge = merged
+                    continue
+
+                elif len(tomerge) == 1:
+                    syscall("mv {fg} {ff}".format(
+                        fg = tomerge[0],
+                        ff = re.sub(fsrc.replace('*', '.*'), fmrg, tomerge[0])
+                    ), False, True)
+                    tomerge = []
+        directory_to_delete(location = None, flush = True)
 
 if __name__ == '__main__':
     print "twin_point_ahtt :: called with the following arguments"
@@ -494,56 +553,8 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        toys = recursive_glob(dcdir, "{ptg}_*_toys_*.root".format(ptg = ptag))
-
-        if len(toys) > 0:
-            print "\ntwin_point_ahtt :: indexed toy files detected, merging them..."
-            toys = set([os.path.basename(re.sub('toys_.*.root', 'toys.root', toy)) for toy in toys])
-
-            mrgdir = ""
-            for ii, toy in enumerate(toys):
-                if ii % max_nfile_per_dir == 0:
-                    mrgdir = make_timestamp_dir(base = dcdir, prefix = "{mode}-merge".format(mode = "fc" if "fc-" in toy else "gof"))
-                    directory_to_delete(location = mrgdir)
-
-                tomerge = recursive_glob(dcdir, toy)
-                if len(tomerge) > 0:
-                    syscall("mv {toy} {tox}".format(toy = tomerge[0], tox = toy.replace("toys.root", "toys_x.root")), False, True)
-                    for tm in tomerge:
-                        directory_to_delete(location = tm)
-
-                tomerge = recursive_glob(dcdir, toy.replace("toys.root", "toys_*.root"))
-                for tm in tomerge:
-                    if '-result' in tm:
-                        directory_to_delete(location = tm)
-
-                jj = 0
-                while len(tomerge) > 0:
-                    if len(tomerge) > 1:
-                        about_right = 200 # arbitrary, only to prevent commands getting too long
-                        tomerge = chunks(tomerge, len(tomerge) // about_right)
-                        merged = []
-
-                        for itm, tm in enumerate(tomerge):
-                            mname = mrgdir + toy.replace("toys.root", "toys_{jj}-{itm}.root".format(jj = jj, itm = itm))
-                            while os.path.isfile(mname):
-                                jj += 1
-                                mname = mrgdir + toy.replace("toys.root", "toys_{jj}-{itm}.root".format(jj = jj, itm = itm))
-                            syscall("hadd {toy} {tox} && rm {tox}".format(toy = mname, tox = " ".join(tm)))
-                            merged.append(mname)
-
-                        jj += 1
-                        tomerge = merged
-                        continue
-
-                    elif len(tomerge) == 1:
-                        syscall("mv {tox} {toy}".format(
-                            tox = tomerge[0],
-                            toy = re.sub('toys_.*.root', 'toys.root', tomerge[0])
-                        ), False, True)
-                        tomerge = []
-
-            directory_to_delete(location = None, flush = True)
+        hadd_files(dcdir, ptag, ["toys_*.root", "toys.root"], ["-result", "{mode}-merge".format(mode = "fc" if "fc-" in toy else "gof")])
+        hadd_files(dcdir, ptag, ["reduced.root", "reduced.root"], ["fc-merge", "fc-reduced"])
 
     if runcompile:
         toys = recursive_glob(dcdir, "{ptg}_fc-scan_*_toys.root".format(ptg = ptag))
