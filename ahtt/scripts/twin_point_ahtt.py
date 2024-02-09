@@ -170,6 +170,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
     source directory is the directory containing source files, ditto for merged
     '''
 
+    fileexp = [ff.replace(".root", "") for ff in fileexp]
     fsrc, fmrg = fileexp
     dsrc, dmrg = direxp
     files = recursive_glob(dcdir, "{ptg}_*_{src}.root".format(ptg = point_tag, src = fsrc))
