@@ -33,6 +33,7 @@ halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 angle = lambda p1, p2: math.atan2(p2[1] - p1[1], p2[0] - p1[0])
 q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else sys.float_info.max
 default_ndivision = 4 # i.e. in step of 1
+gstr_precision = 7
 
 def make_initial_grid(ndivision):
     grid = []
@@ -80,7 +81,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gstorun = [round(gvalue + (delta * sign), 11) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    gstorun = [round(gvalue + (delta * sign), gstr_precision) for gvalue, delta, sign in zip(around, deltas, signs)]
                     if all([min_g <= gvalue <= max_g for gvalue in gstorun]):
                         g_grid.append( tuple(gstorun) + (0,) )
                         ipoint += 1
@@ -109,7 +110,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
                 # add the best fit point into list of grid points, by construction the 0 sigma point
-                gts.append((round(best_fit[0], 11), round(best_fit[1], 11)))
+                gts.append((round(best_fit[0], gstr_precision), round(best_fit[1], gstr_precision)))
                 effs.append(1.)
 
                 tmpgrid = []
