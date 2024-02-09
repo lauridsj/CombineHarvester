@@ -553,7 +553,8 @@ if __name__ == '__main__':
                 ), False)
 
     if runhadd:
-        hadd_files(dcdir, ptag, ["toys_*.root", "toys.root"], ["-result", "{mode}-merge".format(mode = "fc" if "fc-" in toy else "gof")])
+        for imode in ["fc", "gof"]:
+            hadd_files(dcdir, ptag, ["toys_*.root", "toys.root"], ["{im}-result".format(im = imode), "{im}-merge".format(im = imode)])
         hadd_files(dcdir, ptag, ["reduced.root", "reduced.root"], ["fc-merge", "fc-reduced"])
 
     if runcompile:
