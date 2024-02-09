@@ -181,17 +181,18 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
 
         mrgdir = ""
         for ii, ff in enumerate(files):
+            ftmp = fmrg.replace(".root", "_x.root")
             if ii % max_nfile_per_dir == 0:
                 mrgdir = make_timestamp_dir(base = dcdir, prefix = dmrg)
                 directory_to_delete(location = mrgdir)
 
             tomerge = recursive_glob(dcdir, ff)
             if len(tomerge) > 0:
-                syscall("mv {ff} {fg}".format(ff = tomerge[0], fg = mrgdir + ff.replace(fmrg, fmrg.replace(".root", "_x.root"))), False, True)
                 for tm in tomerge:
                     directory_to_delete(location = tm)
+                syscall("mv {ff} {fg}".format(ff = tomerge[0], fg = mrgdir + ff.replace(fmrg, ftmp)), False, True)
 
-            tomerge = list(set(recursive_glob(dcdir, ff.replace(fmrg, fsrc)) + recursive_glob(dcdir, ff.replace(fmrg, fmrg.replace(".root", "_x.root")))))
+            tomerge = list(set(recursive_glob(dcdir, ff.replace(fmrg, fsrc)) + recursive_glob(dcdir, ff.replace(fmrg, ftmp))))
             for tm in tomerge:
                 if dsrc in tm:
                     directory_to_delete(location = tm)
@@ -204,10 +205,11 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                     merged = []
 
                     for itm, tm in enumerate(tomerge):
-                        mname = mrgdir + ff.replace(fmrg, fmrg.replace(".root", "_{jj}-{itm}.root".format(jj = jj, itm = itm)))
+                        ftmp = fmrg.replace(".root", "_{jj}-{itm}.root".format(jj = jj, itm = itm))
+                        mname = mrgdir + ff.replace(fmrg, ftmp)
                         while os.path.isfile(mname):
                             jj += 1
-                            mname = mrgdir + ff.replace(fmrg, fmrg.replace(".root", "_{jj}-{itm}.root".format(jj = jj, itm = itm)))
+                            mname = mrgdir + ff.replace(fmrg, ftmp)
                         syscall("hadd {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
                         merged.append(mname)
 
