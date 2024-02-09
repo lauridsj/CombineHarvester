@@ -172,7 +172,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
 
     fsrc, fmrg = fileexp
     dsrc, dmrg = direxp
-    files = recursive_glob(dcdir, "{ptg}_*_{src}.root".format(ptg = ptag, src = fsrc))
+    files = recursive_glob(dcdir, "{ptg}_*_{src}.root".format(ptg = point_tag, src = fsrc))
 
     if len(files) > 0:
         print "\ntwin_point_ahtt :: source files with expression '{src}' detected, merging them...".format(src = fsrc)
