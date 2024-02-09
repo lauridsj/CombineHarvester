@@ -187,11 +187,12 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
 
             tomerge = recursive_glob(dcdir, ff)
             if len(tomerge) > 0:
+                print len(tomerge)
                 syscall("mv {ff} {fg}".format(ff = tomerge[0], fg = ff.replace(fmrg, fmrg.replace(".root", "_x.root"))), False, True)
                 for tm in tomerge:
                     directory_to_delete(location = tm)
 
-            tomerge = recursive_glob(dcdir, ff.replace(fmrg, fsrc))
+            tomerge = set(recursive_glob(dcdir, ff.replace(fmrg, fsrc)) + recursive_glob(dcdir, ff.replace(fmrg, fmrg.replace(".root", "_x.root"))))
             for tm in tomerge:
                 if dsrc in tm:
                     directory_to_delete(location = tm)
@@ -218,7 +219,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                 elif len(tomerge) == 1:
                     syscall("mv {fg} {ff}".format(
                         fg = tomerge[0],
-                        ff = re.sub(fsrc.replace('*', '.*'), fmrg, tomerge[0])
+                        ff = mrgdir + ff
                     ), False, True)
                     tomerge = []
         directory_to_delete(location = None, flush = True)
