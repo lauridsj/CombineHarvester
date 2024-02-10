@@ -175,7 +175,8 @@ submit_help_messages = {
 
     "--fc-random-around": "g1, g2 point around which to sprinkle points and run toys for",
     "--fc-random-n-min-max": "relevant only in --fc-mode random. comma-separated list of three values.\n"
-    "the first value denotes the number of points to run, second and third the interval of those point from --fc-random-around, uniformly sampled.",
+    "the first value denotes the number of points to run, second and third the interval of those point from --fc-random-around, uniformly sampled.\n"
+    "can give less than three to use defaults.",
 
     "--proper-sigma": "use proper 1 or 2 sigma CLs instead of 68% and 95% in FC scan alphas",
 }
