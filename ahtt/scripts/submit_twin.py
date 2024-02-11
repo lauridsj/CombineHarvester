@@ -90,8 +90,8 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gtorun = [round(gvalue + (delta * sign), gstr_precision) for gvalue, delta, sign in zip(around, deltas, signs)]
-                    if all([min_g <= gvalue <= max_g for gvalue in gtorun]) and tuple(gtorun) not in galready:
+                    gtorun = [max(min_g, min(round(gvalue + (delta * sign), gstr_precision, max_g))) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    if tuple(gtorun) not in galready:
                         g_grid.append( tuple(gtorun) + (0,) )
                         ipoint += 1
 
