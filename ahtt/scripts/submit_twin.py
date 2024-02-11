@@ -124,13 +124,14 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
                 tmpgrid = []
                 nnearest = 3
+                minsqd = 2.**-9
                 for gt, eff in zip(gts, effs):
                     unary_q1sqd = lambda pp: q1sqd(gt, pp[0])
                     gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
                     q1nearest = [gxy[1] if len(gxy) > 1 else None]
 
                     for igxy in range(2, len(gxy)):
-                        if all([abs(angle(gxy[igxy][0], gg[0])) > math.pi / 16. for gg in q1nearest]):
+                        if all([sqd(gxy[igxy][0], gg[0]) > minsqd and abs(angle(gxy[igxy][0], gg[0])) > math.pi / 16. for gg in q1nearest]):
                             q1nearest.append(gxy[igxy])
                         if len(q1nearest) >= nnearest:
                             break
