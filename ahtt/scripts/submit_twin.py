@@ -131,7 +131,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                     q1nearest = [gxy[1] if len(gxy) > 1 else None]
 
                     for igxy in range(2, len(gxy)):
-                        if all([sqd(gxy[igxy][0], gg[0]) > minsqd and abs(angle(gxy[igxy][0], gg[0])) > math.pi / 16. for gg in q1nearest]):
+                        if all([sqd(gxy[igxy][0], gg[0]) > minsqd and abs(angle(gxy[igxy][0], gg[0])) > math.pi / 8. for gg in q1nearest]):
                             q1nearest.append(gxy[igxy])
                         if len(q1nearest) >= nnearest:
                             break
