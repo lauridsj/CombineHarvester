@@ -40,6 +40,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--raster-i", help = submit_help_messages["--raster-i"], dest = "ichunk", default = "..[--raster-n value]", required = False)
     parser.add_argument("--impact-n", help = submit_help_messages["--impact-n"], dest = "nnuisance", default = 10, required = False, type = lambda s: int(remove_spaces_quotes(s)))
+    parser.add_argument("--impact-i", help = submit_help_messages["--impact-i"], dest = "inuisance", default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     parser.add_argument("--skip-expth", help = submit_help_messages["--skip-expth"], dest = "runexpth", action = "store_false", required = False)
     parser.add_argument("--run-mc-stats", help = submit_help_messages["--run-mc-stats"], dest = "runbb", action = "store_true", required = False)
 
@@ -170,6 +171,8 @@ if __name__ == '__main__':
                     nparts = chunks(nparts, nsplit)
 
                     for ip, ipart in enumerate(nparts):
+                        if args.inuisance >= 0 and ip != args.inuisance:
+                            continue
                         group = "expth_{ii}".format(ii = str(ip))
                         nuisances[group] = copy.deepcopy(ipart)
                 syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
@@ -185,6 +188,8 @@ if __name__ == '__main__':
                         nparts = chunks(range(nbin), nsplit)
 
                         for ip, ipart in enumerate(nparts):
+                            if args.inuisance >= 0 and ip != args.inuisance:
+                                continue
                             group = "mcstat_{cc}_{yy}_{ii}".format(cc = cc, yy = yy, ii = str(ip))
                             mcstats = ["prop_bin" + "{cc}_{yy}_bin".format(cc = cc, yy = yy) + str(ii) for ii in ipart]
                             nuisances[group] = copy.deepcopy(mcstats)

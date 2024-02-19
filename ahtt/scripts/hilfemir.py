@@ -144,6 +144,7 @@ submit_help_messages = {
     "the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be 0",
 
     "--impact-n": "maximum number of nuisances to run in a single impact job",
+    "--impact-i": "submit only a specific impact job.",
     "--skip-expth": "in pull/impact mode, skip running over the experimental and theory nuisances",
     "--run-mc-stats": "in pull/impact mode, run also over the BB nuisances individually. this option does not affect their treatment in any way (analytical minimization)",
 
