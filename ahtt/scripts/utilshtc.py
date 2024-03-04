@@ -145,7 +145,7 @@ def flush_jobs():
 
 def common_job(args):
     argstr = (" {sus} {inj} {ass} {exc} {tag} {drp} {kee} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
-              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
+              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {poi} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
                   sus = "--sushi-kfactor" if args.kfactor else "",
                   inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
                   ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
@@ -173,6 +173,7 @@ def common_job(args):
                   fr0 = clamp_with_quote(string = args.frzzero, prefix = '--freeze-zero '),
                   frp = clamp_with_quote(string = args.frzpost, prefix = '--freeze-post '),
                   rsd = clamp_with_quote(string = str(args.seed), prefix = '--seed '),
+                  poi = clamp_with_quote(string = args.poiset, prefix = '--poi-set '),
                   asm = "--unblind" if not args.asimov else "",
                   com = "--compress" if args.rundc else "",
                   dbg = "--experimental" if args.experimental else "",
