@@ -156,7 +156,11 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             workspace = newname
 
     nll = get_fit(workspace, ["nll"])
-    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the POIs = {poi} = (0, ...) point is {nll}".format(poi = ', '.join(poiset), nll = nll)
+    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll)
+    print "WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!"
+    print "WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!"
+    print "\n"
+    sys.stdout.flush()
     return workspace
 
 def starting_nuisance(freeze_zero, freeze_post):
