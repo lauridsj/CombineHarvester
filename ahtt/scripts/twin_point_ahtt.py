@@ -272,6 +272,11 @@ if __name__ == '__main__':
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
+    # pois to use in the fit
+    poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
+    poiset = list(set(pois))
+    notgah = poiset != ["g1", "g2"]
+
     # parameter ranges for best fit file
     ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
     if args.experimental:
@@ -307,8 +312,9 @@ if __name__ == '__main__':
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
-        args.defaultwsp, args.keepbest, default_workspace, args.asimov, "",
+        args.defaultwsp, args.keepbest, default_workspace, args.asimov, '__'.join(poiset) if notgah else "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+        poiset,
         set_range(ranges),
         elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
     )
@@ -640,16 +646,19 @@ if __name__ == '__main__':
         set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
-            args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov, "fitdiag",
+            args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov,
+            '__'.join(poiset) + "_fitdiag" if notgah else "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            poiset,
             set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
-        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{gvl}{fix}_{ftp}.root".format(
+        fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{poi}{gvl}{fix}_{ftp}.root".format(
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
+            poi = "_" + '__'.join(poiset) + "_" if notgah else "",
             gvl = "_" + gfit if gfit != "" else "",
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
@@ -657,17 +666,21 @@ if __name__ == '__main__':
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        startpoi = starting_poi(gvalues, args.fixpoi) if args.prepostfit == 's' else starting_poi(["0.", "0."], True)
+        if args.prepostfit == 's':
+            startpoi = starting_poi(gvalues, args.fixpoi)
+        else:
+            startpoi = starting_poi(gvalues if notgah else ["0.", "0."], args.fixpoi if notgah else True)
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
         fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
 
         never_gonna_give_you_up(
             command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
-            "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {prm} {ext} {fop}".format(
+            "--saveOverallShapes --plots -m {mmm} -n _prepost {stg} {asm} {poi} {prm} {ext} {fop}".format(
                 dcd = fitdiag_workspace,
                 mmm = mstr,
                 stg = "{fit_strategy}",
                 asm = "-t -1" if args.asimov else "",
+                poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset)),
                 prm = set_parameter(set_freeze, args.extopt, masks),
                 ext = nonparametric_option(args.extopt),
                 fop = fitopt

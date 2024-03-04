@@ -215,8 +215,14 @@ if __name__ == '__main__':
     runbest = runbest or rundc
     args.keepbest = False if runbest else args.keepbest
 
+    # pois to use in the fit
+    poiset = args.poiset if len(args.poiset) else ["g"] if args.onepoi else ["r", "g"]
+    poiset = list(set(pois))
+    onepoinotg = len(poiset) == 1 and poiset[0] != "g"
+
     # parameter ranges for best fit file
     ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
+
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
 
@@ -239,16 +245,6 @@ if __name__ == '__main__':
                         ext = args.extopt
                     ))
 
-            #if args.oldmodelnoyukawa:
-            #    syscall("combineTool.py -M T2W -i {dcd} -o workspace_{mod}.root -m {mmm} -P CombineHarvester.CombineTools.{phy} {opt} {ext}".format(
-            #        dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            #        mod = "one-poi" if onepoi else "g-scan",
-            #        mmm = mstr,
-            #        phy = "InterferenceModel:interferenceModel" if onepoi else "InterferencePlusFixed:interferencePlusFixed",
-            #        opt = "--channel-masks --no-wrappers --X-pack-asympows --optimize-simpdf-constraints=cms --use-histsum",
-            #        ext = args.extopt
-            #    ))
-
     if runvalid:
         print "\nsingle_point_ahtt :: validating datacard"
         syscall("ValidateDatacards.py --jsonFile {dcd}{ptg}_validate.json --printLevel 3 {dcd}{crd}".format(
@@ -261,12 +257,14 @@ if __name__ == '__main__':
         default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan")
         workspace = get_best_fit(
             dcdir, args.point[0], [args.otag, args.tag],
-            args.defaultwsp, args.keepbest, default_workspace, args.asimov, "one-poi" if onepoi else "g-scan",
+            args.defaultwsp, args.keepbest, default_workspace, args.asimov,
+            poiset[0] if onepoinotg else "one-poi" if onepoi else "g-scan",
             "{gvl}{rvl}{fix}".format(
                 gvl = "g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
                 rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
                 fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
             ),
+            poiset,
             set_range(ranges),
             elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
@@ -277,14 +275,14 @@ if __name__ == '__main__':
 
         if args.onepoi:
             syscall("rm {dcd}{ptg}_limits_one-poi.root {dcd}{ptg}_limits_one-poi.json".format(dcd = dcdir, ptg = ptag), False, True)
-            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {acc} {stg} {asm} {msk}".format(
+            syscall("combineTool.py -v 0 -M AsymptoticLimits -d {dcd} -m {mmm} -n _limit {acc} {stg} {asm} {msk} {poi}".format(
                 dcd = workspace,
                 mmm = mstr,
-                maxg = max_g,
                 acc = accuracies,
                 stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 asm = "--run blind -t -1" if args.asimov else "",
-                msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else ""
+                msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else "",
+                poi = "--redefineSignalPOIs '{poi}'".format(poi = poiset[0]) if len(poiset) == 1 else ""
             ))
 
             print "\nsingle_point_ahtt :: collecting limit"
@@ -344,30 +342,35 @@ if __name__ == '__main__':
             group = "_" + args.impactnui[0]
             nuisances = tokenize_to_list(args.impactnui[1])
 
-        syscall("rm {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json".format(
+        if onepoinotg:
+            nuisances = [nn for nn in nuisances if nn != poiset[0]]
+
+        oname = "{dcd}{ptg}_impacts_{poi}{gvl}{rvl}{fix}{grp}".format(
             dcd = dcdir,
             ptg = ptag,
-            mod = "one-poi" if args.onepoi else "g-scan",
+            poi = poiset[0] if onepoinotg,
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
             grp = group
-        ), False, True)
+        )
 
+        syscall("rm {onm}.json".format(onm = oname), False, True)
         syscall("rm higgsCombine*Fit__pull*.root", False, True)
         syscall("rm combine_logger.out", False, True)
         syscall("rm robustHesse_*.root", False, True)
 
         if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
-            raise RuntimeError("it is unknown if impact works correctly with the g-scan model when g is left floating. please freeze it.")
+            raise RuntimeError("impact doesn't work correctly with the g-scan model when g is left floating. please freeze it.")
         set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
-        syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {prm} {ext}".format(
+        syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {poi} {prm} {ext}".format(
             dcd = workspace,
             mmm = mstr,
             stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0, robust = True, use_hesse = args.usehesse),
             asm = "-t -1" if args.asimov else "",
+            poi = "--redefineSignalPOIs '{poi}'".format(poi = poiset[0]),
             prm = set_parameter(set_freeze, args.extopt, masks),
             ext = nonparametric_option(args.extopt)
         ))
@@ -376,11 +379,13 @@ if __name__ == '__main__':
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
             never_gonna_give_you_up(
-                command = "combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} {nui} {prm} {ext}".format(
+                command = "combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} "
+                "{poi} {nui} {prm} {ext}".format(
                     dcd = workspace,
                     mmm = mstr,
                     stg = "{fit_strategy}",
                     asm = "-t -1" if args.asimov else "",
+                    poi = "--redefineSignalPOIs '{poi}'".format(poi = poiset[0]),
                     nui = "--named '" + nuisance + "'" if nuisance != "" else "",
                     prm = set_parameter(set_freeze, args.extopt, masks),
                     ext = nonparametric_option(args.extopt)
@@ -397,16 +402,10 @@ if __name__ == '__main__':
             )
 
         print "\nsingle_point_ahtt :: collecting impact results"
-        syscall("combineTool.py -v 0 -M Impacts -d {wsp} -m {mmm} -n _pull -o {dcd}{ptg}_impacts_{mod}{gvl}{rvl}{fix}{grp}.json {nui} {ext}".format(
-            dcd = dcdir,
+        syscall("combineTool.py -v 0 -M Impacts -d {wsp} -m {mmm} -n _pull -o {onm}.json {nui} {ext}".format(
             wsp = workspace,
-            mod = "one-poi" if args.onepoi else "g-scan",
             mmm = mstr,
-            ptg = ptag,
-            gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
-            rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
-            fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
-            grp = group,
+            onm = oname,
             nui = "--named '" + ','.join(nuisances) + "'" if args.impactnui is not None else "",
             ext = nonparametric_option(args.extopt)
         ))

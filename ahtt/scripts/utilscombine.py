@@ -111,7 +111,7 @@ def get_fit(dname, attributes, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
-def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, ranges, set_freeze, extopt = "", masks = []):
+def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
     if usedefault:
@@ -142,7 +142,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
         # ok there really isnt a best fit file, make them
         print "\nxxx_point_ahtt :: making best fits"
         for asm in [not asimov, asimov]:
-            workspace = make_best_fit(dcdir, default, point, asm, ranges, set_freeze, extopt, masks)
+            workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
             newname = "{dcd}{ptg}_best-fit_{asm}{sce}{mod}.root".format(
@@ -156,7 +156,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             workspace = newname
 
     nll = get_fit(workspace, ["nll"])
-    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the POIs = (0, ...) point is {nll}".format(nll = nll)
+    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the POIs = {poi} = (0, ...) point is {nll}".format(poi = ', '.join(poiset), nll = nll)
     return workspace
 
 def starting_nuisance(freeze_zero, freeze_post):
@@ -283,15 +283,16 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
     else:
         return False
 
-def make_best_fit(dcdir, workspace, point, asimov, ranges, set_freeze, extopt = "", masks = []):
+def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, extopt = "", masks = []):
     fname = point + "_best_fit_" + right_now()
     never_gonna_give_you_up(
-        command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {wsp} {prm} {ext}".format(
+        command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {poi} {wsp} {prm} {ext}".format(
             dcd = workspace,
             bff = fname,
             stg = "{fit_strategy}",
             prg = ranges,
             asm = "-t -1" if asimov else "",
+            poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset)),
             wsp = "--saveWorkspace --saveSpecifiedNuis=all --saveNLL",
             prm = set_parameter(set_freeze, extopt, masks),
             ext = nonparametric_option(extopt)

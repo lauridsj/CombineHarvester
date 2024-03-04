@@ -77,10 +77,17 @@ combine_help_messages = {
     "while we use it, let us lament the violation of first principles that led to the birth of this option.",
 
     "--mode": "comma-separated list of combine modes to run",
+    "--poi-set": "comma-separated list of POIs to be used in the fit. relevant modes:\n"
+    "single_point_ahtt: best-fit, limit (with --one-poi), impact\n"
+    "twin_point_ahtt: best-fit, prepost, psfromws\n"
+    "when r or g are not in the list of POIs, they are profiled or frozen, as per options specific to them.\n"
+    "note that mode nll ignores this option, as --nll-uncontrained already does the same.",
+
     "--compress": "compress output into a tar file",
     "--base-directory": "in non-datacard modes, this is the location where datacard is searched for, and output written to. ignored otherwise",
     "--unblind": "use data when fitting",
-    "--fix-poi": "fix pois in the fit, to the values set in --g-value(s) and/or --r-value",
+    "--fix-poi": "fix pois in the fit, to the values set in --g-value(s) and/or --r-value.\n"
+    "ignores NPs promoted to POIs through --poi-set. to fix those, use --extra-option.",
     "--mask": "comma-separated list of channel_year combinations to be masked in statistical analysis modes",
 
     "--fit-strategy": "if >= 0, use this fit strategy, overriding whatever default in the mode.",
