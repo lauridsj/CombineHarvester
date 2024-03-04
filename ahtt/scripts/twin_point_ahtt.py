@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
-    poiset = list(set(poiset))
+    poiset = sorted(list(set(poiset)))
     notgah = poiset != ["g1", "g2"]
 
     # parameter ranges for best fit file
