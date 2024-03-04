@@ -17,7 +17,7 @@ from ROOT import TFile, TTree
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
-from utilscombine import is_good_fit, never_gonna_give_you_up
+from utilscombine import get_fit, is_good_fit, never_gonna_give_you_up
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -46,28 +46,6 @@ def expected_scenario(exp, gvalues_syntax = False):
         return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), second)
 
     return None
-
-def get_fit(dname, attributes, qexp_eq_m1 = True):
-    if not os.path.isfile(dname):
-        return None
-
-    dfile = TFile.Open(dname)
-    dtree = dfile.Get("limit")
-
-    bf = None
-    for i in dtree:
-        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
-            bf = [getattr(dtree, attr) for attr in attributes]
-            if 'deltaNLL' in attributes:
-                idx = attributes.index('deltaNLL')
-                bf[idx] = max(bf[idx], 0.)
-            bf = tuple(bf)
-
-        if bf is not None:
-            break
-
-    dfile.Close()
-    return bf
 
 def read_previous_best_fit(gname):
     with open(gname) as ff:

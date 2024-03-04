@@ -89,6 +89,28 @@ def nonparametric_option(extopt):
 
     return " ".join(extopt)
 
+def get_fit(dname, attributes, qexp_eq_m1 = True):
+    if not os.path.isfile(dname):
+        return None
+
+    dfile = TFile.Open(dname)
+    dtree = dfile.Get("limit")
+
+    bf = None
+    for i in dtree:
+        if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
+            bf = [getattr(dtree, attr) for attr in attributes]
+            if 'deltaNLL' in attributes:
+                idx = attributes.index('deltaNLL')
+                bf[idx] = max(bf[idx], 0.)
+            bf = tuple(bf)
+
+        if bf is not None:
+            break
+
+    dfile.Close()
+    return bf
+
 def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
