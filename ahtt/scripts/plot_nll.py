@@ -117,7 +117,7 @@ def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
             for i in dtree:
                 value = getattr(dtree, name)
-                dnll = dtree.deltaNLL if zero is None else dtree.deltaNLL + dtree.nll0 - zero[0]
+                dnll = dtree.deltaNLL if zero is None else dtree.nll - zero[0]
                 dnll *= 2.
 
                 if dtree.quantileExpected >= 0.:

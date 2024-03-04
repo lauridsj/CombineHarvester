@@ -262,6 +262,7 @@ if __name__ == '__main__':
     print "the following channel x year combinations will be masked:", args.mask
 
     allmodes = ["datacard", "workspace", "validate",
+                "best", "best-fit",
                 "generate", "gof", "fc-scan", "contour",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
@@ -273,6 +274,7 @@ if __name__ == '__main__':
     # determine what to do with workspace, and do it
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
+    runbest = "best" in modes or "best-fit" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
@@ -285,6 +287,9 @@ if __name__ == '__main__':
     if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
+
+    runbest = runbest or rundc
+    args.keepbest = False if runbest else args.keepbest
 
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
@@ -759,7 +764,7 @@ if __name__ == '__main__':
 
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
-                "{exp} {stg} {asm} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
+                "{exp} {stg} {asm} {ext} --saveNLL".format(
                     dcd = fcwsp,
                     mmm = mstr,
                     snm = nllname,

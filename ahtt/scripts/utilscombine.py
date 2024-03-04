@@ -132,6 +132,9 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
+
+    nll = get_fit(workspace, ["nll"])
+    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the POIs = (0, ...) point is {nll}".format(nll = nll)
     return workspace
 
 def starting_nuisance(freeze_zero, freeze_post):

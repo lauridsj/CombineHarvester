@@ -200,7 +200,7 @@ if __name__ == '__main__':
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
-    allmodes = ["datacard", "workspace", "validate", "limit", "pull", "impact"]
+    allmodes = ["datacard", "workspace", "validate", "best", "best-fit", "limit", "pull", "impact"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -208,8 +208,12 @@ if __name__ == '__main__':
     # determine what to do with workspace, and do it
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
+    runbest = "best" in modes or "best-fit" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
+
+    runbest = runbest or rundc
+    args.keepbest = False if runbest else args.keepbest
 
     # parameter ranges for best fit file
     ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
