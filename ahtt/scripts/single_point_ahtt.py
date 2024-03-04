@@ -217,7 +217,7 @@ if __name__ == '__main__':
 
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["g"] if args.onepoi else ["r", "g"]
-    poiset = list(set(pois))
+    poiset = list(set(poiset))
     onepoinotg = len(poiset) == 1 and poiset[0] != "g"
 
     # parameter ranges for best fit file
