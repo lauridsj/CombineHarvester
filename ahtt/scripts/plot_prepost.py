@@ -25,6 +25,7 @@ import mplhep as hep  # noqa:E402
 import ROOT
 import math
 
+from utilspy import tuplize
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 parser = ArgumentParser()
@@ -40,6 +41,8 @@ parser.add_argument("--prefit-signal-from", help = "read prefit signal templates
                     default = "", dest = "ipf", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+parser.add_argument("--signal-scale", help = "scaling to apply on signal in drawing", default = (1., 1.), dest = "sigscale", required = False,
+                    type = lambda s: tuplize(s))
 args = parser.parse_args()
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -244,7 +247,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
 
 
 
-def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
+def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
     width = np.diff(bins)
     ax.errorbar(
         centers,
@@ -262,12 +265,15 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
             np.array(vlo, vlo),
             step = "pre",
             **hatchstyle)
-    for key, signal in signals.items():
+    for idx, (key, signal) in enumerate(signals.items()):
         symbol, mass, decaywidth = key
+        idx = 1 if symbol == 'H' else 0
+        ss = int(sigscale[idx]) if abs(sigscale[idx] - int(sigscale[idx])) < 2.**-11 else sigscale[idx]
+        signal_label = "" if abs(ss - 1.) < 2.**-11 else f"{ss} $\\times$ "
         if symbol == "Total":
-            signal_label = "A + H"
+            signal_label += "A + H"
         else:
-            signal_label = f"{symbol}({mass}, {decaywidth}%)"
+            signal_label += f"{symbol}({mass}, {decaywidth}%)"
         if key in gvalues and gvalues[key] is not None:
             if fit == "s":
                 signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
@@ -291,7 +297,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, fit):
 
 
 def plot(channel, year, fit,
-         smhists, datavalues, total, signals, gvalues, datahist_errors,
+         smhists, datavalues, total, signals, gvalues, sigscale, datahist_errors,
          binning, num_extrabins, extra_axes, first_ax_binning, first_ax_width, bins, centers, log):
     if len(smhists) == 0:
         return
@@ -309,7 +315,7 @@ def plot(channel, year, fit,
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, signals, fit)
     elif args.lower == "diff":
-        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, signals, gvalues, fit)
+        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, signals, gvalues, sigscale, fit)
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
@@ -431,10 +437,11 @@ with uproot.open(args.ifile) as f:
                 else:
                     hist = directory[key].to_hist()[:len(centers)]
 
+                isig = 0 if match.group(1) == 'A' else 1
                 if (match.group(1), mass, width) in signals:
-                    signals[(match.group(1), mass, width)] += hist
+                    signals[(match.group(1), mass, width)] += args.sigscale[isig] * hist
                 else:
-                    signals[(match.group(1), mass, width)] = hist
+                    signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
         gvalues = get_g_values(args.ifile, signals)
         if len(signals) > 1:
             signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
@@ -453,6 +460,7 @@ with uproot.open(args.ifile) as f:
             "total": total,
             "signals": signals,
             "gvalues": gvalues,
+            "sigscale": args.sigscale,
             "datahist_errors": datahist_errors,
             "binning": binning,
             "num_extrabins": num_extrabins,
