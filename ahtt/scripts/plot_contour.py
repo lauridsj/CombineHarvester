@@ -46,7 +46,7 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, transparent):
+def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, a343bkg, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
@@ -117,26 +117,43 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     ax.margins(x = 0, y = 0)
 
     if formal:
-        ctxt = "{cms}".format(cms = r"\textbf{CMS}")
-        ax.text(0.02 * max_g, 0.98 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top')
+        ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
+        ax.text(0.03 * max_g, 0.97 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top', usetex = True)
 
         if cmsapp != "":
-            atxt = "{app}".format(app = r" \textit{" + cmsapp + r"}")
-            ax.text(0.02 * max_g, 0.91 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top')
+            atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
+            ax.text(0.03 * max_g, 0.90 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(0.98 * max_g, 0.98 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top')
+        ax.text(0.985 * max_g, 0.97 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+
+        if a343bkg[0]:
+            btxt = [
+                r"$\mathbf{Including}$ $\eta^{\mathrm{t}}$ approximation",
+                r"based on PRD 104, 034023 ($\mathbf{2021}$)",
+                r"Profiled best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{val}".format(val = a343bkg[2]) + "$ pb"
+            ]
+        else:
+            btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
+        ax.text(0.03 * max_g, 0.84 * max_g, btxt[0], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.03 * max_g, 0.80 * max_g, btxt[1], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.03 * max_g, 0.76 * max_g, btxt[2], fontsize = 13, ha = 'left', va = 'top')
 
     if not scatter:
         if len(handles) > 0 and len(sigmas) > 0:
-            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'upper right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
+            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.625, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
             ax.add_artist(legend1)
 
-            ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+            ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+
+            #legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'upper right', fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+            #ax.add_artist(legend1)
+
+            #ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
         elif len(handles) > 0:
-            ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
+            ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
         elif len(sigmas) > 0:
-            ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2.4, borderaxespad = 1., frameon = False)
+            ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
@@ -188,6 +205,11 @@ if __name__ == '__main__':
                         dest = "formal", action = "store_true", required = False)
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
+    parser.add_argument("--A343-background",
+                        help = "a comma-separated list of 3 values for etat background text, written if --formal is used"
+                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty)",
+                        dest = "a343bkg", default = (0, 6.43, 0.64), required = False,
+                        type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float))
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
@@ -256,5 +278,5 @@ if __name__ == '__main__':
         print("drawing contours for pair: ", pair)
         print("using the following contours: ", contour)
         draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.ptag, fmt = args.fmt), pair, contour, args.label,
-                     args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.transparent)
+                     args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         print()
