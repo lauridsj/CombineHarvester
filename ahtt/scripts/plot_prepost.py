@@ -62,17 +62,19 @@ sm_procs = {
     "EWK_TT_lin_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_lin_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_quad_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
-    "EWK_TT_quad_neg": r"$\mathrm{t}\bar{\mathrm{t}}$"
+    "EWK_TT_quad_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
+    "EtaT": r"$\eta^{\mathrm{t}}$",
 }
 sm_colors = {
     "tX": "C0",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1",
     r"$\mathrm{t}\bar{\mathrm{t}}$": "#F3E5AB",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$, QCD": "C1",
+    r"$\eta^{\mathrm{t}}$": "#cc0033"
 }
 signal_colors = {
     "A": "#cc0033",
-    "H": "#0063ab",
+    "H": "#0033cc",
     "Total": "#3B444B"
 }
 signal_zorder = {
