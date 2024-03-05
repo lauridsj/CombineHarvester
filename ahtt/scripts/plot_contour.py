@@ -187,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
-    parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "XXX", required = False)
+    parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
