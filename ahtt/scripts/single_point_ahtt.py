@@ -352,7 +352,7 @@ if __name__ == '__main__':
         oname = "{dcd}{ptg}_impacts_{poi}{gvl}{rvl}{fix}{grp}".format(
             dcd = dcdir,
             ptg = ptag,
-            poi = poiset[0] if onepoinotg,
+            poi = poiset[0] if onepoinotg else "one-poi" if args.onepoi else "g-scan",
             gvl = "_g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else "",
