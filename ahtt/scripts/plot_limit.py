@@ -420,15 +420,16 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21)
 
     if formal:
+        xwindow = xvalues[-1] - xvalues[0]
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.03 * max_g, 1.01 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top', usetex = True)
+        ax.text(0.02 * xwindow + xvalues[0], 1.0005 * ymax2, ctxt, fontsize = 31, ha = 'left', va = 'bottom', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text(0.25 * max_g, 1.01 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+            ax.text(0.18 * xwindow + xvalues[0], 1.005 * ymax2, atxt, fontsize = 26, ha = 'left', va = 'bottom', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(0.985 * max_g, 1.01 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+        ax.text(0.99 * xwindow + xvalues[0], 1.005 * ymax2, ltxt, fontsize = 26, ha = 'right', va = 'bottom', usetex = True)
 
         if a343bkg[0]:
             btxt = [
@@ -438,9 +439,9 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
             ]
         else:
             btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
-        ax.text(0.60 * max_g, 0.32 * max_g, btxt[0], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.60 * max_g, 0.28 * max_g, btxt[1], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.60 * max_g, 0.24 * max_g, btxt[2], fontsize = 13, ha = 'left', va = 'top')
+            ax.text(0.48 * xwindow + xvalues[0], 0.14 * ymax2, btxt[0], fontsize = 13, ha = 'left', va = 'top')
+            ax.text(0.48 * xwindow + xvalues[0], 0.10 * ymax2, btxt[1], fontsize = 13, ha = 'left', va = 'top')
+            ax.text(0.48 * xwindow + xvalues[0], 0.06 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
