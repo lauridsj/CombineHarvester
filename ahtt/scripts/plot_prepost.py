@@ -41,8 +41,12 @@ parser.add_argument("--prefit-signal-from", help = "read prefit signal templates
                     default = "", dest = "ipf", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
-parser.add_argument("--signal-scale", help = "scaling to apply on signal in drawing", default = (1., 1.), dest = "sigscale", required = False,
-                    type = lambda s: tuplize(s))
+parser.add_argument("--signal-scale", help = "scaling to apply on signal in drawing", default = (1., 1.),
+                    dest = "sigscale", required = False, type = lambda s: tuplize(s))
+parser.add_argument("--as-signal", help = "comma-separated list of background processes to draw as signal",
+                    dest = "assignal", default = "", required = False,
+                    type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))
+parser.add_argument("--skip-ah", help = "don't draw A/H signal histograms", action = "store_false", dest = "doah", required = False)
 args = parser.parse_args()
 
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
@@ -63,24 +67,24 @@ sm_procs = {
     "EWK_TT_lin_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_quad_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_quad_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
-    "EtaT": r"$\eta^{\mathrm{t}}$",
+    "EtaT": r"$\eta_{\mathrm{t}}$",
 }
-sm_colors = {
+proc_colors = {
     "tX": "C0",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1",
     r"$\mathrm{t}\bar{\mathrm{t}}$": "#F3E5AB",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$, QCD": "C1",
-    r"$\eta^{\mathrm{t}}$": "#cc0033"
-}
-signal_colors = {
+    r"$\eta_{\mathrm{t}}$": "#cc0033",
+
     "A": "#cc0033",
     "H": "#0033cc",
     "Total": "#3B444B"
 }
 signal_zorder = {
-    "Total": 0,
-    "A": 1,
-    "H": 2,
+    r"$\eta_{\mathrm{t}}$": 0,
+    "Total": 1,
+    "A": 2,
+    "H": 3
 }
 binnings = {
     ("ee", "em", "mm"): {
@@ -122,27 +126,31 @@ datastyle = dict(
 
 
 
-def get_g_values(fname, signals):
-    twing = len(signals) == 2
+def get_poi_values(fname, signals):
+    signals = list(signals.keys())
+    signals = [signal for signal in signals if signal != ("Total", None, None)]
+    twing = len(signals) == 2 and all([sig[0] == "A" or sig[0] == "H" for sig in signals])
     onepoi = "one-poi" in fname
+    etat = signals[0][0] == r"$\eta_{\mathrm{t}}$"
 
-    if not twing and not onepoi:
+    if not twing and not onepoi and not etat:
         raise NotImplementedError()
 
     ffile = ROOT.TFile.Open(fname, "read")
     if "fit_s" not in ffile.GetListOfKeys():
-        return {sig: 0 for sig, whatever in signals.items()}
+        return {sig: 0 for sig in signals}
 
     fres = ffile.Get("fit_s")
-    signals = list(signals.keys())
 
     if onepoi:
         return {signals[0]: round(fres.floatParsFinal().getRealValue('g'), 2)}
-    else:
+    elif twing:
         return {
             signals[0]: round(fres.floatParsFinal().getRealValue('g1'), 2),
             signals[1]: round(fres.floatParsFinal().getRealValue('g2'), 2)
         }
+    elif etat:
+        return {signals[0]: round(fres.floatParsFinal().getRealValue('CMS_EtaT_norm_13TeV'), 2)}
 
 
 
@@ -169,7 +177,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
         ftype = " (s + b) " if fit == "s" else " (b) "
 
     width = np.diff(bins)
-    colors = [sm_colors[k] for k in smhists.keys()]
+    colors = [proc_colors[k] for k in smhists.keys()]
     hep.histplot(
         [hist.values() / width for hist in smhists.values()],
         bins = bins,
@@ -224,18 +232,26 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
             signal_label = "A + H"
         else:
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
+
         if key in gvalues and gvalues[key] is not None:
-            if fit == "s":
-                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
-            elif fit == "b":
-                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
+            if symbol == "A" or symbol == "H":
+                if fit == "s":
+                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+                elif fit == "b":
+                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
+            elif symbol == r"$\eta_{\mathrm{t}}$":
+                if fit == "s":
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = {gvalues[key]}$"
+                elif fit == "b":
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
+
         hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,
             yerr = np.zeros(len(signal.axes[0])),
             ax = ax,
             histtype = "step",
-            color = signal_colors[symbol],
+            color = proc_colors[symbol],
             linewidth = 1.25,
             label = signal_label,
             zorder = signal_zorder[symbol]
@@ -276,18 +292,26 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             signal_label += "A + H"
         else:
             signal_label += f"{symbol}({mass}, {decaywidth}%)"
+
         if key in gvalues and gvalues[key] is not None:
-            if fit == "s":
-                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
-            elif fit == "b":
-                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
+            if symbol == "A" or symbol == "H":
+                if fit == "s":
+                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+                elif fit == "b":
+                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
+            elif symbol == r"$\eta_{\mathrm{t}}$":
+                if fit == "s":
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = {gvalues[key]}$"
+                elif fit == "b":
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
+
         hep.histplot(
             signal.values() / width,
             bins = bins,
             yerr = np.zeros(len(signal.axes[0])),
             ax = ax,
             histtype = "step",
-            color = signal_colors[symbol],
+            color = proc_colors[symbol],
             linewidth = 1.25,
             label = signal_label,
             zorder = signal_zorder[symbol]
@@ -355,8 +379,11 @@ def plot(channel, year, fit,
     extent = None if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
-    sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
-    sstr = "__".join(sstr)
+    if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
+        sstr = "EtaT"
+    else:
+        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
+        sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
     ystr = year.replace(" ", "").lower()
     fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True, bbox_inches = extent)
@@ -413,42 +440,56 @@ with uproot.open(args.ifile) as f:
 
         directory = f[dname]
         smhists = {}
+        signals = {}
+        promoted = []
         for proc, label in sm_procs.items():
             if proc not in directory:
                 continue
             hist = directory[proc].to_hist()[:len(centers)]
-            if label not in smhists:
-                smhists[label] = hist
+            if proc not in args.assignal:
+                if label not in smhists:
+                    smhists[label] = hist
+                else:
+                    smhists[label] += hist
             else:
-                smhists[label] += hist
-        signals = {}
-        for key in directory.keys():
-            if (match := signal_name_pat.match(key)) is not None:
-                mass = int(match.group(2))
-                width = float(match.group(3).replace("p", "."))
-                if width % 1 == 0:
-                    width = int(width)
-
-                # hack to get around combine's behavior of signal POIs
-                if fit == "p" and args.ipf != "":
-                    ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
-                    with uproot.open(f"{ipf}") as ipf:
-                        hist = ipf[f"{channel}_{year}"][key].to_hist()[:len(centers)]
-                        if "_neg" in key:
-                            hist = -1. * hist
+                if label not in signals:
+                    signals[(label, None, None)] = hist
+                    promoted.append(label)
                 else:
-                    hist = directory[key].to_hist()[:len(centers)]
+                    signals[(label, None, None)] += hist
 
-                isig = 0 if match.group(1) == 'A' else 1
-                if (match.group(1), mass, width) in signals:
-                    signals[(match.group(1), mass, width)] += args.sigscale[isig] * hist
-                else:
-                    signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
-        gvalues = get_g_values(args.ifile, signals)
-        if len(signals) > 1:
-            signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
+        if args.doah:
+            for key in directory.keys():
+                if (match := signal_name_pat.match(key)) is not None:
+                    mass = int(match.group(2))
+                    width = float(match.group(3).replace("p", "."))
+                    if width % 1 == 0:
+                        width = int(width)
+
+                    # hack to get around combine's behavior of signal POIs
+                    if fit == "p" and args.ipf != "":
+                        ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
+                        with uproot.open(f"{ipf}") as ipf:
+                            hist = ipf[f"{channel}_{year}"][key].to_hist()[:len(centers)]
+                            if "_neg" in key:
+                                hist = -1. * hist
+                    else:
+                        hist = directory[key].to_hist()[:len(centers)]
+
+                    isig = 0 if match.group(1) == 'A' else 1
+                    if (match.group(1), mass, width) in signals:
+                        signals[(match.group(1), mass, width)] += args.sigscale[isig] * hist
+                    else:
+                        signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
+
+            if len(signals) > 1:
+                signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
+
+        gvalues = get_poi_values(args.ifile, signals)
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total_background"].to_hist()[:len(centers)]
+        for label in promoted:
+            total += -1. * signals[(label, None, None)]
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
