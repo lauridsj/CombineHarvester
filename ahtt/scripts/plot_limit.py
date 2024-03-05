@@ -228,7 +228,7 @@ def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
 
     return limits
 
-def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, observed, transparent):
+def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     if len(limits) > 6:
         raise RuntimeError("current plotting code is not meant for more than 6 tags. aborting")
 
@@ -418,9 +418,29 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
                        mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21)
-    #fontprop = matplotlib.font_manager.FontProperties()
-    #fontprop.set_size(21)
-    #legend.set_title(title = "95% CL exclusion", prop = fontprop)
+
+    if formal:
+        ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
+        ax.text(0.03 * max_g, 1.01 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top', usetex = True)
+
+        if cmsapp != "":
+            atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
+            ax.text(0.25 * max_g, 1.01 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+
+        ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
+        ax.text(0.985 * max_g, 1.01 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+
+        if a343bkg[0]:
+            btxt = [
+                r"$\mathbf{Including}$ $\eta^{\mathrm{t}}$ approximation",
+                r"based on PRD 104, 034023 ($\mathbf{2021}$)",
+                r"Profiled best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{val}".format(val = a343bkg[2]) + "$ pb"
+            ]
+        else:
+            btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
+        ax.text(0.60 * max_g, 0.32 * max_g, btxt[0], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.60 * max_g, 0.28 * max_g, btxt[1], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.60 * max_g, 0.24 * max_g, btxt[2], fontsize = 13, ha = 'left', va = 'top')
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
@@ -434,7 +454,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
-def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawband, observed, transparent):
+def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     masses = [pnt[1] for pnt in points]
     if len(set(masses)) != len(masses):
         raise RuntimeError("producing " + oname + ", --function natural expects unique mass points only. aborting")
@@ -442,9 +462,9 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawb
     if len(masses) < 2:
         print("There are less than 2 masses points. skipping")
 
-    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, transparent)
+    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
 
-def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi, drawband, observed, transparent, dump_spline):
+def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent, dump_spline):
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
             ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
@@ -469,7 +489,7 @@ def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
                 r'$\Gamma_{\mathrm{\mathsf{%s} t\bar{t}}} \,>\, \Gamma_{\mathrm{\mathsf{%s}}}$' % (points[0][0], points[0][0]),
-                drawband, observed, transparent)
+                drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -485,6 +505,17 @@ if __name__ == '__main__':
                         default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
+
+    parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
+                        dest = "formal", action = "store_true", required = False)
+    parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
+    parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
+    parser.add_argument("--A343-background",
+                        help = "a comma-separated list of 3 values for etat background text, written if --formal is used"
+                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty)",
+                        dest = "a343bkg", default = (0, 6.43, 0.64), required = False,
+                        type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float))
+
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--skip-secondary-bands", help = "do not draw the +-1, 2 sigma bands except for first tag",
@@ -524,19 +555,19 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent)
+                         hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
                           "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          apnt, adir, otags, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          apnt, adir, otags, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
                           "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          hpnt, hdir, otags, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.transparent, args.dump_spline)
+                          hpnt, hdir, otags, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
     pass
