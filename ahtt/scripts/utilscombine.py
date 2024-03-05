@@ -146,7 +146,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_best-fit_{asm}{sce}{mod}.root".format(
+            newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
                 rnm = "single" if "single" in runmode else "best-fit",
