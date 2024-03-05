@@ -131,7 +131,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
             btxt = [
                 r"$\mathbf{Including\,profiled\,\eta^{\mathrm{t}}$ approximation",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)",
-                r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{val}".format(val = a343bkg[2]) + "$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"
+                r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"
             ]
         else:
             btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
@@ -206,8 +206,8 @@ if __name__ == '__main__':
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
     parser.add_argument("--A343-background",
-                        help = "a comma-separated list of 3 values for etat background text, written if --formal is used"
-                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty)",
+                        help = "a comma-separated list of 4 values for etat background text, written if --formal is used"
+                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty, lo and hi)",
                         dest = "a343bkg", default = (0, 6.43, 0.64), required = False,
                         type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float))
 
