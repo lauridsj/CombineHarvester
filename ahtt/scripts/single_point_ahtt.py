@@ -200,7 +200,7 @@ if __name__ == '__main__':
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
-    allmodes = ["datacard", "workspace", "validate", "best", "best-fit", "limit", "pull", "impact"]
+    allmodes = ["datacard", "workspace", "validate", "best", "best-fit", "single", "limit", "pull", "impact"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -209,11 +209,15 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
+    runsingle = "single" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
 
-    runbest = runbest or rundc
+    runbest = runsingle or runbest or rundc
     args.keepbest = False if runbest else args.keepbest
+
+    if runsingle:
+        args.extopt += " --algo singles --cl=0.68"
 
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["g"] if args.onepoi else ["r", "g"]
@@ -258,7 +262,7 @@ if __name__ == '__main__':
         workspace = get_best_fit(
             dcdir, args.point[0], [args.otag, args.tag],
             args.defaultwsp, args.keepbest, default_workspace, args.asimov,
-            poiset[0] if onepoinotg else "one-poi" if onepoi else "g-scan",
+            "single" if runsingle else "", poiset[0] if onepoinotg else "one-poi" if onepoi else "g-scan",
             "{gvl}{rvl}{fix}".format(
                 gvl = "g_" + str(args.setg).replace(".", "p") if args.setg >= 0. else "",
                 rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",

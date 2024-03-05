@@ -240,7 +240,7 @@ if __name__ == '__main__':
     print "the following channel x year combinations will be masked:", args.mask
 
     allmodes = ["datacard", "workspace", "validate",
-                "best", "best-fit",
+                "best", "best-fit", "single",
                 "generate", "gof", "fc-scan", "contour",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
+    runsingle = "single" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
@@ -266,8 +267,11 @@ if __name__ == '__main__':
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
-    runbest = runbest or rundc
+    runbest = runsingle or runbest or rundc
     args.keepbest = False if runbest else args.keepbest
+
+    if runsingle:
+        args.extopt += " --algo singles --cl=0.68"
 
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
@@ -312,7 +316,8 @@ if __name__ == '__main__':
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
-        args.defaultwsp, args.keepbest, default_workspace, args.asimov, '__'.join(poiset) if notgah else "",
+        args.defaultwsp, args.keepbest, default_workspace, args.asimov,
+        "single" if runsingle else "", '__'.join(poiset) if notgah else "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
@@ -457,7 +462,7 @@ if __name__ == '__main__':
                 # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
                 fcwsp = get_best_fit(
                     dcdir, "__".join(points), [args.otag, args.tag],
-                    args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "",
+                    args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
                     set_range(ranges),
                     elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
@@ -647,7 +652,7 @@ if __name__ == '__main__':
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov,
-            '__'.join(poiset) + "_fitdiag" if notgah else "fitdiag",
+            "", '__'.join(poiset) + "_fitdiag" if notgah else "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             poiset,
             set_range(ranges),
@@ -727,7 +732,7 @@ if __name__ == '__main__':
         # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
         fcwsp = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
-            args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "",
+            args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             set_range(ranges),
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks

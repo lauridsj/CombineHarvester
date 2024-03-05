@@ -93,9 +93,7 @@ combine_help_messages = {
     "--fit-strategy": "if >= 0, use this fit strategy, overriding whatever default in the mode.",
     "--use-hesse": "only in the pull/impact/prepost/corrmat/nll mode, use robust hesse to calculate uncertainties. very slow.",
     "--extra-option": "extra options to be passed to combine when running best/contour/pull/impact/prepost/corrmat/nll modes.\n"
-    "irrelevant elsewhere. spaces should be used only to separate options, not arguments to the same option. parsing is hard.\n"
-    "notable abuse: --mode best --extra-option='--algo singles --cl=0.68' for a quick 'measurement' of a parameter,\n"
-    "which is especially convenient when coupled with --poi-set.",
+    "irrelevant elsewhere. spaces should be used only to separate options, not arguments to the same option. parsing is hard.",
     "--output-tag": "a tag that is appended to the fit output files. equals --tag by default",
 
     "--redo-best-fit": "a best fit is performed after datacard creation, to be used in future fits. this option triggers a redoing of the best fit.",

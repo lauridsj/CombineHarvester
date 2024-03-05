@@ -111,7 +111,8 @@ def get_fit(dname, attributes, qexp_eq_m1 = True):
     dfile.Close()
     return bf
 
-def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = []):
+def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, runmode,
+                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = []):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
     if usedefault:
@@ -148,6 +149,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, m
             newname = "{dcd}{ptg}_best-fit_{asm}{sce}{mod}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
+                rnm = "single" if "single" in runmode else "best-fit",
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
                 mod = "_" + modifier if modifier != "" else "",
