@@ -434,14 +434,18 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         if a343bkg[0]:
             btxt = [
                 r"$\mathbf{Including}$ $\mathbf{profiled}$ $\mathbf{\eta^{\mathrm{t}}}$ approximation",
-                r"based on PRD 104, 034023 ($\mathbf{2021}$)",
-                r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"
+                r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
+            if len(a343bkg) > 3:
+                btxt += [r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
+            else:
+                btxt += [r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
+
         else:
             btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
         ax.text(0.46 * xwindow + xvalues[0], 0.15 * ymax2, btxt[0], fontsize = 13, ha = 'left', va = 'top')
         ax.text(0.46 * xwindow + xvalues[0], 0.11 * ymax2, btxt[1], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.46 * xwindow + xvalues[0], 0.07 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
+        #ax.text(0.46 * xwindow + xvalues[0], 0.07 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
@@ -514,7 +518,7 @@ if __name__ == '__main__':
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
     parser.add_argument("--A343-background",
                         help = "a comma-separated list of 4 values for etat background text, written if --formal is used"
-                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty, lo and hi)",
+                        "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty (lo/hi)",
                         dest = "a343bkg", default = (0, 6.43, 0.64, 0.64), required = False,
                         type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float))
 
