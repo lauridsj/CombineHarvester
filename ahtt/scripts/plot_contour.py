@@ -160,7 +160,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
-    fig.set_size_inches(8., 8.)
+    fig.set_size_inches(12., 12.)
     fig.tight_layout()
 
     fig.savefig(oname, transparent = transparent)
