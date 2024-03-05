@@ -129,16 +129,16 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
         if a343bkg[0]:
             btxt = [
-                r"$\mathbf{Including}$ $\mathbf{profiled}$ $\mathbf{\eta^{\mathrm{t}}}$ approximation",
+                r"$\mathbf{Including}$ $\mathbf{profiled}$ $\mathbf{\eta_{\mathrm{t}}}$ approximation",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
             if len(a343bkg) > 3:
-                btxt += [r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
+                btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
             else:
-                btxt += [r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
+                btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
 
         else:
-            btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
+            btxt = [r"$\mathbf{Excluding}$ $\eta_{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
         ax.text(0.03 * max_g, 0.84 * max_g, btxt[0], fontsize = 13, ha = 'left', va = 'top')
         ax.text(0.03 * max_g, 0.80 * max_g, btxt[1], fontsize = 13, ha = 'left', va = 'top')
         #ax.text(0.03 * max_g, 0.76 * max_g, btxt[2], fontsize = 13, ha = 'left', va = 'top')
