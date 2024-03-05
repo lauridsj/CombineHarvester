@@ -34,8 +34,8 @@ parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", re
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
-parser.add_argument("--skip-each", help = "plot each channel x year combination", action = "store_false", dest = "each", required = False)
-parser.add_argument("--batch", help = "skip plotting sums of channels x year combinations", action = "store_true", dest = "batch", required = False)
+parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
+parser.add_argument("--batch", help = "plot sums of channels x year combinations", action = "store_true", dest = "batch", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
