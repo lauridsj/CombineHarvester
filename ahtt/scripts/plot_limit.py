@@ -450,7 +450,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
-    fig.set_size_inches(12., 12.)
+    fig.set_size_inches(8., 8.)
+    fig.set_dpi(450)
     fig.tight_layout()
     fig.savefig(oname, transparent = transparent)
     fig.clf()
