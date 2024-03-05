@@ -129,9 +129,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
         if a343bkg[0]:
             btxt = [
-                r"$\mathbf{Including}$ $\eta^{\mathrm{t}}$ approximation",
+                r"$\mathbf{Including\,profiled\,\eta^{\mathrm{t}}$ approximation",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)",
-                r"Profiled best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{val}".format(val = a343bkg[2]) + "$ pb"
+                r"Best fit $\sigma_{\eta^{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{val}".format(val = a343bkg[2]) + "$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"
             ]
         else:
             btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
