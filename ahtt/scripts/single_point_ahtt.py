@@ -258,6 +258,9 @@ if __name__ == '__main__':
         ))
 
     for onepoi in [not args.onepoi, args.onepoi]:
+        if runsingle and onepoinotg and not onepoi:
+            continue
+
         default_workspace = dcdir + "workspace_{mod}.root".format(mod = "one-poi" if onepoi else "g-scan")
         workspace = get_best_fit(
             dcdir, args.point[0], [args.otag, args.tag],
