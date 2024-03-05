@@ -340,7 +340,7 @@ def plot(channel, year, fit,
             ticks.append(first_ax_width * i + first_ax_width * j)
     ax2.set_xticks(ticks)
     ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
-    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.02, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", edgecolor = "black", framealpha = 1)
+    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.02, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1)
     ax1.set_xlabel("")
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
