@@ -226,9 +226,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
         if key in gvalues and gvalues[key] is not None:
             if fit == "s":
-                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
             elif fit == "b":
-                signal_label += f", $g_{{\\mathrm{{{symbol}}}}} = 0$"
+                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
         hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,

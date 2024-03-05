@@ -118,7 +118,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
     if formal:
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.03 * max_g, 0.96 * max_g, ctxt, fontsize = 36, ha = 'left', va = 'top', usetex = True)
+        ax.text(0.03 * max_g, 0.96 * max_g, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
