@@ -439,9 +439,9 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
             ]
         else:
             btxt = [r"$\mathbf{Excluding}$ $\eta^{\mathrm{t}}$ approximation", "based on PRD 104, 034023 ($\mathbf{2021}$)", ""]
-        ax.text(0.47 * xwindow + xvalues[0], 0.14 * ymax2, btxt[0], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.47 * xwindow + xvalues[0], 0.10 * ymax2, btxt[1], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.47 * xwindow + xvalues[0], 0.06 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.46 * xwindow + xvalues[0], 0.15 * ymax2, btxt[0], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.46 * xwindow + xvalues[0], 0.11 * ymax2, btxt[1], fontsize = 13, ha = 'left', va = 'top')
+        ax.text(0.46 * xwindow + xvalues[0], 0.07 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
