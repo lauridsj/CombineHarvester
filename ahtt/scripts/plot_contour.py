@@ -116,6 +116,19 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
 
+    if not scatter:
+        if len(handles) > 0 and len(sigmas) > 0:
+            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.625, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+            ax.add_artist(legend1)
+
+            legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+            ax.add_artist(legend2)
+
+        elif len(handles) > 0:
+            ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        elif len(sigmas) > 0:
+            ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+
     if formal:
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
         ax.text(0.03 * max_g, 0.96 * max_g, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
@@ -132,36 +145,19 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
                 r"$\mathbf{Including}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
-            if len(a343bkg) > 3:
+
+            # disabled because adding the profiled number depends on signal point
+            if False and len(a343bkg) > 3:
                 btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
             else:
                 btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
-
         else:
             btxt = [
                 r"$\mathbf{Excluding}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
-                r"based on PRD 104, 034023 ($\mathbf{2021}$)",
-                ""
+                r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
-        ax.text(0.03 * max_g, 0.84 * max_g, btxt[0], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.03 * max_g, 0.80 * max_g, btxt[1], fontsize = 13, ha = 'left', va = 'top')
-        #ax.text(0.03 * max_g, 0.76 * max_g, btxt[2], fontsize = 13, ha = 'left', va = 'top')
-
-    if not scatter:
-        if len(handles) > 0 and len(sigmas) > 0:
-            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.625, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
-            ax.add_artist(legend1)
-
-            ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
-
-            #legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'upper right', fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
-            #ax.add_artist(legend1)
-
-            #ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
-        elif len(handles) > 0:
-            ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
-        elif len(sigmas) > 0:
-            ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
+        ax.legend(bbln, btxt, loc = 'best', bbox_to_anchor = (0.725, 0.35, 0.275, 0.2), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
