@@ -44,9 +44,9 @@ def make_initial_grid(ndivision):
     return grid
 
 def default_nminmax(arg = ""):
-    result = map( float, tokenize_to_list( remove_spaces_quotes(arg)))
+    result = map(float, tokenize_to_list( remove_spaces_quotes(arg)))
     defaults = [32, 2.**-9, 2.**-2]
-    while len(result) < 3:
+    while len(result) < len(defaults):
         result.append(defaults[len(result)])
     return result
 

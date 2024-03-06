@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # utilities containing functions to be imported - plotting version
 
+from desalinator import tokenize_to_list, remove_spaces_quotes
+
 min_g = 0.
 max_g = 3.
 epsilon = 2.**-17
@@ -21,3 +23,10 @@ def get_point(sigpnt):
 def str_point(sigpnt):
     pnt = sigpnt.split('_')
     return pnt[0][0] + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)'
+
+def default_etat_blurb(arg = ""):
+    result = tokenize_to_list(remove_spaces_quotes(s), astype = float)
+    defaults = [0, 6.43, 0.64, 0.64]
+    while len(result) < len(defaults):
+        result.append(defaults[len(result)])
+    return result

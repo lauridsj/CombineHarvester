@@ -22,7 +22,7 @@ import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point, default_etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def read_contour(cfiles):
@@ -211,10 +211,10 @@ if __name__ == '__main__':
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
     parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
     parser.add_argument("--A343-background",
-                        help = "a comma-separated list of 3 or 4 values for etat background text, written if --formal is used"
+                        help = "a comma-separated list of 4 values for etat background text, written if --formal is used"
                         "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty (lo/hi)",
-                        dest = "a343bkg", default = (0, 6.43, 0.64), required = False,
-                        type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float))
+                        dest = "a343bkg", default = default_etat_blurb(), required = False,
+                        type = default_etat_blurb)
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
