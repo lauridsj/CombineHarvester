@@ -25,7 +25,7 @@ def str_point(sigpnt):
     return pnt[0][0] + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)'
 
 def default_etat_blurb(arg = ""):
-    result = tokenize_to_list(remove_spaces_quotes(s), astype = float)
+    result = tokenize_to_list(remove_spaces_quotes(arg), astype = float)
     defaults = [0, 6.43, 0.64, 0.64]
     while len(result) < len(defaults):
         result.append(defaults[len(result)])
