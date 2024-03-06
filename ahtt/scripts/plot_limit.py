@@ -419,6 +419,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
                        mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21, facecolor = 'white')
+    ax.add_artist(legend)
 
     if formal:
         xwindow = xvalues[-1] - xvalues[0]
@@ -437,7 +438,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                 r"$\mathbf{Including}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
-            if len(a343bkg) > 3:
+            # disabled because adding the profiled number depends on signal point
+            if False and len(a343bkg) > 3:
                 btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
             else:
                 btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
@@ -445,12 +447,10 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         else:
             btxt = [
                 r"$\mathbf{Excluding}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
-                r"based on PRD 104, 034023 ($\mathbf{2021}$)",
-                ""
+                r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
-        ax.text(0.46 * xwindow + xvalues[0], 0.13 * ymax2, btxt[0], fontsize = 13, ha = 'left', va = 'top')
-        ax.text(0.46 * xwindow + xvalues[0], 0.09 * ymax2, btxt[1], fontsize = 13, ha = 'left', va = 'top')
-        #ax.text(0.46 * xwindow + xvalues[0], 0.05 * ymax2, btxt[2], fontsize = 13, ha = 'left', va = 'top')
+        bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
+        ax.legend(bbln, btxt, loc = 'best', bbox_to_anchor = (0.725, 0.09, 0.275, 0.2), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
