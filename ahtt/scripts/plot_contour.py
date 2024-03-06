@@ -118,7 +118,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
     if not scatter:
         if len(handles) > 0 and len(sigmas) > 0:
-            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.625, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
             ax.add_artist(legend1)
 
             legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
@@ -157,7 +157,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
                 r"PRD 104, 034023 ($\mathbf{2021}$)"
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'best', bbox_to_anchor = (0.85, 0.5, 0.15, 0.15), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        ax.legend(bbln, btxt, loc = 'upper right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 0.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
