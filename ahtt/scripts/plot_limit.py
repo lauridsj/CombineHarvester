@@ -433,7 +433,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
         if a343bkg[0]:
             btxt = [
-                r"$\mathbf{Including}$ $\mathbf{profiled}$ $\mathbf{\eta_{\mathrm{t}}}$ approximation",
+                r"$\mathbf{Including}$ $\mathbf{\eta_{\mathrm{t}}}$ approximation",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
             if len(a343bkg) > 3:
