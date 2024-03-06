@@ -348,10 +348,10 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         fixed_value = float(fixed_value.replace('m', '').replace('w', '').replace('p', '.'))
 
         max_partial_g = [ahtt_max_coupling(parity, fixed_value, xx / 100.) if ismass else ahtt_max_coupling(parity, xx, fixed_value / 100.) for xx in xvalues]
-        max_partial_g = [(xx, gg) for xx, gg in zip(xvalues, max_partial_g) if gg < ymax1]
+        max_partial_g = [(xx, gg) for xx, gg in zip(xvalues, max_partial_g)]
         xmaxg = [xx for xx, gg in max_partial_g]
         max_partial_g = [gg for xx, gg in max_partial_g]
-        may_partial_g = [min(gg + 0.05 * (ymax1 - ymin), ymax1) for gg in max_partial_g]
+        may_partial_g = [min(gg + ((ymax1 / 50.) * (max_g - ymin)), max_g) for gg in max_partial_g]
 
         ax.fill_between(np.array(xmaxg), np.array(max_partial_g), np.array(may_partial_g), facecolor = 'none', hatch = '||', edgecolor = '#848482', linewidth = 0.)
         ax.plot(np.array(xmaxg), np.array(max_partial_g), color = '#848482', linestyle = "solid", linewidth = 1.5)
@@ -402,7 +402,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         ymax2 += 0.25
 
     plt.ylim((ymin, ymax2))
-    ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2)
+    ax.fill_between([xvalues[0], xvalues[-1]], [ymax1, ymax1], [ymax2, ymax2], facecolor = 'white', linewidth = 0., zorder = 2.001)
+    ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2.002)
     plt.xlabel(xaxis, fontsize = 21, loc = "right")
     plt.ylabel(yaxis, fontsize = 21, loc = "top")
     ax.margins(x = 0, y = 0)
@@ -417,7 +418,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     legend = ax.legend(first(handles), second(handles),
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
                        mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
-                       title = "95% CL exclusion" + ltitle, title_fontsize = 21)
+                       title = "95% CL exclusion" + ltitle, title_fontsize = 21, facecolor = 'white')
 
     if formal:
         xwindow = xvalues[-1] - xvalues[0]
