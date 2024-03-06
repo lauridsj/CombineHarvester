@@ -414,7 +414,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
     lheight = (ymax2 - ymax1) / (ymax2 - ymin)
     lmargin = 0.06 if len(limits) == 1 else 0.02
-    lwidth = 1. - (2. * lmargin) 
+    lwidth = 1. - (2. * lmargin)
     legend = ax.legend(first(handles), second(handles),
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
                        mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
@@ -439,18 +439,17 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
             # disabled because adding the profiled number depends on signal point
-            if False and len(a343bkg) > 3:
-                btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
-            else:
-                btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
-
+            #if len(a343bkg) > 3:
+            #    btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
+            #else:
+            #    btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
         else:
             btxt = [
                 r"$\mathbf{Excluding}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
                 r"based on PRD 104, 034023 ($\mathbf{2021}$)"
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'best', bbox_to_anchor = (0.725, 0.09, 0.275, 0.2), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.775, 0.005, 0.2, 0.1), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
