@@ -369,7 +369,7 @@ def plot(channel, year, fit,
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
     ax0.set_title(channel.replace('4p', '4+'))
-    hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
+    #hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
     fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
