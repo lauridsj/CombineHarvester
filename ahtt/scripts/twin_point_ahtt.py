@@ -715,10 +715,13 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: making channel block workspace"
         nicemerge = len(args.prepostmerge) == 1
         ppmtxt, ppmwsp = dcdir + "ahtt_prepostmerge.txt", dcdir + "workspace_prepostmerge.root"
+        os.chdir(dxdir)
         syscall("combineCards.py {cards} > {comb}".format(
-            cards = " ".join([ppm + "=" + dcdir + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
-            comb = ppmtxt
+            cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
+            comb = ppmtxt.replace(dcdir, "")
         ))
+        os.chdir("-")
+
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
                 "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
                 "--PO 'signal={pnt}' {pos} {dyt} {ext}".format(
