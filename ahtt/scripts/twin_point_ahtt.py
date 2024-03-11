@@ -721,7 +721,7 @@ if __name__ == '__main__':
             syscall("cp " + dcdir + inputfile + " .")
         syscall("combineCards.py {cards} > {comb}".format(
             cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
-            comb = ppmtxt.replace(dcdir, "")
+            comb = ppmtxt
         ))
 
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
