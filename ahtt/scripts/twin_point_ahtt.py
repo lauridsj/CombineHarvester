@@ -723,7 +723,8 @@ if __name__ == '__main__':
             cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
             comb = ppmtxt.replace(dcdir, "")
         ))
-        inputfiles += [ppmtxt, ppmwsp]
+        syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
+        inputfiles = [ppmtxt, ppmwsp]
 
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
                 "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
