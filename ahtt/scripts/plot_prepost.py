@@ -323,7 +323,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
 
 
 def plot(channel, year, fit,
-         smhists, datavalues, total, signals, gvalues, sigscale, datahist_errors,
+         smhists, datavalues, total, promotions, signals, gvalues, sigscale, datahist_errors,
          binning, num_extrabins, extra_axes, first_ax_binning, first_ax_width, bins, centers, log):
     if len(smhists) == 0:
         return
@@ -339,9 +339,9 @@ def plot(channel, year, fit,
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
-        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, signals, fit)
+        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, promotions | signals, fit)
     elif args.lower == "diff":
-        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, signals, gvalues, sigscale, fit)
+        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, promotions | signals, gvalues, sigscale, fit)
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
@@ -399,6 +399,7 @@ def sum_kwargs(channel, year, *summands):
         ret["smhists"] = {k: ret["smhists"][k] + summand["smhists"][k] for k in ret["smhists"]}
         ret["datavalues"] = ret["datavalues"] + summand["datavalues"]
         ret["total"] = ret["total"] + summand["total"]
+        ret["promotions"] = {k: ret["promotions"][k] + summand["promotions"][k] for k in ret["promotions"]}
         ret["signals"] = {k: ret["signals"][k] + summand["signals"][k] for k in ret["signals"]}
         ret["datahist_errors"] = (ret["datahist_errors"] ** 2 + summand["datahist_errors"] ** 2) ** .5
     return ret
@@ -411,6 +412,15 @@ def add_covariance(histogram, matrix):
     for ibin in range(len(histogram.values())):
         roo.SetBinContent(ibin + 1, histogram.values()[ibin])
         roo.SetBinError(ibin + 1, math.sqrt(matrix.values()[ibin, ibin]))
+    return uproot.pyroot.from_pyroot(roo).to_hist()
+
+
+
+def zero_variance(histogram):
+    roo = uproot.pyroot.to_pyroot(histogram)
+    for ibin in range(len(histogram.values())):
+        roo.SetBinContent(ibin + 1, histogram.values()[ibin])
+        roo.SetBinError(ibin + 1, 0.)
     return uproot.pyroot.from_pyroot(roo).to_hist()
 
 
@@ -441,7 +451,7 @@ with uproot.open(args.ifile) as f:
         directory = f[dname]
         smhists = {}
         signals = {}
-        promoted = []
+        promotions = {}
         for proc, label in sm_procs.items():
             if proc not in directory:
                 continue
@@ -452,11 +462,10 @@ with uproot.open(args.ifile) as f:
                 else:
                     smhists[label] += hist
             else:
-                if label not in signals:
-                    signals[(label, None, None)] = hist
-                    promoted.append(label)
+                if (label, None, None) not in promotions:
+                    promotions[(label, None, None)] = hist
                 else:
-                    signals[(label, None, None)] += hist
+                    promotions[(label, None, None)] += hist
 
         if args.doah:
             for key in directory.keys():
@@ -488,8 +497,8 @@ with uproot.open(args.ifile) as f:
         gvalues = get_poi_values(args.ifile, signals)
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total_background"].to_hist()[:len(centers)]
-        for label in promoted:
-            total += -1. * signals[(label, None, None)]
+        for promotion in promotions.values():
+            total += -1. * promotion
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
@@ -501,6 +510,7 @@ with uproot.open(args.ifile) as f:
             "smhists": smhists,
             "datavalues": datavalues,
             "total": total,
+            "promotions": promotions,
             "signals": signals,
             "gvalues": gvalues,
             "sigscale": args.sigscale,
@@ -534,6 +544,11 @@ batches = {
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
 if args.batch:
+    #zeroed = year_summed.copy()
+    #for channel, fit in year_summed.keys():
+    #    for preds in ["smhists", "signals"]:
+    #        zeroed[(channel, fit)][preds] = {k: zero_variance(zeroed[(channel, fit)][preds][k]) for k in zeroed[(channel, fit)]}
+
     for cltx, channels in batches.items():
         for fit in fits:
             has_channel = all([(channel, fit) in year_summed for channel in channels])
