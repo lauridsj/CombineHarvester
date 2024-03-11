@@ -328,6 +328,7 @@ def plot(channel, year, fit,
     if len(smhists) == 0:
         return
 
+    allsigs = promotions | signals
     fig, (ax0, ax1, ax2) = plt.subplots(
         nrows = 3,
         sharex = True,
@@ -339,9 +340,9 @@ def plot(channel, year, fit,
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
-        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, promotions | signals, fit)
+        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, fit)
     elif args.lower == "diff":
-        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, promotions | signals, gvalues, sigscale, fit)
+        plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
@@ -378,7 +379,7 @@ def plot(channel, year, fit,
     fig.set_dpi(450)
     extent = None if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
-    sstr = [ss for ss in signals.keys() if ss[0] != "Total"]
+    sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
         sstr = "EtaT"
     else:
