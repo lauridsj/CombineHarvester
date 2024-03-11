@@ -715,7 +715,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: making channel block workspace"
         nicemerge = len(args.prepostmerge) == 1
         ppmtxt, ppmwsp = dcdir + "ahtt_prepostmerge.txt", dcdir + "workspace_prepostmerge.root"
-        os.chdir(dxdir)
+        os.chdir(dcdir)
         syscall("combineCards.py {cards} > {comb}".format(
             cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
             comb = ppmtxt.replace(dcdir, "")
