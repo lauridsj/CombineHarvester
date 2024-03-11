@@ -721,7 +721,7 @@ if __name__ == '__main__':
         ))
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
                 "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                "--PO 'signal={pnt}' {pos} {dyt} {opt} {ext}".format(
+                "--PO 'signal={pnt}' {pos} {dyt} {ext}".format(
             txt = ppmtxt,
             wsp = ppmwsp,
             mmm = mstr,
