@@ -336,7 +336,7 @@ if __name__ == '__main__':
             gvl = "_" + g_in_filename(args.gvalues) if g_in_filename(args.gvalues) != "" else "",
             fix = "_fixed" if args.fixpoi and g_in_filename(args.gvalues) != "" else ""
         )
-        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {clt} {igp} {gvl} {fix} {exp} {ppm}".format(
+        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {clt} {igp} {gvl} {fix} {exp}".format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
             sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year) if rundc else "",
@@ -535,7 +535,7 @@ if __name__ == '__main__':
                     continue
 
             jarg = job_arg
-            jarg += " {ppf}".format(
+            jarg += " {ppf} {ppm}".format(
                 ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '),
                 ppm = clamp_with_quote(
                     string = ','.join(args.prepostmerge),
