@@ -723,8 +723,6 @@ if __name__ == '__main__':
             cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
             comb = ppmtxt.replace(dcdir, "")
         ))
-        syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
-        inputfiles = [ppmtxt, ppmwsp]
 
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
                 "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
@@ -737,6 +735,9 @@ if __name__ == '__main__':
             dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
             ext = args.extopt
         ))
+        syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
+        inputfiles = [ppmtxt, ppmwsp]
+
         print "\ntwin_point_ahtt :: merging postfit plots as per fit result"
         syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
             dcd = ppmtxt,
