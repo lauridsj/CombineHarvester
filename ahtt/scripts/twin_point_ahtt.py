@@ -735,8 +735,8 @@ if __name__ == '__main__':
             dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
             ext = args.extopt
         ))
-        syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
-        inputfiles = [ppmtxt, ppmwsp]
+        syscall("rm {inf}".format(inf = " ".join(inputfiles[:1])), False, True)
+        inputfiles = [inputfiles[0], ppmtxt, ppmwsp]
 
         print "\ntwin_point_ahtt :: merging postfit plots as per fit result"
         syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
