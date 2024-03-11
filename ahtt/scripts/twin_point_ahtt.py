@@ -16,7 +16,7 @@ from ROOT import TFile, TTree
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
-from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option
+from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option, update_mask
 from utilscombine import get_fit, is_good_fit, never_gonna_give_you_up
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
@@ -663,7 +663,7 @@ if __name__ == '__main__':
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
-            poi = "_" + '__'.join(poiset) + "_" if notgah else "",
+            poi = '__'.join(poiset) + "_" if notgah else "",
             gvl = "_" + gfit if gfit != "" else "",
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
