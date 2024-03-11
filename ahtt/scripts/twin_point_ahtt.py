@@ -710,7 +710,7 @@ if __name__ == '__main__':
         prepostmerge = update_mask(args.prepostmerge)
         assert len(prepostmerge) > 1, "--prepost-merge must be longer than 1 in mode psfromws!"
         assert os.path.isfile(dcdir + "ahtt_combined.txt"), "this mode makes no sense with just one channel!"
-        assert os.path.isfile(fitdiag_result), "mode prepost must be ran before this one!"
+        assert os.path.isfile(fitdiag_result), "file {fdr} missing! mode prepost must be ran before this one!".format(fdr = fitdiag_result)
 
         print "\ntwin_point_ahtt :: making channel block workspace"
         nicemerge = len(args.prepostmerge) == 1
