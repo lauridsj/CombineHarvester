@@ -35,7 +35,8 @@ parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
-parser.add_argument("--batch", help = "plot sums of channels x year combinations", action = "store_true", dest = "batch", required = False)
+parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted",
+                    default = "", dest = "batch", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
@@ -529,7 +530,7 @@ with uproot.open(args.ifile) as f:
         if args.each:
             plot(**kwargs)
 
-        if args.batch:
+        if os.isfile(args.batch):
             if (channel, fit) in year_summed:
                 this_year = year_summed[(channel, fit)]
                 year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
@@ -544,14 +545,17 @@ batches = {
     r"$\ell$3j":   ["e3j", "m3j"],
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
-if args.batch:
-    #zeroed = year_summed.copy()
-    #for channel, fit in year_summed.keys():
-    #    for preds in ["smhists", "signals"]:
-    #        zeroed[(channel, fit)][preds] = {k: zero_variance(zeroed[(channel, fit)][preds][k]) for k in zeroed[(channel, fit)]}
-
+if os.isfile(args.batch):
     for cltx, channels in batches.items():
         for fit in fits:
             has_channel = all([(channel, fit) in year_summed for channel in channels])
-            if has_channel:
-                plot(**sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels)))
+            with uproot.open(args.batch) as f:
+                has_psfromws = all([f"{channel}_{year}_postfit" in f for channel in channels for year in years])
+                total = f["postfit"]["TotalBkg"].to_hist()[:len(centers)]
+
+            if has_channel and has_psfromws:
+                sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels))
+                for promotion in sums["promotions"].values():
+                    total += -1. * zero_variance(promotion)
+                sums["total"] = total
+                plot(**sums)
