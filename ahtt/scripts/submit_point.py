@@ -98,8 +98,9 @@ if __name__ == '__main__':
             mode = args.mode
 
         job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
-        job_name += "{mod}{gvl}{rvl}{fix}".format(
+        job_name += "{mod}{poi}{gvl}{rvl}{fix}".format(
             mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
+            poi = args.poiset.replace(",", "__") if args.poiset != "" else "",
             gvl = "_g_" + str(args.setg).replace('.', 'p') if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace('.', 'p') if args.setr >= 0. and not args.onepoi else "",
             fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
