@@ -354,11 +354,7 @@ if __name__ == '__main__':
                     fn = "fc" if runfc or runcompile else "nll",
                     s = '=' if args.fcexp[0][0] == "-" else " "
                 )
-            ) if runfc or runnll or runcompile else "",
-            ppm = clamp_with_quote(
-                string = ','.join(args.prepostmerge),
-                prefix = "--prepost-merge "
-            ) if runpsfromws else ""
+            ) if runfc or runnll or runcompile else ""
         )
         args.rundc = rundc
         job_arg += common_job(args)
@@ -530,13 +526,22 @@ if __name__ == '__main__':
 
         elif runprepost or runpsfromws:
             jname = job_name + "_" + args.prepostfit
+            if runpsfromws:
+                jname += "_" + '-'.join(args.prepostmerge)
+
             logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
             if not (args.runlocal and args.forcelocal):
                 if len(logs) > 0:
                     continue
 
             jarg = job_arg
-            jarg += " {ppf}".format(ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '))
+            jarg += " {ppf}".format(
+                ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '),
+                ppm = clamp_with_quote(
+                    string = ','.join(args.prepostmerge),
+                    prefix = "--prepost-merge "
+                ) if runpsfromws else ""
+            )
 
             submit_job(jname, jarg, args.jobtime, 1, "",
                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
