@@ -375,4 +375,4 @@ def update_mask(masks):
             for yy in years:
                 new_masks.append(cc + "_" + yy)
 
-    return list(set(new_masks))
+    return sorted(list(set(new_masks)))

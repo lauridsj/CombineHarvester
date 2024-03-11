@@ -331,7 +331,7 @@ if __name__ == '__main__':
         mode = mode if mode != "" else args.mode
         valid_g = any(float(gg) >= 0. for gg in args.gvalues)
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
-        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {clt} {igp} {gvl} {fix} {exp}".format(
+        job_arg = "--point {pnt} --mode {mmm} {sig} {rmr} {clt} {igp} {gvl} {fix} {exp} {ppm}".format(
             pnt = pair,
             mmm = mode if not "clean" in mode else ','.join([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm]),
             sig = "--signal " + input_sig(args.signal, pair, args.inject, args.channel, args.year) if rundc else "",
@@ -349,7 +349,11 @@ if __name__ == '__main__':
                     fn = "fc" if runfc or runcompile else "nll",
                     s = '=' if args.fcexp[0][0] == "-" else " "
                 )
-            ) if runfc or runnll or runcompile else ""
+            ) if runfc or runnll or runcompile else "",
+            ppm = clamp_with_quote(
+                string = ','.join(args.prepostmerge),
+                prefix = "--prepost-merge "
+            ) if runpsfromws else ""
         )
         args.rundc = rundc
         job_arg += common_job(args)

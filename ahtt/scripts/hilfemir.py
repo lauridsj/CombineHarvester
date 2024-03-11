@@ -88,7 +88,7 @@ combine_help_messages = {
     "--unblind": "use data when fitting",
     "--fix-poi": "fix pois in the fit, to the values set in --g-value(s) and/or --r-value.\n"
     "ignores NPs promoted to POIs through --poi-set. to fix those, use --extra-option.",
-    "--mask": "comma-separated list of channel_year combinations to be masked in statistical analysis modes",
+    "--mask": "comma-separated list of channel_year combinations to be masked.",
 
     "--fit-strategy": "if >= 0, use this fit strategy, overriding whatever default in the mode.",
     "--use-hesse": "only in the pull/impact/prepost/corrmat/nll mode, use robust hesse to calculate uncertainties. very slow.",
@@ -129,6 +129,7 @@ combine_help_messages = {
     "WARNING: profile mode is deprecated!!",
 
     "--prepost-fit": "type of fit to run in prepost and psfromws modes; s or b",
+    "--prepost-merge": "comma-separated list of channel_year combinations to be summed up in mode psfromws",
 
     "--nll-parameter": "comma-separated list of parameters to evaluate the NLL for.",
     "--nll-npoint": "comma-separated list of number of points to sample equidistantly along each parameter.\n"

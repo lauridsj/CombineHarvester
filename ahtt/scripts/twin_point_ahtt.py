@@ -706,15 +706,42 @@ if __name__ == '__main__':
         )
 
     if runpsfromws:
-        # TODO option to sum up sublist of channels
+        # from https://cms-talk.web.cern.ch/t/postfit-uncertainty-bands-very-large/20967/9
+        prepostmerge = update_mask(args.prepostmerge)
+        assert len(prepostmerge) > 1, "--prepost-merge must be longer than 1 in mode psfromws!"
+        assert os.path.isfile(dcdir + "ahtt_combined.txt"), "this mode makes no sense with just one channel!"
+        assert os.path.isfile(fitdiag_result), "mode prepost must be ran before this one!"
+
+        print "\ntwin_point_ahtt :: making channel block workspace"
+        nicemerge = len(args.prepostmerge) == 1
+        ppmtxt, ppmwsp = dcdir + "ahtt_prepostmerge.txt", dcdir + "workspace_prepostmerge.root"
+        syscall("combineCards.py {cards} > {comb}".format(
+            cards = " ".join([ppm + "=" + dcdir + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
+            comb = ppmtxt
+        ))
+        syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
+                "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
+                "--PO 'signal={pnt}' {pos} {dyt} {opt} {ext}".format(
+            txt = ppmtxt,
+            wsp = ppmwsp,
+            mmm = mstr,
+            pnt = ",".join(points),
+            pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
+            dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
+            ext = args.extopt
+        ))
+
         syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            fdw = fitdiag_workspace,
-            fds = fitdiag_shape,
+            dcd = ppmtxt,
+            fdw = ppmwsp,
+            fds = fitdiag_shape.replace(
+                "fitdiagnostics_shape",
+                "psfromws_{ppm}".format(ppm = args.prepostmerge[0] if nicemerge else "-".join(prepostmerge))
+            ),
             fdr = fitdiag_result,
             ftp = args.prepostfit
         ))
-        print "\n"
+        syscall("rm {txt} {wsp}".format(txt = ppmtxt, wsp = ppmwsp), False, True)
 
     if runnll:
         if len(args.nllparam) < 1:
