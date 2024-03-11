@@ -333,7 +333,7 @@ if __name__ == '__main__':
         job_name = "twin_point_" + pstr + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_name += args.poiset.replace(",", "__") if args.poiset != "" else ""
         job_extra += "{poi}{gvl}{fix}".format(
-            poi = "_" + args.poiset.replace(",", "__") if args.poiset != "" else ""
+            poi = "_" + args.poiset.replace(",", "__") if args.poiset != "" else "",
             gvl = "_" + g_in_filename(gvalues) if g_in_filename(gvalues) != "" else "",
             fix = "_fixed" if args.fixpoi and g_in_filename(gvalues) != "" else ""
         )
