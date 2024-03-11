@@ -663,7 +663,7 @@ if __name__ == '__main__':
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
-            poi = '__'.join(poiset) if notgah else "",
+            poi = "_" + '__'.join(poiset) if notgah else "",
             gvl = "_" + gfit if gfit != "" else "",
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
