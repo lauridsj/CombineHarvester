@@ -369,7 +369,7 @@ def plot(channel, year, fit,
     ax2.set_xlabel(list(binning.keys())[0])
     ax0.set_title(channel.replace('m', '$\\mu$'))
     ax0.set_title(channel.replace('4p', '4+'))
-    #hep.cms.label(ax = ax0, llabel = "Work in progress", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
+    hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
     fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
@@ -494,7 +494,7 @@ with uproot.open(args.ifile) as f:
             if len(signals) > 1:
                 signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
 
-        gvalues = get_poi_values(args.ifile, signals)
+        gvalues = get_poi_values(args.ifile, promotions | signals)
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total_background"].to_hist()[:len(centers)]
         for promotion in promotions.values():
