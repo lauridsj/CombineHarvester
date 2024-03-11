@@ -714,14 +714,16 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: making channel block workspace"
         nicemerge = len(args.prepostmerge) == 1
-        ppmtxt, ppmwsp = dcdir + "ahtt_prepostmerge.txt", dcdir + "workspace_prepostmerge.root"
-        pwd = os.getcwd()
-        os.chdir(dcdir)
+        ppmtxt, ppmwsp = "ahtt_prepostmerge.txt", "workspace_prepostmerge.root"
+
+        inputfiles = ["ahtt_input.root"] + ["ahtt_" + ppm + ".txt" for ppm in prepostmerge]
+        for inputfile in inputfiles:
+            syscall("cp " + dcdir + inputfile + " .")
         syscall("combineCards.py {cards} > {comb}".format(
             cards = " ".join([ppm + "=" + "ahtt_" + ppm + ".txt" for ppm in prepostmerge]),
             comb = ppmtxt.replace(dcdir, "")
         ))
-        os.chdir(pwd)
+        inputfile += [ppmtxt, ppmwsp]
 
         syscall("combineTool.py -v 0 -M T2W -i {txt} -o {wsp} -m {mmm} "
                 "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
@@ -745,7 +747,7 @@ if __name__ == '__main__':
             fdr = fitdiag_result,
             ftp = args.prepostfit
         ))
-        syscall("rm {txt} {wsp}".format(txt = ppmtxt, wsp = ppmwsp), False, True)
+        syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
 
     if runnll:
         if len(args.nllparam) < 1:
