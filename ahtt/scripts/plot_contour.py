@@ -157,7 +157,9 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
                 #r"PRD 104, 034023 ($\mathbf{2021}$)"
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'upper right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 0.)
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
+                  fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
+                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
