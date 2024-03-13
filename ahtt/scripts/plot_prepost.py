@@ -409,21 +409,18 @@ def sum_kwargs(channel, year, *summands):
 
 
 def add_covariance(histogram, matrix):
-    # still good ol when it comes to direct fudging
-    roo = ROOT.TH1D("", "", len(histogram.values()), 0., len(histogram.values()))
     for ibin in range(len(histogram.values())):
-        roo.SetBinContent(ibin + 1, histogram.values()[ibin])
-        roo.SetBinError(ibin + 1, math.sqrt(matrix.values()[ibin, ibin]))
-    return uproot.pyroot.from_pyroot(roo).to_hist()
+        histogram[ibin] = Hist.accumulators.WeightedSum(
+            value = histogram.values()[ibin],
+            variance = math.sqrt(matrix.values()[ibin, ibin])
+        )
+    return histogram
 
 
 
 def zero_variance(histogram):
-    roo = uproot.pyroot.to_pyroot(histogram)
-    for ibin in range(len(histogram.values())):
-        roo.SetBinContent(ibin + 1, histogram.values()[ibin])
-        roo.SetBinError(ibin + 1, 0.)
-    return uproot.pyroot.from_pyroot(roo).to_hist()
+    histogram.view().variance = 0
+    return histogram
 
 
 
@@ -530,7 +527,7 @@ with uproot.open(args.ifile) as f:
         if args.each:
             plot(**kwargs)
 
-        if os.isfile(args.batch):
+        if os.path.isfile(args.batch):
             if (channel, fit) in year_summed:
                 this_year = year_summed[(channel, fit)]
                 year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
@@ -541,21 +538,24 @@ batches = {
     r"$\ell\ell$": ["ee", "em", "mm"],
     r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
     r"ej":         ["e4pj", "e3j"],
-    r"mj":         ["e4pj", "m3j"],
+    r"mj":         ["m4pj", "m3j"],
     r"$\ell$3j":   ["e3j", "m3j"],
     r"$\ell$4+j":  ["e4pj", "m4pj"],
 }
-if os.isfile(args.batch):
+if os.path.isfile(args.batch):
     for cltx, channels in batches.items():
         for fit in fits:
             has_channel = all([(channel, fit) in year_summed for channel in channels])
+            if not has_channel:
+                continue
+
             with uproot.open(args.batch) as f:
                 has_psfromws = all([f"{channel}_{year}_postfit" in f for channel in channels for year in years])
-                total = f["postfit"]["TotalBkg"].to_hist()[:len(centers)]
+                total = f["postfit"]["TotalBkg"].to_hist()[:len(year_summed[(channels[0], fit)]["datavalues"])]
 
-            if has_channel and has_psfromws:
+            if has_psfromws:
                 sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels))
                 for promotion in sums["promotions"].values():
-                    total += -1. * zero_variance(promotion)
+                    total.view().value -= promotion.values()
                 sums["total"] = total
                 plot(**sums)

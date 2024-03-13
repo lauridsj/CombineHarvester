@@ -435,7 +435,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
         if a343bkg[0]:
             btxt = [
-                r"$\mathbf{Including}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
+                r"$\mathbf{Including~{}^{1} S_{0}^{[1]}~t\bar{t}~bound~state~\eta_{\mathrm{t}}}$",
                 r"PRD 104, 034023 ($\mathbf{2021}$)"
             ]
             # disabled because adding the profiled number depends on signal point
@@ -445,11 +445,13 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
             #    btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
         else:
             btxt = [
-                r"$\mathbf{Excluding}$ $\mathbf{\eta_{t}}$ $\mathbf{approximation}$",
-                r"PRD 104, 034023 ($\mathbf{2021}$)"
+                r"$\mathbf{No~t\bar{t}~bound~state}$",
+                #r"PRD 104, 034023 ($\mathbf{2021}$)"
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.005, 0.15, 0.1), fontsize = 14, frameon = False, handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.005, 0.15, 0.1),
+                  fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
+                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
