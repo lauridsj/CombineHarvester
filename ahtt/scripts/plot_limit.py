@@ -450,7 +450,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
         ax.legend(bbln, btxt, loc = 'lower right',
-                  bbox_to_anchor = (0.825, 0.0025 if len(btxt) > 1 else 0.005, 0.15, 0.1),
+                  bbox_to_anchor = (0.825, 0.001 if len(btxt) > 1 else 0.005, 0.15, 0.1),
                   fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
                   handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
