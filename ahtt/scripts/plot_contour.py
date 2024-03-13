@@ -153,7 +153,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
             #    btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
         else:
             btxt = [
-                r"$\mathbf{No~t\bar{t}~bound~state}$",
+                r"$\mathbf{No~t\bar{t}~bound~states}$",
                 #r"PRD 104, 034023 ($\mathbf{2021}$)"
             ]
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
