@@ -119,8 +119,8 @@ hatchstyle = dict(
 )
 datastyle = dict(
     marker = "o",
-    markersize = 2.5,
-    elinewidth = 0.7,
+    markersize = 3,
+    elinewidth = 0.75,
     linestyle = "none",
     color = "black"
 )
@@ -253,7 +253,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
-            linewidth = 1.25,
+            linewidth = 1.75,
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
@@ -313,7 +313,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
-            linewidth = 1.25,
+            linewidth = 1.75,
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
@@ -378,7 +378,7 @@ def plot(channel, year, fit,
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
     fig.set_dpi(450)
-    extent = None if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
+    extent = 'tight' if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
