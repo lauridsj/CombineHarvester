@@ -97,7 +97,7 @@ def common_2D(parser):
     parser.add_argument("--collect-toy", help = combine_help_messages["--collect-toy"], dest = "collecttoy", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = combine_help_messages["--ignore-previous"], dest = "ignoreprev", action = "store_true", required = False)
 
-    parser.add_argument("--prepost-fit", help = combine_help_messages["--prepost-fit"], dest = "prepostfit", default = "s", required = False, choices = ['s', 'b'], type = remove_spaces_quotes)
+    parser.add_argument("--prepost-fit", help = combine_help_messages["--prepost-fit"], dest = "prepostfit", default = "s", required = False, choices = ['s', 'b', 'p'], type = remove_spaces_quotes)
     parser.add_argument("--prepost-merge", help = combine_help_messages["--prepost-merge"], dest = "prepostmerge",
                         default = [], required = False,
                         type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))

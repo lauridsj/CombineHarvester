@@ -671,12 +671,19 @@ if __name__ == '__main__':
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        if args.prepostfit == 's':
-            startpoi = starting_poi(gvalues, args.fixpoi)
-        else:
-            startpoi = starting_poi(gvalues if notgah else ["0.", "0."], args.fixpoi if notgah else True)
+        startpois = {
+            's': starting_poi(gvalues, args.fixpoi),
+            'b': starting_poi(gvalues if notgah else ["0.", "0."], args.fixpoi if notgah else True),
+            'p': starting_poi(["1.", "1."], False)
+        }
+        startpoi = startpois[args.prepostfit]
         set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
-        fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
+        fitopts = {
+            's': "--customStartingPoint --skipBOnlyFit",
+            'b': "--customStartingPoint --skipSBFit",
+            'p': "--customStartingPoint --skipSBFit --skipBOnlyFit"
+        }
+        fitopt = fitopts[args.prepostfit]
 
         never_gonna_give_you_up(
             command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
