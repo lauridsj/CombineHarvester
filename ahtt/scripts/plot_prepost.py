@@ -231,8 +231,12 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
         symbol, mass, decaywidth = key
         if symbol == "Total":
             signal_label = "A + H"
-        else:
+        elif symbol == "A" or symbol == "H":
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
+        elif symbol == r"$\eta_{\mathrm{t}}$":
+            signal_label = r"$\eta_{\mathrm{t}}$"
+        else:
+            signal_label = "Signal"
 
         if key in gvalues and gvalues[key] is not None:
             if symbol == "A" or symbol == "H":
@@ -291,8 +295,12 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         signal_label = "" if abs(ss - 1.) < 2.**-11 else f"{ss} $\\times$ "
         if symbol == "Total":
             signal_label += "A + H"
+        elif symbol == "A" or symbol == "H":
+            signal_label = f"{symbol}({mass}, {decaywidth}%)"
+        elif symbol == r"$\eta_{\mathrm{t}}$":
+            signal_label = r"$\eta_{\mathrm{t}}$"
         else:
-            signal_label += f"{symbol}({mass}, {decaywidth}%)"
+            signal_label = "Signal"
 
         if key in gvalues and gvalues[key] is not None:
             if symbol == "A" or symbol == "H":
@@ -550,13 +558,22 @@ if args.batch is not None:
                 continue
 
             sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels))
-            if fit != 'p' and os.path.isfile(args.batch):
+            if fit != 'p':
+                if not os.path.isfile(args.batch):
+                    continue
+
                 with uproot.open(args.batch) as f:
                     has_psfromws = all([f"{channel}_{year}_postfit" in f for channel in channels for year in years])
                     total = f["postfit"]["TotalBkg"].to_hist()[:len(year_summed[(channels[0], fit)]["datavalues"])]
 
-                if has_psfromws:
-                    for promotion in sums["promotions"].values():
-                        total.view().value -= promotion.values()
-                    sums["total"] = total
+                if not has_psfromws:
+                    continue
+
+                for promotion in sums["promotions"].values():
+                    total.view().value -= promotion.values()
+                sums["total"] = total
+
+            #print(cltx, channels, fit)
+            #print(sums["datavalues"])
+            #print("\n", flush = True)
             plot(**sums)
