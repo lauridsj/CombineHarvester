@@ -57,7 +57,7 @@ def dump_pull(directories, onepoi, poiname, gvalue, rvalue, fixpoi, keeps, drops
                 dcd = directory,
                 tag = tag,
                 pnt = '_'.join(directory.split('_')[:3]),
-                mod = "one-poi" if onepoi else "g-scan",
+                mod = poiname if poiname != "g" else "one-poi" if onepoi else "g-scan",
                 gvl = "_g_" + str(gvalue).replace(".", "p") if gvalue >= 0. else "",
                 rvl = "_r_" + str(rvalue).replace(".", "p") if rvalue >= 0. and not onepoi else "",
                 fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
