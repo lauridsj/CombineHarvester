@@ -14,7 +14,7 @@ import json
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
-def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, keeps, drops, otag):
+def dump_pull(directories, onepoi, poiname, gvalue, rvalue, fixpoi, keeps, drops, otag):
     for directory, tag in directories:
         pulls = OrderedDict()
 
@@ -23,7 +23,7 @@ def dump_pull(directories, onepoi, gvalue, rvalue, fixpoi, keeps, drops, otag):
                 dcd = directory,
                 tag = tag,
                 pnt = '_'.join(directory.split('_')[:3]),
-                mod = "one-poi" if onepoi else "g-scan",
+                mod = poiname if poiname != "g" else "one-poi" if onepoi else "g-scan",
                 gvl = "_g_" + str(gvalue).replace(".", "p") if gvalue >= 0. else "",
                 rvl = "_r_" + str(rvalue).replace(".", "p") if rvalue >= 0. and not onepoi else "",
                 fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
@@ -82,6 +82,9 @@ if __name__ == '__main__':
     parser.add_argument("--impact-tag", help = "tag to attach to the merged impact json file",
                         dest = "otag", default = "all", required = False)
 
+    parser.add_argument("--poi-name", help = "name of poi",
+                        dest = "poiname", default = "g", required = False)
+
     parser.add_argument("--g-value",
                         help = "g to use when evaluating impacts/fit diagnostics/nll. "
                         "does NOT freeze the value, unless --fix-poi is also used. "
@@ -96,4 +99,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
-    dump_pull(dirs, args.onepoi, args.setg, args.setr, args.fixpoi, args.keep, args.drop, args.otag)
+    dump_pull(dirs, args.onepoi, args.poiname, args.setg, args.setr, args.fixpoi, args.keep, args.drop, args.otag)
