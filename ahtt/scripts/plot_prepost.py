@@ -500,7 +500,7 @@ with uproot.open(args.ifile) as f:
                         signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
 
             if len(signals) > 1:
-                signals[("Total", None, None)] = directory["total_signal"].to_hist()[:len(centers)]
+                signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
         gvalues = get_poi_values(args.ifile, promotions | signals)
         datavalues = directory["data"].values()[1][:len(centers)]
