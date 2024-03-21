@@ -42,7 +42,7 @@ parser.add_argument("--prefit-signal-from", help = "read prefit signal templates
                     default = "", dest = "ipf", required = False)
 parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
-parser.add_argument("--signal-scale", help = "scaling to apply on signal in drawing", default = (1., 1.),
+parser.add_argument("--signal-scale", help = "scaling to apply on A/H signal (ie not promoted ones (yet!)) in drawing", default = (1., 1.),
                     dest = "sigscale", required = False, type = lambda s: tuplize(s))
 parser.add_argument("--as-signal", help = "comma-separated list of background processes to draw as signal",
                     dest = "assignal", default = "", required = False,
@@ -211,7 +211,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
 
 
 
-def plot_ratio(ax, bins, centers, data, total, signals, fit):
+def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
     ax.errorbar(
         centers,
         data[0] / total.values(),
@@ -229,8 +229,11 @@ def plot_ratio(ax, bins, centers, data, total, signals, fit):
     )
     for key, signal in signals.items():
         symbol, mass, decaywidth = key
+        idx = 1 if symbol == 'H' else 0
+        ss = int(sigscale[idx]) if abs(sigscale[idx] - int(sigscale[idx])) < 2.**-11 else sigscale[idx]
+        signal_label = "" if abs(ss - 1.) < 2.**-11 else f"{ss} $\\times$ "
         if symbol == "Total":
-            signal_label = "A + H"
+            signal_label += "A + H"
         elif symbol == "A" or symbol == "H":
             signal_label = f"{symbol}({mass}, {decaywidth}%)"
         elif symbol == r"$\eta_{\mathrm{t}}$":
@@ -349,7 +352,7 @@ def plot(channel, year, fit,
     if "s" in fit and args.lower == "ratio":
         raise NotImplementedError()
     if args.lower == "ratio":
-        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, fit)
+        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     elif args.lower == "diff":
         plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     else:
