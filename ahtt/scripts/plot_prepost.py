@@ -264,10 +264,10 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
-    for pos in [0.8, 0.9, 1.1, 1.2]:
-        ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
+    #for pos in [0.8, 0.9, 1.1, 1.2]:
+    #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
-    ax.set_ylim(0.75, 1.25)
+    ax.set_ylim(0.9, 1.1)
     ax.set_ylabel(ratiolabels[fit])
     ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
@@ -349,8 +349,6 @@ def plot(channel, year, fit,
     )
     ax0.set_axis_off()
     plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit)
-    if "s" in fit and args.lower == "ratio":
-        raise NotImplementedError()
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     elif args.lower == "diff":
