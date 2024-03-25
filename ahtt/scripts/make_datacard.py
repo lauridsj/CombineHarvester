@@ -520,14 +520,15 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         if nn2 in tokenize_to_list(nsci[0]) and len(nsci) > 1:
                             for ichop in range(1, len(nsci)):
                                 sci = tokenize_to_list(nsci[ichop], '|')
-                                if len(sci) == 3 and odir in update_mask(tokenize_to_list(sci[1])):
+                                if odir in update_mask(tokenize_to_list(sci[1])):
+                                    usesubidx = len(sci) == 3
                                     nn3 = nn2 + "_" + sci[0]
                                     nuisance.append((nn3, prechop_scale))
 
-                                    ibins = index_list(sci[2], 1)
+                                    ibins = index_list(sci[2], 1) if usesubidx else None
                                     ho = read_original_nominal(odir, pp)
-                                    huc = chop_up(hu, ho, ibins)
-                                    hdc = chop_up(hd, ho, ibins)
+                                    huc = chop_up(hu, ho, ibins) if usesubidx else hu.Clone("uutmpuu")
+                                    hdc = chop_up(hd, ho, ibins) if usesubidx else hd.Clone("ddtmpdd")
 
                                     huc.SetName(hu.GetName().replace(nn2, nn3))
                                     hdc.SetName(hd.GetName().replace(nn2, nn3))
