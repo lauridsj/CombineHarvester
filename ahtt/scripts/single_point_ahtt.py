@@ -271,7 +271,7 @@ if __name__ == '__main__':
                 rvl = "_r_" + str(args.setr).replace(".", "p") if args.setr >= 0. and not onepoi else "",
                 fix = "_fixed" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
             ),
-            poiset,
+            ["g"] if onepoi and not onepoinotg else poiset,
             set_range(ranges),
             elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
