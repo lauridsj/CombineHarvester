@@ -145,7 +145,7 @@ def flush_jobs():
 
 def common_job(args):
     argstr = (" {sus} {inj} {ass} {exc} {tag} {drp} {kee} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
-              "{cho} {rep} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {poi} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
+              "{cho} {rep} {arn} {fst} {hes} {kbf} {dws} {fr0} {frp} {rsd} {poi} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
                   sus = "--sushi-kfactor" if args.kfactor else "",
                   inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
                   ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
@@ -166,6 +166,7 @@ def common_job(args):
                   prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
                   cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
                   rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
+                  arn = clamp_with_quote(string = args.arbnorm, prefix = '--arbitrary-resonance-normalization '),
                   fst = "--fit-strategy {fst}".format(fst = args.fitstrat) if args.fitstrat > -1 else "",
                   hes = "--use-hesse" if args.usehesse else "",
                   kbf = "--redo-best-fit" if not args.keepbest else "",

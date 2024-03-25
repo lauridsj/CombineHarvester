@@ -313,7 +313,8 @@ def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, e
 
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
-            "{psd} {inj} {ass} {exc} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} {igb} {prj} {cho} {rep} {rsd}".format(
+            "{psd} {inj} {ass} {exc} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} "
+            "{igb} {prj} {cho} {rep} {arn} {rsd}".format(
                 scr = scriptdir,
                 pnt = ','.join(args.point),
                 sig = args.signal,
@@ -338,6 +339,7 @@ def make_datacard_with_args(scriptdir, args):
                 prj = clamp_with_quote(string = args.projection, prefix = '--projection '),
                 cho = clamp_with_quote(string = args.chop, prefix = '--chop-up '),
                 rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
+                arn = clamp_with_quote(string = args.arbnorm, prefix = '--arbitrary-resonance-normalization '),
                 rsd = clamp_with_quote(string = str(args.seed), prefix = '--seed '),
             ))
 

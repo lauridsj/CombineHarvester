@@ -140,6 +140,8 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False)
     parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False)
     parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "repnom", default = "", required = False)
+    parser.add_argument("--arbitrary-resonance-normalization", help = combine_help_messages["--arbitrary-resonance-normalization"],
+                        dest = "arbnorm", default = "", required = False)
     return parser
 
 def parse_args(parser):

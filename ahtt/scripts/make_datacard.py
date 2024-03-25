@@ -41,6 +41,20 @@ def get_kfactor(sigpnt, mtop):
 
     return kvals
 
+def nominal_res_factor_to_arbitrary(sigpnt, channel, arbnorm):
+    wlep_br = 3. * 0.1086 # PDG 2020, as in kfactor_closure.cc
+    brs = {"ll": wlep_br * wlep_br, "lj": 2. * (1. - wlep_br) * wlep_br}
+    arbnorm *= brs[channel] # pb
+
+    kfile = TFile.Open(kfactor_file_name[172], "read")
+    nhist = kfile.Get(sigpnt[0] + "_res_mg5_pdf_325500_scale_dyn_0p5mtt_nominal_xsec_" + channel)
+    nxres = nhist.Interpolate(sigpnt[1], sigpnt[2])
+    nhist = kfile.Get(sigpnt[0] + "_res_sushi_nnlo_mg5_lo_kfactor_pdf_325500_nominal")
+    nkfac = nhist.Interpolate(sigpnt[1], sigpnt[2])
+    kfile.Close()
+    arbnorm /= (nxres * nkfac)
+    return arbnorm
+
 def get_lo_ratio(sigpnt, channel, mtop):
     kfile = TFile.Open(kfactor_file_name[mtop], "read")
     xhist = [
@@ -61,8 +75,10 @@ def get_lo_ratio(sigpnt, channel, mtop):
     return rvals
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
-def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata, chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
-                                   excludeproc = None, bin_masks = None, projection_rule = "", sigpnt = None, kfactor = False):
+def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata,
+                                   chops, replaces, drops, keeps, alwaysshape, threshold, lnNsmall,
+                                   excludeproc = None, bin_masks = None, projection_rule = "", sigpnt = None,
+                                   kfactor = False, arbnorm = None):
     # because afiq hates seeing jets spelled outside of text
     if not hasattr(read_category_process_nuisance, "aliases"):
         read_category_process_nuisance.aliases = OrderedDict([
@@ -193,6 +209,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
     ifile = None
     kfactors = None
     loratios = None
+    arbfactor = None
 
     if sigpnt is None:
         fname = ""
@@ -235,6 +252,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         for sig in sigpnt:
             if kfactor:
                 kfactors = {mt: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
+                if arbnorm is not None:
+                    arbfactor = nominal_res_factor_to_arbitrary(get_point(sig), "ll", arbnorm) if channel in ["ee", "em", "mm", "ll"] else nominal_res_factor_to_arbitrary(get_point(sig), "lj", arbnorm)
 
             fname = ""
             for iname in inames:
@@ -274,6 +293,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     else:
                         scale(hn, kfactors[172][0][1])
 
+                    if arbfactor is not None:
+                        scale(hn, arbfactor)
+
                 ofile.cd(odir)
                 hn.Write()
 
@@ -282,6 +304,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ifile.Close()
             ifile = None
             kfactors = None
+            arbfactor = None
 
     for pp, ff in processes:
         if sigpnt is not None:
@@ -289,6 +312,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             if kfactor:
                 loratios = {mt: get_lo_ratio(get_point(sig), "ll", mt) if channel in ["ee", "em", "mm", "ll"] else get_lo_ratio(get_point(sig), "lj", mt) for mt in [171, 172, 173]}
                 kfactors = {mt: get_kfactor(get_point(sig), mt) for mt in [171, 172, 173]}
+                if arbnorm is not None:
+                    arbfactor = nominal_res_factor_to_arbitrary(get_point(sig), "ll", arbnorm) if channel in ["ee", "em", "mm", "ll"] else nominal_res_factor_to_arbitrary(get_point(sig), "lj", arbnorm)
 
         ifile = TFile.Open(ff, "read")
         ifile.cd(idir)
@@ -392,6 +417,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                             scale(hu, 1. / kfactors[172][0][idxp])
                             scale(hd, 1. / kfactors[172][0][idxp])
 
+                            if arbfactor is not None:
+                                scale(hu, 1. / arbfactor)
+                                scale(hd, 1. / arbfactor)
+
                     hu.SetName(nu)
                     hd.SetName(nd)
 
@@ -480,6 +509,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     # NOTE if instead the uX varied LO xsec is desired, comment the loratios uX scaling above
                     # NOTE and use 0 instead of idxu/idxp for kfactors
 
+                    if arbfactor is not None:
+                        scale(hu, arbfactor)
+                        scale(hd, arbfactor)
 
                 if nn1 == "tmass_AH":
                     up_norm_rdev = (hu.Integral() - hah.Integral()) / hah.Integral()
@@ -546,6 +578,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
         ifile = None
         kfactors = None
         loratios = None
+        arbfactor = None
 
     if odir not in cpn:
         cpn[odir] = OrderedDict()
@@ -864,6 +897,10 @@ if __name__ == '__main__':
     parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "repnom", default = "", required = False,
                         type = lambda s: None if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
 
+    parser.add_argument("--arbitrary-resonance-normalization", help = combine_help_messages["--arbitrary-resonance-normalization"],
+                        dest = "arbnorm", default = "", required = False,
+                        type = lambda s: None if s == "" else 5. if s.lower() in ["true", "default"] else float(s))
+
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
     args = parser.parse_args()
 
@@ -914,13 +951,13 @@ if __name__ == '__main__':
 
             read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
                                            args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall,
-                                           args.excludeproc, bin_masks, projection_rule, args.point, args.kfactor)
+                                           args.excludeproc, bin_masks, projection_rule, args.point, args.kfactor, args.arbnorm)
             if args.inject is not None and args.point != args.inject:
                 remaining = list(set(args.inject).difference(args.point))
                 if len(remaining) > 0:
                     read_category_process_nuisance(output, args.signal, cc, yy, cpn, args.pseudodata,
                                                    args.chop, args.repnom, args.drop, args.keep, args.alwaysshape, args.threshold, args.lnNsmall,
-                                                   args.excludeproc, bin_masks, projection_rule, remaining, args.kfactor)
+                                                   args.excludeproc, bin_masks, projection_rule, remaining, args.kfactor, args.arbnorm)
 
     if args.pseudodata:
         print "using ", args.seed, "as seed for pseudodata generation"

@@ -41,6 +41,11 @@ combine_help_messages = {
     "and assigning the resulting template as the nominal template to be added to the pseudodata.\n"
     "p/s: does NOT support adding chopped up nuisances for the moment.",
 
+    "--arbitrary-resonance-normalization": "normalize A/H signal processes such that the nominal cross section of the resonant component is\n"
+    "the given number in pb. A default normalization of 5 pb can be given, by providing 'true' or 'default' as argument.\n"
+    "all other A/H templates are normalized such that their ratios to the nominal resonant templates are the same as without this option.\n"
+    "applied on top of --sushi-kfactor, so it must be used for this option to take effect.",
+
     "--ignore-bin":
     "instruction to ignore certain bins in the search template of the form:\n"
     "[instruction 0]:[instruction 1]:...:[instruction n] for n different channel_year combinations.\n"
