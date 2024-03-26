@@ -223,6 +223,7 @@ if __name__ == '__main__':
     poiset = args.poiset if len(args.poiset) else ["g"] if args.onepoi else ["r", "g"]
     poiset = sorted(list(set(poiset)))
     onepoinotg = len(poiset) == 1 and poiset[0] != "g"
+    args.onepoi = args.onepoi or onepoinotg
 
     # parameter ranges for best fit file
     ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
