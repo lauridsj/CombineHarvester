@@ -304,7 +304,7 @@ if __name__ == '__main__':
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
     processes = list_of_processes(
-        "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
+        dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
     )
     print processes
     raise

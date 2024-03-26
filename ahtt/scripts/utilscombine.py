@@ -38,7 +38,11 @@ def problematic_datacard_log(logfile):
     return False
 
 def list_of_processes(datacard):
-    ret = parseCard(datacard, addDatacardParserOptions(OptionParser(usage = "dummy option"))
+    with open(datacard) as dcd:
+        prs = OptionParser(usage = "dummy option", verbose = False)
+        addDatacardParserOptions(prs)
+        opt, _ = prs.parse_args()
+        ret = parseCard(dcd, opt)
     return ret.processes
 
 def set_range(parameters):
