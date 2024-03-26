@@ -17,7 +17,7 @@ from ROOT import TFile, TTree
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option, update_mask
-from utilscombine import get_fit, is_good_fit, never_gonna_give_you_up
+from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -263,29 +263,6 @@ if __name__ == '__main__':
     runpsfromws = "psfromws" in modes
     runnll = "nll" in modes or "likelihood" in modes
 
-    if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
-        print "given expected scenarii:", args.fcexp
-        raise RuntimeError("unexpected expected scenario is given. aborting.")
-
-    runbest = runsingle or runbest or rundc
-    args.keepbest = False if runbest else args.keepbest
-
-    if runsingle:
-        args.extopt += " --algo singles --cl=0.68"
-
-    if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
-        raise RuntimeError("in toy generation or FC scans no g can be negative!!")
-
-    # pois to use in the fit
-    poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
-    poiset = sorted(list(set(poiset)))
-    notgah = poiset != ["g1", "g2"]
-
-    # parameter ranges for best fit file
-    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
-    if args.experimental:
-        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
-
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         make_datacard_with_args(scriptdir, args)
@@ -312,6 +289,35 @@ if __name__ == '__main__':
             ptg = ptag,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
+
+    if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
+        print "given expected scenarii:", args.fcexp
+        raise RuntimeError("unexpected expected scenario is given. aborting.")
+
+    runbest = runsingle or runbest or rundc
+    args.keepbest = False if runbest else args.keepbest
+
+    if runsingle:
+        args.extopt += " --algo singles --cl=0.68"
+
+    if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
+        raise RuntimeError("in toy generation or FC scans no g can be negative!!")
+
+    processes = list_of_processes(
+        "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
+    )
+    print processes
+    raise
+
+    # pois to use in the fit
+    poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
+    poiset = sorted(list(set(poiset)))
+    notgah = poiset != ["g1", "g2"]
+
+    # parameter ranges for best fit file
+    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+    if args.experimental:
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
 
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
