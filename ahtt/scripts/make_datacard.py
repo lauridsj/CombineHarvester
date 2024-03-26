@@ -546,6 +546,12 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if chops is not None and any([nn2 in tokenize_to_list(tokenize_to_list(chop, ';')[0]) for chop in chops]):
                     prechop_name, prechop_scale = nuisance.pop()
 
+                    # save unchopped tmass_TT always, for A/H and EtaT
+                    if nn2 == "tmass" and pp == "TT":
+                        ofile.cd(odir)
+                        hu.Write()
+                        hd.Write()
+
                     for chop in chops:
                         nsci = tokenize_to_list(chop, ';') # nuisance subgroup channel_year index
 
