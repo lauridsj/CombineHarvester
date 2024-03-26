@@ -12,9 +12,6 @@ from ROOT import TFile, gDirectory, TH1, TH1D
 TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
-from optparse import OptionParser
-from HiggsAnalysis.CombinedLimit.DatacardParser import parseCard, addDatacardParserOptions
-
 min_g = 0.
 max_g = 3.
 
@@ -38,12 +35,8 @@ def problematic_datacard_log(logfile):
     return False
 
 def list_of_processes(datacard):
-    with open(datacard) as dcd:
-        prs = OptionParser(usage = "dummy option", verbose = False)
-        addDatacardParserOptions(prs)
-        opt, _ = prs.parse_args()
-        ret = parseCard(dcd, opt)
-    return ret.processes
+    # ../../../HiggsAnalysis/CombinedLimit/python/DatacardParser.py
+    return []
 
 def set_range(parameters):
     '''

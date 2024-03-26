@@ -303,11 +303,11 @@ if __name__ == '__main__':
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
-    processes = list_of_processes(
-        dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
-    )
-    print processes
-    raise
+    #processes = list_of_processes(
+    #    dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
+    #)
+    #print processes
+    #raise RuntimeError("wtf")
 
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
