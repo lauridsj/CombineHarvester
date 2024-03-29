@@ -466,6 +466,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if sigpnt is not None and kfactor and kfactors is not None:
                         # remove the nominal k-factor as at this stage they are not yet included
                         scale(hn, 1. / kfactors[172][0][0] if "_res" in pp else 1. / kfactors[172][0][1])
+                        if arbfactor is not None:
+                            scale(hu, 1. / arbfactor)
 
                     up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
                     down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
