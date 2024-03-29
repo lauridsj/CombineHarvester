@@ -34,8 +34,14 @@ def problematic_datacard_log(logfile):
         lf.close()
     return False
 
-def list_of_processes(datacard):
-    # ../../../HiggsAnalysis/CombinedLimit/python/DatacardParser.py
+def list_of_processes(datacard, hint = "TT"):
+    with open(datacard) as dc:
+        for line in dc:
+            processes = tokenize_to_list(line, token = " ")
+            if "process" in processes[0]:
+                processes = [remove_spaces(it) for it in processes[:1]]
+                if hint in processes:
+                    return set(processes)
     return []
 
 def set_range(parameters):
