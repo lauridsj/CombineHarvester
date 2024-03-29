@@ -5,9 +5,11 @@
 import argparse
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import mplhep
-import uproot
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt # noqa:E402
+import mplhep # noqa:E402
+import uproot # noqa:E402
 import itertools
 import traceback
 
