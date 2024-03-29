@@ -292,7 +292,7 @@ if __name__ == '__main__':
         for ihsum in [True, False]:
             if ahresonly:
                 modelopt = "-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel "
-                modelopt += " ".join(["--PO 'map=.*/{pp}_res:{rr}[1,-20,20]'".format(
+                modelopt += " ".join(["--PO 'map=.*/{pp}_res:{rr}[1,-5,5]'".format(
                     pp = pp,
                     rr = rr
                 ) for pp, rr in zip(points, ["r1", "r2"])])
@@ -332,7 +332,7 @@ if __name__ == '__main__':
 
     # parameter ranges for best fit file
     if ahresonly:
-        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
+        ranges = ["{rr}: -5, 5".format(rr = rr) for rr in ["r1", "r2"]]
     else:
         ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
 
