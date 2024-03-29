@@ -151,7 +151,9 @@ def index_list(index_string, baseline = 0):
     builds a list of indices from an index string, to be used in some options
     index_string can be a mixture of comma separated non-negative integers, or the form A..B where A < B and A, B non-negative
     where the comma separated integers are plainly the single indices and
-    the A..B version builds a list of indices from [A, B). If A is omitted, it is assumed to be the baseline (0 by default)
+    the A..B(..C) version builds a list of indices from [A, B) with stride C
+    If A is omitted, it is assumed to be the baseline (0 by default)
+    C is 1 by default
     the returned list of indices is sorted, with duplicates removed
     returns empty list if syntax is not followed
     '''
@@ -165,11 +167,12 @@ def index_list(index_string, baseline = 0):
     for istr in index_string:
         if ".." in istr:
             ilst = tokenize_to_list(istr, '..' )
-            idxs += range(int(ilst[0]), int(ilst[1])) if ilst[0] != "" else range(baseline, int(ilst[1]))
+            stride = int(ilst[2]) if len(istr.split('..')) == 3 and ilst[2] != "" else 1
+            idxs += range(int(ilst[0]), int(ilst[1]), stride) if ilst[0] != "" else range(baseline, int(ilst[1]), stride)
         else:
             idxs.append(int(istr))
 
-    return list(set(idxs))
+    return sorted(list(set(idxs)))
 
 def directory_to_delete(location, flush = False):
     '''
