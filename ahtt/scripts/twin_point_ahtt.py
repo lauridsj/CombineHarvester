@@ -203,6 +203,10 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                     tomerge = []
         directory_to_delete(location = None, flush = True)
 
+def is_ah_res_only(datacard):
+    processes = list_of_processes(datacard)
+    return all([point + part not in processes for point in points for part in ["_pos", "_neg"]])
+
 if __name__ == '__main__':
     print "twin_point_ahtt :: called with the following arguments"
     print sys.argv[1:]
@@ -276,28 +280,13 @@ if __name__ == '__main__':
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
 
-    processes = list_of_processes(
-        dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
-    )
-    ahresonly = all([point + part not in processes for point in points for part in ["_pos", "_neg"]])
-
-    # pois to use in the fit
-    poiset = args.poiset if len(args.poiset) else ["r1", "r2"] if ahresonly else ["g1", "g2"]
-    poiset = sorted(list(set(poiset)))
-    notgah = poiset != ["g1", "g2"]
-
-    # parameter ranges for best fit file
-    if ahresonly:
-        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
-    else:
-        ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
-
-    if args.experimental:
-        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
-
     if rundc:
         print "\ntwin_point_ahtt :: making datacard"
         make_datacard_with_args(scriptdir, args)
+        ahresonly = is_ah_res_only(
+            dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else
+            dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
+        )
 
         print "\ntwin_point_ahtt :: making workspaces"
         for ihsum in [True, False]:
@@ -331,6 +320,24 @@ if __name__ == '__main__':
             ptg = ptag,
             crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
         ))
+
+    ahresonly = is_ah_res_only(
+        dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else
+        dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
+    )
+    # pois to use in the fit
+    poiset = args.poiset if len(args.poiset) else ["r1", "r2"] if ahresonly else ["g1", "g2"]
+    poiset = sorted(list(set(poiset)))
+    notgah = poiset != ["g1", "g2"]
+
+    # parameter ranges for best fit file
+    if ahresonly:
+        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
+    else:
+        ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+
+    if args.experimental:
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
 
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
