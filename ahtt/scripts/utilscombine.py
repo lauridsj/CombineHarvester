@@ -39,10 +39,11 @@ def list_of_processes(datacard, hint = "TT"):
         for line in dc:
             processes = tokenize_to_list(line, token = " ")
             if "process" in processes[0]:
-                processes = [remove_spaces(it) for it in processes[:1]]
+                processes = [remove_spaces(it) for it in processes[1:]]
+                processes = [it for it in processes if it != "" and it != "\n"]
                 if hint in processes:
-                    return set(processes)
-    return []
+                    break
+    return sorted(list(set(processes)))
 
 def set_range(parameters):
     '''

@@ -97,9 +97,11 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_ISR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_AH",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("tmass_AH",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("tmass_AH",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
             ("bindingEnergy_EtaT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("tmass_EtaT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("tmass_EtaT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
             ("QCDscale_MEFac_EtaT",                (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_ISR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -467,7 +469,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         # remove the nominal k-factor as at this stage they are not yet included
                         scale(hn, 1. / kfactors[172][0][0] if "_res" in pp else 1. / kfactors[172][0][1])
                         if arbfactor is not None:
-                            scale(hu, 1. / arbfactor)
+                            scale(hn, 1. / arbfactor)
 
                     up_norm_rdev = (hu.Integral() - hn.Integral()) / hn.Integral()
                     down_norm_rdev = (hd.Integral() - hn.Integral()) / hn.Integral()
