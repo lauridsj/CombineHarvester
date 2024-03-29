@@ -263,33 +263,6 @@ if __name__ == '__main__':
     runpsfromws = "psfromws" in modes
     runnll = "nll" in modes or "likelihood" in modes
 
-    if rundc:
-        print "\ntwin_point_ahtt :: making datacard"
-        make_datacard_with_args(scriptdir, args)
-
-        print "\ntwin_point_ahtt :: making workspaces"
-        for ihsum in [True, False]:
-            syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} -P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
-                    "--PO 'signal={pnt}' {pos} {dyt} {opt} {whs} {ext}".format(
-                        dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-                        wst = "twin-g" if ihsum else "fitdiag",
-                        mmm = mstr,
-                        pnt = ",".join(points),
-                        pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
-                        dyt = "--PO yukawa" if "EWK_TT" in args.assignal else "",
-                        opt = "--channel-masks",
-                        whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
-                        ext = args.extopt
-                    ))
-
-    if runvalid:
-        print "\ntwin_point_ahtt :: validating datacard"
-        syscall("ValidateDatacards.py --jsonFile {dcd}{ptg}_validate.json --printLevel 3 {dcd}{crd}".format(
-            dcd = dcdir,
-            ptg = ptag,
-            crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
-        ))
-
     if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
@@ -306,18 +279,58 @@ if __name__ == '__main__':
     processes = list_of_processes(
         dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt"
     )
-    print processes
-    raise RuntimeError("wtf")
+    ahresonly = all([point + part not in processes for point in points for part in ["_pos", "_neg"]])
 
     # pois to use in the fit
-    poiset = args.poiset if len(args.poiset) else ["g1", "g2"]
+    poiset = args.poiset if len(args.poiset) else ["r1", "r2"] if ahresonly else ["g1", "g2"]
     poiset = sorted(list(set(poiset)))
     notgah = poiset != ["g1", "g2"]
 
     # parameter ranges for best fit file
-    ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+    if ahresonly:
+        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
+    else:
+        ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
+
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
+
+    if rundc:
+        print "\ntwin_point_ahtt :: making datacard"
+        make_datacard_with_args(scriptdir, args)
+
+        print "\ntwin_point_ahtt :: making workspaces"
+        for ihsum in [True, False]:
+            if ahresonly:
+                modelopt = "-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel "
+                modelopt += " ".join(["--PO 'map=.*/{pp}_res:{rr}[1,-20,20]'".format(
+                    pp = pp,
+                    rr = rr
+                ) for pp, rr in zip(points, ["r1", "r2"])])
+            else:
+                modelopt = "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed"
+                modelopt += "--PO 'signal={pnt}' {pos} {dyt}".format(
+                    pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
+                    dyt = "--PO yukawa" if "EWK_TT" in args.assignal else ""
+                )
+
+            syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
+                dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                wst = "twin-g" if ihsum else "fitdiag",
+                mmm = mstr,
+                mop = modelopt,
+                opt = "--channel-masks",
+                whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
+                ext = args.extopt
+            ))
+
+    if runvalid:
+        print "\ntwin_point_ahtt :: validating datacard"
+        syscall("ValidateDatacards.py --jsonFile {dcd}{ptg}_validate.json --printLevel 3 {dcd}{crd}".format(
+            dcd = dcdir,
+            ptg = ptag,
+            crd = "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else "ahtt_" + args.channel + '_' + args.year + ".txt"
+        ))
 
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
