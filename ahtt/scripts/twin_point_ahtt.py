@@ -297,7 +297,7 @@ if __name__ == '__main__':
                     rr = rr
                 ) for pp, rr in zip(points, ["r1", "r2"])])
             else:
-                modelopt = "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed"
+                modelopt = "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed "
                 modelopt += "--PO 'signal={pnt}' {pos} {dyt}".format(
                     pnt = ",".join(points),
                     pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
