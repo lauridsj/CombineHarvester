@@ -299,6 +299,7 @@ if __name__ == '__main__':
             else:
                 modelopt = "-P CombineHarvester.CombineTools.MultiInterferencePlusFixed:multiInterferencePlusFixed"
                 modelopt += "--PO 'signal={pnt}' {pos} {dyt}".format(
+                    pnt = ",".join(points),
                     pos = " ".join(["--PO " + stuff for stuff in ["verbose", "no-r"]]),
                     dyt = "--PO yukawa" if "EWK_TT" in args.assignal else ""
                 )
