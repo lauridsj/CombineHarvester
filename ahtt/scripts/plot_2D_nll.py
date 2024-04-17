@@ -167,12 +167,12 @@ if __name__ == '__main__':
                         dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';' ))
     parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
-    parser.add_argument("--label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", required = False,
+    parser.add_argument("--tag-label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", required = False,
                         type = lambda s: tokenize_to_list(s, token = ';' ))
 
     parser.add_argument("--parameters", help = "comma-separated names of parameters. must be exactly 2.",
                         dest = "params", type = lambda s: tokenize_to_list(remove_spaces_quotes(s)), default = ["g1", "g2"], required = False)
-    parser.add_argument("--labels", help = "semicolon-separated labels of those parameters. must be either not given, or exactly 2.",
+    parser.add_argument("--parameter-labels", help = "semicolon-separated labels of those parameters. must be either not given, or exactly 2.",
                         dest = "labels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
                         dest = "intervals", type = lambda s: [tokenize_to_list(minmax) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
