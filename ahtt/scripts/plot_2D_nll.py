@@ -56,7 +56,7 @@ def read_nll(points, directories, parameters, intervals):
         fits.append(originals)
     return result
 
-def draw_nll(oname, points, directories, parameters, labels, intervals, maxsigma, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, maxsigma, formal, cmsapp, luminosity, a343bkg, transparent):
     dnlls = [nsigma * nsigma for nsigma in range(1, 6)]
 
     if not hasattr(draw_nll, "colors"):
@@ -75,7 +75,6 @@ def draw_nll(oname, points, directories, parameters, labels, intervals, maxsigma
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
     nlls = read_nll(points, directories, parameters, intervals)
 
     for ii, nll in enumerate(nlls):
@@ -96,11 +95,23 @@ def draw_nll(oname, points, directories, parameters, labels, intervals, maxsigma
                           linestyles = draw_nll.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), labels[ic]))
+                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ic]))
 
-    plt.xlabel(labels[0], fontsize = 23, loc = "right")
-    plt.ylabel(labels[1], fontsize = 23, loc = "top")
+    plt.xlabel(plabels[0], fontsize = 23, loc = "right")
+    plt.ylabel(plabels[1], fontsize = 23, loc = "top")
     ax.margins(x = 0, y = 0)
+
+    if len(handles) > 0 and len(sigmas) > 0:
+        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+        ax.add_artist(legend1)
+
+        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.add_artist(legend2)
+
+    elif len(handles) > 0:
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+    elif len(sigmas) > 0:
+        ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
@@ -124,35 +135,6 @@ def draw_nll(oname, points, directories, parameters, labels, intervals, maxsigma
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
-    ### -------------------------------------------------------
-
-    for ii, nll in enumerate(nlls[1]):
-        values = np.array([nn[0] for nn in nll])
-        dnlls = np.array([nn[1] for nn in nll])
-        measurement = get_interval(parameter = xlabel, best_fit = nlls[0][ii], fits = nll)
-        color = colors[ii]
-        style = styles[ii]
-        label = labels[ii] + measurement
-        ax.plot(values, dnlls, color = color, linestyle = style, linewidth = 2)
-        handles.append((mln.Line2D([0], [0], color = color, linestyle = style, linewidth = 2), label))
-
-    plt.xlim(rangex)
-    plt.ylim(rangey)
-    #ax.plot(rangex, [rangey[1], rangey[1]], color = "black", linestyle = 'solid', linewidth = 1)
-    plt.xlabel(xlabel, fontsize = 21, loc = "right")
-    #plt.ylabel(axes["dnll"] % 'A/H', fontsize = 21, loc = "top")
-    plt.ylabel("2dNLL", fontsize = 21, loc = "top")
-    ax.margins(x = 0, y = 0)
-
-    legend = ax.legend(first(handles), second(handles),
-	               loc = legendloc, ncol = 1 if ndir <= len(draw_nll.settings) else 2, borderaxespad = 1., fontsize = 18, frameon = False,
-                       title = legendtitle, title_fontsize = 21)
-    ax.add_artist(legend)
-    ax.minorticks_on()
-    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
-    ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
-
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
     fig.savefig(oname, transparent = transparent)
@@ -167,13 +149,13 @@ if __name__ == '__main__':
                         dest = "itag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), token = ';' ))
     parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
-    parser.add_argument("--tag-label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", required = False,
-                        type = lambda s: tokenize_to_list(s, token = ';' ))
+    parser.add_argument("--tag-label", help = "labels to attach on plot for each tag triplet, semicolon separated", default = "", dest = "tlabel",
+                        required = False, type = lambda s: tokenize_to_list(s, token = ';' ))
 
     parser.add_argument("--parameters", help = "comma-separated names of parameters. must be exactly 2.",
                         dest = "params", type = lambda s: tokenize_to_list(remove_spaces_quotes(s)), default = ["g1", "g2"], required = False)
     parser.add_argument("--parameter-labels", help = "semicolon-separated labels of those parameters. must be either not given, or exactly 2.",
-                        dest = "labels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
+                        dest = "plabels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
                         dest = "intervals", type = lambda s: [tokenize_to_list(minmax) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
 
@@ -200,16 +182,16 @@ if __name__ == '__main__':
         raise RuntimeError("this script is to be used with exactly two A/H points!")
     pstr = "__".join(points)
 
-    if len(args.itag) != len(args.label):
-        raise RuntimeError("length of tags isnt the same as labels. aborting")
+    if len(args.itag) != len(args.tlabel):
+        raise RuntimeError("length of tags isnt the same as tag labels. aborting")
 
-    if len(args.labels) == 0:
-        args.labels = stock_labels(args.params, args.point)
+    if len(args.plabels) == 0:
+        args.plabels = stock_labels(args.params, args.point)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.parameters)}{args.ptag}{args.fmt}",
-             points, dirs, args.parameters, args.labels, args.intervals, args.maxsigma, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+             points, dirs, args.tlabel, args.parameters, args.plabels, args.intervals, args.maxsigma, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass
