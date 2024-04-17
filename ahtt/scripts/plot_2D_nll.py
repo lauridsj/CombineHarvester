@@ -77,10 +77,10 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     sigmas = []
     nlls = read_nll(points, directories, parameters, intervals)
 
-    for ii, nll in enumerate(nlls):
-        colortouse = draw_nll.colors[len(nlls)][ii]
+    for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
+        colortouse = draw_nll.colors[len(nlls[1])][ii]
         print(nll[0])
-        ax.plot(np.array([nll[0][ii][0]]), np.array([nll[0][ii][1]]), marker = 'X', markersize = 10.0, color = colortouse)
+        ax.plot(np.array([best_fit[ii][0]]), np.array([best_fit[ii][1]]), marker = 'X', markersize = 10.0, color = colortouse)
         if ii == 0:
             sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
