@@ -177,7 +177,7 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
 
     fig, ax = plt.subplots()
     handles = []
-    name, xlabel = namelabel if len(namelabel) > 1 else namelabel + namelabel
+    name, xlabel = namelabel
     nlls = read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
     for ii, nll in enumerate(nlls[1]):
@@ -266,7 +266,7 @@ if __name__ == '__main__':
             raise RuntimeError("one or more of the kinks given don't correspond to list of minmaxes. aborting!")
 
     if len(args.namelabel) == 1:
-        args.namelabel += stock_labels(args.namelabel[0], args.point)
+        args.namelabel += stock_labels(args.namelabel, args.point)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
