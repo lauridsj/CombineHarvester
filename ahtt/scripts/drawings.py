@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # utilities containing functions to be imported - plotting version
 
+from utilspy import pmtofloat
 from desalinator import tokenize_to_list, remove_spaces_quotes
 
 min_g = 0.
@@ -11,6 +12,9 @@ axes = {
     "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [%% m$_{\mathrm{\mathsf{%s}}}$]",
     "coupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
     "dnll":     r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
+    "muah":     r"$\mu^{%s}$",
+    "muetat":   r"$\mu^{\eta_{\mathrm{t}}}$",
+    "yukawa":   r"$y_{\mathrm{t}}$"
 }
 
 first  = lambda vv: [ii for ii, _ in vv]
@@ -24,9 +28,59 @@ def str_point(sigpnt):
     pnt = sigpnt.split('_')
     return pnt[0][0] + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)'
 
-def default_etat_blurb(arg = ""):
+def default_etat_measurement(arg = ""):
     result = tokenize_to_list(remove_spaces_quotes(arg), astype = float)
     defaults = [0, 6.43, 0.64, 0.64]
     while len(result) < len(defaults):
         result.append(defaults[len(result)])
     return result
+
+def etat_blurb(cfg):
+    if cfg[0]:
+        blurb = [
+            r"$\mathbf{Including~{}^{1} S_{0}^{[1]}~t\bar{t}~bound~state~\eta_{\mathrm{t}}}$",
+            r"PRD 104, 034023 ($\mathbf{2021}$)"
+        ]
+        # disabled because adding the profiled number depends on signal point
+        #blurb += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = cfg[1])]
+        #if len(cfg) > 3:
+        #    blurb[-1] += r"_{-" + "{ulo}".format(ulo = cfg[2]) + r"}^{+" + "{uhi}".format(uhi = cfg[3])
+        #else:
+        #    blurb[-1] += r" \pm " + "{unc}".format(unc = cfg[2])
+        #blurb[-1] += r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"
+    else:
+        blurb = [
+            r"$\mathbf{No~t\bar{t}~bound~states}$",
+            #r"PRD 104, 034023 ($\mathbf{2021}$)"
+        ]
+    return blurb
+
+def stock_labels(parameters, points):
+    labels = []
+    for ii, pp in parameters:
+        if pp in ["g1", "g2"]:
+            labels.append(axes["coupling"] % str_point(points[ii]))
+        elif pp in ["r1", "r2"]:
+            labels.append(axes["muah"] % str_point(points[ii]))
+        elif pp == "CMS_EtaT_norm_13TeV":
+            labels.append(axes["muetat"])
+        elif pp == "EWK_yukawa":
+            labels.append(axes["yukawa"])
+        else:
+            labels.append(pp)
+    return labels
+
+def valid_nll_fname(fname, ninterval = 1):
+    fname = fname.split('/')[-1].split('_')
+    nvalidto = 0
+    for part in fname:
+        if "to" in part:
+            minmax = part.split('to')
+            for mm in minmax:
+                try:
+                    pmtofloat(mm)
+                    break
+                except ValueError:
+                    return False
+            nvalidto += 1
+    return nvalidto == ninterval

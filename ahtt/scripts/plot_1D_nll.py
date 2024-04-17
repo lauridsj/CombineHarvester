@@ -21,7 +21,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, valid_nll_fname
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
 def nice_number(value, epsilon):
@@ -68,21 +68,6 @@ def get_interval(parameter, best_fit, fits, delta = 1., epsilon = 1.e-2):
             return result
     return ""
 
-def valid_1D_nll_fname(fname):
-    fname = fname.split('/')[-1].split('_')
-    nvalidto = 0
-    for part in fname:
-        if "to" in part:
-            minmax = part.split('to')
-            for mm in minmax:
-                try:
-                    pmtofloat(mm)
-                    break
-                except ValueError:
-                    return False
-            nvalidto += 1
-    return nvalidto == 1
-
 def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint):
     result = [[], []]
     best_fit, fits = result
@@ -90,7 +75,7 @@ def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
     for ii, (directory, scenario, tag) in enumerate(directories):
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}_*.root"
-        files = [ifile for ifile in glob.glob(fexp) if valid_1D_nll_fname(ifile)]
+        files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, ninterval = 1)]
         best_fit.append(None)
 
         zero = None

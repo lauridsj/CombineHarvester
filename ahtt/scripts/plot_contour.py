@@ -22,7 +22,8 @@ import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point, default_etat_blurb
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
+from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def read_contour(cfiles):
@@ -140,22 +141,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         ax.text(0.985 * max_g, 0.97 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
-        if a343bkg[0]:
-            btxt = [
-                r"$\mathbf{Including~{}^{1} S_{0}^{[1]}~t\bar{t}~bound~state~\eta_{\mathrm{t}}}$",
-                r"PRD 104, 034023 ($\mathbf{2021}$)"
-            ]
-
-            # disabled because adding the profiled number depends on signal point
-            #if len(a343bkg) > 3:
-            #    btxt += [r"Best fit $\sigma_{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r"_{-" + "{ulo}".format(ulo = a343bkg[2]) + r"}^{+" + "{uhi}".format(uhi = a343bkg[3]) + r"}$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
-            #else:
-            #    btxt += [r"Best fit $\sigma^{\eta_{\mathrm{t}}}$: $" + "{val}".format(val = a343bkg[1]) + r" \pm " + "{unc}".format(unc = a343bkg[2]) + r"$ pb ($\mathrm{g}_{\mathrm{\mathsf{A/H}}} = 0$)"]
-        else:
-            btxt = [
-                r"$\mathbf{No~t\bar{t}~bound~states}$",
-                #r"PRD 104, 034023 ($\mathbf{2021}$)"
-            ]
+        btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
         ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
                   fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
@@ -215,8 +201,8 @@ if __name__ == '__main__':
     parser.add_argument("--A343-background",
                         help = "a comma-separated list of 4 values for etat background text, written if --formal is used"
                         "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty (lo/hi)",
-                        dest = "a343bkg", default = default_etat_blurb(), required = False,
-                        type = default_etat_blurb)
+                        dest = "a343bkg", default = default_etat_measurement(), required = False,
+                        type = default_etat_measurement)
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
