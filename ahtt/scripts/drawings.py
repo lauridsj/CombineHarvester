@@ -57,7 +57,7 @@ def etat_blurb(cfg):
 
 def stock_labels(parameters, points):
     labels = []
-    for ii, pp in parameters:
+    for ii, pp in enumerate(parameters):
         if pp in ["g1", "g2"]:
             labels.append(axes["coupling"] % str_point(points[ii]))
         elif pp in ["r1", "r2"]:
