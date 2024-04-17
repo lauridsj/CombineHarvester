@@ -21,7 +21,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point, valid_nll_fname
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, valid_nll_fname, stock_labels
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 
 def nice_number(value, epsilon):
@@ -265,8 +265,8 @@ if __name__ == '__main__':
         if any([len(kk[1]) % 2 == 1 for kk in args.kinks]):
             raise RuntimeError("one or more of the kinks given don't correspond to list of minmaxes. aborting!")
 
-    if len(args.namelabel) == 1 and args.namelabel[0] in ["g1", "g2"]:
-        args.namelabel[1] = axes["coupling"] % str_point(points[0]) if args.namelabel[0] == "g1" else axes["coupling"] % str_point(points[1])
+    if len(args.namelabel) == 1:
+        args.namelabel[1] = stock_labels(args.namelabel[0], args.point)[0]
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
