@@ -266,7 +266,7 @@ if __name__ == '__main__':
             raise RuntimeError("one or more of the kinks given don't correspond to list of minmaxes. aborting!")
 
     if len(args.namelabel) == 1:
-        args.namelabel[1] = stock_labels(args.namelabel[0], args.point)[0]
+        args.namelabel += stock_labels(args.namelabel[0], args.point)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
