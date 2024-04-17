@@ -33,7 +33,7 @@ def read_nll(points, directories, parameters, intervals):
 
     for ii, (directory, scenario, tag) in enumerate(directories):
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{parameters[0]}_*_{parameters[1]}_*.root"
-        files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, ninterval = 2)]
+        files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, tag = tag, ninterval = 2)]
         best_fit.append(None)
 
         originals = []
@@ -42,7 +42,7 @@ def read_nll(points, directories, parameters, intervals):
             dtree = dfile.Get("limit")
 
             for i in dtree:
-                valuednll = (getattr(dtree, parameters[0]), getattr(dtree, parameters[1]), 2. * dtree.deltaNLL)
+                valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), 2. * dtree.deltaNLL)
 
                 if dtree.quantileExpected >= 0.:
                     originals.append(valuednll)
@@ -78,7 +78,8 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     nlls = read_nll(points, directories, parameters, intervals)
 
     for ii, nll in enumerate(nlls):
-        colortouse = draw_contour.colors[len(nlls)][ii]
+        colortouse = draw_nll.colors[len(nlls)][ii]
+        print(nll[0])
         ax.plot(np.array([nll[0][ii][0]]), np.array([nll[0][ii][1]]), marker = 'X', markersize = 10.0, color = colortouse)
         if ii == 0:
             sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     parser.add_argument("--parameter-labels", help = "semicolon-separated labels of those parameters. must be either not given, or exactly 2.",
                         dest = "plabels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
-                        dest = "intervals", type = lambda s: [tokenize_to_list(minmax) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
+                        dest = "intervals", type = lambda s: [tokenize_to_list(minmax, astype = float) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
 
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "5", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
@@ -192,6 +193,6 @@ if __name__ == '__main__':
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
-    draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.parameters)}{args.ptag}{args.fmt}",
-             points, dirs, args.tlabel, args.parameters, args.plabels, args.intervals, args.maxsigma, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+    draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{args.fmt}",
+             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.maxsigma, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass

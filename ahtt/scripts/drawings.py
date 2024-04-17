@@ -70,8 +70,8 @@ def stock_labels(parameters, points):
             labels.append(pp)
     return labels
 
-def valid_nll_fname(fname, ninterval = 1):
-    fname = fname.split('/')[-1].split('_')
+def valid_nll_fname(fname, tag, ninterval = 1):
+    fname = fname.split('/')[-1].replace(tag, "").split('_')
     nvalidto = 0
     for part in fname:
         if "to" in part:

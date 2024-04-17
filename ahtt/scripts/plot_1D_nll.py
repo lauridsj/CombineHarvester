@@ -75,7 +75,7 @@ def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
 
     for ii, (directory, scenario, tag) in enumerate(directories):
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{name}_*.root"
-        files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, ninterval = 1)]
+        files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, tag = tag, ninterval = 1)]
         best_fit.append(None)
 
         zero = None
