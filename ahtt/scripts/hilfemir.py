@@ -192,5 +192,8 @@ submit_help_messages = {
     "the first value denotes the number of points to run, second and third the interval of those point from --fc-random-around, uniformly sampled.\n"
     "can give less than three to use defaults.",
 
+    "--nll-full-range": "semicolon-separated min and max value pair (that are comma-separated) to be divided into -nll-njob intervals.\n",
+    "--nll-njob": "like --nll-npoint, but representing the number of jobs along each dimension.\n",
+
     "--proper-sigma": "use proper 1 or 2 sigma CLs instead of 68% and 95% in FC scan alphas",
 }

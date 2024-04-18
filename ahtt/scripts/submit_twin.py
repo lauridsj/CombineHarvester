@@ -226,6 +226,13 @@ if __name__ == '__main__':
     parser.add_argument("--fc-random-n-min-max", help = submit_help_messages["--fc-random-n-min-max"], default = default_nminmax(),
                         dest = "fcrandnminmax", required = False, type = default_nminmax)
 
+    parser.add_argument("--nll-full-range", help = submit_help_messages["--nll-full-range"],
+                        dest = "nllfullrange", default = "", required = False,
+                        type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s), ";"))
+    parser.add_argument("--nll-njob", help = submit_help_messages["--nll-njob"], dest = "nllnjob",
+                        default = "", required = False,
+                        type = lambda s: [] if s == "" else [int(njob) for njob in tokenize_to_list(remove_spaces_quotes(s))])
+
     parser.add_argument("--proper-sigma", help = submit_help_messages["--proper-sigma"], dest = "propersig", action = "store_true", required = False)
 
     args = parse_args(parser)
@@ -501,28 +508,29 @@ if __name__ == '__main__':
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
         elif runnll:
-            minmax = [(values.split(",")[0], values.split(",")[1]) for values in args.nllwindow]
-            jname = job_name + "_" + args.fcexp[0]
-            jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
-            if len(minmax) < len(args.nllparam):
-                jname += "_" + "_".join(args.nllparam[len(minmax):])
-            logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+            for nllwindow in args.nllfullrange:
+                minmax = [(values.split(",")[0], values.split(",")[1]) for values in nllwindow]
+                jname = job_name + "_" + args.fcexp[0]
+                jname += "_" + "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam[:len(minmax)], minmax)])
+                if len(minmax) < len(args.nllparam):
+                    jname += "_" + "_".join(args.nllparam[len(minmax):])
+                logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
 
-            if not (args.runlocal and args.forcelocal):
-                if len(logs) > 0:
-                    continue
+                if not (args.runlocal and args.forcelocal):
+                    if len(logs) > 0:
+                        continue
 
-            jarg = job_arg
-            jarg += " {par} {win} {pnt} {uco}".format(
-                par = clamp_with_quote(string = ",".join(args.nllparam), prefix = '--nll-parameter '),
-                win = clamp_with_quote(string = ";".join(args.nllwindow), prefix = '--nll-interval='),
-                pnt = clamp_with_quote(string = ",".join([str(npnt) for npnt in args.nllnpnt]), prefix = '--nll-npoint '),
-                uco = "--nll-unconstrained" if args.nllunconstrained else "",
-            )
+                jarg = job_arg
+                jarg += " {par} {win} {pnt} {uco}".format(
+                    par = clamp_with_quote(string = ",".join(args.nllparam), prefix = '--nll-parameter '),
+                    win = clamp_with_quote(string = ";".join(nllwindow), prefix = '--nll-interval='),
+                    pnt = clamp_with_quote(string = ",".join([str(npnt) for npnt in args.nllnpnt]), prefix = '--nll-npoint '),
+                    uco = "--nll-unconstrained" if args.nllunconstrained else "",
+                )
 
-            submit_job(jname, jarg, args.jobtime, 1, "",
-                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-                       True, args.runlocal, args.writelog)
+                submit_job(jname, jarg, args.jobtime, 1, "",
+                           "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
+                           True, args.runlocal, args.writelog)
 
         elif runprepost or runpsfromws:
             jname = job_name + "_" + args.prepostfit

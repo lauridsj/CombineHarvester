@@ -12,6 +12,8 @@
 # the main goal is to minimize duplication, rather than getting the categorization watertight
 
 import re
+import numpy as np
+import itertools
 
 from utilspy import rng_seeder
 from utilscombine import update_mask
@@ -153,5 +155,14 @@ def parse_args(parser):
     args = parser.parse_args()
     if args.otag == "":
         args.otag = args.tag
+    if hasattr(args, 'nllfullrange') and hasattr(args, 'nllparam'):
+        if not hasattr(args, 'nllnjob'):
+            args.nllnjob = [10] * len(args.nllparam)
+        result = []
+        for minmax, njob, in zip(args.nllfullrange, args.nllnjob):
+            each = list(np.linspace(minmax[0], minmax[1], num = njob))
+            each = ["{0},{1}".format(each[ii], each[ii + 1]) for ii in range(len(each) - 1)]
+            result += each
+        args.nllfullrange = list(itertools.product(*result))
     rng_seeder(args.seed)
     return args
