@@ -23,7 +23,7 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
-def expected_scenario(exp, gvalues_syntax = False):
+def expected_scenario(exp, gvalues_syntax = False, resonly = False):
     specials = {
         "exp-b":  "g1=0,g2=0",
         "exp-s":  "g1=1,g2=1",
@@ -31,21 +31,24 @@ def expected_scenario(exp, gvalues_syntax = False):
         "exp-10": "g1=1,g2=0",
         "obs":    ""
     }
+    tag = None
 
     if exp in specials:
-        second = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
-        return (exp, second)
+        tag = exp
+        parameters = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
 
-    if not re.search(r',[eo]', exp):
+    if not re.search(r'[eo][xb].*', exp):
         gvalues = tokenize_to_list(exp)
         if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
             return None
         g1, g2 = gvalues
-        second = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
+        tag = "exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5))
+        parameters = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
 
-        return ("exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5)), second)
+    if tag is not None and resonly:
+        parameters = [pp.replace("g1", "r1").replace("g2", "r2") for pp in parameters]
 
-    return None
+    return (tag, parameters) if tag is not None else None
 
 def read_previous_best_fit(gname):
     with open(gname) as ff:
@@ -482,7 +485,7 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: finding the best fit point for FC scan"
 
             for fcexp in args.fcexp:
-                scenario = expected_scenario(fcexp)
+                scenario = expected_scenario(fcexp, resonly = ahresonly)
                 identifier = "_" + scenario[0]
                 parameters = [scenario[1]] if scenario[1] != "" else [] 
 
@@ -590,7 +593,7 @@ if __name__ == '__main__':
 
         print "\ntwin_point_ahtt :: compiling FC scan results..."
         for fcexp in args.fcexp:
-            scenario = expected_scenario(fcexp)
+            scenario = expected_scenario(fcexp, resonly = ahresonly)
             print "\ntwin_point_ahtt :: compiling scenario {sc}...".format(sc = scenario)
             sys.stdout.flush()
 
@@ -788,7 +791,7 @@ if __name__ == '__main__':
         print "\ntwin_point_ahtt :: evaluating nll as a function of {nlp}".format(nlp = ", ".join(args.nllparam))
 
         nparam = len(args.nllparam)
-        scenario = expected_scenario(args.fcexp[0], True)
+        scenario = expected_scenario(args.fcexp[0], gvalues_syntax = True, resonly = ahresonly)
         set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
 
         # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
