@@ -15,7 +15,9 @@ from ROOT import TFile, TTree
 import glob
 from collections import OrderedDict
 import json
+
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
@@ -25,6 +27,7 @@ from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point, stock_labels, valid_nll_fname
 from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
+from hilfemir import combine_help_messages
 
 def read_nll(points, directories, parameters, intervals):
     result = [[], []]
@@ -51,13 +54,11 @@ def read_nll(points, directories, parameters, intervals):
             dfile.Close()
         originals.append(best_fit[ii])
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
-        mm0, mm1 = intervals
-        originals = [(v0, v1, dnll) for v0, v1, dnll in originals if mm0[0] <= v0 <= mm0[1] and mm1[0] <= v1 <= mm1[1]]
         fits.append(originals)
     return result
 
-def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, maxsigma, formal, cmsapp, luminosity, a343bkg, transparent):
-    dnlls = [nsigma * nsigma for nsigma in range(1, 6)]
+def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+    alphas = [nsigma * nsigma for nsigma in range(1, 6)]
 
     if not hasattr(draw_nll, "colors"):
         draw_nll.colors = OrderedDict([
@@ -66,7 +67,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
             (3    , ["#0033cc", "#cc0033", "0"]),
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
-        draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
+        draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
 
     ndir = len(directories)
     if ndir > len(draw_nll.colors):
@@ -79,27 +80,33 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
-        print(nll[0])
-        ax.plot(np.array([best_fit[ii][0]]), np.array([best_fit[ii][1]]), marker = 'X', markersize = 10.0, color = colortouse)
-        if ii == 0:
-            sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+
+        if bestfit:
+            ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X', markersize = 10.0, color = colortouse)
+            if ii == 0:
+                sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
         for isig in range(maxsigma):
+            if maxsigma > 3 and (isig + 1) % 2 == 0:
+                continue
+            iline = isig if maxsigma <= 3 else isig // 2
+
             if ii == 0 and maxsigma > 1:
-                if isig > 1:
-                    sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), str(isig + 1) + r" SD"))
 
-            dnll = dnlls[isig]
+            alpha = alphas[isig]
 
-            ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array([nn[2] for nn in nll]),
+            ax.tricontour(np.array([nn[0] for nn in nll]), np.array([nn[1] for nn in nll]), np.array([nn[2] for nn in nll]),
                           levels = np.array([0., alpha]), colors = colortouse,
-                          linestyles = draw_nll.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+                          linestyles = draw_nll.lines[iline], linewidths = 2, alpha = 1. - (0.05 * isig))
 
-            if len(labels) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ic]))
+            if len(tlabel) > 1 and isig == 0:
+                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))
 
     plt.xlabel(plabels[0], fontsize = 23, loc = "right")
     plt.ylabel(plabels[1], fontsize = 23, loc = "top")
+    plt.xlim(*intervals[0])
+    plt.ylim(*intervals[1])
     ax.margins(x = 0, y = 0)
 
     if len(handles) > 0 and len(sigmas) > 0:
@@ -115,15 +122,21 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
         ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
+        xlength = intervals[0][1] - intervals[0][0]
+        ylength = intervals[1][1] - intervals[1][0]
+
+        xmin, xmax = intervals[0]
+        ymin, ymax = intervals[1]
+
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.03 * max_g, 0.96 * max_g, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
+        ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text(0.03 * max_g, 0.90 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+            ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(0.985 * max_g, 0.97 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+        ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
@@ -137,7 +150,9 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
+    fig.set_dpi(450)
     fig.tight_layout()
+
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
@@ -160,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
                         dest = "intervals", type = lambda s: [tokenize_to_list(minmax, astype = float) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
 
+    parser.add_argument("--draw-best-fit", help = "draw the best fit point.", dest = "bestfit", action = "store_true", required = False)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "5", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
@@ -172,6 +188,10 @@ if __name__ == '__main__':
                         "syntax: (bool, 1 or 0, whether it is included as bkg, best fit xsec, xsec uncertainty (lo/hi)",
                         dest = "a343bkg", default = default_etat_measurement(), required = False,
                         type = default_etat_measurement)
+
+    parser.add_argument("--arbitrary-resonance-normalization", help = combine_help_messages["--arbitrary-resonance-normalization"],
+                        dest = "arbnorm", default = 5, required = False,
+                        type = lambda s: 5 if s.lower() in ["", "true", "default"] else float(s))
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
@@ -187,12 +207,13 @@ if __name__ == '__main__':
         raise RuntimeError("length of tags isnt the same as tag labels. aborting")
 
     if len(args.plabels) == 0:
-        args.plabels = stock_labels(args.params, args.point)
+        args.plabels = stock_labels(args.params, args.point, args.arbnorm)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{args.fmt}",
-             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.maxsigma, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.maxsigma, args.bestfit,
+             args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass
