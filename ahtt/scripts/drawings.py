@@ -12,7 +12,7 @@ axes = {
     "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [%% m$_{\mathrm{\mathsf{%s}}}$]",
     "coupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
     "dnll":     r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
-    "muah":     r"$\mu^{%s}$",
+    "muah":     r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
     "muetat":   r"$\mu^{\eta_{\mathrm{t}}}$",
     "yukawa":   r"$y_{\mathrm{t}}$"
 }
@@ -55,13 +55,13 @@ def etat_blurb(cfg):
         ]
     return blurb
 
-def stock_labels(parameters, points):
+def stock_labels(parameters, points, resxsecpb = 5):
     labels = []
     for ii, pp in enumerate(parameters):
         if pp in ["g1", "g2"]:
             labels.append(axes["coupling"] % str_point(points[ii]))
         elif pp in ["r1", "r2"]:
-            labels.append(axes["muah"] % str_point(points[ii]))
+            labels.append(axes["muah"] % (str_point(points[ii]), str(resxsecpb) + r"\,pb"))
         elif pp == "CMS_EtaT_norm_13TeV":
             labels.append(axes["muetat"])
         elif pp == "EWK_yukawa":
