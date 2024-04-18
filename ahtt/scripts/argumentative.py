@@ -160,9 +160,10 @@ def parse_args(parser):
             args.nllnjob = [10] * len(args.nllparam)
         result = []
         for minmax, njob, in zip(args.nllfullrange, args.nllnjob):
-            each = list(np.linspace(minmax[0], minmax[1], num = njob))
+            mm = minmax.split(',')
+            each = list(np.linspace(float(mm[0]), float(mm[1]), num = njob))
             each = ["{0},{1}".format(each[ii], each[ii + 1]) for ii in range(len(each) - 1)]
-            result += each
-        args.nllfullrange = list(itertools.product(*result))
+            result.append(each)
+        args.nllfullrange = itertools.product(*result)
     rng_seeder(args.seed)
     return args
