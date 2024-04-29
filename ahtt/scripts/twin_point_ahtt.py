@@ -427,7 +427,8 @@ if __name__ == '__main__':
                 ],
 
                 tolerances = list(range(4)),
-                usehesse = args.usehesse
+                usehesse = args.usehesse,
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
@@ -527,7 +528,8 @@ if __name__ == '__main__':
                     ],
 
                     tolerances = list(range(4)),
-                    usehesse = args.usehesse
+                    usehesse = args.usehesse,
+                    first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
                 )
 
                 syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
@@ -732,7 +734,8 @@ if __name__ == '__main__':
             fit_result_names = [fitdiag_result, ["fit_{ftp}".format(ftp = args.prepostfit)]],
 
             optimize = False,
-            usehesse = args.usehesse
+            usehesse = args.usehesse,
+            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
         )
 
     if runpsfromws:
@@ -842,7 +845,8 @@ if __name__ == '__main__':
                     [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
                 ],
 
-                usehesse = args.usehesse
+                usehesse = args.usehesse,
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
         if nelement > 1:

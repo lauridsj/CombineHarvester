@@ -82,7 +82,7 @@ def is_acceptable(limit):
     return gte0 and not obs0exp1
 
 def single_point_scan(args):
-    gval, workspace, mstr, accuracies, asimov, masks = args
+    gval, workspace, mstr, first_strategy, accuracies, asimov, masks = args
     gstr = str(round(gval, 3)).replace('.', 'p')
     fname = "higgsCombine_limit_g-scan_{gst}.POINT.1.AsymptoticLimits.mH{mmm}.root".format(mmm = mstr, gst = gstr)
     epsilon = 2.**-13
@@ -116,7 +116,8 @@ def single_point_scan(args):
                 ],
 
                 all_strategies = [(False, 0, 0), (False, 0, 1), (False, 0, 2), (False, 0, 3), (False, 1, 3), (False, 2, 3)],
-                throw_upon_failure = False
+                throw_upon_failure = False,
+                first_fit_strategy = first_strategy if first_strategy > -1 else 0
             )
 
             limit = get_limit(fname)
@@ -126,7 +127,7 @@ def single_point_scan(args):
     return None
 
 def dotty_scan(args):
-    gvals, workspace, mstr, accuracies, asimov, masks = args
+    gvals, workspace, mstr, first_strategy, accuracies, asimov, masks = args
     if len(gvals) < 2:
         return None
     gvals = sorted(gvals)
@@ -134,7 +135,7 @@ def dotty_scan(args):
     results = []
     ii = 0
     while ii < len(gvals):
-        result = single_point_scan((gvals[ii], workspace, mstr, accuracies, asimov, masks))
+        result = single_point_scan((gvals[ii], workspace, mstr, first_strategy, accuracies, asimov, masks))
 
         if result is not None:
             if (0.0125 < result[2] < 0.2):
@@ -317,7 +318,7 @@ if __name__ == '__main__':
 
             gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
             lll = dotty_scan(
-                (gvals, workspace, mstr, accuracies, args.asimov, masks)
+                (gvals, workspace, mstr, args.fitstrat, accuracies, args.asimov, masks)
             )
             print "\nsingle_point_ahtt :: collecting limit"
             print "\nthe following points have been processed:"
@@ -406,7 +407,8 @@ if __name__ == '__main__':
                 #    [syscall, "rm {fn}".format(fn = fname), False]
                 #],
 
-                usehesse = args.usehesse
+                usehesse = args.usehesse,
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
         print "\nsingle_point_ahtt :: collecting impact results"
