@@ -1,0 +1,103 @@
+{
+    "nuisances": {
+        "CMS_$PROC_norm_13TeV": "$PROC rate",
+
+        "QCDscale_MERen_$PROC": "ME renormalization scale ($PROC)",
+        "QCDscale_MEFac_$PROC": "ME factorization scale ($PROC)",
+        "QCDscale_ISR_$PROC": "PS ISR scale ($PROC)",
+        "QCDscale_FSR_$PROC": "PS FSR scale ($PROC)",
+
+        "tmass": "Top mass",
+        "hdamp_TT": "t\\bar{t} ME/PS matching (hdamp)",
+
+        "EWK_yukawa": "t\\bar{t} EW NLO (top Yukawa)",
+        "EWK_scheme": "t\\bar{t} EW NLO (mult./add.)",
+
+        "CMS_PDF_PCA_0": "PDF",
+        "CMS_PDF_alphaS": "PDF \\alpha_{s}",
+
+        "CR_ERD_TT": "Color reconnection (Early resonance decays)",
+        "CR_QCD_TT": "Color reconnection (QCD-inspired)",
+        "CR_GluonMove_TT": "Color reconnection (GluonMove)",
+
+        "CMS_EWQCD_$CHAN_norm_13TeV_$YEAR": "EWQCD rate ($CHAN, $YEAR)",
+        "$CHAN_TTsub_EWQCD_$YEAR": "EWQCD TTsub ($CHAN, $YEAR)",
+        "$CHAN_shape_EWQCD": "EWQCD shape ($CHAN)",
+
+        "CMS_JEC_13TeV_FlavorPureBottom": "JES (bottom flavor response)",
+        "CMS_JEC_13TeV_FlavorQCDOnNonBottom": "JES (light/charm flavor response)",
+        "CMS_JEC_13TeV_Absolute": "JES (absolute scale, corr.)",
+        "CMS_JEC_13TeV_Absolute_$YEAR": "JES (absolute scale, $YEAR)",
+        "CMS_JEC_13TeV_BBEC1": "JES (BBEC1, corr.)",
+        "CMS_JEC_13TeV_BBEC1_$YEAR": "JES (BBEC1, $YEAR)",
+        "CMS_JEC_13TeV_RelativeSample": "JES (relative sample, corr.)",
+        "CMS_JEC_13TeV_RelativeSample_$YEAR": "JES (relative sample, $YEAR)",
+        "CMS_JEC_13TeV_RelativeBal": "JES (relative balance, corr.)",
+        "CMS_JEC_13TeV_RelativeBal_$YEAR": "JES (relative balance, $YEAR)",
+        "CMS_JER_13TeV": "Jet energy resolution (corr.)",
+        "CMS_JER_13TeV_$YEAR": "Jet energy resolution ($YEAR)",
+
+        "CMS_eff_b_13TeV_VzeroParticles": "b-tag eff. (VzeroParticles)",
+        "CMS_eff_b_13TeV_Pileup": "b-tag eff. (pileup)",
+        "CMS_eff_b_13TeV_LifetimeOthers": "b-tag eff. (particle lifetime)",
+        "CMS_eff_b_13TeV_LightCharmRatio": "b-tag eff. (light/charm ratio)",
+        "CMS_eff_b_13TeV_CharmFragmentation": "b-tag eff. (charm fragmentation)",
+        "CMS_eff_b_13TeV_CharmTemplateCorrection": "b-tag eff. (charm template)",
+        "CMS_eff_b_13TeV_BottomFragmentation": "b-tag eff. (b fragmentation)",
+        "CMS_eff_b_13TeV_BottomTemplateCorrection": "b-tag eff. (b template)",
+        "CMS_eff_b_13TeV_GluonSplitting": "b-tag eff. (gluon splitting)",
+        "CMS_eff_b_13TeV_AwayJetTag": "b-tag eff. (AwayJetTag)",
+        "CMS_eff_b_13TeV_MuonRelativePt": "b-tag eff. (relative muon pT)",
+        "CMS_eff_b_13TeV_Statistic_$YEAR": "b-tag eff. (stat, $YEAR)",
+        "CMS_fake_b_13TeV": "b-tag misidentification (corr.)",
+        "CMS_fake_b_13TeV_$YEAR": "b-tag misidentification ($YEAR)",
+
+        "CMS_eff_m_id_syst": "Muon ID eff. (syst)",
+        "CMS_eff_m_id_stat_$YEAR": "Muon ID eff. (stat, $YEAR)",
+        "CMS_eff_m_iso_syst": "Muon isolation eff. (syst)",
+        "CMS_eff_m_iso_stat_$YEAR": "Muon isolation eff. (stat, $YEAR)",
+
+        "CMS_eff_e_reco": "Electron reconstruction eff.",
+        "CMS_eff_e_id": "Electron ID eff.",
+
+        "CMS_eff_trigger_$CHAN_$YEAR": "Trigger eff. ($CHAN, $YEAR)",
+
+        "CMS_pileup": "Pileup",
+        "CMS_UEtune_13TeV": "PS tune",
+        "CMS_L1_prefire_$YEAR": "L1 pre-firing ($YEAR)",
+
+        "lumi_13TeV_18": "Luminosity (2018, uncorr.)",
+        "lumi_13TeV_17": "Luminosity (2017, uncorr.)",
+        "lumi_13TeV_16": "Luminosity (2016, uncorr.)",
+        "lumi_13TeV_1718": "Luminosity (2017/2018, corr.)",
+        "lumi_13TeV_correlated": "Luminosity (all years, corr.)"
+
+    },
+    "processes": {
+        "TT": "t\\bar{t}",
+        "TX": "t+X",
+        "TW": "tW",
+        "TQ": "t-channel single-top",
+        "TB": "s-channel single-top",
+        "DY": "Z+jets",
+        "VV": "Diboson",
+        "TTV": "t\\bar{t}+X",
+        "AH": "A/H",
+        "EtaT": "\\eta"
+    },
+    "years": [
+        "2016pre",
+        "2016post",
+        "2017",
+        "2018"
+    ],
+    "channels": {
+        "ee": "ee",
+        "em": "e\\mu",
+        "mm": "\\mu\\mu",
+        "e3j": "e, 3 jets",
+        "e4pj": "e, 4+ jets",
+        "m3j": "\\mu, 3 jets",
+        "m4pj": "\\mu, 4+ jets"
+    }
+}
