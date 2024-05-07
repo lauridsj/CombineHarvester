@@ -58,7 +58,7 @@ def read_nll(points, directories, parameters, intervals):
     return result
 
 def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
-    alphas = [nsigma * nsigma for nsigma in range(1, 6)]
+    alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
         draw_nll.colors = OrderedDict([
