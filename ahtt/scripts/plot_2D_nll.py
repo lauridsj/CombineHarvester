@@ -69,7 +69,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
                 zs = [zz for zz in zs if withinerror(zz, z0)]
                 if len(zs) == 0:
                     continue
-                interpolated.append((x, y, zs))
+                interpolated.append((x, y, zs[0]))
         fits.append(interpolated if prunesmooth else originals)
     return result
 
