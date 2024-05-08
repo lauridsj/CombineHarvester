@@ -58,7 +58,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
         if prunesmooth:
             prunes = [np.array(pruned(originals)), np.array(pruned(originals)), np.array(pruned(originals))]
             splines = [
-                interp2d(np.array(first(originals)), np.array(second(originals)), np.array(third(originals))),
+                interp2d(np.array(first(originals)), np.array(second(originals)), np.array(third(originals)), kind = 'cubic'),
                 interp2d(np.array(first(prunes[0])), np.array(second(prunes[0])), np.array(third(prunes[0])), kind = 'cubic'),
                 interp2d(np.array(first(prunes[1])), np.array(second(prunes[1])), np.array(third(prunes[1])), kind = 'cubic'),
                 interp2d(np.array(first(prunes[2])), np.array(second(prunes[2])), np.array(third(prunes[2])), kind = 'cubic')
