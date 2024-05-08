@@ -18,11 +18,11 @@ axes = {
 }
 
 def ith(iterable, idx):
-    result = [item[idx] for item in iterable]
+    return [item[idx] for item in iterable]
 
-first = lambda iterable: return ith(iterable, 0)
-second = lambda iterable: return ith(iterable, 1)
-third = lambda iterable: return ith(iterable, 2)
+first = lambda iterable: ith(iterable, 0)
+second = lambda iterable: ith(iterable, 1)
+third = lambda iterable: ith(iterable, 2)
 
 def prune(iterable, dropout = 0.1):
     return [item for item in iterable if coinflip(dropout)]
