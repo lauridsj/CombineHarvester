@@ -135,12 +135,13 @@ def sum_up(g1, g2):
 
     return gs
 
-def starting_poi(gvalues, fixpoi):
+def starting_poi(gvalues, fixpoi, resonly = False):
     if all(float(gg) < 0. for gg in gvalues):
         return [[], []]
 
-    setpar = ['g' + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if float(gg) >= 0.]
-    frzpar = ['g' + str(ii + 1) for ii, gg in enumerate(gvalues) if float(gg) >= 0.] if fixpoi else []
+    poi = 'r' if resonly else 'g'
+    setpar = [poi + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)]
+    frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)] if fixpoi else []
 
     return [setpar, frzpar]
 
@@ -795,7 +796,7 @@ if __name__ == '__main__':
 
         nparam = len(args.nllparam)
         scenario = expected_scenario(args.fcexp[0], gvalues_syntax = True, resonly = ahresonly)
-        set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, args.frzpost)])
 
         # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
         fcwsp = get_best_fit(
