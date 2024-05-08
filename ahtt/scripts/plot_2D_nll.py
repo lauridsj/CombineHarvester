@@ -90,7 +90,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    nlls = read_nll(points, directories, parameters, intervals, prune)
+    nlls = read_nll(points, directories, parameters, intervals, prunesmooth)
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
