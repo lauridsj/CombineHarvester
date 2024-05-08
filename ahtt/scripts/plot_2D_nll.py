@@ -56,12 +56,12 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
 
         if prunesmooth:
-            prunes = [pruned(originals), pruned(originals), pruned(originals)]
+            prunes = [np.array(pruned(originals)), np.array(pruned(originals)), np.array(pruned(originals))]
             splines = [
-                interp2d(first(originals), second(originals), third(originals)),
-                interp2d(first(prunes[0]), second(prunes[0]), third(prunes[0]), kind = 'cubic'),
-                interp2d(first(prunes[1]), second(prunes[1]), third(prunes[1]), kind = 'cubic'),
-                interp2d(first(prunes[2]), second(prunes[2]), third(prunes[2]), kind = 'cubic')
+                interp2d(np.array(first(originals)), np.array(second(originals)), np.array(third(originals))),
+                interp2d(np.array(first(prunes[0])), np.array(second(prunes[0])), np.array(third(prunes[0])), kind = 'cubic'),
+                interp2d(np.array(first(prunes[1])), np.array(second(prunes[1])), np.array(third(prunes[1])), kind = 'cubic'),
+                interp2d(np.array(first(prunes[2])), np.array(second(prunes[2])), np.array(third(prunes[2])), kind = 'cubic')
             ]
 
             interpolated = []
