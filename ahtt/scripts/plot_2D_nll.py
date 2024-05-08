@@ -108,7 +108,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
 
             alpha = alphas[isig]
 
-            ax.tricontour(np.array([nn[0] for nn in nll]), np.array([nn[1] for nn in nll]), np.array([nn[2] for nn in nll]),
+            ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array(third(nll)),
                           levels = np.array([0., alpha]), colors = colortouse,
                           linestyles = draw_nll.lines[iline], linewidths = 2, alpha = 1. - (0.05 * isig))
 
