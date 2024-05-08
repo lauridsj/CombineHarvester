@@ -24,7 +24,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, get_point, stock_labels, valid_nll_fname
+from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, withinerror, get_point, stock_labels, valid_nll_fname
 from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
@@ -56,7 +56,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
 
         if prunesmooth:
-            prunes = [pruned(originals) for _ in range(3)]
+            prunes = [pruned(originals) for _ in range(1)]
             splines = [
                 interpolator(np.array(first(prunes[_])), np.array(second(prunes[_])), np.array(third(prunes[_])))
                 for _ in range(len(prunes))
@@ -64,8 +64,12 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
 
             interpolated = []
             for ii in range(len(originals)):
-                x, y = originals[ii][0], originals[ii][1]
-                interpolated.append((x, y, sum([ss(x, y).squeeze() for ss in splines]) / len(splines)))
+                x, y, z0 = originals[ii][0], originals[ii][1], originals[ii][2]
+                zs = [ss(x, y).squeeze() for ss in splines]
+                zs = [zz for zz in zs if withinerror(zz, z0)]
+                if len(zs) == 0:
+                    continue
+                interpolated.append((x, y, zs))
         fits.append(interpolated if prunesmooth else originals)
     return result
 

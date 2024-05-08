@@ -27,6 +27,11 @@ third = lambda iterable: ith(iterable, 2)
 def pruned(iterable, dropout = 0.1):
     return [item for item in iterable if coinflip(dropout)]
 
+def withinerror(v0, v1, epsilon = 2.**-7):
+    relativeok = abs((v0 - v1) / v0) < epsilon if v0 != 0 else True
+    absoluteok = abs(v0 - v1) < epsilon
+    return relativeok or absoluteok
+
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
