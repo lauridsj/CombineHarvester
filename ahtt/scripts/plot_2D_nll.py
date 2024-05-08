@@ -64,7 +64,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
 
             interpolated = []
             for ii in range(len(originals)):
-                x, y = originals[ii][:1]
+                x, y = originals[ii][0], originals[ii][1]
                 interpolated.append((x, y, sum([ss(x, y) for ss in splines]) / len(spline)))
         fits.append(interpolated if prunesmooth else originals)
     return result
