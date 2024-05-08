@@ -92,7 +92,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
             iline = isig if maxsigma <= 3 else isig // 2
 
             if ii == 0 and maxsigma > 1:
-                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), str(isig + 1) + r" SD"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), r"\pm" + str(isig + 1) + r"$\sigma$"))
 
             alpha = alphas[isig]
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--arbitrary-resonance-normalization", help = combine_help_messages["--arbitrary-resonance-normalization"],
                         dest = "arbnorm", default = 5, required = False,
-                        type = lambda s: 5 if s.lower() in ["", "true", "default"] else float(s))
+                        type = lambda s: 5 if s.lower() in ["", "true", "default"] else int(s))
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
