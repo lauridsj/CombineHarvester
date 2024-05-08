@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import os
 import sys
 import numpy as np
-from scipy.interpolate import UnivariateSpline
+from scipy.interpolate import interp2d, RectBivariateSpline
 import math
 from functools import cmp_to_key
 
@@ -24,12 +24,12 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, get_point, stock_labels, valid_nll_fname
+from drawings import min_g, max_g, epsilon, axes, first, second, third, get_point, stock_labels, valid_nll_fname
 from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
 
-def read_nll(points, directories, parameters, intervals):
+def read_nll(points, directories, parameters, intervals, prunesmooth = False):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -54,10 +54,24 @@ def read_nll(points, directories, parameters, intervals):
             dfile.Close()
         originals.append(best_fit[ii])
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
-        fits.append(originals)
+
+        if prunesmooth:
+            pruned = [pruned(originals), pruned(originals), pruned(originals)]
+            splines = [
+                RectBivariateSpline(first(originals), second(originals), third(originals)),
+                interp2d(first(pruned[0]), second(pruned[0]), third(pruned[0]), kind = 'cubic'),
+                interp2d(first(pruned[1]), second(pruned[1]), third(pruned[1]), kind = 'cubic'),
+                interp2d(first(pruned[2]), second(pruned[2]), third(pruned[2]), kind = 'cubic')
+            ]
+
+            interpolated = []
+            for ii in range(len(originals)):
+                x, y = originals[ii][:1]
+                interpolated.append((x, y, sum([ss(x, y) for ss in splines]) / len(spline)))
+        fits.append(interpolated if prunesmooth else originals)
     return result
 
-def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
     alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
@@ -76,7 +90,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    nlls = read_nll(points, directories, parameters, intervals)
+    nlls = read_nll(points, directories, parameters, intervals, prune)
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
@@ -174,6 +188,9 @@ if __name__ == '__main__':
                         dest = "plabels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
                         dest = "intervals", type = lambda s: [tokenize_to_list(minmax, astype = float) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
+    parser.add_argument("--prune-smoothing",
+                        help = "smooth the data points by making splines off the pruned points, and then taking their averages.",
+                        dest = "prunesmooth", action = "store_true", required = False)
 
     parser.add_argument("--draw-best-fit", help = "draw the best fit point.", dest = "bestfit", action = "store_true", required = False)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "5", required = False, type = lambda s: int(remove_spaces_quotes(s)))
@@ -214,6 +231,6 @@ if __name__ == '__main__':
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{args.fmt}",
-             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.maxsigma, args.bestfit,
+             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.prunesmooth, args.maxsigma, args.bestfit,
              args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass

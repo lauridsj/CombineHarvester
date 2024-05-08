@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # utilities containing functions to be imported - plotting version
 
-from utilspy import pmtofloat
+from utilspy import pmtofloat, coinflip
 from desalinator import tokenize_to_list, remove_spaces_quotes
 
 min_g = 0.
@@ -17,8 +17,15 @@ axes = {
     "yukawa":   r"$y_{\mathrm{t}}$"
 }
 
-first  = lambda vv: [ii for ii, _ in vv]
-second = lambda vv: [ii for _, ii in vv]
+def ith(iterable, idx):
+    result = [item[idx] for item in iterable]
+
+first = lambda iterable: return ith(iterable, 0)
+second = lambda iterable: return ith(iterable, 1)
+third = lambda iterable: return ith(iterable, 2)
+
+def prune(iterable, dropout = 0.1):
+    return [item for item in iterable if coinflip(dropout)]
 
 def get_point(sigpnt):
     pnt = sigpnt.split('_')
