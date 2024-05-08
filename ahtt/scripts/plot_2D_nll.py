@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import os
 import sys
 import numpy as np
-from scipy.interpolate import interp2d
+from scipy.interpolate import SmoothBivariateSpline as interpolator
 import math
 from functools import cmp_to_key
 
@@ -58,14 +58,14 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
         if prunesmooth:
             prunes = [pruned(originals) for _ in range(3)]
             splines = [
-                interp2d(np.array(first(prunes[_])), np.array(second(prunes[_])), np.array(third(prunes[_])), kind = 'cubic')
+                interpolator(np.array(first(prunes[_])), np.array(second(prunes[_])), np.array(third(prunes[_])))
                 for _ in range(len(prunes))
             ]
 
             interpolated = []
             for ii in range(len(originals)):
                 x, y = originals[ii][0], originals[ii][1]
-                interpolated.append((x, y, sum([ss(x, y) for ss in splines]) / len(spline)))
+                interpolated.append((x, y, sum([ss(x, y) for ss in splines]) / len(splines)))
         fits.append(interpolated if prunesmooth else originals)
     return result
 
