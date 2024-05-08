@@ -24,7 +24,7 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 
 from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, third, get_point, stock_labels, valid_nll_fname
+from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, get_point, stock_labels, valid_nll_fname
 from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages

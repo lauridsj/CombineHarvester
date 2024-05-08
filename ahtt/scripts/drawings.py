@@ -24,7 +24,7 @@ first = lambda iterable: ith(iterable, 0)
 second = lambda iterable: ith(iterable, 1)
 third = lambda iterable: ith(iterable, 2)
 
-def prune(iterable, dropout = 0.1):
+def pruned(iterable, dropout = 0.1):
     return [item for item in iterable if coinflip(dropout)]
 
 def get_point(sigpnt):
