@@ -29,7 +29,7 @@ from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
 
-def read_nll(points, directories, parameters, intervals, prunesmooth = False):
+def read_nll(points, directories, parameters, intervals, prunesmooth = False, maxsigma = 5):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -45,7 +45,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
             dtree = dfile.Get("limit")
 
             for i in dtree:
-                valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), 2. * dtree.deltaNLL)
+                valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), round(2. * dtree.deltaNLL, 5))
 
                 if dtree.quantileExpected >= 0.:
                     originals.append(valuednll)
@@ -56,20 +56,25 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False):
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
 
         if prunesmooth:
-            prunes = [pruned(originals) for _ in range(1)]
+            alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
+            originals = [oo for oo in originals if oo[2] < 10 * math.ceil(alphas[maxsigma - 1 if 1 < maxsigma < 6 else -1] / 10)]
+            prunes = [pruned(originals, keep = best_fit[ii]) for _ in range(1)]
             splines = [
-                interpolator(np.array(first(prunes[_])), np.array(second(prunes[_])), np.array(third(prunes[_])))
+                interpolator(np.array(first(prunes[_])), np.array(second(prunes[_])), np.array(third(prunes[_])), kx = 4, ky = 4, s = len(originals) / 100)
                 for _ in range(len(prunes))
             ]
 
             interpolated = []
-            for ii in range(len(originals)):
-                x, y, z0 = originals[ii][0], originals[ii][1], originals[ii][2]
-                zs = [ss(x, y).squeeze() for ss in splines]
-                zs = [zz for zz in zs if withinerror(zz, z0)]
-                if len(zs) == 0:
-                    continue
-                interpolated.append((x, y, zs[0]))
+            for oo in range(len(originals)):
+                x, y, z0 = originals[oo][0], originals[oo][1], originals[oo][2]
+                if x != best_fit[ii][0] and y != best_fit[ii][1]:
+                    zs = [ss(x, y).squeeze() for ss in splines]
+                    zs = [zz for zz in zs if zz < 0 or withinerror(z0, zz)]
+                    if len(zs) == 0:
+                        print(x, y, z0, [ss(x, y).squeeze() for ss in splines])
+                        continue
+                interpolated.append((x, y, z0))
+            del splines
         fits.append(interpolated if prunesmooth else originals)
     return result
 
@@ -92,7 +97,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    nlls = read_nll(points, directories, parameters, intervals, prunesmooth)
+    nlls = read_nll(points, directories, parameters, intervals, prunesmooth, maxsigma)
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]

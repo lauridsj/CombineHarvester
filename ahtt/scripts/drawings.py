@@ -24,10 +24,14 @@ first = lambda iterable: ith(iterable, 0)
 second = lambda iterable: ith(iterable, 1)
 third = lambda iterable: ith(iterable, 2)
 
-def pruned(iterable, dropout = 0.1):
-    return [item for item in iterable if coinflip(dropout)]
+def pruned(iterable, keep = None, dropout = 0.02):
+    result = []
+    for item in iterable:
+        if (keep is not None and (item == keep or item in keep)) or coinflip(1. - dropout):
+            result.append(item)
+    return result
 
-def withinerror(v0, v1, epsilon = 2.**-7):
+def withinerror(v0, v1, epsilon = 2.**-3):
     relativeok = abs((v0 - v1) / v0) < epsilon if v0 != 0 else True
     absoluteok = abs(v0 - v1) < epsilon
     return relativeok or absoluteok
