@@ -386,7 +386,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
 
                     # for A/H, apply the SM relative deviation onto A/H nominal
-                    if "_AH" in nn2:
+                    if "_AH" in nn2 or "EtaT" in nn2:
                         hc = None
                         hah = read_original_nominal(odir, pp)
                         hsm = read_original_nominal(odir, "TT")
@@ -414,7 +414,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         hd = apply_relative_nuisance(hd, hsm, hah)
 
                         # revert the effect of nominal kfactor if needed
-                        if kfactor and kfactors is not None:
+                        if "_AH" in nn2 and kfactor and kfactors is not None:
                             idxp = 0 if "_res" in pp else 1
                             scale(hu, 1. / kfactors[172][0][idxp])
                             scale(hd, 1. / kfactors[172][0][idxp])
