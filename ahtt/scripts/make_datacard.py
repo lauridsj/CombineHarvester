@@ -308,6 +308,10 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             kfactors = None
             arbfactor = None
 
+    # FIXME hardcode major bkg, which is needed first
+    idx = [pp for pp, ff in processes].index("TT")
+    processes[0], processes[idx] = processes[idx], processes[0]
+
     for pp, ff in processes:
         if sigpnt is not None:
             sig = "_".join(pp.split("_")[:-1])
