@@ -168,6 +168,6 @@ def parse_args(parser):
                 result.append(each)
             args.nllfullrange = itertools.product(*result)
         else:
-            args.nllfullrange = [args.nllinterval]
+            args.nllfullrange = [args.nllwindow]
     rng_seeder(args.seed)
     return args
