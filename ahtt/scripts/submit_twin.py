@@ -525,7 +525,7 @@ if __name__ == '__main__':
                     par = clamp_with_quote(string = ",".join(args.nllparam), prefix = '--nll-parameter '),
                     win = clamp_with_quote(string = ";".join(nllwindow), prefix = '--nll-interval='),
                     pnt = clamp_with_quote(string = ",".join([str(npnt) for npnt in args.nllnpnt]), prefix = '--nll-npoint '),
-                    uco = "--nll-unconstrained" if args.nllunconstrained else "",
+                    uco = clamp_with_quote(string = ",".join(args.nllunconstrained), prefix = '--nll-unconstrained '),
                 )
 
                 submit_job(jname, jarg, args.jobtime, 1, "",

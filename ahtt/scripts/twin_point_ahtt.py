@@ -807,8 +807,8 @@ if __name__ == '__main__':
             elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
         )
 
-        isgah = [param in ["g1", "g2"] for param in args.nllparam]
-        unconstrained = ",".join([param for param, isg in zip(args.nllparam, isgah) if args.nllunconstrained and not isg])
+        isgah = [param in ["g1", "g2", "r1", "r2"] for param in args.nllunconstrained]
+        unconstrained = ",".join([param for param, isg in zip(args.nllunconstrained, isgah) if not isg])
 
         if len(args.nllwindow) < nparam:
             args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]

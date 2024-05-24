@@ -85,8 +85,8 @@ combine_help_messages = {
     "--poi-set": "comma-separated list of POIs to be used in the fit. relevant modes:\n"
     "single_point_ahtt: best-fit, limit (with --one-poi), impact\n"
     "twin_point_ahtt: best-fit, prepost, psfromws\n"
-    "when r or g are not in the list of POIs, they are profiled or frozen, as per options specific to them.\n"
-    "note that mode nll ignores this option, as --nll-uncontrained already does the same.",
+    "when r or g are not in the list of POIs, they are profiled without constraints or frozen, as per options specific to them.\n"
+    "note that mode nll ignores this option.",
 
     "--compress": "compress output into a tar file",
     "--base-directory": "in non-datacard modes, this is the location where datacard is searched for, and output written to. ignored otherwise",
@@ -141,7 +141,8 @@ combine_help_messages = {
     "if not given, defaults to a scan with roughly 200 points total, finer in g than NPs.",
     "--nll-interval": "semicolon-separated min and max value pair (that are comma-separated) to evaluate the nll along each parameter.\n"
     "if not provided, defaults to 0, 3 for gs and -5, 5 for nuisances.",
-    "--nll-unconstrained": "remove any constraint terms on NPs when performing the scan.",
+    "--nll-unconstrained": "comma-separated list of parameters for whom any constraint terms are to be removed.\n"
+    "relevant only for NPs. those not also in --nll-parameter are profiled with flat prior.\n",
 
     "--delete-root": "delete root files after compiling",
     "--collect-toy": "collect the dNLL of toys used in FC scan when compiling",
