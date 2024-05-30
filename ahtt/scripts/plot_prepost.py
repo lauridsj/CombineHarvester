@@ -75,7 +75,7 @@ proc_colors = {
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1",
     r"$\mathrm{t}\bar{\mathrm{t}}$": "#F3E5AB",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$, QCD": "C1",
-    r"$\eta_{\mathrm{t}}$": "#cc0033",
+    r"$\eta_{\mathrm{t}}$": "#33cc00",
 
     "A": "#cc0033",
     "H": "#0033cc",
@@ -101,9 +101,9 @@ binnings = {
     }
 }
 ratiolabels = {
-    "b": "Data / SM",
-    "s": "Data / SM",
-    "p": "Data / SM",
+    "b": "Ratio to\nperturbative SM",
+    "s": "Ratio to\nperturbative SM",
+    "p": "Ratio to\nperturbative SM",
 }
 lumis = {
     "2016pre": "19.5",
@@ -328,7 +328,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
-    ax.set_ylabel("<(Data - SM) / GeV>")
+    ax.set_ylabel("Difference to\nperturbative SM")
     #ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
 
@@ -548,8 +548,8 @@ batches = {
     r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
     r"ej":         ["e4pj", "e3j"],
     r"mj":         ["m4pj", "m3j"],
-    r"$\ell$3j":   ["e3j", "m3j"],
-    r"$\ell$4+j":  ["e4pj", "m4pj"],
+    r"$\ell +$ 3j":   ["e3j", "m3j"],
+    r"$\ell + \geq$ 4j":  ["e4pj", "m4pj"],
 }
 if args.batch is not None:
     for cltx, channels in batches.items():
