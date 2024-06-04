@@ -83,6 +83,8 @@
         "VV": "Diboson",
         "TTV": "t\\bar{t}+X",
         "AH": "A/H",
+        "AH_int": "A/H int.",
+        "AH_res": "A/H res.",
         "EtaT": "\\eta"
     },
     "years": [
