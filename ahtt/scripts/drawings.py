@@ -8,13 +8,14 @@ min_g = 0.
 max_g = 3.
 epsilon = 2.**-17
 axes = {
-    "mass" :    r"$\mathrm{m}_{\mathrm{\mathsf{%s}}}$ [GeV]",
-    "width":    r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [%% m$_{\mathrm{\mathsf{%s}}}$]",
-    "coupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
-    "dnll":     r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
-    "muah":     r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
-    "muetat":   r"$\mu^{\eta_{\mathrm{t}}}$",
-    "yukawa":   r"$y_{\mathrm{t}}$"
+    "mass" :      r"$\mathrm{m}_{\mathrm{\mathsf{%s}}}$ [GeV]",
+    "width":      r"$\Gamma_{\mathrm{\mathsf{%s}}}$ [%% m$_{\mathrm{\mathsf{%s}}}$]",
+    "coupling":   r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
+    "ttcoupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}t\bar{t}}}$",
+    "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
+    "muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
+    "muetat":     r"$\mu^{\eta_{\mathrm{t}}}$",
+    "yukawa":     r"$y_{\mathrm{t}}$"
 }
 
 def ith(iterable, idx):
