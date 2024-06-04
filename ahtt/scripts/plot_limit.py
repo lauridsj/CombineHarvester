@@ -62,7 +62,170 @@ def ahtt_max_coupling(parity, mah, wah, relwidth = True):
     wah = wah * mah if relwidth else wah
     return math.sqrt(wah / ahtt_width_coupling_helper(parity, mah))
 
-def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
+def cleanup_multi_crossing(g_and_cls):
+    ### this block here is some attempt to smooth out the raw cls numbers from combine
+    ### to deal with unphysical jumps at close by g values
+    ### scenario with possibly multiple crossing (used for observed)
+    result = []
+    cutoffs = []
+    cutoff = []
+
+    for gg, cc in g_and_cls:
+        if 0.01 < cc < 0.2:
+            cutoff.append((gg, cc))
+        else:
+            if cutoff != []:
+                cutoffs.append(cutoff)
+                cutoff = []
+
+    ## merge intervals that are nearby
+    minmax = [(first(cutoff)[0], first(cutoff)[-1]) for cutoff in cutoffs if len(cutoff) != 1]
+    imm = 0
+    while imm < len(minmax) - 1:
+        if minmax[imm + 1][0] - minmax[imm][1] < 0.1:
+            cutoffs = cutoffs[:imm] + [cutoffs[imm] + cutoffs[imm + 1]] + cutoffs[imm + 2:]
+            minmax = [(first(cutoff)[0], first(cutoff)[-1]) for cutoff in cutoffs]
+            imm = 0
+        else:
+            imm += 1
+
+    ## ensure the intervals are monotonous
+    for icut in range(len(cutoffs)):
+        clamp = (cutoffs[icut][0][1], cutoffs[icut][-1][1])
+        which = 1 if clamp[-1] > clamp[0] else -1
+        mono = [cutoffs[icut][0]]
+        for cut in cutoffs[icut][1:]:
+            ismono= second(mono) + [cut[1]]
+            upward = which > 0 and ismono == sorted(ismono)
+            downward = which < 0 and ismono == list(reversed(sorted(ismono)))
+            if upward or downward:
+                mono.append(cut)
+            cutoffs[icut] = mono
+
+    ## build splines to interpolate
+    for cutoff in cutoffs:
+        if len(cutoff) < 5:
+            continue
+        spline = UnivariateSpline(np.array(first(cutoff)), np.array(second(cutoff)), s = len(cutoff))
+        minmax = (first(cutoff)[0], first(cutoff)[-1])
+        for idx in range(len(g_and_cls)):
+            if minmax[0] <= g_and_cls[idx][0] <= minmax[1]:
+                result.append((g_and_cls[idx][0], float(spline(g_and_cls[idx][0]))))
+            else:
+                result.append((g_and_cls[idx][0], g_and_cls[idx][1]))
+    ### end of block
+    return result
+
+def cleanup_single_crossing(g_and_cls):
+    ### this block here is some attempt to smooth out the raw cls numbers from combine
+    ### to deal with unphysical jumps at close by g values
+    ### scenario with possibly multiple crossing (used for expected)
+    result = []
+    g = [gg for gg, cc in g_and_cls]
+    cls = [cc for gg, cc in g_and_cls]
+
+    vmin = min([(abs(cc - 0.05), gg, cc) for gg, cc in g_and_cls])
+    vmin = (vmin[1], vmin[2])
+    imin = g_and_cls.index(vmin)
+
+    if imin > 0 and len(cls) - imin > 0:
+        cmin = 5e-3
+        cmax = 0.5
+
+        left = [cc for cc in cls if cc < 0.05]
+        right = [cc for cc in cls if cc > 0.05]
+
+        left = sum(left) / len(left) if len(left) > 0 else -1.
+        right = sum(right) / len(right) if len(right) > 0 else -1.
+
+        g = []
+        cls = []
+
+        condition = lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
+        if left >= 0. and right >= 0.:
+            for ii in range(1, len(g_and_cls)):
+                gg, cc = g_and_cls[ii]
+                if cmin < cc < cmax:
+                    if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], vmin[1] < cls[0]):
+                        g.append(gg)
+                        cls.append(cc)
+                    elif len(g) > 1 and len(cls) > 1 and ii < len(g_and_cls) - 1:
+                        cprev = condition(cc, cls[-2], vmin[1] < cls[0])
+                        nprev = condition(g_and_cls[ii + 1][1], cls[-2], vmin[1] < cls[0])
+                        if cprev and nprev:
+                            g.pop()
+                            cls.pop()
+                            g.append(gg)
+                            cls.append(cc)
+    else:
+        g = []
+        cls = []
+
+    if len(g) > 3:
+        spline = UnivariateSpline(np.array(g), np.array(cls), s = len(g))
+
+        smin = min([(abs(cc - 0.05), gg, cc) for gg, cc in zip(g, cls)])
+        smin = (smin[1], smin[2])
+
+        min_factor = 1.
+        abs_tolerance = 0.0005
+        need_checking = False
+        crossing = smin[0]
+        residual = abs(spline(crossing) - 0.05)
+        factor = 2.**9 if smin[1] > 0.05 else -2.**9
+
+        while residual > abs_tolerance and crossing < max_g and crossing > min_g:
+            if need_checking or abs(factor) < min_factor:
+                break
+
+            crossing += factor * epsilon
+            if abs(spline(crossing) - 0.05) > residual or crossing >= g[-1] or crossing <= g[0]:
+                if crossing >= g[-1]:
+                    crossing = g[-1] - (min_factor * epsilon / 2.)
+                if crossing <= g[0]:
+                    crossing = g[0] + (min_factor * epsilon / 2.)
+                factor /= -2.
+
+            if abs(factor) < min_factor and residual > abs_tolerance:
+                need_checking = True
+            residual = abs(spline(crossing) - 0.05)
+
+        if need_checking:
+            #print("in " + dcd + ", quantile " + quantile + ", achieved cls residual is " +
+            #      str(residual) + " at g = " + str(crossing))
+            print("achieved cls residual is " + str(residual) + " at g = " + str(crossing))
+            print("g and cls values used to build the spline:")
+            print(g)
+            print(cls)
+            print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled points: ", vmin)
+            print("g, cls point with minimum distance to cls = 0.05 from points considered for the spline: ", smin)
+            print("\n")
+
+        ## FIXME to be reimplemented post refactoring
+        #if dump_spline or need_checking:
+        #    qstr = quantile.replace('+', 'pp').replace('-', 'm')
+        #    fig, ax = plt.subplots()
+        #    ax.plot(g, spline(g), 'g', lw = 3)
+        #    fig.tight_layout()
+        #    fig.savefig("{dcd}/{pnt}_{tag}_spline_{qua}.png".format(
+        #        dcd = odir,
+        #        tag = otags[tt],
+        #        pnt = '_'.join(dcd.split('_')[:3]),
+        #        qua = qstr
+        #    ), transparent = True)
+        #    fig.clf()
+        result = [[crossing, max_g]] if crossing < max_g else []
+    else:
+        #print("in " + dcd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
+        print("following g and cls are insufficient to form a spline:")
+        print(g)
+        print(cls)
+        print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
+        print("\n")
+        result = []
+    return result
+
+def read_limit(directories, otags, xvalues, onepoi):
     limits = [OrderedDict() for tag in directories]
 
     for tt, directory in enumerate(directories):
@@ -75,14 +238,6 @@ def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
                 ("exp+1", []),
                 ("exp+2", []),
                 ("obs", [])
-            ])
-
-            exclusion = OrderedDict([
-                ("exp-2", False),
-                ("exp-1", False),
-                ("exp0", False),
-                ("exp+1", False),
-                ("exp+2", False),
             ])
 
             if onepoi:
@@ -108,128 +263,16 @@ def read_limit(directories, otags, xvalues, onepoi, dump_spline, odir):
                     for g, lmt in result.items():
                         # FIXME in some cases combine gives strange cls values
                         # not understood why, skip
-                        if any([round(cls, 3) > 1. or round(cls, 3) < 0. for cls in lmt.values()]):
+                        cls = list(lmt.values())
+                        if any([round(cc, 3) > 1. or round(cc, 3) < 0. for cc in cls]):
                             continue
 
                         for quantile, cls in lmt.items():
-                            limit[quantile].append((round(float(g), 4), round(cls, 5)))
-
-                for quantile in limit.keys():
-                    if quantile == "obs":
-                        continue
-
-                    g = [gg for gg, cc in limit[quantile]]
-                    cls = [cc for gg, cc in limit[quantile]]
-                    vmin = min([(abs(cc - 0.05), gg, cc) for gg, cc in limit[quantile]])
-                    vmin = (vmin[1], vmin[2])
-                    imin = limit[quantile].index(vmin)
-
-                    if imin > 0 and len(cls) - imin > 0:
-                        cmin = 5e-3
-                        cmax = 0.5
-
-                        left = [cc for cc in cls if cc < 0.05]
-                        right = [cc for cc in cls if cc > 0.05]
-
-                        left = sum(left) / len(left) if len(left) > 0 else -1.
-                        right = sum(right) / len(right) if len(right) > 0 else -1.
-
-                        g = []
-                        cls = []
-
-                        condition = lambda x, y, le_if_true_else_ge: x < y if le_if_true_else_ge else x > y
-                        if left >= 0. and right >= 0.:
-                            for ii in range(1, len(limit[quantile])):
-                                gg, cc = limit[quantile][ii]
-                                if cmin < cc < cmax:
-                                    if (len(g) == 0 and len(cls) == 0) or condition(cc, cls[-1], vmin[1] < cls[0]):
-                                        g.append(gg)
-                                        cls.append(cc)
-                                    elif len(g) > 1 and len(cls) > 1 and ii < len(limit[quantile]) - 1:
-                                        cprev = condition(cc, cls[-2], vmin[1] < cls[0])
-                                        nprev = condition(limit[quantile][ii + 1][1], cls[-2], vmin[1] < cls[0])
-
-                                        if cprev and nprev:
-                                            g.pop()
-                                            cls.pop()
-
-                                            g.append(gg)
-                                            cls.append(cc)
-                    else:
-                        g = []
-                        cls = []
-
-                    if len(g) > 3:
-                        spline = UnivariateSpline(np.array(g), np.array(cls))
-
-                        smin = min([(abs(cc - 0.05), gg, cc) for gg, cc in zip(g, cls)])
-                        smin = (smin[1], smin[2])
-
-                        min_factor = 1.
-                        abs_tolerance = 0.0005
-                        need_checking = False
-                        crossing = smin[0]
-                        residual = abs(spline(crossing) - 0.05)
-                        factor = 2.**9 if smin[1] > 0.05 else -2.**9
-
-                        while residual > abs_tolerance and crossing < max_g and crossing > min_g:
-                            if need_checking or abs(factor) < min_factor:
-                                break
-
-                            crossing += factor * epsilon
-                            if abs(spline(crossing) - 0.05) > residual or crossing >= g[-1] or crossing <= g[0]:
-                                if crossing >= g[-1]:
-                                    crossing = g[-1] - (min_factor * epsilon / 2.)
-                                if crossing <= g[0]:
-                                    crossing = g[0] + (min_factor * epsilon / 2.)
-
-                                factor /= -2.
-
-                            if abs(factor) < min_factor and residual > abs_tolerance:
-                                need_checking = True
-
-                            residual = abs(spline(crossing) - 0.05)
-
-                        if need_checking:
-                            print("in " + dcd + ", quantile " + quantile + ", achieved cls residual is " +
-                                  str(residual) + " at g = " + str(crossing))
-                            print("g and cls values used to build the spline:")
-                            print(g)
-                            print(cls)
-                            print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled points: ", vmin)
-                            print("g, cls point with minimum distance to cls = 0.05 from points considered for the spline: ", smin)
-                            print("\n")
-
-                        if dump_spline or need_checking:
-                            qstr = quantile.replace('+', 'pp').replace('-', 'm')
-                            fig, ax = plt.subplots()
-
-                            ax.plot(g, spline(g), 'g', lw = 3)
-                            fig.tight_layout()
-                            fig.savefig("{dcd}/{pnt}_{tag}_spline_{qua}.png".format(
-                                dcd = odir,
-                                tag = otags[tt],
-                                pnt = '_'.join(dcd.split('_')[:3]),
-                                qua = qstr
-                            ), transparent = True)
-                            fig.clf()
-
-                        limit[quantile] = [[crossing, max_g]] if crossing < max_g else []
-
-                    else:
-                        print("in " + dcd + ", quantile " + quantile + ", following g and cls are insufficient to form a spline:")
-                        print(g)
-                        print(cls)
-                        print("g, cls point with minimum distance to cls = 0.05 from a raw search on sampled point: ", vmin)
-                        print("\n")
-
-                        limit[quantile] = []
-
+                            limit[quantile].append((float(g), round(cls, 7)))
             limits[tt][xvalues[jj]] = limit
-
     return limits
 
-def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     if len(limits) > 6:
         raise RuntimeError("current plotting code is not meant for more than 6 tags. aborting")
 
@@ -238,7 +281,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
 
     if not hasattr(draw_1D, "colors"):
         draw_1D.colors = OrderedDict([
-            (1    , [{"exp2": "#ffcc00", "exp1": "#00cc00", "exp0": "0", "expl": "dashed", "obsf": "#0033cc", "obsl": "#0033cc", "alpe": 1., "alpo": 0.25}]),
+            (1    , [{"exp2": "#f5bb54", "exp1": "#607641", "exp0": "0", "expl": "dashed", "obsf": "#385cb4", "obsl": "#0033a0", "alpe": 1., "alpo": 0.25}]),
 
             (2    , [{"exp2": "#ff6699", "exp1": "#ff3366", "exp0": "#cc0033", "expl": "dashed", "obsf": "#ffffff", "obsl": "#cc0033", "alpe": 0.4, "alpo": 0.},
                      {"exp2": "#6699ff", "exp1": "#3366ff", "exp0": "#0033cc", "expl": (0, (1, 1)), "obsf": "#ffffff", "obsl": "#0033cc", "alpe": 0.4, "alpo": 0.}]),
@@ -282,22 +325,22 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
         for xx, lmt in tag.items():
             for quantile, exclusion in lmt.items():
                 if quantile == "obs":
-                    limit[quantile].append(exclusion)
+                    cleaned = cleanup_multi_crossing(exclusion)
+                    limit[quantile].append(cleaned if cleaned != [] else exclusion)
                 else:
-                    if len(exclusion) > 1:
-                        print(quantile, exclusion)
+                    cleaned = cleanup_single_crossing(exclusion)
+                    if len(cleaned) > 1:
+                        print(quantile, cleaned)
                         raise RuntimeError("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
                                        ", current plotting code is meant to handle only 1 expected exclusion interval. aborting")
-
-                    if len(exclusion) > 0:
-                        limit[quantile].append(exclusion[0][0])
-                        if exclusion[0][1] != max_g:
-                            print(quantile, exclusion)
+                    if len(cleaned) > 0:
+                        limit[quantile].append(cleaned[0][0])
+                        if cleaned[0][1] != max_g:
+                            print(quantile, cleaned)
                             print("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
                                   " strange exclusion interval. recheck.\n")
                     else:
                         limit[quantile].append(max_g)
-
         yvalues.append(limit)
 
     #with open(oname.replace(".pdf", ".json").replace(".png", ".json"), "w") as jj: 
@@ -454,7 +497,13 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, drawband, obser
     fig.savefig(oname, transparent = transparent)
     fig.clf()
 
-def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
+def parse_point_quantile(pqs, var = "mass"):
+    other = 2 if var == "mass" else 1
+    result = [tokenize_to_list(pq, token = ':') for pq in pqs]
+    result = {get_point(pq[0])[other]: tokenize_to_list(pq[1]) for pq in result}
+    return result
+
+def draw_natural(oname, points, directories, labels, xaxis, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     masses = [pnt[1] for pnt in points]
     if len(set(masses)) != len(masses):
         raise RuntimeError("producing " + oname + ", --function natural expects unique mass points only. aborting")
@@ -462,9 +511,10 @@ def draw_natural(oname, points, directories, labels, xaxis, yaxis, onepoi, drawb
     if len(masses) < 2:
         print("There are less than 2 masses points. skipping")
 
-    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "", drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
+    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "",
+            parse_point_quantile(interpolate), drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
 
-def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent, dump_spline):
+def draw_variable(var1, oname, points, directories, otags, labels, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent, dump_spline):
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
             ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
@@ -485,11 +535,11 @@ def draw_variable(var1, oname, points, directories, otags, labels, yaxis, onepoi
         axislabel = points[0][0] if var1 == "mass" else (points[0][0], points[0][0])
         legendtext = (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv)
         draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))),
-                read_limit(dirs, otags, var1s, onepoi, dump_spline, os.path.dirname(oname)),
+                read_limit(dirs, otags, var1s, onepoi),
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
                 r'$\Gamma_{\mathrm{\mathsf{%s} t\bar{t}}} \,>\, \Gamma_{\mathrm{\mathsf{%s}}}$' % (points[0][0], points[0][0]),
-                drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
+                parse_point_quantile(interpolate), drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -503,6 +553,12 @@ if __name__ == '__main__':
     parser.add_argument("--drop",
                         help = "comma separated list of points to be dropped. 'XX, YY' means all points containing XX or YY are dropped.",
                         default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
+    parser.add_argument("--interpolate",
+                        help = "semicolon-separated point: quantiles to linearly interpolate based on neighboring points.\n"
+                        "e.g. A_m425_w10p0: exp-1,exp0 to interpolate these two quantiles"
+                        "the neighboring points are based on --function.",
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s), token = ';' ) )
+
     parser.add_argument("--one-poi", help = "plot limits set with the g-only model", dest = "onepoi", action = "store_true", required = False)
     parser.add_argument("--observed", help = "draw observed limits as well", dest = "observed", action = "store_true", required = False)
 
@@ -526,7 +582,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if len(args.itag) != len(args.label):
-        raise RuntimeError("length of tags isnt the same as labels. aborting")
+        if len(args.itag) == 1 and len(args.label) == 0:
+            args.label =[""]
+        else:
+            raise RuntimeError("length of tags isnt the same as labels. aborting")
 
     adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
     hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
@@ -555,19 +614,19 @@ if __name__ == '__main__':
     if args.function == "natural":
         if len(apnt) > 0:
             draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+                         apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["ttcoupling"] % apnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         if len(hpnt) > 0:
             draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
-                         hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+                         hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["ttcoupling"] % hpnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
                           "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          apnt, adir, otags, args.label, axes["coupling"] % apnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
+                          apnt, adir, otags, args.label, axes["ttcoupling"] % apnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
                           "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
                                                                        tag = args.ptag, fmt = args.fmt),
-                          hpnt, hdir, otags, args.label, axes["coupling"] % hpnt[0][0], args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
+                          hpnt, hdir, otags, args.label, axes["ttcoupling"] % hpnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
     pass
