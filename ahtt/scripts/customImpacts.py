@@ -123,14 +123,14 @@ if args.translate is not None:
     with open(args.translate) as jsonfile:
         translate = json.load(jsonfile)
 if POI == "CMS_EtaT_norm_13TeV":
-    poi_translated = "\\mu(\\eta_{t})"
+    poi_translated = "\\hat{\\mu}^{\\eta_{t}}"
 else:
     poi_translated = Translate(POI,translate) #Get translated POI name (if available)
 
 #Sort parameters by largest absolute impact on this POI
 data['params'].sort(key=lambda x: abs(x['impact_%s' % POI]), reverse=True)
 
-#Set the number of parameters per page (show) and the number of pages (n)
+#Set the number of parameters per page (show) and the number of pages ((n)
 show = args.per_page
 n = int(math.ceil(float(len(data['params'])) / float(show)))
 if args.onlyfirstpage == True: n = 1
@@ -340,7 +340,7 @@ for page in xrange(n):
         "impacts", "impacts", 6, -max_impact * 1.06, max_impact * 1.06, n_params, 0, n_params)
     plot.Set(h_impacts.GetXaxis(), LabelSize=0.03, TitleSize=0.04, Ndivisions=505, Title=
      # '#Delta#mu')
-     '#Delta#hat{%s}' % poi_translated)
+     '#Delta%s' % poi_translated)
     plot.Set(h_impacts.GetYaxis(), LabelSize=0, TickLength=0.0)
     h_impacts.Draw()
 
@@ -447,13 +447,17 @@ for page in xrange(n):
     #-- Draw best-fit value and uncertainties
     # s_nom, s_hi, s_lo = GetRounded(POI_fit[1], POI_fit[2] - POI_fit[1], POI_fit[1] - POI_fit[0])
     # THIS PART DRAWS THE POI and sets how many digits to display
-    s_nom, s_hi, s_lo = "{:.3f}".format(POI_fit[1]), "{:.3f}".format( POI_fit[2] - POI_fit[1]), "{:.3f}".format( POI_fit[1] - POI_fit[0])
+    s_nom, s_hi, s_lo = "{:.2f}".format(POI_fit[1]), "{:.2f}".format( POI_fit[2] - POI_fit[1]), "{:.2f}".format( POI_fit[1] - POI_fit[0])
+    if s_hi == s_lo:
+        unctext = ' \\pm %s' % s_hi
+    else:
+        unctext = '^{#plus%s}_{#minus%s}' % (s_hi, s_lo)
     if not args.blind:
         plot.DrawTitle(pad=pads[1], text='%s' % (
-                '#hat{%s}' % poi_translated
+                '%s' % poi_translated
                 )
-            +' = %s^{#plus%s}_{#minus%s}%s' % (
-                s_nom, s_hi, s_lo,
+            +' = %s%s%s' % (
+                s_nom, unctext,
                 '' if args.units is None else ' '+args.units
             ), align=3, textOffset=0.12, textSize=0.25)
     # pads[0].RedrawAxis()
