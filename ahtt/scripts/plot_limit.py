@@ -375,7 +375,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
     for ii, yy in enumerate(yvalues):
         ax.plot(xvalues, np.array(yy["exp0"]), color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = draw_1D.colors[len(limits)][ii]["expl"], linewidth = 1.5)
 
-        label = "Expected" if labels[ii] == "" else "Exp."
+        label = "Median expected" if labels[ii] == "" else "Median exp."
         handles.append((mln.Line2D([0], [0], color = draw_1D.colors[len(limits)][ii]["exp0"], linestyle = draw_1D.colors[len(limits)][ii]["expl"], linewidth = 1.5),
                         label + " " + labels[ii]))
 
@@ -457,11 +457,11 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
     handles.append((mpt.Patch(hatch = '||', facecolor = 'none', edgecolor = '#848482', linewidth = 1.), gcurve))
 
     lheight = (ymax2 - ymax1) / (ymax2 - ymin)
-    lmargin = 0.06 if len(limits) == 1 else 0.02
+    lmargin = 0.04 if len(limits) == 1 else 0.02
     lwidth = 1. - (2. * lmargin)
     legend = ax.legend(first(handles), second(handles),
 	               loc = "upper right", ncol = 2 if len(limits) < 3 else 3, bbox_to_anchor = (lmargin, 1. - lheight, lwidth, lheight - 0.025),
-                       mode = "expand", borderaxespad = 0., handletextpad = 0.5, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
+                       mode = "expand", borderaxespad = 0., handletextpad = 0.35, fontsize = 21 if len(limits) < 3 else 15, frameon = False,
                        title = "95% CL exclusion" + ltitle, title_fontsize = 21, facecolor = 'white')
     ax.add_artist(legend)
 
