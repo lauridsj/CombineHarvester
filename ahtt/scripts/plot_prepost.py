@@ -3,8 +3,6 @@
 # environment: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_102 x86_64-centos7-gcc11-opt
 # updating mpl: python3 -m pip install matplotlib --upgrade
 # actually using it: export PYTHONPATH=`python3 -c 'import site; print(site.getusersitepackages())'`:$PYTHONPATH
-# FIXME: summed up templates across years not yet fully correct: check out https://cms-analysis.github.io/CombineHarvester/post-fit-shapes-ws.html
-# more info: https://cms-analysis.github.io/CombineHarvester/post-fit-shapes-ws.html
 
 import os
 from itertools import product
@@ -30,13 +28,14 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
-parser.add_argument("--lower", choices = ["ratio", "diff"], default = "diff", required = False)
+parser.add_argument("--lower", choices = ["ratio", "diff"], default = "ratio", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
-parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted",
+parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted. give any string to draw only batched prefit.",
                     default = None, dest = "batch", required = False)
+parser.add_argument("--skip-postfit", help = "skip plotting postfit", action = "store_false", dest = "postfit", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
@@ -50,13 +49,18 @@ parser.add_argument("--as-signal", help = "comma-separated list of background pr
 parser.add_argument("--skip-ah", help = "don't draw A/H signal histograms", action = "store_false", dest = "doah", required = False)
 args = parser.parse_args()
 
+fits = []
+if args.postfit:
+    fits += ["s", "b"]
+if args.prefit:
+    fits += ["p"]
+
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
 years = ["2016pre", "2016post", "2017", "2018"]
-fits = ["s", "b", "p"]
 sm_procs = {
     "TTV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
     "VV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
-    "EWQCD": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$, QCD",
+    "EWQCD": r"EW + QCD",
     "TW": "tX",
     "TB": "tX",
     "TQ": "tX",
@@ -74,13 +78,16 @@ proc_colors = {
     "tX": "C0",
     r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1",
     r"$\mathrm{t}\bar{\mathrm{t}}$": "#F3E5AB",
-    r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$, QCD": "C1",
-    r"$\eta_{\mathrm{t}}$": "#33cc00",
+    r"EW + QCD": "C1",
+    r"$\eta_{\mathrm{t}}$": "#009000",
 
     "A": "#cc0033",
     "H": "#0033cc",
     "Total": "#3B444B"
 }
+if not args.doah:
+    proc_colors[r"$\eta_{\mathrm{t}}$"] = proc_colors['A']
+
 signal_zorder = {
     r"$\eta_{\mathrm{t}}$": 0,
     "Total": 1,
@@ -129,12 +136,12 @@ datastyle = dict(
 
 def get_poi_values(fname, signals):
     signals = list(signals.keys())
-    signals = [signal for signal in signals if signal != ("Total", None, None)]
-    twing = len(signals) == 2 and all([sig[0] == "A" or sig[0] == "H" for sig in signals])
+    signals = [sig for sig in signals if sig != ("Total", None, None)]
+    twing = len(signals) >= 2 and sum([1 if sig[0] == "A" or sig[0] == "H" else 0 for sig in signals]) == 2
     onepoi = "one-poi" in fname
-    etat = signals[0][0] == r"$\eta_{\mathrm{t}}$"
+    etat = r"$\eta_{\mathrm{t}}$" in [sig[0] for sig in signals]
 
-    if not twing and not onepoi and not etat:
+    if not twing and not onepoi:
         raise NotImplementedError()
 
     ffile = ROOT.TFile.Open(fname, "read")
@@ -142,16 +149,26 @@ def get_poi_values(fname, signals):
         return {sig: 0 for sig in signals}
 
     fres = ffile.Get("fit_s")
-
+    result = {}
     if onepoi:
-        return {signals[0]: round(fres.floatParsFinal().getRealValue('g'), 2)}
+        gg = fres.floatParsFinal().find('g')
+        result = {signals[0]: (round(gg.getValV(), 3), round(gg.getError(), 3))}
+        #result = {signals[0]: (round(gg.getValV(), 3), round(gg.getAsymErrorLo(), 3), round(gg.getAsymErrorHi(), 3))}
     elif twing:
-        return {
-            signals[0]: round(fres.floatParsFinal().getRealValue('g1'), 2),
-            signals[1]: round(fres.floatParsFinal().getRealValue('g2'), 2)
+        g1 = fres.floatParsFinal().find('g1')
+        g2 = fres.floatParsFinal().find('g2')
+        result = {
+            signals[0]: (round(g1.getValV(), 2), round(g1.getError(), 2)),
+            signals[1]: (round(g2.getValV(), 2), round(g2.getError(), 2))
         }
-    elif etat:
-        return {signals[0]: round(fres.floatParsFinal().getRealValue('CMS_EtaT_norm_13TeV'), 2)}
+        #result = {
+        #    signals[0]: (round(g1.getValV(), 3), round(g1.getAsymErrorLo(), 3), round(g1.getAsymErrorHi(), 3)),
+        #    signals[1]: (round(g2.getValV(), 3), round(g2.getAsymErrorLo(), 3), round(g2.getAsymErrorHi(), 3))
+        #}
+    if etat:
+        muetat = fres.floatParsFinal().find('CMS_EtaT_norm_13TeV')
+        result = result | {signals[0]: (round(muetat.getValV(), 3), round(muetat.getError(), 3))}
+    return result
 
 
 
@@ -244,14 +261,15 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         if key in gvalues and gvalues[key] is not None:
             if symbol == "A" or symbol == "H":
                 if fit == "s":
-                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key]}$"
+                    signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]} \\pm {gvalues[key][1]}$"
+                    #signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]}_{{-{gvalues[key][1]}}}^{{+{gvalues[key][2]}}}$"
                 elif fit == "b":
                     signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
             elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = {gvalues[key]}$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = [{gvalues[key][0]} \\pm {gvalues[key][1]}] \\times \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}}$"
                 elif fit == "b":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
 
         hep.histplot(
             (total.values() + signal.values()) / total.values(),
@@ -340,7 +358,7 @@ def plot(channel, year, fit,
     if len(smhists) == 0:
         return
 
-    allsigs = promotions | signals
+    allsigs = signals | promotions
     fig, (ax0, ax1, ax2) = plt.subplots(
         nrows = 3,
         sharex = True,
@@ -393,9 +411,9 @@ def plot(channel, year, fit,
     if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
         sstr = "EtaT"
     else:
-        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr]
+        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if ss[0] != r"$\eta_{\mathrm{t}}$"]
         sstr = "__".join(sstr)
-    cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$', 'l').replace('+', 'p')
+    cstr = channel.replace(r'$\ell\bar{\ell}$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
     ystr = year.replace(" ", "").lower()
     fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True, bbox_inches = extent)
     fig.clf()
@@ -437,8 +455,6 @@ signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
 with uproot.open(args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
-        if fit == "p" and not args.prefit:
-            continue
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
@@ -463,7 +479,15 @@ with uproot.open(args.ifile) as f:
         for proc, label in sm_procs.items():
             if proc not in directory:
                 continue
-            hist = directory[proc].to_hist()[:len(centers)]
+
+            # combine hack, see args.doah block
+            if fit == "p" and args.ipf != "" and proc == "EtaT":
+                ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
+                with uproot.open(f"{ipf}") as ipf:
+                    hist = ipf[f"{channel}_{year}"][proc].to_hist()[:len(centers)]
+            else:
+                hist = directory[proc].to_hist()[:len(centers)]
+
             if proc not in args.assignal:
                 if label not in smhists:
                     smhists[label] = hist
@@ -499,14 +523,17 @@ with uproot.open(args.ifile) as f:
                     else:
                         signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
 
-            if len(signals) > 1:
+            if len(signals) > 1 and len(promotions) == 0:
                 signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
-        gvalues = get_poi_values(args.ifile, promotions | signals)
+        gvalues = get_poi_values(args.ifile, signals | promotions)
         datavalues = directory["data"].values()[1][:len(centers)]
         total = directory["total_background"].to_hist()[:len(centers)]
-        for promotion in promotions.values():
-            total += -1. * promotion
+
+        # FIXME actual error: axes not mergable error when reading EtaT from args.ipf (needed because muetat = 0 at prefit, so hist = 0)
+        if fit != 'p':
+            for promotion in promotions.values():
+                total += -1. * promotion
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
@@ -544,12 +571,12 @@ with uproot.open(args.ifile) as f:
                 year_summed[(channel, fit)] = kwargs
 
 batches = {
-    r"$\ell\ell$": ["ee", "em", "mm"],
-    r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
-    r"ej":         ["e4pj", "e3j"],
-    r"mj":         ["m4pj", "m3j"],
-    r"$\ell +$ 3j":   ["e3j", "m3j"],
-    r"$\ell + \geq$ 4j":  ["e4pj", "m4pj"],
+    r"$\ell\bar{\ell}$": ["ee", "em", "mm"],
+    #r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
+    #r"ej":         ["e4pj", "e3j"],
+    #r"mj":         ["m4pj", "m3j"],
+    r"$\ell$, 3j":   ["e3j", "m3j"],
+    r"$\ell$, $\geq$ 4j":  ["e4pj", "m4pj"],
 }
 if args.batch is not None:
     for cltx, channels in batches.items():
