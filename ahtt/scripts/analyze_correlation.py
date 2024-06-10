@@ -42,9 +42,11 @@ with uproot.open(args.infile) as f:
     idx = labels.index(poi)
 
     minvs = np.linalg.inv(mvals)
-    vdet = np.linalg.det(mvals)
+    det = np.linalg.det(mvals)
+    cond = np.linalg.cond(mvals)
     multcorr = np.sqrt(1. - 1./minvs[idx][idx])
 
     print(f"reading matrix {args.infile}")
-    print(f"determinant: {vdet}")
+    print(f"determinant: {det}")
+    print(f"condition: {cond}")
     print(f"multiple correlation coefficient of {poi}: {multcorr}")
