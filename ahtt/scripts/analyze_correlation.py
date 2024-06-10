@@ -11,7 +11,7 @@ from desalinator import tokenize_to_list, remove_spaces_quotes
 parser = argparse.ArgumentParser()
 parser.add_argument("--infile", type = str, help = "path to fitDiagnostics root file")
 parser.add_argument("--signal", type = str, choices = ["A", "H", "EtaT"])
-parser.add_argument("--drop", dest = "drop", help = "comma-separated list of NPs to be dropped, greedy matched. signal is not droppable. default is dropping mc stats.",
+parser.add_argument("--drop", dest = "drop",  default = "", help = "list of NPs to be dropped, greedy matched. signal is not droppable. default is dropping mc stats.",
                     type = lambda s: ["prop"] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))
 args = parser.parse_args()
 
