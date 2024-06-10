@@ -43,7 +43,7 @@ with uproot.open(args.infile) as f:
 
     minvs = np.linalg.inv(mvals)
     vdet = np.linalg.det(mvals)
-    multcorr = np.sqrt(1. - 1./minvs[poi_idx][poi_idx])
+    multcorr = np.sqrt(1. - 1./minvs[idx][idx])
 
     print(f"reading matrix {args.infile}")
     print(f"determinant: {vdet}")
