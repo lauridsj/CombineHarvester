@@ -9,13 +9,14 @@ from itertools import product
 import re
 from argparse import ArgumentParser
 import numpy as np
+from functools import reduce
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
 plt.rcParams['figure.max_open_warning'] = False
-plt.rcParams["font.size"] = 15.0
+plt.rcParams["font.size"] = 17.0
 from matplotlib.transforms import Bbox
 
 import uproot  # noqa:E402
@@ -25,6 +26,7 @@ import math
 
 from utilspy import tuplize
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from drawings import etat_blurb
 
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
@@ -65,6 +67,7 @@ sm_procs = {
     "TB": "tX",
     "TQ": "tX",
     "DY": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
+    "EtaT": r"$\eta_{\mathrm{t}}$",
     "TT": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_const_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_const_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
@@ -72,21 +75,20 @@ sm_procs = {
     "EWK_TT_lin_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_quad_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_quad_neg": r"$\mathrm{t}\bar{\mathrm{t}}$",
-    "EtaT": r"$\eta_{\mathrm{t}}$",
 }
 proc_colors = {
-    "tX": "C0",
-    r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1",
-    r"$\mathrm{t}\bar{\mathrm{t}}$": "#F3E5AB",
-    r"EW + QCD": "C1",
+    "tX": "C0", #"#5790fc",
+    r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1", #"#f89c20",
+    r"$\mathrm{t}\bar{\mathrm{t}}$":  "#F3E5AB", #"#e42536",
+    r"EW + QCD": "#58A279", #"#964a8b",
     r"$\eta_{\mathrm{t}}$": "#009000",
 
     "A": "#cc0033",
     "H": "#0033cc",
     "Total": "#3B444B"
 }
-if not args.doah:
-    proc_colors[r"$\eta_{\mathrm{t}}$"] = proc_colors['A']
+#if not args.doah:
+#    proc_colors[r"$\eta_{\mathrm{t}}$"] = proc_colors['A']
 
 signal_zorder = {
     r"$\eta_{\mathrm{t}}$": 0,
@@ -97,13 +99,13 @@ signal_zorder = {
 binnings = {
     ("ee", "em", "mm"): {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
-            [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1700],
-        r"$c_{\mathrm{han}}$": ["-1", r"-1/3", r"1/3", "1"],
-        r"$c_{\mathrm{hel}}$": ["-1", r"-1/3", r"1/3", "1"],
+            [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
+        r"$c_{\mathrm{han}}$": ["-1", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
+        r"$c_{\mathrm{hel}}$": ["-1", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
     },
     ("e4pj", "m4pj", "e3j", "m3j"): {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
-            [320, 360, 400, 440, 480, 520, 560, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100,  1150, 1200, 1300, 1500, 2000],
+            [320, 360, 400, 440, 480, 520, 560, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100,  1150, 1200, 1300, 1500, 1700],
         r"$\left|\cos(\theta_{\mathrm{t}_{\ell}}^{*})\right|$": [0.0, 0.4, 0.6, 0.75, 0.9, 1.0],
     }
 }
@@ -141,7 +143,7 @@ def get_poi_values(fname, signals):
     onepoi = "one-poi" in fname
     etat = r"$\eta_{\mathrm{t}}$" in [sig[0] for sig in signals]
 
-    if not twing and not onepoi:
+    if not twing and not onepoi and not etat:
         raise NotImplementedError()
 
     ffile = ROOT.TFile.Open(fname, "read")
@@ -157,6 +159,7 @@ def get_poi_values(fname, signals):
     elif twing:
         g1 = fres.floatParsFinal().find('g1')
         g2 = fres.floatParsFinal().find('g2')
+        
         result = {
             signals[0]: (round(g1.getValV(), 2), round(g1.getError(), 2)),
             signals[1]: (round(g2.getValV(), 2), round(g2.getError(), 2))
@@ -186,7 +189,7 @@ def full_extent(ax, pad = 0.0):
 
 
 
-def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
+def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel):
     if fit == "p":
         fstage = "Pre"
         ftype = " "
@@ -225,6 +228,11 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit):
     ax.set_ylabel("<Events / GeV>")
     if log:
         ax.set_yscale("log")
+        ymin = 0.5 * np.amin(data[0] / width)
+        ymax = 1.08 if "j" in channel else 1.12
+        ax.set_ylim(ymin, ax.transData.inverted().transform(ax.transAxes.transform([0, ymax]))[1])
+    else:
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
 
 
 
@@ -285,9 +293,12 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
-    ax.set_ylim(0.9, 1.1)
+    if fit == "p":
+        ax.set_ylim(0.79, 1.21)
+    else:
+        ax.set_ylim(0.895, 1.105)
     ax.set_ylabel(ratiolabels[fit])
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
 
 
@@ -348,7 +359,7 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         )
     ax.set_ylabel("Difference to\nperturbative SM")
     #ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.05, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand").get_frame().set_edgecolor("black")
+    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
 
 
@@ -362,11 +373,11 @@ def plot(channel, year, fit,
     fig, (ax0, ax1, ax2) = plt.subplots(
         nrows = 3,
         sharex = True,
-        gridspec_kw = {"height_ratios": [0.001, 2.5, 1]},
+        gridspec_kw = {"height_ratios": [0.001, 1, 1]},
         figsize = (10.5, 5.5)
     )
     ax0.set_axis_off()
-    plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit)
+    plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     elif args.lower == "diff":
@@ -376,30 +387,39 @@ def plot(channel, year, fit,
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
         ax1.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
         ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
-    if log:
-        ax1.set_ylim(ax1.get_ylim()[0], ax1.transData.inverted().transform(ax1.transAxes.transform([0, 1.1]))[1])
-    else:
-        ax1.set_ylim(0, ax1.get_ylim()[1] * 1.1)
     for j, (variable, edges) in enumerate(extra_axes.items()):
         for i in range(num_extrabins):
             edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
             text = r"{} $\leq$ {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-            ax1.text(1 / num_extrabins * (i + 0.5), 0.955 - j * 0.06, text, horizontalalignment = "center", fontsize = "small", transform = ax1.transAxes)
+            ax1.text(1 / num_extrabins * (i + 0.5), 0.915 - j * 0.11, text, horizontalalignment = "center", fontsize = 15, transform = ax1.transAxes)
     ax1.minorticks_on()
     ax2.minorticks_on()
     ticks = []
     for i in range(num_extrabins):
-        for j in (1 / 4, 3 / 4):
+        jrange = (1/6, 3/6, 5/6) if "j" in channel else (1/4, 3/4)
+        for j in jrange:
             ticks.append(first_ax_width * i + first_ax_width * j)
     ax2.set_xticks(ticks)
     ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
-    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.02, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1)
+    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False)
     ax1.set_xlabel("")
     ax2.set_xlabel(list(binning.keys())[0])
-    ax0.set_title(channel.replace('m', '$\\mu$'))
-    ax0.set_title(channel.replace('4p', '4+'))
-    hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 17)
-    fig.subplots_adjust(hspace = 0.27, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
+    title = channel.replace('m', '$\\mu$').replace('4p', '4+')
+    if fit == "p":
+        fittype = "pre-fit"
+    elif fit == "b":
+        fittype = "post-fit (background only)"
+    elif fit == "s" and "EtaT" in args.assignal:
+        fittype = f"post-fit (background + {sm_procs['EtaT']})"
+    else:
+        fittype = "post-fit (background + A/H)"
+    title += "  -  " + fittype
+    ax0.set_title(title)
+    if "EtaT" not in args.assignal:
+        btxt = etat_blurb([sm_procs["EtaT"] in smhists])
+        ax2.annotate("\n".join(btxt), (0.99, 0.05), xycoords="axes fraction", va="bottom", ha="right", fontsize=15)
+    hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
+    fig.subplots_adjust(hspace = 0.24, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
@@ -523,17 +543,21 @@ with uproot.open(args.ifile) as f:
                     else:
                         signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
 
-            if len(signals) > 1 and len(promotions) == 0:
-                signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
+            #if len(signals) > 1 and len(promotions) == 0:
+            #    signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
-        gvalues = get_poi_values(args.ifile, signals | promotions)
+        if fit != "p":
+            gvalues = get_poi_values(args.ifile, signals | promotions)
+        else:
+            gvalues = {}
         datavalues = directory["data"].values()[1][:len(centers)]
-        total = directory["total_background"].to_hist()[:len(centers)]
+        #total = directory["total_background"].to_hist()[:len(centers)]
+        total = reduce(lambda a,b: a+b, smhists.values())
 
         # FIXME actual error: axes not mergable error when reading EtaT from args.ipf (needed because muetat = 0 at prefit, so hist = 0)
-        if fit != 'p':
-            for promotion in promotions.values():
-                total += -1. * promotion
+        #if fit != 'p':
+        #    for promotion in promotions.values():
+        #        total += -1. * promotion
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
         datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
