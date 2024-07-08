@@ -18,6 +18,7 @@ plt.rcParams['axes.xmargin'] = 0
 plt.rcParams['figure.max_open_warning'] = False
 plt.rcParams["font.size"] = 17.0
 from matplotlib.transforms import Bbox
+from matplotlib.patches import Rectangle
 
 import uproot  # noqa:E402
 import mplhep as hep  # noqa:E402
@@ -30,36 +31,40 @@ from drawings import etat_blurb
 
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
+parser.add_argument("--ifileah", help = "input file ie fitdiagnostic results", default = "", required = True)
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "ratio", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
-parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
+#parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
 parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted. give any string to draw only batched prefit.",
                     default = None, dest = "batch", required = False)
-parser.add_argument("--skip-postfit", help = "skip plotting postfit", action = "store_false", dest = "postfit", required = False)
-parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
+parser.add_argument("--batchah", help = "psfromws output containing sums of channel x year combinations to be plotted. give any string to draw only batched prefit.",
+                    default = None, dest = "batchah", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
-parser.add_argument("--only-lower", help = "dont plot the top panel. WIP, doesnt really work yet", dest = "plotupper", action = "store_false", required = False)
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 parser.add_argument("--signal-scale", help = "scaling to apply on A/H signal (ie not promoted ones (yet!)) in drawing", default = (1., 1.),
                     dest = "sigscale", required = False, type = lambda s: tuplize(s))
-parser.add_argument("--as-signal", help = "comma-separated list of background processes to draw as signal",
-                    dest = "assignal", default = "", required = False,
-                    type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))
-parser.add_argument("--skip-ah", help = "don't draw A/H signal histograms", action = "store_false", dest = "doah", required = False)
-parser.add_argument("--panel-labels", help = "put labels on each panel", action = "store_true", dest = "panellabels", required = False)
-parser.add_argument("--no-xaxis", help = "put labels on each panel", action = "store_true", dest = "noxaxis", required = False)
 args = parser.parse_args()
 
-fits = []
-if args.postfit:
-    fits += ["s", "b"]
-if args.prefit:
-    fits += ["p"]
+fits = ["p", "sah", "s"]
 
-channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
+if args.batch is not None:
+    if "_ll_" in args.batch:
+        channels = ["ee", "em", "mm"]
+        batches = {r"$\ell\bar{\ell}$": channels}
+    elif "_l4pj_" in args.batch:
+        channels = ["e4pj", "m4pj"]
+        batches = {r"$\ell$, $\geq$ 4j": channels}
+    elif "_l3j_" in args.batch:
+        channels = ["e3j", "m3j"]
+        batches = {r"$\ell$, 3j": channels}
+    else:
+        raise ValueError(f"Unknown batch: {args.batch}")
+else:
+    channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
+    raise NotImplementedError()
 years = ["2016pre", "2016post", "2017", "2018"]
 sm_procs = {
     "TTV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
@@ -238,7 +243,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
 
 
 
-def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
+def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, fitstep):
     ax.errorbar(
         centers,
         data[0] / total.values(),
@@ -251,15 +256,17 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         fstage = "Post"
     err_up = 1 + (total.variances() ** .5) / total.values()
     err_down = 1 - (total.variances() ** .5) / total.values()
-    ax.fill_between(
+    handle_unc = ax.fill_between(
         bins,
         np.r_[err_up[0], err_up],
         np.r_[err_down[0], err_down],
         step = "pre",
-        label = f"{fstage}-fit uncertainty" if args.panellabels else None,
+        label = f"{fstage}-fit uncertainty",
         zorder = -99,
         **hatchstyle
     )
+    handles_signals = []
+    labels_signals = []
     for key, signal in signals.items():
         symbol, mass, decaywidth = key
         idx = 1 if symbol == 'H' else 0
@@ -292,7 +299,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
                 elif fit == "b":
                     signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
 
-        hep.histplot(
+        handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,
             yerr = np.zeros(len(signal.axes[0])),
@@ -303,15 +310,29 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
+        handles_signals.append(handle_signal[0])
+        labels_signals.append(signal_label)
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
+    if fitstep == "p":
+        fittype = "pre-fit"
+    elif fitstep == "b":
+        fittype = "post-fit (background only)"
+    elif fitstep == "s":
+        fittype = "post-fit (background + et)"
+    elif fitstep == "sah":
+        fittype = "post-fit (background + A/H)"
+        #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
+        #fittype += "\n" + "\n".join(btxt)
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     if fit == "p":
         ax.set_ylim(0.79, 1.21)
     else:
         ax.set_ylim(0.895, 1.105)
     ax.set_ylabel(ratiolabels[fit])
-    ax.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
+    handles = [Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.), *handles_signals, handle_unc]
+    labels = [" "*len(fittype), *labels_signals, "Uncertainty"]
+    ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
 
 
@@ -378,36 +399,27 @@ def plot_diff(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
 
 def plot(channel, year, fit,
          smhists, datavalues, total, promotions, signals, gvalues, sigscale, datahist_errors,
-         binning, num_extrabins, extra_axes, first_ax_binning, first_ax_width, bins, centers, log):
+         binning, num_extrabins, extra_axes, first_ax_binning, first_ax_width, bins, centers, log,
+         fig, ax0, ax1, ax2, fitstep):
     if len(smhists) == 0:
         return
 
+    plotupper = fitstep == "p"
     allsigs = signals | promotions
-    if args.plotupper:
-        fig, (ax0, ax1, ax2) = plt.subplots(
-            nrows = 3,
-            sharex = True,
-            gridspec_kw = {"height_ratios": [0.001, 1, 1]},
-            figsize = (10.5, 5.5)
-        )
+    if plotupper:
         ax0.set_axis_off()
         plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
-    else:
-        fig, ax2 = plt.subplots(
-            nrows = 1,
-            figsize = (10.5, 3.5)
-        )
     if args.lower == "ratio":
-        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
+        plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit, fitstep)
     elif args.lower == "diff":
         plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
-        if args.plotupper:
+        if plotupper:
             ax1.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
         ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
-    if args.plotupper:
+    if plotupper:
         for j, (variable, edges) in enumerate(extra_axes.items()):
             for i in range(num_extrabins):
                 edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
@@ -423,63 +435,60 @@ def plot(channel, year, fit,
         for j in jrange:
             ticks.append(first_ax_width * i + first_ax_width * j)
     ax2.set_xticks(ticks)
-    if args.noxaxis:
+    noxaxis = fitstep != "s"
+    if noxaxis:
         ax2.set_xticklabels([])
     else:
         ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
-    if args.plotupper:
+    if plotupper:
         ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False)
         ax1.set_xlabel("")
-    if args.noxaxis:
+    if noxaxis:
         ax2.set_xlabel("")
     else:
         ax2.set_xlabel(list(binning.keys())[0])
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
-    if fit == "p":
+    if fitstep == "p":
         fittype = "pre-fit"
-    elif fit == "b":
+    elif fitstep == "b":
         fittype = "post-fit (background only)"
-    elif fit == "s" and "EtaT" in args.assignal:
-        if args.panellabels:
-            fittype = r"post-fit (background + $\mathbf{\eta_{\mathrm{t}}}$)"
-        else:
-            fittype = r"post-fit (background + $\eta_{\mathrm{t}}$)"
-    else:
+    elif fitstep == "s":
+        fittype = r"post-fit (background + $\mathbf{\eta_{\mathrm{t}}}$)"
+    elif fitstep == "sah":
         fittype = "post-fit (background + A/H)"
-    if args.panellabels:
-        ax2.annotate(fittype, (0.01, 0.95), xycoords="axes fraction", va="top", ha="left", fontsize=15, fontweight="bold")
-    else:
-        title += "  -  " + fittype
-    if args.plotupper:
+        #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
+        #fittype += "\n" + "\n".join(btxt)
+    ax2.annotate(fittype, (0.007, 1.035), xycoords="axes fraction", va="bottom", ha="left", fontsize=15, fontweight="bold", zorder=7777)
+   
+    if fitstep == "sah":
+        btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
+        ax2.annotate(btxt, (0.007, 0.96), xycoords="axes fraction", va="top", ha="left", fontsize=15, zorder=7777)
+        
+    if plotupper:
         ax0.set_title(title)
-    if "EtaT" not in args.assignal:
-        btxt = etat_blurb([sm_procs["EtaT"] in smhists])
-        ax2.annotate("\n".join(btxt), (0.01, 0.95), xycoords="axes fraction", va="top", ha="left", fontsize=15)
-    if args.plotupper:
-        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
-        fig.subplots_adjust(hspace = 0.24, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
-    else:
-        fig.subplots_adjust(left = 0.075, right = 1 - 0.025)
-    bbox = ax2.get_position()
-    offset = -0.01
-    ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    if args.plotupper:
-        fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
-    else:
-        fig.set_size_inches(w = 19.2, h = 1.0 * fig.get_figheight())
-    fig.set_dpi(450)
-    extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
+    #if fitstep == "sah":
+    #    btxt = etat_blurb([sm_procs["EtaT"] in smhists])
+    #    ax2.annotate("\n".join(btxt), (0.01, 0.05), xycoords="axes fraction", va="bottom", ha="left", fontsize=15)
 
-    sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
-    if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
-        sstr = "EtaT"
-    else:
-        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if ss[0] != r"$\eta_{\mathrm{t}}$"]
-        sstr = "__".join(sstr)
-    cstr = channel.replace(r'$\ell\bar{\ell}$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
-    ystr = year.replace(" ", "").lower()
-    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True, bbox_inches = extent)
-    fig.clf()
+    if fitstep == "s":
+        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
+        fig.align_ylabels()
+        fig.subplots_adjust(hspace = 0.21, left = 0.07, right = 1 - 0.008, top = 1 - 0.025, bottom = 0.04)
+        
+
+        bbox = ax0.get_position()
+        offset = -0.005
+        ax0.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
+        #fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
+
+        #fig.set_dpi(450)
+        #extent = 'tight'
+
+        sstr = "Combined"
+        cstr = channel.replace(r'$\ell\bar{\ell}$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
+        ystr = year.replace(" ", "").lower()
+        fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True)#, bbox_inches = extent)
+        fig.clf()
 
 
 
@@ -512,12 +521,22 @@ def zero_variance(histogram):
     histogram.view().variance = 0
     return histogram
 
-gvalues_p = None
+
+
+gvalues_ah = None
+gvalues_etat = None
 
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
-with uproot.open(args.ifile) as f:
-    for channel, year, fit in product(channels, years, fits):
+feta = uproot.open(args.ifile)
+fah = uproot.open(args.ifileah)
+print("--- Collecting data ---")
+for channel, year in product(channels, years):
+    for fitstep in fits:
+        print(f"Channel {channel}, Year {year}, Fit step {fitstep}")
+        fit = "s" if fitstep == "sah" else fitstep
+        f = fah if fitstep == "sah" else feta
+        ifile = args.ifileah if fitstep == "sah" else args.ifile
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
@@ -535,6 +554,7 @@ with uproot.open(args.ifile) as f:
         if dname not in f:
             continue
 
+        assignal = ["EtaT"] if fitstep != "sah" else []
         directory = f[dname]
         smhists = {}
         signals = {}
@@ -545,13 +565,13 @@ with uproot.open(args.ifile) as f:
 
             # combine hack, see args.doah block
             if fit == "p" and args.ipf != "" and proc == "EtaT":
-                ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
+                ipf = f"{os.path.dirname(ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
                 with uproot.open(f"{ipf}") as ipf:
                     hist = ipf[f"{channel}_{year}"][proc].to_hist()[:len(centers)]
             else:
                 hist = directory[proc].to_hist()[:len(centers)]
 
-            if proc not in args.assignal:
+            if proc not in assignal:
                 if label not in smhists:
                     smhists[label] = hist
                 else:
@@ -562,7 +582,7 @@ with uproot.open(args.ifile) as f:
                 else:
                     promotions[(label, None, None)] += hist
 
-        if args.doah:
+        if fitstep == "sah" or fitstep == "p":
             for key in directory.keys():
                 if (match := signal_name_pat.match(key)) is not None:
                     mass = int(match.group(2))
@@ -572,7 +592,7 @@ with uproot.open(args.ifile) as f:
 
                     # hack to get around combine's behavior of signal POIs
                     if fit == "p" and args.ipf != "":
-                        ipf = f"{os.path.dirname(args.ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
+                        ipf = f"{os.path.dirname(ifile)}/ahtt_input.root" if args.ipf == 'default' else args.ipf
                         with uproot.open(f"{ipf}") as ipf:
                             hist = ipf[f"{channel}_{year}"][key].to_hist()[:len(centers)]
                             if "_neg" in key:
@@ -590,9 +610,14 @@ with uproot.open(args.ifile) as f:
             #    signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
         if fit != "p":
-            if gvalues_p is None:
-                gvalues_p = get_poi_values(args.ifile, signals | promotions)
-            gvalues = gvalues_p
+            if fitstep == "sah":
+                if gvalues_ah is None:
+                    gvalues_ah = get_poi_values(ifile, signals | promotions)
+                gvalues = gvalues_ah
+            elif fitstep == "s":
+                if gvalues_etat is None:
+                    gvalues_etat = get_poi_values(ifile, signals | promotions)
+                gvalues = gvalues_etat
         else:
             gvalues = {}
         datavalues = directory["data"].values()[1][:len(centers)]
@@ -626,40 +651,46 @@ with uproot.open(args.ifile) as f:
             "first_ax_width": first_ax_width,
             "bins": bins,
             "centers": centers,
-            "log": args.log
+            "log": args.log,
+            "fitstep": fitstep
         }
 
-        if args.each:
-            plot(**kwargs)
+        #if args.each:
+        #    plot(**kwargs)
 
         if args.batch is not None:
-            if (channel, fit) in year_summed:
-                this_year = year_summed[(channel, fit)]
-                year_summed[(channel, fit)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
+            if (channel, fitstep) in year_summed:
+                this_year = year_summed[(channel, fitstep)]
+                year_summed[(channel, fitstep)] = sum_kwargs(channel, "Run 2", kwargs, this_year)
             else:
-                year_summed[(channel, fit)] = kwargs
+                year_summed[(channel, fitstep)] = kwargs
 
-batches = {
-    r"$\ell\bar{\ell}$": ["ee", "em", "mm"],
-    #r"$\ell$j":    ["e4pj", "m4pj", "e3j", "m3j"],
-    #r"ej":         ["e4pj", "e3j"],
-    #r"mj":         ["m4pj", "m3j"],
-    r"$\ell$, 3j":   ["e3j", "m3j"],
-    r"$\ell$, $\geq$ 4j":  ["e4pj", "m4pj"],
-}
+feta.close()
+fah.close()
+
+print("--- Plotting ---")
 if args.batch is not None:
     for cltx, channels in batches.items():
-        for fit in fits:
-            has_channel = all([(channel, fit) in year_summed for channel in channels])
+        fig, axes = plt.subplots(
+            nrows = 5,
+            sharex = True,
+            gridspec_kw = {"height_ratios": [0.001, 1, 1, 1, 1]},
+            figsize = (19.2, 17.25),
+            dpi=450
+        )
+        for fitstep in fits:
+            print(f"Channel {cltx}, fitstep {fitstep}")
+            has_channel = all([(channel, fitstep) in year_summed for channel in channels])
             if not has_channel:
                 continue
 
-            sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in channels))
-            if fit != 'p':
-                if not os.path.isfile(args.batch):
+            sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fitstep)] for channel in channels))
+            if fitstep != 'p':
+                batchpath = args.batchah if fitstep == "sah" else args.batch
+                if not os.path.isfile(batchpath):
                     continue
 
-                with uproot.open(args.batch) as f:
+                with uproot.open(batchpath) as f:
                     has_psfromws = all([f"{channel}_{year}_postfit" in f for channel in channels for year in years])
                     total = f["postfit"]["TotalBkg"].to_hist()[:len(year_summed[(channels[0], fit)]["datavalues"])]
 
@@ -673,4 +704,16 @@ if args.batch is not None:
             #print(cltx, channels, fit)
             #print(sums["datavalues"])
             #print("\n", flush = True)
+            if fitstep == "p":
+                lower_ax = axes[2]
+            elif fitstep == "sah":
+                lower_ax = axes[3]
+            elif fitstep == "s":
+                lower_ax = axes[4]
+            sums.update({
+                "fig": fig,
+                "ax0": axes[0],
+                "ax1": axes[1],
+                "ax2": lower_ax,
+            })
             plot(**sums)
