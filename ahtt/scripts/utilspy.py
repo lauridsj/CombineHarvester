@@ -5,6 +5,7 @@ import os
 import sys
 import math
 import fnmatch
+import platform
 
 from datetime import datetime
 from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
@@ -14,8 +15,57 @@ rng.seed(None)
 
 max_nfile_per_dir = 4000
 
-def syscall(cmd, verbose = True, nothrow = False):
+def get_cmssw_dir():
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+    if not "CMSSW" in scriptdir:
+        raise RuntimeError("No CMSSW environment found in path: " + scriptdir)
+    cmssw_dir = []
+    for folder in scriptdir.split("/"):
+        cmssw_dir.append(folder)
+        if "CMSSW" in folder:
+            break
+    cmssw_dir = "/".join(cmssw_dir)
+    return cmssw_dir
+
+def make_singularity_command(command):
+    
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+    cmssw_dir = get_cmssw_dir()
+    
+    #source_commands = [
+    #    "source /cvmfs/cms.cern.ch/cmsset_default.sh",
+    #    "cd " + cmssw_dir,
+    #    "eval `scramv1 runtime -sh`",
+    #    "cd -",
+    #]
+    #source_commands.append(command.replace("'", r"'\''"))
+    condorrun = scriptdir + "/condorRun.sh"
+    command = condorrun + " '" + command.replace("'", '"') + "'"
+    
+    if "desy" in platform.node():
+        bind_folders = ["/afs", "/cvmfs", "/nfs"]
+    elif "lxplus" in platform.node():
+        bind_folders = ["/afs", "/cvmfs", "/eos"]
+
+    cmd = "cmssw-el7"
+    cmd += " --contain"
+    cmd += " --env CMSSW_DIR=" + cmssw_dir
+    cmd += " --pwd " + os.getcwd()
+    for f in bind_folders:
+        cmd += " --bind " + f + ":" + f
+    cmd += ' --command-to-run ' + command
+
+    print("Full singularity command:    " + cmd)
+    return cmd
+
+def syscall(cmd, verbose = True, nothrow = False, cmssw = False):
+    
     cmd = " && ".join(["set -o pipefail", cmd])
+
+    if cmssw:
+        cmssw_sourced = os.getenv("CMSSW_BASE") is not None
+        if not cmssw_sourced:
+            cmd = make_singularity_command(cmd)
     if verbose:
         print ("Executing: %s" % cmd)
         sys.stdout.flush()

@@ -10,7 +10,7 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilspy import syscall, chunks, index_list
+from utilspy import syscall, chunks, index_list, make_singularity_command
 from utilslab import input_base, input_sig, remove_mjf
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
@@ -21,11 +21,11 @@ from argumentative import common_point, common_common, common_fit_pure, common_f
 from hilfemir import combine_help_messages, submit_help_messages
 
 if __name__ == '__main__':
-    print "submit_point :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
+    print ("submit_point :: called with the following arguments")
+    print (sys.argv[1:])
+    print ("\n")
+    print (" ".join(sys.argv))
+    print ("\n")
     sys.stdout.flush()
 
     parser = ArgumentParser()
@@ -152,11 +152,17 @@ if __name__ == '__main__':
 
             nuisances = OrderedDict()
             if args.runexpth:
-                syscall("python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt | "
+                pythoncmd = "python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt".format(
+                    cms = r'${CMSSW_BASE}',
+                    dcd = pnt + args.tag,
+                    ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
+                )
+                pythoncmd = make_singularity_command(pythoncmd)
+                syscall("{cmd} | "
                         "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
                         "> {dcd}/{nui} && grep {prm} {dcd}/ahtt_{ch}.txt | awk {awk} | sort -u >> {dcd}/{nui} && "
                         "grep rateParam {dcd}/ahtt_{ch}.txt | grep -v '@' | awk {awk} | sort -u >> {dcd}/{nui}".format(
-                            cms = r'${CMSSW_BASE}',
+                            cmd = pythoncmd,
                             dcd = pnt + args.tag,
                             ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                             nui = "ahtt_nuisance.txt",
