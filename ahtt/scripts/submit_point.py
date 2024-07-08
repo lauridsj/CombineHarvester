@@ -152,24 +152,26 @@ if __name__ == '__main__':
 
             nuisances = OrderedDict()
             if args.runexpth:
-                pythoncmd = "python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt".format(
+                pythoncmd = "python {cms}/src/HiggsAnalysis/CombinedLimit/test/systematicsAnalyzer.py --format brief --all {dcd}/ahtt_{ch}.txt > {dcd}/{sot}".format(
                     cms = r'${CMSSW_BASE}',
                     dcd = pnt + args.tag,
                     ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
+                    sot = "ahtt_systanalyzer_output.txt"
                 )
-                pythoncmd = make_singularity_command(pythoncmd)
-                syscall("{cmd} | "
+                syscall(make_singularity_command(pythoncmd))
+                syscall("cat {dcd}/{sot} | "
                         "grep -v -e 'NUISANCE (TYPE)' | grep -v -e '--------------------------------------------------' | awk {awk} "
                         "> {dcd}/{nui} && grep {prm} {dcd}/ahtt_{ch}.txt | awk {awk} | sort -u >> {dcd}/{nui} && "
                         "grep rateParam {dcd}/ahtt_{ch}.txt | grep -v '@' | awk {awk} | sort -u >> {dcd}/{nui}".format(
-                            cmd = pythoncmd,
                             dcd = pnt + args.tag,
                             ch = "combined" if "," in args.channel or "," in args.year else args.channel + "_" + args.year,
                             nui = "ahtt_nuisance.txt",
+                            sot = "ahtt_systanalyzer_output.txt",
                             prm = r"'param '",
                             awk = r"'{print $1}'"
                         ))
 
+                
                 with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                     nparts = fexp.readlines()
                     nparts = [et.rstrip() for et in nparts]
@@ -182,6 +184,7 @@ if __name__ == '__main__':
                             continue
                         group = "expth_{ii}".format(ii = str(ip))
                         nuisances[group] = copy.deepcopy(ipart)
+                syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_systanalyzer_output.txt"), False)
                 syscall('rm {nui}'.format(nui = pnt + args.tag + "/ahtt_nuisance.txt"), False)
 
             if args.runbb:
