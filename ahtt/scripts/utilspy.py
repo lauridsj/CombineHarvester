@@ -5,7 +5,6 @@ import os
 import sys
 import math
 import fnmatch
-import platform
 
 from datetime import datetime
 from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
@@ -16,9 +15,7 @@ rng.seed(None)
 max_nfile_per_dir = 4000
 
 def syscall(cmd, verbose = True, nothrow = False):
-    
     cmd = " && ".join(["set -o pipefail", cmd])
-
     if verbose:
         print ("Executing: %s" % cmd)
         sys.stdout.flush()
