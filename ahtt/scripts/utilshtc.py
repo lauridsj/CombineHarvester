@@ -98,7 +98,7 @@ def submit_job(job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executabl
         has_cmssw = os.getenv("CMSSW_BASE") is not None
         if has_cmssw:
             syscall('echo "Job execution starts at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
-            syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True)
+            syscall(command, True)
             syscall('echo "Job execution ends at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
         else:
             command = make_singularity_command("set -o pipefail && " + command)

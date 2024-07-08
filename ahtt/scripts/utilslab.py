@@ -65,4 +65,3 @@ def remove_mjf():
     # in lxplus the file return output also gives an unneeded dir
     if "desy" not in input_base:
         syscall("rm -r mjf-{user}".format(user = os.environ.get('USER')), False, True)
-
