@@ -22,6 +22,7 @@ def input_storage_base_directory():
 input_base = input_storage_base_directory()
 #condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
 condordir = os.path.dirname(os.path.realpath(__file__)) + "/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
+# These are not used as far as I can tell
 #condorsub = condordir + "condorSubmit.sh"
 #condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
 condorrun = condordir + "condorRun.sh" if "desy" in input_base else condordir + "condorRun_lxpCombine.sh"

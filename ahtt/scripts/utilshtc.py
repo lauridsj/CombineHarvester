@@ -6,7 +6,7 @@ import sys
 
 from datetime import datetime
 
-from utilspy import syscall, right_now, chunks, coinflip, get_cmssw_dir
+from utilspy import syscall, right_now, chunks, coinflip
 from utilslab import cluster, condorrun, input_bkg
 from desalinator import clamp_with_quote
 
@@ -93,9 +93,16 @@ def submit_job(job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executabl
             lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
             syscall("touch {log}".format(log = lname), False)
 
-        syscall('echo "Job execution starts at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
-        syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True, cmssw=True)
-        syscall('echo "Job execution ends at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
+        command = '{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else "")
+
+        has_cmssw = os.getenv("CMSSW_BASE") is not None
+        if has_cmssw:
+            syscall('echo "Job execution starts at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
+            syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True)
+            syscall('echo "Job execution ends at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
+        else:
+            command = make_singularity_command("set -o pipefail && " + command)
+            syscall(command, True)
     else:
         sub_script = make_submission_script_single(
             name = job_name,
@@ -189,3 +196,40 @@ def common_job(args):
                   bsd = "" if args.rundc else "--base-directory " + os.path.abspath("./")
               )
     return argstr
+
+
+def get_cmssw_dir():
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+    if not "CMSSW" in scriptdir:
+        raise RuntimeError("No CMSSW environment found in path: " + scriptdir)
+    cmssw_dir = []
+    for folder in scriptdir.split("/"):
+        cmssw_dir.append(folder)
+        if "CMSSW" in folder:
+            break
+    cmssw_dir = "/".join(cmssw_dir)
+    return cmssw_dir
+
+def make_singularity_command(command):
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+    cmssw_dir = get_cmssw_dir()
+    
+    condorrun = scriptdir + "/condorRun.sh"
+    command = condorrun + " '" + command.replace("'", '"') + "'"
+    
+    if cluster == "naf":
+        bind_folders = ["/afs", "/cvmfs", "/nfs"]
+    elif cluster == "lxplus":
+        bind_folders = ["/afs", "/cvmfs", "/eos"]
+    else:
+        raise RuntimeError("Unknown cluster: " + cluster)
+
+    cmd = "cmssw-el7"
+    cmd += " --contain"
+    cmd += " --env CMSSW_DIR=" + cmssw_dir
+    cmd += " --pwd " + os.getcwd()
+    for f in bind_folders:
+        cmd += " --bind " + f + ":" + f
+    cmd += ' --command-to-run ' + command
+
+    return cmd

@@ -10,11 +10,11 @@ import glob
 import copy
 from collections import OrderedDict
 
-from utilspy import syscall, chunks, index_list, make_singularity_command
+from utilspy import syscall, chunks, index_list
 from utilslab import input_base, input_sig, remove_mjf
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
-from utilshtc import submit_job, flush_jobs, common_job
+from utilshtc import submit_job, flush_jobs, common_job, make_singularity_command
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_1D, common_submit, parse_args
