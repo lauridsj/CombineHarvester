@@ -4,6 +4,7 @@
 import glob
 import os
 import sys
+import re
 
 from desalinator import remove_quotes, remove_spaces, tokenize_to_list, clamp_with_quote
 from utilspy import syscall, right_now
@@ -152,7 +153,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
 
     if not usedefault and not useexisting:
         # ok there really isnt a best fit file, make them
-        print "\nxxx_point_ahtt :: making best fits"
+        print ("\nxxx_point_ahtt :: making best fits")
         for asm in [not asimov, asimov]:
             workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
@@ -169,10 +170,10 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             workspace = newname
 
     nll = get_fit(workspace, ["nll"])
-    print "\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll)
-    print "WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!"
-    print "WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!"
-    print "\n"
+    print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll))
+    print ("WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!")
+    print ("WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!")
+    print ("\n")
     sys.stdout.flush()
     return workspace
 
@@ -226,7 +227,7 @@ def is_good_fit(fit_fname, fit_names):
     for fname in fit_names:
         fresult = ffile.Get("{fname}".format(fname = fname))
         fit_quality = fit_result.covQual()
-        print "\nxxx_point_ahtt :: fit with name {fname} has a covariance matrix of status {fql}".format(fname = fname, fql = fit_quality)
+        print ("\nxxx_point_ahtt :: fit with name {fname} has a covariance matrix of status {fql}".format(fname = fname, fql = fit_quality))
         sys.stdout.flush()
         fgood.append(fit_quality != 3)
     ffile.Close()
@@ -234,7 +235,7 @@ def is_good_fit(fit_fname, fit_names):
     all_good = all(fgood)
     if not all_good:
         syscall("rm {ffn}".format(ffn = fit_fname), False, True)
-        print "xxx_point_ahtt :: one of the matrices is bad."
+        print ("xxx_point_ahtt :: one of the matrices is bad.")
         sys.stdout.flush()
 
     return all_good
@@ -294,9 +295,9 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             for fc in failure_cleanups:
                 fc[0](*fc[1:])
 
-    print "\nnever_gonna_give_you_up :: no accepted fit found. argument and state variables:"
-    print locals()
-    print "\n\n"
+    print ("\nnever_gonna_give_you_up :: no accepted fit found. argument and state variables:")
+    print (locals())
+    print ("\n\n")
     sys.stdout.flush()
     if throw_upon_failure:
         raise RuntimeError("never_gonna_give_you_up :: unfortunately, with this set, the function has to give up...")
@@ -392,3 +393,30 @@ def update_mask(masks):
                 new_masks.append(cc + "_" + yy)
 
     return sorted(list(set(new_masks)))
+
+def expected_scenario(exp, gvalues_syntax = False, resonly = False):
+    specials = {
+        "exp-b":  "g1=0,g2=0",
+        "exp-s":  "g1=1,g2=1",
+        "exp-01": "g1=0,g2=1",
+        "exp-10": "g1=1,g2=0",
+        "obs":    ""
+    }
+    tag = None
+
+    if exp in specials:
+        tag = exp
+        parameters = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
+
+    if not re.search(r'[eo][xb].*', exp):
+        gvalues = tokenize_to_list(exp)
+        if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
+            return None
+        g1, g2 = gvalues
+        tag = "exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5))
+        parameters = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
+
+    if tag is not None and resonly:
+        parameters = [pp.replace("g1", "r1").replace("g2", "r2") for pp in parameters]
+
+    return (tag, parameters) if tag is not None else None

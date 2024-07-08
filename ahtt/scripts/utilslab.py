@@ -20,10 +20,13 @@ def input_storage_base_directory():
         return "/eos/cms/store/user/afiqaize/"
 
 input_base = input_storage_base_directory()
-condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
-condorsub = condordir + "condorSubmit.sh"
-condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
+#condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
+condordir = os.path.dirname(os.path.realpath(__file__)) + "/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
+# These are not used as far as I can tell
+#condorsub = condordir + "condorSubmit.sh"
+#condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
 condorrun = condordir + "condorRun.sh" if "desy" in input_base else condordir + "condorRun_lxpCombine.sh"
+
 
 kfactor_file_name = {
     171: input_base + "ahtt_kfactor_sushi/ulkfactor_final_mt171p5_230329.root",
@@ -48,7 +51,7 @@ def input_sig(signal, points, injects, channels, years):
         return signal
 
     signals = []
-    masses = ["m" + str(im) for im in [365, 380] + range(400, 1001, 25)]
+    masses = ["m" + str(im) for im in [365, 380] + list(range(400, 1001, 25))]
     for im in masses:
         if im in points or im in injects:
             if any(cc in channels for cc in ["ee", "em", "mm"]):
