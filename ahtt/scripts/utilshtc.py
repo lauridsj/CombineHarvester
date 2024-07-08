@@ -6,7 +6,7 @@ import sys
 
 from datetime import datetime
 
-from utilspy import syscall, right_now, chunks, coinflip
+from utilspy import syscall, right_now, chunks, coinflip, get_cmssw_dir
 from utilslab import cluster, condorrun, input_bkg
 from desalinator import clamp_with_quote
 
@@ -15,12 +15,13 @@ def make_submission_script_header():
     script = "Job_Proc_ID = $(Process) + 1 \n"
     script += "executable = {script}\n".format(script = condorrun)
     script += "notification = error\n"
-    script += 'requirements = (OpSysAndVer == "CentOS7")\n'
+    #script += 'requirements = (OpSysAndVer == "CentOS7")\n'
 
     if cluster == "naf":
         script += "universe = vanilla\n"
         script += "getenv = true\n"
-        script += 'environment = "LD_LIB_PATH={ldpath} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(ldpath = os.getenv('LD_LIBRARY_PATH'))
+        script += 'environment = "CMSSW_DIR={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw = get_cmssw_dir())
+        script += '+MySingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:x86_64"'
 
     elif cluster == "lxplus":
         script += 'environment = "cmssw_base={cmssw} JOB_PROC_ID=$INT(Job_Proc_ID)"\n'.format(cmssw = os.getenv('CMSSW_BASE'))
@@ -39,7 +40,9 @@ batch_name = {name}
 arguments = "{executable} {args}"
 '''
 
-    script = script.format(name = name, directory = directory, executable = executable, args = ' '.join(arguments.split()))
+    args = ' '.join(arguments.split())
+    args = args.replace("'", '""')
+    script = script.format(name = name, directory = directory, executable = executable, args = args)
     if writelog:
         script += "output = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
         script += "error = {directory}/{name}.o$(Cluster).$INT(Job_Proc_ID)\n".format(name = name, directory = directory)
@@ -91,7 +94,7 @@ def submit_job(job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executabl
             syscall("touch {log}".format(log = lname), False)
 
         syscall('echo "Job execution starts at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
-        syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True)
+        syscall('{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else ""), True, cmssw=True)
         syscall('echo "Job execution ends at {atm}"{log}'.format(atm = datetime.now(), log = " |& tee -a " + lname if lname != "" else ""), False)
     else:
         sub_script = make_submission_script_single(

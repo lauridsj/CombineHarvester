@@ -34,16 +34,16 @@ def project(histogram, rule):
     src_nbinn = [int(bb) for bb in rule[0].split(',')]
 
     if len(src_nbinn) <= 1:
-        print "aint nuthin to project for 1D histograms innit???"
+        print ("aint nuthin to project for 1D histograms innit???")
         return histogram
 
     if reduce(lambda a, b: a * b, src_nbinn, 1) != src_nbin1:
-        print "number of bins given in rule doesnt match the histogram. skipping projection."
+        print ("number of bins given in rule doesnt match the histogram. skipping projection.")
         return histogram
 
     target = sorted([int(tt) for tt in rule[1].split(',')])
     if any([tt >= len(src_nbinn) or tt < 0 for tt in target]) or len(target) >= len(src_nbinn) or len(target) <= 0:
-        print "target dimension indices not compatible with assumed dimensionality. skipping projection."
+        print ("target dimension indices not compatible with assumed dimensionality. skipping projection.")
         return histogram
 
     tgt_nbinn = [src_nbinn[tt] for tt in target]
