@@ -49,6 +49,8 @@ parser.add_argument("--as-signal", help = "comma-separated list of background pr
                     dest = "assignal", default = "", required = False,
                     type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))
 parser.add_argument("--skip-ah", help = "don't draw A/H signal histograms", action = "store_false", dest = "doah", required = False)
+parser.add_argument("--panel-labels", help = "put labels on each panel", action = "store_true", dest = "panellabels", required = False)
+parser.add_argument("--no-xaxis", help = "put labels on each panel", action = "store_true", dest = "noxaxis", required = False)
 args = parser.parse_args()
 
 fits = []
@@ -100,8 +102,8 @@ binnings = {
     ("ee", "em", "mm"): {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
             [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
-        r"$c_{\mathrm{han}}$": ["-1", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
-        r"$c_{\mathrm{hel}}$": ["-1", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
+        r"$c_{\mathrm{han}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
+        r"$c_{\mathrm{hel}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
     },
     ("e4pj", "m4pj", "e3j", "m3j"): {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
@@ -243,6 +245,10 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         data[1] / total.values(),
         **datastyle
     )
+    if fit == "p":
+        fstage = "Pre"
+    else:
+        fstage = "Post"
     err_up = 1 + (total.variances() ** .5) / total.values()
     err_down = 1 - (total.variances() ** .5) / total.values()
     ax.fill_between(
@@ -250,6 +256,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         np.r_[err_up[0], err_up],
         np.r_[err_down[0], err_down],
         step = "pre",
+        label = f"{fstage}-fit uncertainty" if args.panellabels else None,
+        zorder = -99,
         **hatchstyle
     )
     for key, signal in signals.items():
@@ -266,7 +274,12 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         else:
             signal_label = "Signal"
 
-        if key in gvalues and gvalues[key] is not None:
+        if fit == "p":
+            if symbol == "A" or symbol == "H":
+                signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 1$"
+            elif symbol == r"$\eta_{\mathrm{t}}$":
+                signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} / \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}} = 1$"
+        elif key in gvalues and gvalues[key] is not None:
             if symbol == "A" or symbol == "H":
                 if fit == "s":
                     signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]} \\pm {gvalues[key][1]}$"
@@ -275,7 +288,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
                     signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
             elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = [{gvalues[key][0]} \\pm {gvalues[key][1]}] \\times \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}}$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} / \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}} = {gvalues[key][0]} \\pm {gvalues[key][1]}$"
                 elif fit == "b":
                     signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
 
@@ -370,14 +383,20 @@ def plot(channel, year, fit,
         return
 
     allsigs = signals | promotions
-    fig, (ax0, ax1, ax2) = plt.subplots(
-        nrows = 3,
-        sharex = True,
-        gridspec_kw = {"height_ratios": [0.001, 1, 1]},
-        figsize = (10.5, 5.5)
-    )
-    ax0.set_axis_off()
-    plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
+    if args.plotupper:
+        fig, (ax0, ax1, ax2) = plt.subplots(
+            nrows = 3,
+            sharex = True,
+            gridspec_kw = {"height_ratios": [0.001, 1, 1]},
+            figsize = (10.5, 5.5)
+        )
+        ax0.set_axis_off()
+        plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
+    else:
+        fig, ax2 = plt.subplots(
+            nrows = 1,
+            figsize = (10.5, 3.5)
+        )
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
     elif args.lower == "diff":
@@ -385,47 +404,71 @@ def plot(channel, year, fit,
     else:
         raise ValueError(f"Invalid lower type: {args.lower}")
     for pos in bins[::len(first_ax_binning) - 1][1:-1]:
-        ax1.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
+        if args.plotupper:
+            ax1.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
         ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
-    for j, (variable, edges) in enumerate(extra_axes.items()):
-        for i in range(num_extrabins):
-            edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
-            text = r"{} $\leq$ {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-            ax1.text(1 / num_extrabins * (i + 0.5), 0.915 - j * 0.11, text, horizontalalignment = "center", fontsize = 15, transform = ax1.transAxes)
-    ax1.minorticks_on()
+    if args.plotupper:
+        for j, (variable, edges) in enumerate(extra_axes.items()):
+            for i in range(num_extrabins):
+                edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
+                text = r"{} $\leq$ {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
+                ax1.text(1 / num_extrabins * (i + 0.5), 0.915 - j * 0.11, text, horizontalalignment = "center", fontsize = 15, transform = ax1.transAxes)
+        ax1.minorticks_on()
+        ax1.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
     ax2.minorticks_on()
+    ax2.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
     ticks = []
     for i in range(num_extrabins):
         jrange = (1/6, 3/6, 5/6) if "j" in channel else (1/4, 3/4)
         for j in jrange:
             ticks.append(first_ax_width * i + first_ax_width * j)
     ax2.set_xticks(ticks)
-    ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
-    ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False)
-    ax1.set_xlabel("")
-    ax2.set_xlabel(list(binning.keys())[0])
+    if args.noxaxis:
+        ax2.set_xticklabels([])
+    else:
+        ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
+    if args.plotupper:
+        ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False)
+        ax1.set_xlabel("")
+    if args.noxaxis:
+        ax2.set_xlabel("")
+    else:
+        ax2.set_xlabel(list(binning.keys())[0])
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
     if fit == "p":
         fittype = "pre-fit"
     elif fit == "b":
         fittype = "post-fit (background only)"
     elif fit == "s" and "EtaT" in args.assignal:
-        fittype = f"post-fit (background + {sm_procs['EtaT']})"
+        if args.panellabels:
+            fittype = r"post-fit (background + $\mathbf{\eta_{\mathrm{t}}}$)"
+        else:
+            fittype = r"post-fit (background + $\eta_{\mathrm{t}}$)"
     else:
         fittype = "post-fit (background + A/H)"
-    title += "  -  " + fittype
-    ax0.set_title(title)
+    if args.panellabels:
+        ax2.annotate(fittype, (0.01, 0.95), xycoords="axes fraction", va="top", ha="left", fontsize=15, fontweight="bold")
+    else:
+        title += "  -  " + fittype
+    if args.plotupper:
+        ax0.set_title(title)
     if "EtaT" not in args.assignal:
         btxt = etat_blurb([sm_procs["EtaT"] in smhists])
-        ax2.annotate("\n".join(btxt), (0.99, 0.05), xycoords="axes fraction", va="bottom", ha="right", fontsize=15)
-    hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
-    fig.subplots_adjust(hspace = 0.24, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
+        ax2.annotate("\n".join(btxt), (0.01, 0.95), xycoords="axes fraction", va="top", ha="left", fontsize=15)
+    if args.plotupper:
+        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
+        fig.subplots_adjust(hspace = 0.24, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
+    else:
+        fig.subplots_adjust(left = 0.075, right = 1 - 0.025)
     bbox = ax2.get_position()
     offset = -0.01
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
-    fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
+    if args.plotupper:
+        fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
+    else:
+        fig.set_size_inches(w = 19.2, h = 1.0 * fig.get_figheight())
     fig.set_dpi(450)
-    extent = 'tight' if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
+    extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     if sstr[0][0] == r"$\eta_{\mathrm{t}}$":
@@ -469,7 +512,7 @@ def zero_variance(histogram):
     histogram.view().variance = 0
     return histogram
 
-
+gvalues_p = None
 
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
@@ -547,7 +590,9 @@ with uproot.open(args.ifile) as f:
             #    signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
         if fit != "p":
-            gvalues = get_poi_values(args.ifile, signals | promotions)
+            if gvalues_p is None:
+                gvalues_p = get_poi_values(args.ifile, signals | promotions)
+            gvalues = gvalues_p
         else:
             gvalues = {}
         datavalues = directory["data"].values()[1][:len(centers)]
