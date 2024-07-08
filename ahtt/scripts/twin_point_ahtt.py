@@ -17,38 +17,12 @@ from ROOT import TFile, TTree
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option, update_mask
-from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up
+from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
-def expected_scenario(exp, gvalues_syntax = False, resonly = False):
-    specials = {
-        "exp-b":  "g1=0,g2=0",
-        "exp-s":  "g1=1,g2=1",
-        "exp-01": "g1=0,g2=1",
-        "exp-10": "g1=1,g2=0",
-        "obs":    ""
-    }
-    tag = None
-
-    if exp in specials:
-        tag = exp
-        parameters = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
-
-    if not re.search(r'[eo][xb].*', exp):
-        gvalues = tokenize_to_list(exp)
-        if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
-            return None
-        g1, g2 = gvalues
-        tag = "exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5))
-        parameters = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
-
-    if tag is not None and resonly:
-        parameters = [pp.replace("g1", "r1").replace("g2", "r2") for pp in parameters]
-
-    return (tag, parameters) if tag is not None else None
 
 def read_previous_best_fit(gname):
     with open(gname) as ff:

@@ -4,6 +4,7 @@
 import glob
 import os
 import sys
+import re
 
 from desalinator import remove_quotes, remove_spaces, tokenize_to_list, clamp_with_quote
 from utilspy import syscall, right_now
@@ -392,3 +393,30 @@ def update_mask(masks):
                 new_masks.append(cc + "_" + yy)
 
     return sorted(list(set(new_masks)))
+
+def expected_scenario(exp, gvalues_syntax = False, resonly = False):
+    specials = {
+        "exp-b":  "g1=0,g2=0",
+        "exp-s":  "g1=1,g2=1",
+        "exp-01": "g1=0,g2=1",
+        "exp-10": "g1=1,g2=0",
+        "obs":    ""
+    }
+    tag = None
+
+    if exp in specials:
+        tag = exp
+        parameters = [str(float(ss)) for ss in tokenize_to_list(specials[exp].replace("g1=", "").replace("g2=", ""))] if gvalues_syntax else specials[exp]
+
+    if not re.search(r'[eo][xb].*', exp):
+        gvalues = tokenize_to_list(exp)
+        if len(gvalues) != 2 or not all([float(gg) >= 0. for gg in gvalues]):
+            return None
+        g1, g2 = gvalues
+        tag = "exp-{g1}-{g2}".format(g1 = round(float(g1), 5), g2 = round(float(g2), 5))
+        parameters = [str(float(ss)) for ss in tokenize_to_list("{g1},{g2}".format(g1 = g1, g2 = g2))] if gvalues_syntax else "g1={g1},g2={g2}".format(g1 = g1, g2 = g2)
+
+    if tag is not None and resonly:
+        parameters = [pp.replace("g1", "r1").replace("g2", "r2") for pp in parameters]
+
+    return (tag, parameters) if tag is not None else None

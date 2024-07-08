@@ -18,15 +18,13 @@ from datetime import datetime
 from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, floattopm, uniform, coinflip
 from utilspy import make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilslab import input_base, input_sig, remove_mjf
-from utilscombine import problematic_datacard_log, min_g, max_g
+from utilscombine import problematic_datacard_log, min_g, max_g, expected_scenario
 from utilshtc import submit_job, flush_jobs, common_job
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_quotes, remove_spaces_quotes, clamp_with_quote
 from argumentative import common_common, common_fit_pure, common_fit_forwarded, make_datacard_pure, make_datacard_forwarded, common_2D
 from argumentative import common_submit, parse_args
 from hilfemir import combine_help_messages, submit_help_messages
-
-from twin_point_ahtt import expected_scenario
 
 sqd = lambda p1, p2: sum([(pp2 - pp1)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
@@ -44,7 +42,7 @@ def make_initial_grid(ndivision):
     return grid
 
 def default_nminmax(arg = ""):
-    result = map(float, tokenize_to_list( remove_spaces_quotes(arg)))
+    result = list(map(float, tokenize_to_list( remove_spaces_quotes(arg))))
     defaults = [32, 2.**-9, 2.**-2]
     while len(result) < len(defaults):
         result.append(defaults[len(result)])
@@ -64,16 +62,16 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
         for ggrid in ggrids:
             if not os.path.isfile(ggrid):
-                print "g grid file " + ggrid + " is not accessible, skipping..."
+                print("g grid file " + ggrid + " is not accessible, skipping...")
                 return g_grid
 
             with open(ggrid) as ff:
                 contour = json.load(ff, object_pairs_hook = OrderedDict)
 
             if contour["points"] != pair:
-                print "given pair in grid is inconsistent with currently expected pair, skipping..."
-                print "in grid: ", contour["points"]
-                print "currently expected: ", pair
+                print("given pair in grid is inconsistent with currently expected pair, skipping...")
+                print("in grid: ", contour["points"])
+                print("currently expected: ", pair)
                 return g_grid
 
             best_fit = contour["best_fit_g1_g2_dnll"]
@@ -112,7 +110,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
 
                 cuts = [mintoy > (generate_g_grid.atleast / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cut else 0 for cut in cuts]) < 1:
-                    print "minimum toy count: " + str(mintoy)
+                    print("minimum toy count: " + str(mintoy))
                     raise RuntimeError("minimum toys insufficient to determine 1 sigma contour!! likely unintended, recheck!!")
 
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
@@ -191,11 +189,11 @@ def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_d
     return toylocs
 
 if __name__ == '__main__':
-    print "submit_twin :: called with the following arguments"
-    print sys.argv[1:]
-    print "\n"
-    print " ".join(sys.argv)
-    print "\n"
+    print("submit_twin :: called with the following arguments")
+    print(sys.argv[1:])
+    print("\n")
+    print(" ".join(sys.argv))
+    print("\n")
     sys.stdout.flush()
 
     parser = ArgumentParser()
@@ -311,7 +309,7 @@ if __name__ == '__main__':
             logs = glob.glob("twin_point_" + pstr + args.tag + "_*.o*")
             for ll in logs:
                 if 'validate' in ll and problematic_datacard_log(ll):
-                    print("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pstr = pstr + args.tag))
+                    print(("WARNING :: datacard of point {pstr} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pstr = pstr + args.tag)))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pstr + args.tag))
 
         if rundc and os.path.isdir(pstr + args.tag):
@@ -434,14 +432,14 @@ if __name__ == '__main__':
 
             if runfc:
                 if args.fcmode != "" and ggrid == "":
-                    print "checking last grids"
+                    print("checking last grids")
                     for fcexp in args.fcexp:
                         ggg = glob.glob(pstr + args.tag + "/" + pstr + args.otag + "_fc-scan_" + expected_scenario(fcexp)[0] + "_*.json")
                         ggg.sort(key = os.path.getmtime)
                         ggrid += ggg[-1] if ggrid == "" else "," + ggg[-1]
-                print "using the following grids:"
-                print ggrid
-                print
+                print("using the following grids:")
+                print(ggrid)
+                print()
                 sys.stdout.flush()
 
                 if args.fcsinglepnt:
