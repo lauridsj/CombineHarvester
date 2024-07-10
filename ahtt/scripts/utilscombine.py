@@ -446,7 +446,7 @@ def channel_compatibility_hackery(datacard, extopt):
     # so we go the hacky way of adding the params by hand
     # currently assumes that this is only of interest for 2D A/H, etat, yukawa
     if "_combined.txt" not in datacard:
-        print "method makes no sense if not for combined datacard, aborting"
+        print ("method makes no sense if not for combined datacard, aborting")
         return
     processes = list_of_processes(datacard)
     channels = list_of_channels(datacard)
