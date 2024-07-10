@@ -520,7 +520,7 @@ def channel_compatibility_hackery(datacard, extopt):
                 txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
             txt.write("\n")
             for cc in channels:
-                txt.write("\nCMS_EtaT_norm_13TeV_{cc}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global CMS_EtaT_norm_13TeV_{cc}".format(cc = cc)
+                txt.write("\nCMS_EtaT_norm_13TeV_{cc}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global CMS_EtaT_norm_13TeV_{cc}".format(cc = cc))
             txt.write("\n")
 
     syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {opt} {whs} {ext}".format(
