@@ -464,7 +464,7 @@ def channel_compatibility_hackery(datacard, extopt):
                     indices[ii] = " " + str(idx + 6) if idx < 0 else str(iproc + 6)
                 except:
                     continue
-            print "%d: %s" % (fileinput.filelineno(), " ".join(indices))
+            print('{} {}'.format(fileinput.filelineno(), " ".join(indices)), end = '')
 
     # delete irrelevant/to be redone lines
     syscall("'/group =/d' {dc}".format(dc = datacard))
