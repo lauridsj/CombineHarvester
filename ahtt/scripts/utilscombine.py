@@ -5,6 +5,8 @@ import glob
 import os
 import sys
 import re
+import fileinput
+import shutil
 
 from desalinator import remove_quotes, remove_spaces, tokenize_to_list, clamp_with_quote
 from utilspy import syscall, right_now
@@ -438,3 +440,96 @@ def expected_scenario(exp, gvalues_syntax = False, resonly = False):
         parameters = [pp.replace("g1", "r1").replace("g2", "r2") for pp in parameters]
 
     return (tag, parameters) if tag is not None else None
+
+def channel_compatibility_hackery(datacard, extopt):
+    # channel compatibility test, as is currently implemented in the version we use, is far too slow
+    # so we go the hacky way of adding the params by hand
+    # currently assumes that this is only of interest for 2D A/H, etat, yukawa
+    if "_combined.txt" not in datacard:
+        print "method makes no sense if not for combined datacard, aborting"
+        return
+    processes = list_of_processes(datacard)
+    channels = list_of_channels(datacard)
+
+    shutil.copyfile(datacard, datacard.replace("_combined.txt", "_chancomp.txt"))
+    datacard = datacard.replace("_combined.txt", "_chancomp.txt")
+
+    # renumber the indices to be all background
+    for line in fileinput.input(datacard, inplace = True):
+        indices = tokenize_to_list(line, token = " ")
+        if "process" in line and "TT" not in line:
+            for ii in range(indices):
+                try:
+                    idx = int(indices[ii])
+                    indices[ii] = " " + str(idx + 6) if idx < 0 else str(iproc + 6)
+                except:
+                    continue
+            print "%d: %s" % (fileinput.filelineno(), " ".join(indices))
+
+    # delete irrelevant/to be redone lines
+    syscall("'/group =/d' {dc}".format(dc = datacard))
+    syscall("'/EWK_yukawa/d' {dc}".format(dc = datacard))
+    syscall("'/CMS_EtaT_norm_13TeV/d' {dc}".format(dc = datacard))
+
+    # process tags
+    ahres = [proc for proc in processes if (proc.startswith("A") or proc.startswith("H")) and proc.endswith("_res")]
+    ahint = len([proc for proc in processes if (proc.startswith("A") or proc.startswith("H")) and (proc.endswith("_pos") or proc.endswith("_neg"))]) > 0
+    ewktt = len([proc for proc in processes if proc.startswith("EWK_TT")]) > 0
+    etat = len([proc for proc in processes if proc == "EtaT"]) > 0
+
+    if len(ahres):
+        for idx in range(2):
+            iah = idx + 1
+            pah = ahres[idx].replace("_res", "")
+
+            if ahint:
+                txt.write("\ng{iah}_global extArg 1 [0,5]".format(iah = iah))
+                for cc in channels:
+                    txt.write("\ng{iah}_{cc} extArg 1 [0,5]".format(iah = iah, cc = cc))
+                txt.write("\n")
+                for cc in channels:
+                    txt.write("\ng4{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@0*@0*@1*@1*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_res"))
+                    txt.write("\ng2{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_pos"))
+                    txt.write("\nmg2{iah}_{cc}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_neg"))
+                txt.write("\n")
+            else:
+                with open(datacard, 'a') as txt:
+                    txt.write("\nr{iah}_global extArg 1 [-5,5]".format(iah = iah))
+                    for cc in channels:
+                        txt.write("\nr{iah}_{cc} extArg 1 [-5,5]".format(iah = iah, cc = cc))
+                    txt.write("\n")
+                    for cc in channels:
+                        txt.write("\nr{iah}_{cc}_product rateParam {cc} {pah} (@0*@1) r{iah}_global r{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_res"))
+                    txt.write("\n")
+
+    if ewktt:
+        with open(datacard, 'a') as txt:
+            txt.write("\nEWK_yukawa_global param 1 -0.12/+0.11")
+            for cc in channels:
+                txt.write("\nEWK_yukawa_{cc} param 1 -0.12/+0.11".format(cc = cc))
+            txt.write("\n")
+            for cc in channels:
+                txt.write("\nEWK_yukawa_{cc}_product rateParam {cc} EWK_TT_lin_pos (@0*@1) EWK_yukawa_global EWK_yukawa_{cc}".format(cc = cc))
+                txt.write("\nmEWK_yukawa_{cc}_product rateParam {cc} EWK_TT_lin_neg (-@0*@1) EWK_yukawa_global EWK_yukawa_{cc}".format(cc = cc))
+                txt.write("\nEWK_yukawa2_{cc}_product rateParam {cc} EWK_TT_quad_pos (@0*@0*@1*@1) EWK_yukawa_global EWK_yukawa_{cc}".format(cc = cc))
+                txt.write("\nmEWK_yukawa2_{cc}_product rateParam {cc} EWK_TT_quad_neg (-@0*@0*@1*@1) EWK_yukawa_global EWK_yukawa_{cc}".format(cc = cc))
+            txt.write("\n")
+
+    if etat:
+        with open(datacard, 'a') as txt:
+            txt.write("\CMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
+            for cc in channels:
+                txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
+            txt.write("\n")
+            for cc in channels:
+                txt.write("\nCMS_EtaT_norm_13TeV_{cc}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global CMS_EtaT_norm_13TeV_{cc}".format(cc = cc)
+            txt.write("\n")
+
+    syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {opt} {whs} {ext}".format(
+        dcd = datacard,
+        wst = "chancomp",
+        mmm = mstr,
+        opt = "--channel-masks",
+        whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
+        ext = extopt
+    ))

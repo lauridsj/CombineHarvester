@@ -17,7 +17,7 @@ from ROOT import TFile, TTree
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option, update_mask
-from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario
+from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario, channel_compatibility_hackery
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
@@ -291,6 +291,10 @@ if __name__ == '__main__':
                 whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
                 ext = args.extopt
             ))
+            channel_compatibility_hackery(
+                dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                args.extopt
+            )
 
     if runvalid:
         print "\ntwin_point_ahtt :: validating datacard"
