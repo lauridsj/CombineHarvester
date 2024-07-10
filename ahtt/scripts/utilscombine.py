@@ -46,6 +46,24 @@ def list_of_processes(datacard, hint = "TT"):
                     break
     return sorted(list(set(processes)))
 
+def list_of_channels(datacard):
+    with open(datacard) as dc:
+        for line in dc:
+            nchannel = tokenize_to_list(line, token = " ")
+            if "imax" in nchannel[0] and "bins" in nchannel[-1]:
+                nchannel = int(nchannel[1])
+                break
+
+        for line in dc:
+            channels = tokenize_to_list(line, token = " ")
+            if "bin" in channels[0]:
+                channels = [remove_spaces(it) for it in channels[1:]]
+                channels = [it for it in channels if it != "" and it != "\n"]
+                channels = sorted(list(set(channels)))
+                if len(channels) == nchannel:
+                    break
+    return return channels
+
 def set_range(parameters):
     '''
     given a list of parameters, return the set of combine setting their ranges
