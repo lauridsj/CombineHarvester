@@ -477,23 +477,23 @@ def channel_compatibility_hackery(datacard, extopt):
     ewktt = len([proc for proc in processes if proc.startswith("EWK_TT")]) > 0
     etat = len([proc for proc in processes if proc == "EtaT"]) > 0
 
-    if len(ahres):
-        for idx in range(2):
-            iah = idx + 1
-            pah = ahres[idx].replace("_res", "")
+    with open(datacard, 'a') as txt:
+        if len(ahres):
+            for idx in range(2):
+                iah = idx + 1
+                pah = ahres[idx].replace("_res", "")
 
-            if ahint:
-                txt.write("\ng{iah}_global extArg 1 [0,5]".format(iah = iah))
-                for cc in channels:
-                    txt.write("\ng{iah}_{cc} extArg 1 [0,5]".format(iah = iah, cc = cc))
-                txt.write("\n")
-                for cc in channels:
-                    txt.write("\ng4{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@0*@0*@1*@1*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_res"))
-                    txt.write("\ng2{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_pos"))
-                    txt.write("\nmg2{iah}_{cc}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_neg"))
-                txt.write("\n")
-            else:
-                with open(datacard, 'a') as txt:
+                if ahint:
+                    txt.write("\ng{iah}_global extArg 1 [0,5]".format(iah = iah))
+                    for cc in channels:
+                        txt.write("\ng{iah}_{cc} extArg 1 [0,5]".format(iah = iah, cc = cc))
+                    txt.write("\n")
+                    for cc in channels:
+                        txt.write("\ng4{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@0*@0*@1*@1*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_res"))
+                        txt.write("\ng2{iah}_{cc}_product rateParam {cc} {pah} (@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_pos"))
+                        txt.write("\nmg2{iah}_{cc}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global g{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_neg"))
+                    txt.write("\n")
+                else:
                     txt.write("\nr{iah}_global extArg 1 [-5,5]".format(iah = iah))
                     for cc in channels:
                         txt.write("\nr{iah}_{cc} extArg 1 [-5,5]".format(iah = iah, cc = cc))
@@ -502,8 +502,7 @@ def channel_compatibility_hackery(datacard, extopt):
                         txt.write("\nr{iah}_{cc}_product rateParam {cc} {pah} (@0*@1) r{iah}_global r{iah}_{cc}".format(iah = iah, cc = cc, pah = pah + "_res"))
                     txt.write("\n")
 
-    if ewktt:
-        with open(datacard, 'a') as txt:
+        if ewktt:
             txt.write("\nEWK_yukawa_global param 1 -0.12/+0.11")
             for cc in channels:
                 txt.write("\nEWK_yukawa_{cc} param 1 -0.12/+0.11".format(cc = cc))
@@ -515,8 +514,7 @@ def channel_compatibility_hackery(datacard, extopt):
                 txt.write("\nmEWK_yukawa2_{cc}_product rateParam {cc} EWK_TT_quad_neg (-@0*@0*@1*@1) EWK_yukawa_global EWK_yukawa_{cc}".format(cc = cc))
             txt.write("\n")
 
-    if etat:
-        with open(datacard, 'a') as txt:
+        if etat:
             txt.write("\CMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
             for cc in channels:
                 txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
