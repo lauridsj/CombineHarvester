@@ -64,7 +64,7 @@ def list_of_channels(datacard):
                 channels = sorted(list(set(channels)))
                 if len(channels) == nchannel:
                     break
-    return return channels
+    return channels
 
 def set_range(parameters):
     '''
