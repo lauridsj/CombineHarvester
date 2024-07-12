@@ -451,25 +451,23 @@ def channel_compatibility_hackery(datacard, extopt):
     processes = list_of_processes(datacard)
     channels = list_of_channels(datacard)
 
-    shutil.copyfile(datacard, datacard.replace("_combined.txt", "_chancomp.txt"))
-    datacard = datacard.replace("_combined.txt", "_chancomp.txt")
-
     # renumber the indices to be all background
-    for line in fileinput.input(datacard, inplace = True):
-        indices = tokenize_to_list(line, token = " ")
-        if "process" in line and "TT" not in line:
-            for ii in range(indices):
-                try:
-                    idx = int(indices[ii])
-                    indices[ii] = " " + str(idx + 6) if idx < 0 else str(iproc + 6)
-                except:
+    with open(datacard.replace("_combined.txt", "_chancomp.txt"), 'a') as txt:
+        with open(datacard) as dc:
+            for line in dc:
+                if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV"]]):
                     continue
-            print('{} {}'.format(fileinput.filelineno(), " ".join(indices)), end = '')
 
-    # delete irrelevant/to be redone lines
-    syscall("'/group =/d' {dc}".format(dc = datacard))
-    syscall("'/EWK_yukawa/d' {dc}".format(dc = datacard))
-    syscall("'/CMS_EtaT_norm_13TeV/d' {dc}".format(dc = datacard))
+                indices = tokenize_to_list(line, token = " ")
+                if "process" in line and "TT" not in line:
+                    for ii in range(len(indices)):
+                        try:
+                            idx = int(indices[ii])
+                            indices[ii] = " " + str(idx + 6) if idx < 0 else str(iproc + 6)
+                        except:
+                            continue
+                txt.write(" ".join(indices))
+    datacard = datacard.replace("_combined.txt", "_chancomp.txt")
 
     # process tags
     ahres = [proc for proc in processes if (proc.startswith("A") or proc.startswith("H")) and proc.endswith("_res")]
@@ -515,19 +513,10 @@ def channel_compatibility_hackery(datacard, extopt):
             txt.write("\n")
 
         if etat:
-            txt.write("\CMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
+            txt.write("\nCMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
             for cc in channels:
                 txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
             txt.write("\n")
             for cc in channels:
                 txt.write("\nCMS_EtaT_norm_13TeV_{cc}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global CMS_EtaT_norm_13TeV_{cc}".format(cc = cc))
             txt.write("\n")
-
-    syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {opt} {whs} {ext}".format(
-        dcd = datacard,
-        wst = "chancomp",
-        mmm = mstr,
-        opt = "--channel-masks",
-        whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
-        ext = extopt
-    ))

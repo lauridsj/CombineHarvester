@@ -291,10 +291,19 @@ if __name__ == '__main__':
                 whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
                 ext = args.extopt
             ))
-            channel_compatibility_hackery(
-                dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-                args.extopt
-            )
+        channel_compatibility_hackery(
+            dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+            args.extopt
+        )
+        syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
+            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+            wst = "chancomp",
+            mmm = mstr,
+            mop = "",
+            opt = "--channel-masks",
+            whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum",
+            ext = "" # FIXME let's not go there...
+        ))
 
     if runvalid:
         print "\ntwin_point_ahtt :: validating datacard"
