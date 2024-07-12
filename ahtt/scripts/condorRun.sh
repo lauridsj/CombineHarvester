@@ -7,6 +7,7 @@ set -o noglob
 
 echo "CMSSW directory: ${CMSSW_DIR}"
 
+source /cvmfs/grid.desy.de/etc/profile.d/grid-ui-env.sh
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 wdir=`pwd -P`
