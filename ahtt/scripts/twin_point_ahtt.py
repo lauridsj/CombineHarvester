@@ -331,7 +331,7 @@ if __name__ == '__main__':
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
-    runccomp = "chancomp" in modes
+    runcc = "chancomp" in modes
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
     runprepost = "prepost" in modes or "corrmat" in modes
@@ -649,7 +649,7 @@ if __name__ == '__main__':
                     mmm = mstr,
                 ), False)
 
-    if runccomp:
+    if runcc:
         ccbase = ["r1", "r2"] if ahresonly else ["g1", "g2"]
         ccbase += ["EWK_yukawa", "CMS_EtaT_norm_13TeV"]
 
@@ -736,7 +736,7 @@ if __name__ == '__main__':
             channel_compatibility_fits(chancomp_workspace, scenarii, oname, args.ntoy, tname)
 
     if runhadd:
-        for imode in ["fc", "gof"]:
+        for imode in ["fc", "gof", "chancomp"]:
             hadd_files(dcdir, ptag, ["toys_*.root", "toys.root"], ["{im}-result".format(im = imode), "{im}-merge".format(im = imode)])
         hadd_files(dcdir, ptag, ["reduced.root", "reduced.root"], ["fc-merge", "fc-reduced"])
 

@@ -275,6 +275,7 @@ if __name__ == '__main__':
     rungen = "generate" in args.mode
     rungof = "gof" in args.mode
     runfc = "fc-scan" in args.mode or "contour" in args.mode
+    runcc = "chancomp" in args.mode
     runhadd = "hadd" in args.mode or "merge" in args.mode
     runcompile = "compile" in args.mode
     runprepost = "prepost" in args.mode or "corrmat" in args.mode
@@ -284,7 +285,7 @@ if __name__ == '__main__':
     if runcompile and (rundc or runfc or runhadd):
         raise RuntimeError("compile mode must be ran on its own!")
 
-    if int(rungof) + int(runfc) + int(runnll) > 1:
+    if int(rungof) + int(runfc) + int(runcc) + int(runnll) > 1:
         raise RuntimeError("these are the worst modes in this suite, and you wanna run them together? lmao. edit this raise out by hand, then.")
 
     if (runfc or runcompile) and not args.asimov and "obs" not in args.fcexp:
@@ -364,7 +365,7 @@ if __name__ == '__main__':
         args.rundc = rundc
         job_arg += common_job(args)
 
-        if rungen or rungof or runfc:
+        if rungen or rungof or runfc or runcc:
             idxs = index_list(args.runidxs) if args.ntoy > 0 else [-1]
 
             if rungen:
@@ -504,6 +505,41 @@ if __name__ == '__main__':
                             expnres += 2 * len(args.fcexp + args.fcsubalso) if firstjob and fcrundat else 2 if writelog else 1
                             submit_job(jname, jarg, args.jobtime, 1, "",
                                        "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
+
+            if runcc:
+                resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "chancomp-result")
+                cctag = "chancomp{mm}".format(mm = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks))
+                expnres = 0
+
+                for ii, idx in enumerate([-1] + idxs):
+                    if expnres > max_nfile_per_dir:
+                        resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "chancomp-result")
+                        expnres = 0
+
+                    firstjob = ii == 0
+                    writelog = ii < 2 and args.writelog # write logs only for best fit and first toy job unless explicitly disabled
+                    sdx = '_' + str(idx) if idx != -1 else ''
+                    jname = job_name + sdx
+                    logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
+                    roots = recursive_glob(pstr + args.tag, pstr + args.otag + "_" + cctag + "_toys" + sdx + ".root")
+                    ccrundat = args.ccrundat and firstjob
+
+                    if not (args.runlocal and args.forcelocal):
+                        if len(logs) > 0 or len(roots) > 0:
+                            continue
+
+                    jarg = job_arg
+                    jarg += " {toy} {dat} {rsd} {idx}".format(
+                        toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
+                        dat = "--cc-skip-data " if not ccrundat else "",
+                        rsd = "--result-dir " + resdir,
+                        idx = "--run-idx " + str(idx) if idx > -1 else ""
+                    )
+
+                    if not ("--cc-skip-data" in jarg and "--n-toy 0" in jarg):
+                        expnres += 2 if firstjob and ccrundat else 2 if writelog else 1
+                        submit_job(jname, jarg, args.jobtime, 1, "",
+                                   "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
         elif runnll:
             for nllwindow in args.nllfullrange:

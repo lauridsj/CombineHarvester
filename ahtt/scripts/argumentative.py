@@ -95,6 +95,11 @@ def common_2D(parser):
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
     parser.add_argument("--fc-skip-data", help = combine_help_messages["--fc-skip-data"], dest = "fcrundat", action = "store_false", required = False)
 
+    parser.add_argument("--cc-skip-data", help = combine_help_messages["--cc-skip-data"], dest = "ccrundat", action = "store_false", required = False)
+    parser.add_argument("--cc-mask", help = combine_help_messages["--cc-mask"], dest = "ccmasks",
+                        default = [], required = False,
+                        type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+
     parser.add_argument("--delete-root", help = combine_help_messages["--delete-root"], dest = "rmroot", action = "store_true", required = False)
     parser.add_argument("--collect-toy", help = combine_help_messages["--collect-toy"], dest = "collecttoy", action = "store_true", required = False)
     parser.add_argument("--ignore-previous", help = combine_help_messages["--ignore-previous"], dest = "ignoreprev", action = "store_true", required = False)

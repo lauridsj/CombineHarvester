@@ -133,6 +133,9 @@ combine_help_messages = {
     "--fc-nuisance-mode": "how to handle nuisance parameters in toy generation (see https://arxiv.org/abs/2207.14353)\n"
     "WARNING: profile mode is deprecated!!",
 
+    "--cc-skip-data": "skip running on data in channel compatibility test",
+    "--cc-mask": "comma separated list of masks to apply in channel compatibility test, ie make fully correlated. look up utilscombine.py::update_mask() for valid choices.",
+
     "--prepost-fit": "type of fit to run in prepost and psfromws modes; s or b",
     "--prepost-merge": "comma-separated list of channel_year combinations to be summed up in mode psfromws",
 
