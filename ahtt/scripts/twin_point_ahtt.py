@@ -13,16 +13,17 @@ from collections import OrderedDict
 import json
 
 from ROOT import TFile, TTree
+from array import array
 
 from utilspy import syscall, chunks, elementwise_add, recursive_glob, make_timestamp_dir, directory_to_delete, max_nfile_per_dir
 from utilspy import get_point, tuplize, stringify, g_in_filename, floattopm
 from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, make_datacard_with_args, set_range, set_parameter, nonparametric_option, update_mask
-from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario, channel_compatibility_hackery
+from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario
+from utilscombine import channel_compatibility_hackery, channel_compatibility_masking
 
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
-
 
 def read_previous_best_fit(gname):
     with open(gname) as ff:
@@ -118,6 +119,97 @@ def starting_poi(gvalues, fixpoi, resonly = False):
     frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)] if fixpoi else []
 
     return [setpar, frzpar]
+
+def channel_compatibility_set_freeze(ccbase, channels, set_freeze):
+    # takes a list that would be given as the set_freeze arg used by many methods in the code
+    # and returns two lists: one is the corresponding list for use in chancomp mode global fits, and the other per-channel fits
+    sf_global = copy.deepcopy(set_freeze)
+    sf_channel = copy.deepcopy(set_freeze)
+
+    for cb in ccbase:
+        for ii in range(len(sf_global[0])):
+            if cb in sf_global[0][ii]:
+                sf_global[0][ii].replace(sf_global[0][ii], sf_global[0][ii] + "_global")
+
+        for ii in range(len(sf_global[1])):
+            if cb in sf_global[1][ii]:
+                sf_global[1][ii].replace(sf_global[1][ii], sf_global[1][ii] + "_global")
+
+        for cc in channels:
+            sf_global[0].append(cb + "_" + cc + "=1")
+            sf_global[1].append(cb + "_" + cc)
+
+        for ii in range(len(sf_channel[0])):
+            if cb in sf_channel[0][ii]:
+                for cc in channels:
+                    sf_channel[0][ii].replace(sf_channel[0][ii], sf_channel[0][ii] + "_" + cc)
+
+        for ii in range(len(sf_channel[1])):
+            if cb in sf_channel[1][ii]:
+                for cc in channels:
+                    sf_channel[1][ii].replace(sf_channel[1][ii], sf_channel[1][ii] + "_" + cc)
+
+        sf_channel[0].append(cb + "_global=1")
+        sf_channel[1].append(cb + "_global")
+    return [sf_global, sf_channel]
+
+def channel_compatibility_fits(workspace, scenarii, oname, ntoy = 0, tname = ""):
+    # computes the NLL for two scenarii and computes the difference in their NLLs
+    # https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part3/commonstatsmethods/#channel-compatibility
+    # https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit/blob/102x-comb2021/src/ChannelCompatibilityCheck.cc
+
+    istoy = ntoy > 0
+    results = []
+    for scenario in scenarii:
+        never_gonna_give_you_up(
+            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{sce} "
+            "{exp} {stg} {asm} {toy} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
+                dcd = fcwsp,
+                mmm = mstr,
+                sce = scenario,
+                exp = set_parameter(scenario, "", []),
+                stg = "{fit_strategy}",
+                toy = "-s -1",
+                asm = "-t {nt}".format(nt = ntoy) if ntoy > 0 else "",
+                opd = "--toysFile '" + tname + "'" if ntoy > 0 else "",
+            ),
+
+            failure_cleanups = [
+                [syscall, "rm higgsCombine_{sce}.MultiDimFit.mH{mmm}*.root".format(sce = scenario, mmm = mstr), False]
+            ],
+
+            tolerances = list(range(4)),
+            usehesse = args.usehesse,
+            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
+        )
+
+        result = get_fit(
+            dname = "higgsCombine_{sce}.MultiDimFit.mH{mmm}*.root".format(sce = scenario, mmm = mstr),
+            attributes = ["deltaNLL", "nll", "nll0"],
+            qexp_eq_m1 = not istoy,
+            loop_all = istoy
+        )
+        if istoy:
+            results.append(result)
+        else:
+            results.append([result])
+        #syscall("rm higgsCombine_{sce}.MultiDimFit.mH{mmm}*.root", False, True)
+
+    ofile = TFile(oname, "recreate")
+    tree = TTree("chancomp")
+    ddNLL = array('d', [0])
+    tree.Branch('ddNLL', ddNLL, 'ddNLL/D')
+
+    if not istoy:
+        ddNLL[0] = results[0] - results[1]
+        tree.Fill()
+    else:
+        for rr in range(len(results[0])):
+            ddNLL[0] = results[0][rr] - results[1][rr]
+            tree.Fill()
+    tree.Write()
+    ofile.Close()
+    syscall("rm {tn}".format(tn = tname), False, True)
 
 def hadd_files(dcdir, point_tag, fileexp, direxp):
     '''
@@ -223,7 +315,7 @@ if __name__ == '__main__':
 
     allmodes = ["datacard", "workspace", "validate",
                 "best", "best-fit", "single",
-                "generate", "gof", "fc-scan", "contour",
+                "generate", "gof", "fc-scan", "contour", "chancomp",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
                 "nll", "likelihood"]
@@ -239,6 +331,7 @@ if __name__ == '__main__':
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
+    runccomp = "chancomp" in modes
     runhadd = "hadd" in modes or "merge" in modes
     runcompile = "compile" in args.mode
     runprepost = "prepost" in modes or "corrmat" in modes
@@ -291,19 +384,6 @@ if __name__ == '__main__':
                 whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum" if ihsum else "",
                 ext = args.extopt
             ))
-        channel_compatibility_hackery(
-            dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            args.extopt
-        )
-        syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
-            dcd = dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            wst = "chancomp",
-            mmm = mstr,
-            mop = "",
-            opt = "--channel-masks",
-            whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum",
-            ext = "" # FIXME let's not go there...
-        ))
 
     if runvalid:
         print "\ntwin_point_ahtt :: validating datacard"
@@ -568,6 +648,92 @@ if __name__ == '__main__':
                     idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
                     mmm = mstr,
                 ), False)
+
+    if runccomp:
+        ccbase = ["r1", "r2"] if ahresonly else ["g1", "g2"]
+        ccbase += ["EWK_yukawa", "CMS_EtaT_norm_13TeV"]
+
+        if any([cp not in ccbase for cp in poiset]):
+            raise RuntimeError("twin_point_ahtt :: mode chancomp only works with any subset of [g1, g2, EWK_yukawa, CMS_EtaT_norm_13TeV]")
+
+        if args.asimov:
+            raise RuntimeError("mode gof is meaningless for asimov dataset!!")
+
+        print "\ntwin_point_ahtt :: channel compatibility mode"
+        channel_compatibility_hackery(
+            dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+            args.ccmasks
+        )
+        cctag = "chancomp{mm}".format(mm = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks))
+        syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
+            dcd = dcdir + "ahtt_{cct}.txt".format(cct = cctag),
+            wst = cctag,
+            mmm = mstr,
+            mop = "",
+            opt = "--channel-masks",
+            whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum",
+            ext = ""
+        ))
+
+        channels = channel_compatibility_masking(dcdir + "ahtt_{cct}.txt".format(cct = cctag), args.ccmasks)
+        ccpois = [[poi + "_global" for poi in poiset], [poi + "_" + cc for poi in poiset for cc in channels]]
+
+        wsppoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
+        wspnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, set()))
+
+        chancomp_workspace = get_best_fit(
+            dcdir, "__".join(points), [args.otag, args.tag],
+            args.defaultwsp, args.keepbest, dcdir + "workspace_cct.root".format(cct = cctag), args.asimov,
+            "", '__'.join(poiset) + "_chancomp" if notgah else "chancomp",
+            "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            ccpois[0],
+            "",
+            elementwise_add([wsppoi[0], wspnp[0]]), "", []
+        )
+
+        fitpoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
+        fitnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, args.frzpost))
+        scenarii = {"global": elementwise_add([fitpoi[0], fitnp[0]]), "channel": elementwise_add([fitpoi[1], fitnp[1]])}
+
+        if args.ccrundat:
+            oname = "{dcd}{ptg}_{cct}_obs.root".format(
+                dcd = args.resdir,
+                ptg = ptag,
+                cct = cctag,
+                toy = "_n" + str(args.ntoy),
+                idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+            )
+            channel_compatibility_fits(chancomp_workspace, scenarii, oname)
+
+        if args.ntoy > 0:
+            # generate toy in global mode - the same toy are used for both fits
+            syscall("combine -v 0 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} {prm} {stg} {toy}".format(
+                dcd = chancomp_workspace,
+                mmm = mstr,
+                snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+                prm = set_parameter(elementwise_add([wsppoi[0], wspnp[0]]), "", []),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
+                toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
+            ))
+            tname = "{ptg}_toys_{cct}{toy}{idx}.root".format(
+                ptg = ptag,
+                cct = cctag,
+                toy = "_n" + str(args.ntoy),
+                idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+            )
+            syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {tnm}".format(
+                snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+                mmm = mstr,
+                tnm = tname
+            ), False)
+
+            oname = "{dcd}{ptg}_{cct}_toys{idx}.root".format(
+                dcd = args.resdir,
+                ptg = ptag,
+                cct = cctag,
+                idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+            )
+            channel_compatibility_fits(chancomp_workspace, scenarii, oname, args.ntoy, tname)
 
     if runhadd:
         for imode in ["fc", "gof"]:
