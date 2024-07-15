@@ -46,7 +46,7 @@ def list_of_processes(datacard, hint = "TT"):
                 processes = [it for it in processes if it != "" and it != "\n"]
                 if hint in processes:
                     break
-    return list(set(processes))
+    return sorted(list(set(processes)))
 
 def list_of_channels(datacard):
     with open(datacard) as dc:
@@ -61,7 +61,7 @@ def list_of_channels(datacard):
             if "bin" in channels[0]:
                 channels = [remove_spaces(it) for it in channels[1:]]
                 channels = [it for it in channels if it != "" and it != "\n"]
-                channels = list(set(channels))
+                channels = sorted(list(set(channels)))
                 if len(channels) == nchannel:
                     break
     return channels
@@ -417,7 +417,7 @@ def update_mask(masks):
             for yy in years:
                 new_masks.append(cc + "_" + yy)
 
-    return list(set(new_masks))
+    return sorted(list(set(new_masks)))
 
 def expected_scenario(exp, gvalues_syntax = False, resonly = False):
     specials = {
@@ -455,12 +455,12 @@ def channel_compatibility_masking(datacard, masks):
     masks assumed to not overlap
     '''
     channels = list_of_channels(datacard)
-    im = list(set([channel for channel in channels if channel in update_mask(masks)]))
+    im = sorted(list(set([channel for channel in channels if channel in update_mask(masks)])))
     om = list(set([channel for channel in channels if channel not in update_mask(masks)]))
     if len(om) == 0 and len(masks) == 1:
         return im
     else:
-        return list(set(om + masks))
+        return sorted(list(set(om + masks)))
 
 def channel_compatibility_hackery(datacard, masks):
     # channel compatibility test, as is currently implemented in the version we use, is far too slow
@@ -472,9 +472,10 @@ def channel_compatibility_hackery(datacard, masks):
     processes = list_of_processes(datacard)
     channels = channel_compatibility_masking(datacard, masks)
     maskmap = {cc: mm for cc in list_of_channels(datacard) for mm in channels if cc in update_mask([mm])}
+    cctag = "chancomp{mm}".format(mm = "_" + "_".join(masks) if len(masks) > 0 else "")
 
     # renumber the indices to be all background
-    with open(datacard.replace("_combined.txt", "_chancomp{mm}.txt".format(mm = "_" + "_".join(masks))), 'a') as txt:
+    with open(datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag)), 'a') as txt:
         with open(datacard) as dc:
             for line in dc:
                 if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV"]]):
@@ -489,7 +490,7 @@ def channel_compatibility_hackery(datacard, masks):
                         except:
                             continue
                 txt.write(" ".join(indices))
-    datacard = datacard.replace("_combined.txt", "_chancomp{mm}.txt".format(mm = "_" + "_".join(masks))
+    datacard = datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag))
 
     # process tags
     ahres = [proc for proc in processes if (proc.startswith("A") or proc.startswith("H")) and proc.endswith("_res")]
@@ -504,41 +505,41 @@ def channel_compatibility_hackery(datacard, masks):
                 pah = ahres[idx].replace("_res", "")
 
                 if ahint:
-                    txt.write("\ng{iah}_global extArg 1 [0,5]".format(iah = iah))
-                    for mm in set(maskmap.values()):
-                        txt.write("\ng{iah}_{mm} extArg 1 [0,5]".format(iah = iah, cc = cc))
+                    txt.write("\ng{iah}_global extArg 0 [0,5]".format(iah = iah))
+                    for cc in set(maskmap.values()):
+                        txt.write("\ng{iah}_{cc} extArg 0 [0,5]".format(iah = iah, cc = cc))
                     txt.write("\n")
                     for cc, mm in maskmap.items():
-                        txt.write("\ng4{iah}_{mm}_product rateParam {cc} {pah} (@0*@0*@0*@0*@1*@1*@1*@1) g{iah}_global g{iah}_{mm}".format(iah = iah, cc = cc, pah = pah + "_res"))
-                        txt.write("\ng2{iah}_{mm}_product rateParam {cc} {pah} (@0*@0*@1*@1) g{iah}_global g{iah}_{mm}".format(iah = iah, cc = cc, pah = pah + "_pos"))
-                        txt.write("\nmg2{iah}_{mm}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global g{iah}_{mm}".format(iah = iah, cc = cc, pah = pah + "_neg"))
+                        txt.write("\ng{iah}_to4_{mm}_product rateParam {cc} {pah} (@0*@0*@0*@0*@1*@1*@1*@1) g{iah}_global,g{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_res"))
+                        txt.write("\ng{iah}_to2_{mm}_product rateParam {cc} {pah} (@0*@0*@1*@1) g{iah}_global,g{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_pos"))
+                        txt.write("\nmg{iah}_to2_{mm}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global,g{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_neg"))
                     txt.write("\n")
                 else:
-                    txt.write("\nr{iah}_global extArg 1 [-5,5]".format(iah = iah))
-                    for mm in set(maskmap.values()):
-                        txt.write("\nr{iah}_{mm} extArg 1 [-5,5]".format(iah = iah, cc = cc))
+                    txt.write("\nr{iah}_global extArg 0 [-5,5]".format(iah = iah))
+                    for cc in set(maskmap.values()):
+                        txt.write("\nr{iah}_{cc} extArg 0 [-5,5]".format(iah = iah, cc = cc))
                     txt.write("\n")
                     for cc, mm in maskmap.items():
-                        txt.write("\nr{iah}_{mm}_product rateParam {cc} {pah} (@0*@1) r{iah}_global r{iah}_{mm}".format(iah = iah, cc = cc, pah = pah + "_res"))
+                        txt.write("\nr{iah}_{mm}_product rateParam {cc} {pah} (@0*@1) r{iah}_global,r{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_res"))
                     txt.write("\n")
 
         if ewktt:
             txt.write("\nEWK_yukawa_global param 1 -0.12/+0.11")
-            for mm in set(maskmap.values()):
-                txt.write("\nEWK_yukawa_{mm} param 1 -0.12/+0.11".format(cc = cc))
+            for cc in set(maskmap.values()):
+                txt.write("\nEWK_yukawa_{cc} param 1 -0.12/+0.11".format(cc = cc))
             txt.write("\n")
             for cc, mm in maskmap.items():
-                txt.write("\nEWK_yukawa_{mm}_product rateParam {cc} EWK_TT_lin_pos (@0*@1) EWK_yukawa_global EWK_yukawa_{mm}".format(cc = cc))
-                txt.write("\nmEWK_yukawa_{mm}_product rateParam {cc} EWK_TT_lin_neg (-@0*@1) EWK_yukawa_global EWK_yukawa_{mm}".format(cc = cc))
-                txt.write("\nEWK_yukawa2_{mm}_product rateParam {cc} EWK_TT_quad_pos (@0*@0*@1*@1) EWK_yukawa_global EWK_yukawa_{mm}".format(cc = cc))
-                txt.write("\nmEWK_yukawa2_{mm}_product rateParam {cc} EWK_TT_quad_neg (-@0*@0*@1*@1) EWK_yukawa_global EWK_yukawa_{mm}".format(cc = cc))
+                txt.write("\nEWK_yukawa_{mm}_product rateParam {cc} EWK_TT_lin_pos (@0*@1) EWK_yukawa_global,EWK_yukawa_{mm}".format(cc = cc, mm = mm))
+                txt.write("\nmEWK_yukawa_{mm}_product rateParam {cc} EWK_TT_lin_neg (-@0*@1) EWK_yukawa_global,EWK_yukawa_{mm}".format(cc = cc, mm = mm))
+                txt.write("\nEWK_yukawa2_{mm}_product rateParam {cc} EWK_TT_quad_pos (@0*@0*@1*@1) EWK_yukawa_global,EWK_yukawa_{mm}".format(cc = cc, mm = mm))
+                txt.write("\nmEWK_yukawa2_{mm}_product rateParam {cc} EWK_TT_quad_neg (-@0*@0*@1*@1) EWK_yukawa_global,EWK_yukawa_{mm}".format(cc = cc, mm = mm))
             txt.write("\n")
 
         if etat:
             txt.write("\nCMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
-            for mm in set(maskmap.values()):
-                txt.write("\nCMS_EtaT_norm_13TeV_{mm} extArg 1 [-5,5]".format(cc = cc))
+            for cc in set(maskmap.values()):
+                txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
             txt.write("\n")
             for cc, mm in maskmap.items():
-                txt.write("\nCMS_EtaT_norm_13TeV_{mm}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global CMS_EtaT_norm_13TeV_{mm}".format(cc = cc))
+                txt.write("\nCMS_EtaT_norm_13TeV_{mm}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global,CMS_EtaT_norm_13TeV_{mm}".format(cc = cc, mm = mm))
             txt.write("\n")

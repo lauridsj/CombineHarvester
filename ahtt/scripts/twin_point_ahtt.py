@@ -123,51 +123,54 @@ def starting_poi(gvalues, fixpoi, resonly = False):
 def channel_compatibility_set_freeze(ccbase, channels, set_freeze):
     # takes a list that would be given as the set_freeze arg used by many methods in the code
     # and returns two lists: one is the corresponding list for use in chancomp mode global fits, and the other per-channel fits
-    sf_global = copy.deepcopy(set_freeze)
-    sf_channel = copy.deepcopy(set_freeze)
+    sf_global = [[], []]
+    sf_channel = [[], []]
+    notcb = [[param for param in set_freeze[0] if param.split('=')[0] not in ccbase], [param for param in set_freeze[1] if param not in ccbase]]
 
     for cb in ccbase:
-        for ii in range(len(sf_global[0])):
-            if cb in sf_global[0][ii]:
-                sf_global[0][ii].replace(sf_global[0][ii], sf_global[0][ii] + "_global")
-
-        for ii in range(len(sf_global[1])):
-            if cb in sf_global[1][ii]:
-                sf_global[1][ii].replace(sf_global[1][ii], sf_global[1][ii] + "_global")
-
         for cc in channels:
             sf_global[0].append(cb + "_" + cc + "=1")
             sf_global[1].append(cb + "_" + cc)
-
-        for ii in range(len(sf_channel[0])):
-            if cb in sf_channel[0][ii]:
-                for cc in channels:
-                    sf_channel[0][ii].replace(sf_channel[0][ii], sf_channel[0][ii] + "_" + cc)
-
-        for ii in range(len(sf_channel[1])):
-            if cb in sf_channel[1][ii]:
-                for cc in channels:
-                    sf_channel[1][ii].replace(sf_channel[1][ii], sf_channel[1][ii] + "_" + cc)
-
         sf_channel[0].append(cb + "_global=1")
         sf_channel[1].append(cb + "_global")
+
+        setp = [param for param in set_freeze[0] if param.split('=')[0] == cb]
+        if len(setp) == 1:
+            value = param.split('=')[1]
+            sf_global[0].append(cb + "_global=" + value)
+            for cc in channels:
+                sf_channel[0].append(cb + "_" + cc + "=" + value)
+
+        if cb in set_freeze[1]:
+            sf_global[1].append(cb + "_global")
+            for cc in channels:
+                sf_channel[1].append(cb + "_" + cc)
+    sf_global[0].append("r=1")
+    sf_global[1].append("r")
+    sf_channel[0].append("r=1")
+    sf_channel[1].append("r")
+
+    sf_global = [sorted(list(set(sf_global[0]))), sorted(list(set(sf_global[1])))]
+    sf_channel = [sorted(list(set(sf_channel[0]))), sorted(list(set(sf_channel[1])))]
     return [sf_global, sf_channel]
 
-def channel_compatibility_fits(workspace, scenarii, oname, ntoy = 0, tname = ""):
+def channel_compatibility_fits(workspace, pois, scenarii, trkparam, oname, ntoy = 0, tname = ""):
     # computes the NLL for two scenarii and computes the difference in their NLLs
     # https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part3/commonstatsmethods/#channel-compatibility
     # https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit/blob/102x-comb2021/src/ChannelCompatibilityCheck.cc
 
     istoy = ntoy > 0
     results = []
-    for scenario in scenarii:
+    for idx in range(len(scenarii)):
+        scenario, params = scenarii.items()[idx]
         never_gonna_give_you_up(
-            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{sce} "
-            "{exp} {stg} {asm} {toy} {ext} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
-                dcd = fcwsp,
-                mmm = mstr,
+            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{sce} {trk} --redefineSignalPOIs '{poi}' "
+            "{exp} {stg} {asm} {toy} {opd} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
+                dcd = workspace,
                 sce = scenario,
-                exp = set_parameter(scenario, "", []),
+                trk = trkparam,
+                poi = ",".join(pois[idx]),
+                exp = set_parameter(params, "", []),
                 stg = "{fit_strategy}",
                 toy = "-s -1",
                 asm = "-t {nt}".format(nt = ntoy) if ntoy > 0 else "",
@@ -183,32 +186,35 @@ def channel_compatibility_fits(workspace, scenarii, oname, ntoy = 0, tname = "")
             first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
         )
 
+        syscall("mv higgsCombine_{sce}.MultiDimFit.mH*.root xxtmpxx_{sce}.root".format(sce = scenario), False, True)
         result = get_fit(
-            dname = "higgsCombine_{sce}.MultiDimFit.mH{mmm}*.root".format(sce = scenario, mmm = mstr),
+            dname = "xxtmpxx_{sce}.root".format(sce = scenario),
             attributes = ["deltaNLL", "nll", "nll0"],
             qexp_eq_m1 = not istoy,
             loop_all = istoy
         )
-        if istoy:
-            results.append(result)
-        else:
+        if not istoy:
             results.append([result])
-        #syscall("rm higgsCombine_{sce}.MultiDimFit.mH{mmm}*.root", False, True)
+        else:
+            results.append(result)
 
     ofile = TFile(oname, "recreate")
-    tree = TTree("chancomp")
+    tree = TTree("chancomp", "")
     ddNLL = array('d', [0])
     tree.Branch('ddNLL', ddNLL, 'ddNLL/D')
+    dNLLg = array('d', [0])
+    tree.Branch('dNLL_global', dNLLg, 'dNLL_global/D')
+    dNLLc = array('d', [0])
+    tree.Branch('dNLL_channel', dNLLc, 'dNLL_channel/D')
 
-    if not istoy:
-        ddNLL[0] = results[0] - results[1]
+    for rr in range(len(results[0])):
+        dNLLg[0] = 2. * sum(results[0][rr])
+        dNLLc[0] = 2. * sum(results[1][rr])
+        ddNLL[0] = dNLLg[0] - dNLLc[0]
         tree.Fill()
-    else:
-        for rr in range(len(results[0])):
-            ddNLL[0] = results[0][rr] - results[1][rr]
-            tree.Fill()
     tree.Write()
     ofile.Close()
+    syscall("rm xxtmpxx*.root", False, True)
     syscall("rm {tn}".format(tn = tname), False, True)
 
 def hadd_files(dcdir, point_tag, fileexp, direxp):
@@ -660,40 +666,48 @@ if __name__ == '__main__':
             raise RuntimeError("mode gof is meaningless for asimov dataset!!")
 
         print "\ntwin_point_ahtt :: channel compatibility mode"
-        channel_compatibility_hackery(
-            dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
-            args.ccmasks
-        )
         cctag = "chancomp{mm}".format(mm = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks))
-        syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
-            dcd = dcdir + "ahtt_{cct}.txt".format(cct = cctag),
-            wst = cctag,
-            mmm = mstr,
-            mop = "",
-            opt = "--channel-masks",
-            whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum",
-            ext = ""
-        ))
-
+        if not os.path.isfile(dcdir + "ahtt_{cct}.txt".format(cct = cctag)):
+            channel_compatibility_hackery(
+                dcdir + "ahtt_combined.txt" if os.path.isfile(dcdir + "ahtt_combined.txt") else dcdir + "ahtt_" + args.channel + '_' + args.year + ".txt",
+                args.ccmasks
+            )
+            syscall("combineTool.py -v 0 -M T2W -i {dcd} -o workspace_{wst}.root -m {mmm} {mop} {opt} {whs} {ext}".format(
+                dcd = dcdir + "ahtt_{cct}.txt".format(cct = cctag),
+                wst = cctag,
+                mmm = mstr,
+                mop = "",
+                opt = "--channel-masks",
+                whs = "--X-pack-asympows --optimize-simpdf-constraints=cms --no-wrappers --use-histsum",
+                ext = ""
+            ))
         channels = channel_compatibility_masking(dcdir + "ahtt_{cct}.txt".format(cct = cctag), args.ccmasks)
-        ccpois = [[poi + "_global" for poi in poiset], [poi + "_" + cc for poi in poiset for cc in channels]]
+        ccpois = [[poi + "_global" for poi in poiset], sorted(list(set([poi + "_" + cc for poi in poiset for cc in channels])))]
+        ccprms = [[poi + "_global" for poi in ccbase], [poi + "_" + cc for poi in ccbase for cc in channels]]
+        ccprms = [poi + "_product" for poi in ccprms[1] if "g1" not in poi and "g2" not in poi] + sum(ccprms, [])
+        ccprms += [] if ahresonly else [tt + cc + "_product" for cc in channels for tt in ["g1_to4_", "g1_to2_", "mg1_to2_", "g2_to4_", "g2_to2_", "mg2_to2_"]]
+        ccprms += [tt + cc + "_product" for cc in channels for tt in ["EWK_yukawa2_", "mEWK_yukawa_", "mEWK_yukawa2_"]]
+        ccprms = sorted(list(set(ccprms)))
 
+        remove_dupe = lambda x, y: [sorted(list(set(elementwise_add([x, y])[0]))), sorted(list(set(elementwise_add([x, y])[1])))]
         wsppoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
         wspnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, set()))
+        wspprm = remove_dupe(wsppoi[0], wspnp[0])
 
+        trkparam = "--trackParameters '{prm}' --trackErrors '{prm}'".format(prm = ",".join(ccprms))
         chancomp_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
-            args.defaultwsp, args.keepbest, dcdir + "workspace_cct.root".format(cct = cctag), args.asimov,
+            args.defaultwsp, args.keepbest, dcdir + "workspace_{cct}.root".format(cct = cctag), args.asimov,
             "", '__'.join(poiset) + "_chancomp" if notgah else "chancomp",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             ccpois[0],
-            "",
-            elementwise_add([wsppoi[0], wspnp[0]]), "", []
+            trkparam,
+            wspprm, "", []
         )
 
         fitpoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
         fitnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, args.frzpost))
-        scenarii = {"global": elementwise_add([fitpoi[0], fitnp[0]]), "channel": elementwise_add([fitpoi[1], fitnp[1]])}
+        scenarii = {"global": remove_dupe(fitpoi[0], fitnp[0]), "channel": remove_dupe(fitpoi[1], fitnp[1])}
 
         if args.ccrundat:
             oname = "{dcd}{ptg}_{cct}_obs.root".format(
@@ -703,7 +717,7 @@ if __name__ == '__main__':
                 toy = "_n" + str(args.ntoy),
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
-            channel_compatibility_fits(chancomp_workspace, scenarii, oname)
+            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, trkparam, oname)
 
         if args.ntoy > 0:
             # generate toy in global mode - the same toy are used for both fits
@@ -733,7 +747,7 @@ if __name__ == '__main__':
                 cct = cctag,
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
-            channel_compatibility_fits(chancomp_workspace, scenarii, oname, args.ntoy, tname)
+            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, trkparam, oname, args.ntoy, tname)
 
     if runhadd:
         for imode in ["fc", "gof", "chancomp"]:

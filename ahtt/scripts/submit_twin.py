@@ -529,9 +529,10 @@ if __name__ == '__main__':
                             continue
 
                     jarg = job_arg
-                    jarg += " {toy} {dat} {rsd} {idx}".format(
+                    jarg += " {toy} {dat} {msk} {rsd} {idx}".format(
                         toy = "--n-toy " + str(args.ntoy) if args.ntoy > 0 and not firstjob else "--n-toy 0",
                         dat = "--cc-skip-data " if not ccrundat else "",
+                        msk = "--cc-mask '{ccm}'".format(ccm = ",".join(args.ccmasks)) if len(args.ccmasks) else "",
                         rsd = "--result-dir " + resdir,
                         idx = "--run-idx " + str(idx) if idx > -1 else ""
                     )
