@@ -519,7 +519,7 @@ if __name__ == '__main__':
                     firstjob = ii == 0
                     writelog = ii < 2 and args.writelog # write logs only for best fit and first toy job unless explicitly disabled
                     sdx = '_' + str(idx) if idx != -1 else ''
-                    jname = job_name + sdx
+                    jname = job_name + "{mm}".format(mm = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks))  + sdx
                     logs = glob.glob(pstr + args.tag + "/" + jname + ".o*")
                     roots = recursive_glob(pstr + args.tag, pstr + args.otag + "_" + cctag + "_toys" + sdx + ".root")
                     ccrundat = args.ccrundat and firstjob
