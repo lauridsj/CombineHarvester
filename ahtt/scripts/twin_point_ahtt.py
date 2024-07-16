@@ -120,13 +120,23 @@ def starting_poi(gvalues, fixpoi, resonly = False):
 
     return [setpar, frzpar]
 
-def channel_compatibility_set_freeze(ccbase, channels, set_freeze):
+def channel_compatibility_set_freeze(ccbase, channels, set_freeze, extopt):
     # takes a list that would be given as the set_freeze arg used by many methods in the code
     # and returns two lists: one is the corresponding list for use in chancomp mode global fits, and the other per-channel fits
-    sf_global = [[], []]
-    sf_channel = [[], []]
+    extopt = [] if extopt == "" else extopt.split(' ')
+    for option in ['--setParameters', '--freezeParameters']:
+        while option in extopt:
+            iopt = extopt.index(option)
+            parameters = tokenize_to_list(remove_quotes(extopt.pop(iopt + 1))) if iopt + 1 < len(extopt) else []
+            extopt.pop(iopt)
+            if option == '--setParameters':
+                set_freeze[0] += parameters
+            elif option == '--freezeParameters':
+                set_freeze[1] += parameters
     notcb = [[param for param in set_freeze[0] if param.split('=')[0] not in ccbase], [param for param in set_freeze[1] if param not in ccbase]]
 
+    sf_global = [[], []]
+    sf_channel = [[], []]
     for cb in ccbase:
         for cc in channels:
             sf_global[0].append(cb + "_" + cc + "=1")
@@ -154,7 +164,7 @@ def channel_compatibility_set_freeze(ccbase, channels, set_freeze):
     sf_channel = [sorted(list(set(sf_channel[0]))), sorted(list(set(sf_channel[1])))]
     return [sf_global, sf_channel]
 
-def channel_compatibility_fits(workspace, pois, scenarii, trkparam, oname, ntoy = 0, tname = ""):
+def channel_compatibility_fits(workspace, pois, scenarii, extopt, trkparam, oname, ntoy = 0, tname = ""):
     # computes the NLL for two scenarii and computes the difference in their NLLs
     # https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part3/commonstatsmethods/#channel-compatibility
     # https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit/blob/102x-comb2021/src/ChannelCompatibilityCheck.cc
@@ -164,10 +174,11 @@ def channel_compatibility_fits(workspace, pois, scenarii, trkparam, oname, ntoy 
     for idx in range(len(scenarii)):
         scenario, params = scenarii.items()[idx]
         never_gonna_give_you_up(
-            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{sce} {trk} --redefineSignalPOIs '{poi}' "
-            "{exp} {stg} {asm} {toy} {opd} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1".format(
+            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{sce} --redefineSignalPOIs '{poi}' "
+            "{ext} {asm} {toy} {opd} --saveNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 {stg} {exp} {trk}".format(
                 dcd = workspace,
                 sce = scenario,
+                ext = extopt,
                 trk = trkparam,
                 poi = ",".join(pois[idx]),
                 exp = set_parameter(params, "", []),
@@ -690,9 +701,12 @@ if __name__ == '__main__':
         ccprms = sorted(list(set(ccprms)))
 
         remove_dupe = lambda x, y: [sorted(list(set(elementwise_add([x, y])[0]))), sorted(list(set(elementwise_add([x, y])[1])))]
-        wsppoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
-        wspnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, set()))
-        wspprm = remove_dupe(wsppoi[0], wspnp[0])
+        wspprm = channel_compatibility_set_freeze(
+            ccbase,
+            channels,
+            elementwise_add([starting_poi(gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, set())]),
+            args.extopt
+        )
 
         trkparam = "--trackParameters '{prm}' --trackErrors '{prm}'".format(prm = ",".join(ccprms))
         chancomp_workspace = get_best_fit(
@@ -702,12 +716,16 @@ if __name__ == '__main__':
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             ccpois[0],
             trkparam,
-            wspprm, "", []
+            wspprm, nonparametric_option(args.extopt), []
         )
 
-        fitpoi = channel_compatibility_set_freeze(ccbase, channels, starting_poi(gvalues, args.fixpoi, ahresonly))
-        fitnp = channel_compatibility_set_freeze(ccbase, channels, starting_nuisance(args.frzzero, args.frzpost))
-        scenarii = {"global": remove_dupe(fitpoi[0], fitnp[0]), "channel": remove_dupe(fitpoi[1], fitnp[1])}
+        fitprm = channel_compatibility_set_freeze(
+            ccbase,
+            channels,
+            elementwise_add([starting_poi(gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, args.frzpost)]),
+            args.extopt
+        )
+        scenarii = {"global": fitprm[0], "channel": fitprm[1]}
 
         if args.ccrundat:
             oname = "{dcd}{ptg}_{cct}_obs.root".format(
@@ -717,7 +735,7 @@ if __name__ == '__main__':
                 toy = "_n" + str(args.ntoy),
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
-            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, trkparam, oname)
+            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, nonparametric_option(args.extopt), trkparam, oname)
 
         if args.ntoy > 0:
             # generate toy in global mode - the same toy are used for both fits
@@ -747,7 +765,7 @@ if __name__ == '__main__':
                 cct = cctag,
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
-            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, trkparam, oname, args.ntoy, tname)
+            channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, nonparametric_option(args.extopt), trkparam, oname, args.ntoy, tname)
 
     if runhadd:
         for imode in ["fc", "gof", "chancomp"]:
