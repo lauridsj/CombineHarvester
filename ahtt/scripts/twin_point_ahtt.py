@@ -743,7 +743,7 @@ if __name__ == '__main__':
                 dcd = chancomp_workspace,
                 mmm = mstr,
                 snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
-                prm = set_parameter(elementwise_add([wsppoi[0], wspnp[0]]), "", []),
+                prm = set_parameter(wspprm[0], "", []),
                 stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
             ))
