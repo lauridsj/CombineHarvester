@@ -200,8 +200,8 @@ def channel_compatibility_fits(workspace, pois, scenarii, extopt, trkparam, onam
         syscall("mv higgsCombine_{sce}.MultiDimFit.mH*.root xxtmpxx_{sce}.root".format(sce = scenario), False, True)
         result = get_fit(
             dname = "xxtmpxx_{sce}.root".format(sce = scenario),
-            attributes = ["deltaNLL", "nll", "nll0"],
-            qexp_eq_m1 = not istoy,
+            attributes = ["deltaNLL", "nll", "nll0"] + pois[idx] + ['trackedError_' + poi for poi in pois[idx]],
+            qexp_eq_m1 = True,
             loop_all = istoy
         )
         if not istoy:
@@ -217,10 +217,22 @@ def channel_compatibility_fits(workspace, pois, scenarii, extopt, trkparam, onam
     tree.Branch('dNLL_global', dNLLg, 'dNLL_global/D')
     dNLLc = array('d', [0])
     tree.Branch('dNLL_channel', dNLLc, 'dNLL_channel/D')
+    brpois = [[], []]
+    brerrs = [[], []]
+    for idx in range(len(pois)):
+        for ipoi in range(len(pois[idx])):
+            brpois[idx].append(array('d', [0]))
+            tree.Branch(pois[idx][ipoi], brpois[idx][-1], pois[idx][ipoi] + '/D')
+            brerrs[idx].append(array('d', [0]))
+            tree.Branch(pois[idx][ipoi] + "_error", brerrs[idx][-1], pois[idx][ipoi] + '_error/D')
 
     for rr in range(len(results[0])):
-        dNLLg[0] = 2. * sum(results[0][rr])
-        dNLLc[0] = 2. * sum(results[1][rr])
+        dNLLg[0] = 2. * sum(results[0][rr][:3])
+        dNLLc[0] = 2. * sum(results[1][rr][:3])
+        for idx in range(len(pois)):
+            for ipoi in range(len(pois[idx])):
+                brpois[idx][ipoi][0] = results[idx][rr][ipoi + 3]
+                brerrs[idx][ipoi][0] = results[idx][rr][ipoi + len(pois[idx]) + 3]
         ddNLL[0] = dNLLg[0] - dNLLc[0]
         tree.Fill()
     tree.Write()
