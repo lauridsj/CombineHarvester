@@ -728,12 +728,12 @@ if __name__ == '__main__':
         scenarii = {"global": fitprm[0], "channel": fitprm[1]}
 
         if args.ccrundat:
-            oname = "{dcd}{ptg}_{cct}_obs.root".format(
+            oname = "{dcd}{ptg}_chancomp_{exp}_{poi}{cct}_obs.root".format(
                 dcd = args.resdir,
                 ptg = ptag,
-                cct = cctag,
-                toy = "_n" + str(args.ntoy),
-                idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
+                exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+                poi = '__'.join(poiset) if notgah else "",
+                cct = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks)
             )
             channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, nonparametric_option(args.extopt), trkparam, oname)
 
@@ -759,10 +759,12 @@ if __name__ == '__main__':
                 tnm = tname
             ), False)
 
-            oname = "{dcd}{ptg}_{cct}_toys{idx}.root".format(
+            oname = "{dcd}{ptg}_chancomp_{exp}_{poi}{cct}_toys{idx}.root".format(
                 dcd = args.resdir,
                 ptg = ptag,
-                cct = cctag,
+                exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+                poi = '__'.join(poiset) if notgah else "",
+                cct = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks),
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
             channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, nonparametric_option(args.extopt), trkparam, oname, args.ntoy, tname)
