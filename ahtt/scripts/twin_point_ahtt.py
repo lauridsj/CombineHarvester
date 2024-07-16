@@ -698,7 +698,7 @@ if __name__ == '__main__':
         chancomp_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_{cct}.root".format(cct = cctag), args.asimov,
-            "", '__'.join(poiset) + "_chancomp" if notgah else "chancomp",
+            "", '__'.join(poiset) + "_{cct}".format(cct = cctag) if notgah else "{cct}".format(cct = cctag),
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             ccpois[0],
             trkparam,

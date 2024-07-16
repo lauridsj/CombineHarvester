@@ -474,21 +474,12 @@ def channel_compatibility_hackery(datacard, masks):
     maskmap = {cc: mm for cc in list_of_channels(datacard) for mm in channels if cc in update_mask([mm])}
     cctag = "chancomp{mm}".format(mm = "_" + "_".join(masks) if len(masks) > 0 else "")
 
-    # renumber the indices to be all background
+    # delete some lines we won't need
     with open(datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag)), 'a') as txt:
         with open(datacard) as dc:
             for line in dc:
                 if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV"]]):
                     continue
-
-                indices = tokenize_to_list(line, token = " ")
-                if "process" in line and "TT" not in line:
-                    for ii in range(len(indices)):
-                        try:
-                            idx = int(indices[ii])
-                            indices[ii] = " " + str(idx + 6) if idx < 0 else str(iproc + 6)
-                        except:
-                            continue
                 txt.write(" ".join(indices))
     datacard = datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag))
 
