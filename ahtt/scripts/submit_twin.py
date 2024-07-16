@@ -328,7 +328,7 @@ if __name__ == '__main__':
                     tag = args.tag,
                     otg = args.otag,
                     job = job), False, True)
-            for tmps in ["fc-result", "toys"]:
+            for tmps in ["fc-result", "gof-result", "chancomp-result", "toys"]:
                 tmp = glob.glob(pstr + args.tag + "/" + tmps + "_*")
                 for tm in tmp:
                     directory_to_delete(location = tm)
