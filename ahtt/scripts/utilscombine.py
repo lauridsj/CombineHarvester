@@ -480,7 +480,7 @@ def channel_compatibility_hackery(datacard, masks):
             for line in dc:
                 if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV"]]):
                     continue
-                txt.write(" ".join(indices))
+                txt.write(line)
     datacard = datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag))
 
     # process tags

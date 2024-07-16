@@ -21,7 +21,7 @@ from utilscombine import max_g, get_best_fit, starting_nuisance, fit_strategy, m
 from utilscombine import list_of_processes, get_fit, is_good_fit, never_gonna_give_you_up, expected_scenario
 from utilscombine import channel_compatibility_hackery, channel_compatibility_masking
 
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from argumentative import common_point, common_common, common_fit_pure, common_fit, make_datacard_pure, make_datacard_forwarded, common_2D, parse_args
 from hilfemir import combine_help_messages
 
@@ -708,15 +708,15 @@ if __name__ == '__main__':
             args.extopt
         )
 
-        trkparam = "--trackParameters '{prm}' --trackErrors '{prm}'".format(prm = ",".join(ccprms))
+        trkparam = " --trackParameters '{prm}' --trackErrors '{prm}'".format(prm = ",".join(ccprms))
         chancomp_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_{cct}.root".format(cct = cctag), args.asimov,
             "", '__'.join(poiset) + "_{cct}".format(cct = cctag) if notgah else "{cct}".format(cct = cctag),
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             ccpois[0],
-            trkparam,
-            wspprm, nonparametric_option(args.extopt), []
+            "",
+            wspprm[0], nonparametric_option(args.extopt + trkparam), []
         )
 
         fitprm = channel_compatibility_set_freeze(
