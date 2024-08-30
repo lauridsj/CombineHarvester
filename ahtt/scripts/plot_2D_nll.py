@@ -88,7 +88,8 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
             (3    , ["#0033cc", "#cc0033", "0"]),
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
-        draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
+        #draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
+        draw_nll.lines = ['solid', 'dashed', (0, (3, 1, 1, 1)), 'dotted']
 
     ndir = len(directories)
     if ndir > len(draw_nll.colors):
@@ -119,7 +120,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
 
             ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array(third(nll)),
                           levels = np.array([0., alpha]), colors = colortouse,
-                          linestyles = draw_nll.lines[iline], linewidths = 2, alpha = 1. - (0.05 * isig))
+                          linestyles = [draw_nll.lines[iline]], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(tlabel) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))

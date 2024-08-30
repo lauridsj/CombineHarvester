@@ -108,7 +108,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
             if drawcontour:
                 ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
                               levels = np.array([alpha, 2.]), colors = colortouse,
-                              linestyles = draw_contour.lines[isig], linewidths = 2, alpha = 1. - (0.05 * isig))
+                              linestyles = [draw_contour.lines[isig]], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), labels[ic]))
