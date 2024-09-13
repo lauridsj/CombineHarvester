@@ -113,8 +113,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), labels[ic]))
 
-    plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 23, loc = "right")
-    plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 23, loc = "top")
+    plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 26, loc = "right")
+    plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 26, loc = "top")
     ax.margins(x = 0, y = 0)
 
     if not scatter:
@@ -143,13 +143,13 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
 
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
-                  fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
-                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.85, 0.55, 0.15, 0.15),
+                  fontsize = 17 if len(btxt) > 1 else 17, frameon = False,
+                  handlelength = 0, handletextpad = 0, borderaxespad = 0.4)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 10)
+    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 22, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
@@ -157,7 +157,7 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     fig.tight_layout()
 
     fig.savefig(oname, transparent = transparent)
-    fig.clf()
+    plt.close()
 
 if __name__ == '__main__':
     parser = ArgumentParser()

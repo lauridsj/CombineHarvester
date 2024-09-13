@@ -448,8 +448,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
     plt.ylim((ymin, ymax2))
     ax.fill_between([xvalues[0], xvalues[-1]], [ymax1, ymax1], [ymax2, ymax2], facecolor = 'white', linewidth = 0., zorder = 2.001)
     ax.plot([xvalues[0], xvalues[-1]], [ymax1, ymax1], color = "black", linestyle = 'solid', linewidth = 2.002)
-    plt.xlabel(xaxis, fontsize = 21, loc = "right")
-    plt.ylabel(yaxis, fontsize = 21, loc = "top")
+    plt.xlabel(xaxis, fontsize = 26, loc = "right")
+    plt.ylabel(yaxis, fontsize = 26, loc = "top")
     ax.margins(x = 0, y = 0)
 
     # resorting to get a columnwise fill in legend
@@ -480,22 +480,23 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
         ax.legend(bbln, btxt, loc = 'lower right',
-                  bbox_to_anchor = (0.825, 0.001 if len(btxt) > 1 else 0.005, 0.15, 0.1),
-                  fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
-                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+                  bbox_to_anchor = (0.85, 0.001 if len(btxt) > 1 else 0.005, 0.15, 0.1),
+                  fontsize = 17 if len(btxt) > 1 else 17, frameon = False,
+                  handlelength = 0, handletextpad = 0, borderaxespad = 0.4,
+                  labelspacing=0.2)
 
     if ymax2 > 1.75:
         ax.yaxis.set_major_locator(mtc.MultipleLocator(0.5))
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = False, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18)
+    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 22)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
     fig.set_dpi(450)
     fig.tight_layout()
     fig.savefig(oname, transparent = transparent)
-    fig.clf()
+    plt.close()
 
 def parse_point_quantile(pqs, var = "mass"):
     other = 2 if var == "mass" else 1

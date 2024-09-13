@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
 plt.rcParams['figure.max_open_warning'] = False
-plt.rcParams["font.size"] = 17.0
+plt.rcParams["font.size"] = 22.0
 from matplotlib.transforms import Bbox
 from matplotlib.patches import Rectangle
 
@@ -67,13 +67,13 @@ else:
     raise NotImplementedError()
 years = ["2016pre", "2016post", "2017", "2018"]
 sm_procs = {
-    "TTV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
-    "VV": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
-    "EWQCD": r"EW + QCD",
+    "TTV": r"Other",
+    "VV": r"Other",
+    "EWQCD": r"Other",
     "TW": "tX",
     "TB": "tX",
     "TQ": "tX",
-    "DY": r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$",
+    "DY": r"Other",
     "EtaT": r"$\eta_{\mathrm{t}}$",
     "TT": r"$\mathrm{t}\bar{\mathrm{t}}$",
     "EWK_TT_const_pos": r"$\mathrm{t}\bar{\mathrm{t}}$",
@@ -85,9 +85,9 @@ sm_procs = {
 }
 proc_colors = {
     "tX": "C0", #"#5790fc",
-    r"$\mathrm{VX}$, $\mathrm{t}\bar{\mathrm{t}}\mathrm{V}$": "C1", #"#f89c20",
+    r"Other": "C1", #"#f89c20",
     r"$\mathrm{t}\bar{\mathrm{t}}$":  "#F3E5AB", #"#e42536",
-    r"EW + QCD": "#58A279", #"#964a8b",
+    #r"Other": "#58A279", #"#964a8b",
     r"$\eta_{\mathrm{t}}$": "#009000",
 
     "A": "#cc0033",
@@ -117,9 +117,9 @@ binnings = {
     }
 }
 ratiolabels = {
-    "b": "Ratio to\nperturbative SM",
-    "s": "Ratio to\nperturbative SM",
-    "p": "Ratio to\nperturbative SM",
+    "b": "Ratio to background",
+    "s": "Ratio to background",
+    "p": "Ratio to background",
 }
 lumis = {
     "2016pre": "19.5",
@@ -223,7 +223,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
             np.array(vhi, vhi),
             np.array(vlo, vlo),
             step = "mid",
-            label = f"{fstage}-fit{ftype}uncertainty" if ibin == 0 else None,
+            label = f"{fstage}fit{ftype}uncertainty" if ibin == 0 else None,
             **hatchstyle)
     ax.errorbar(
         centers,
@@ -232,7 +232,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         label = "Data",
         **datastyle
     )
-    ax.set_ylabel("<Events / GeV>")
+    ax.set_ylabel("<Events / GeV>", fontsize=24)
     if log:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width)
@@ -285,7 +285,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             if symbol == "A" or symbol == "H":
                 signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 1$"
             elif symbol == r"$\eta_{\mathrm{t}}$":
-                signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} / \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}} = 1$"
+                signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
             if symbol == "A" or symbol == "H":
                 if fit == "s":
@@ -295,9 +295,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
                     signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = 0$"
             elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} / \\sigma^{{\\eta_{{\\mathrm{{t}}}}}}_{{\\mathrm{{th.}}}} = {gvalues[key][0]} \\pm {gvalues[key][1]}$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]} \\pm {gvalues[key][1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\sigma^{{\\eta_{{\\mathrm{{t}}}}}} = 0$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\\mu(\\eta_{{\\mathrm{{t}}}}) = 0$"
 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
@@ -315,21 +315,23 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     if fitstep == "p":
-        fittype = "pre-fit"
+        fittype = "Prefit"
     elif fitstep == "b":
-        fittype = "post-fit (background only)"
+        fittype = "Postfit (background only)"
     elif fitstep == "s":
-        fittype = "post-fit (background + et)"
+        fittype = "Postfit (background + et)"
     elif fitstep == "sah":
-        fittype = "post-fit (background + A/H)"
+        fittype = "Postfit (background + A/H)"
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         #fittype += "\n" + "\n".join(btxt)
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
     if fit == "p":
         ax.set_ylim(0.79, 1.21)
+        ax.set_yticks([0.8, 1.0, 1.2])
     else:
         ax.set_ylim(0.895, 1.105)
-    ax.set_ylabel(ratiolabels[fit])
+        ax.set_yticks([0.9, 1.0, 1.1])
+    ax.set_ylabel(ratiolabels[fit], fontsize=24)
     handles = [Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.), *handles_signals, handle_unc]
     labels = [" "*len(fittype), *labels_signals, "Uncertainty"]
     ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = 5, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
@@ -423,46 +425,55 @@ def plot(channel, year, fit,
         for j, (variable, edges) in enumerate(extra_axes.items()):
             for i in range(num_extrabins):
                 edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
-                text = r"{} $\leq$ {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-                ax1.text(1 / num_extrabins * (i + 0.5), 0.915 - j * 0.11, text, horizontalalignment = "center", fontsize = 15, transform = ax1.transAxes)
+                text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
+                ax1.text(1 / num_extrabins * (i + 0.5), 0.912 - j * 0.11, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes)
         ax1.minorticks_on()
         ax1.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
     ax2.minorticks_on()
     ax2.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
-    ticks = []
-    for i in range(num_extrabins):
-        jrange = (1/6, 3/6, 5/6) if "j" in channel else (1/4, 3/4)
-        for j in jrange:
-            ticks.append(first_ax_width * i + first_ax_width * j)
-    ax2.set_xticks(ticks)
+    if "j" in channel:
+        ticklocs = np.linspace(500, 1500, 3)
+        ticklocs_minor = np.linspace(400, 1600, 13)
+    else:
+        ticklocs = np.linspace(600, 1200, 2)
+        ticklocs_minor = np.linspace(450, 1350, 7)
+    ticks = np.concatenate(
+        [ticklocs - first_ax_binning[0] + i * first_ax_width
+         for i in range(num_extrabins)])
+    ticks_minor = np.concatenate(
+        [ticklocs_minor - first_ax_binning[0] + i * first_ax_width
+         for i in range(num_extrabins)])
+    ax2.set_xticks(ticks, minor=False)
+    ax2.set_xticks(ticks_minor, minor=True)
     noxaxis = fitstep != "s"
     if noxaxis:
         ax2.set_xticklabels([])
-    else:
-        ax2.set_xticklabels((ax2.get_xticks() % first_ax_width + first_ax_binning[0]).astype(int))
+    else:       
+        tickloc_labels = [f"{t:.0f}" for i in range(num_extrabins) for t in ticklocs]
+        ax2.set_xticklabels(tickloc_labels)
     if plotupper:
         ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = len(smhists) + 2, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False)
         ax1.set_xlabel("")
     if noxaxis:
         ax2.set_xlabel("")
     else:
-        ax2.set_xlabel(list(binning.keys())[0])
+        ax2.set_xlabel(list(binning.keys())[0], fontsize=24)
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
     if fitstep == "p":
-        fittype = "pre-fit"
+        fittype = "Prefit"
     elif fitstep == "b":
-        fittype = "post-fit (background only)"
+        fittype = "Postfit (BG only)"
     elif fitstep == "s":
-        fittype = r"post-fit (background + $\mathbf{\eta_{\mathrm{t}}}$)"
+        fittype = r"Postfit (BG + $\mathbf{\eta_{\mathrm{t}}}$)"
     elif fitstep == "sah":
-        fittype = "post-fit (background + A/H)"
+        fittype = "Postfit (BG + A/H)"
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         #fittype += "\n" + "\n".join(btxt)
-    ax2.annotate(fittype, (0.007, 1.035), xycoords="axes fraction", va="bottom", ha="left", fontsize=15, fontweight="bold", zorder=7777)
+    ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
    
     if fitstep == "sah":
         btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
-        ax2.annotate(btxt, (0.007, 0.96), xycoords="axes fraction", va="top", ha="left", fontsize=15, zorder=7777)
+        ax2.annotate(btxt, (0.007, 0.96), xycoords="axes fraction", va="top", ha="left", fontsize=20, zorder=7777)
         
     if plotupper:
         ax0.set_title(title)
@@ -471,9 +482,9 @@ def plot(channel, year, fit,
     #    ax2.annotate("\n".join(btxt), (0.01, 0.05), xycoords="axes fraction", va="bottom", ha="left", fontsize=15)
 
     if fitstep == "s":
-        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 19)
+        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 24)
         fig.align_ylabels()
-        fig.subplots_adjust(hspace = 0.21, left = 0.07, right = 1 - 0.008, top = 1 - 0.025, bottom = 0.04)
+        fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.025, bottom = 0.045)
         
 
         bbox = ax0.get_position()
@@ -675,7 +686,7 @@ if args.batch is not None:
             nrows = 5,
             sharex = True,
             gridspec_kw = {"height_ratios": [0.001, 1, 1, 1, 1]},
-            figsize = (19.2, 17.25),
+            figsize = (19.2, 17.75),
             dpi=450
         )
         for fitstep in fits:

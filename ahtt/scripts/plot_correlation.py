@@ -26,7 +26,7 @@ poi_names = {
 poi_labels = {
     "A":"$\\mathrm{g_{A t \\bar{t}}}$",
     "H":"$\\mathrm{g_{H t \\bar{t}}}$",
-    "EtaT": "$\\mathrm{\\mu^{\\eta_t}}$"
+    "EtaT": "$\\mathrm{\\mu(\\eta_t)}$"
 }
 
 poi = poi_names[args.signal]
@@ -139,7 +139,7 @@ with uproot.open(args.infile) as f:
     plt.yticks(tick_range, labels, fontsize="small")
 
     cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.05,ax.get_position().height])
-    plt.colorbar(im, label="correlation coefficient", cax=cax)
+    plt.colorbar(im, label="Correlation coefficient", ticks=[-1.0, -0.5, 0.0, 0.5, 1.0], cax=cax)
 
     ax.annotate("$\\textbf{CMS}$", (-0.04, 1.04), fontsize = 20, ha = 'right', va = 'bottom', usetex = True, xycoords="axes fraction")
 

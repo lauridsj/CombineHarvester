@@ -123,7 +123,7 @@ if args.translate is not None:
     with open(args.translate) as jsonfile:
         translate = json.load(jsonfile)
 if POI == "CMS_EtaT_norm_13TeV":
-    poi_translated = "\\hat{\\mu}^{\\eta_{t}}"
+    poi_translated = "\\hat{\\mu}(\\eta_{t})"
 else:
     poi_translated = Translate(POI,translate) #Get translated POI name (if available)
 
@@ -459,7 +459,7 @@ for page in xrange(n):
             +' = %s%s%s' % (
                 s_nom, unctext,
                 '' if args.units is None else ' '+args.units
-            ), align=3, textOffset=0.12, textSize=0.25)
+            ), align=3, textOffset=0.14, textSize=0.25)
     # pads[0].RedrawAxis()
     pads[1].RedrawAxis()
 
