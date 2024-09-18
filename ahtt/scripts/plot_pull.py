@@ -102,9 +102,9 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
         if ii % nuisance_per_page == nuisance_per_page - 1 or ii == len(nuisances) - 1:
             ymax = (ii % nuisance_per_page) + 1 if ii == len(nuisances) - 1 else nuisance_per_page
             rmax = max([np.amax(imp[0:, 0:]) for imp in imu] +
-                        [np.amax(imp[0:, 0:]) for imp in imd]) if isimpact else 1.5
+                        [np.amax(imp[0:, 0:]) for imp in imd]) if isimpact else 3.
             rmax = math.ceil(rmax * 10.**int( math.ceil(abs(math.log10(rmax))) )) / 10.**int( math.ceil(abs(math.log10(rmax))) )
-            lmax = -rmax if isimpact else -1.5
+            lmax = -rmax if isimpact else -3.
 
             plots = []
             handles = []
