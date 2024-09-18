@@ -23,7 +23,7 @@ nuisance_per_page = 30
 
 def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
-    for ii, (directory, tag) in enumerate(directories):
+    for ii, directory, tag in enumerate(directories):
         impacts = glob.glob("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dcd = directory,
             tag = tag,
@@ -172,7 +172,7 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
 
 def draw_pull(oname, directories, labels, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
     pulls = read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi)
-    point = get_point('_'.join(directories[0].split('_')[:3]))
+    point = get_point('_'.join(directories[0][0].split('_')[:3]))
 
     expth = []
     for pull in pulls:
@@ -231,7 +231,11 @@ if __name__ == '__main__':
     if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
+
+    dirs = [tag.split(':') for tag in args.itag]
+    dirs = [tag + tag[:1] if len(tag) < 2 else tag for tag in dirs]
+    dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
+
     draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.ptag,
               dirs, args.label, isimpact, args.onepoi, args.poiname, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
     pass

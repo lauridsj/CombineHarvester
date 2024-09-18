@@ -120,7 +120,7 @@ if __name__ == '__main__':
         raise RuntimeError("unsupported len > 1. aborting")
 
     dirs = [tag.split(':') for tag in args.itag]
-    dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
+    dirs = [tag + tag[:1] if len(tag) < 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     summarize_chancomp(args.odir, dirs, points, args.transparent, args.fmt)
