@@ -160,10 +160,11 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
 
             fig.set_size_inches(9., 16.)
             fig.tight_layout()
-            if len(pulls) == 2:
-                fig.savefig(oname + extra + str(counter) + plotformat, bbox_extra_artists = (legend,), transparent = transparent)
-            else:
-                fig.savefig(oname + extra + str(counter) + plotformat, transparent = transparent)
+            for fmt in plotformat:
+                if len(pulls) == 2:
+                    fig.savefig(oname + extra + str(counter) + fmt, bbox_extra_artists = (legend,), transparent = transparent)
+                else:
+                    fig.savefig(oname + extra + str(counter) + fmt, transparent = transparent)
             fig.clf()
 
             fig, ax = plt.subplots()
@@ -220,7 +221,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
 

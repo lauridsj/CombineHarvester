@@ -72,12 +72,13 @@ def draw_cls(odir, directories, tags, xaxis, transparent, plotformat):
             ax.set_yscale('log')
             ax.legend(title = "${point}$".format(point = str_point('_'.join(dcd.split('_')[:3]))))
             fig.tight_layout()
-            fig.savefig("{ooo}/{pnt}_{tag}_cls{fmt}".format(
-                ooo = odir,
-                pnt = '_'.join(dcd.split('_')[:3]),
-                tag = tags[tt],
-                fmt = plotformat
-            ), transparent = transparent)
+            for fmt in plotformat:
+                fig.savefig("{ooo}/{pnt}_{tag}_cls{fmt}".format(
+                    ooo = odir,
+                    pnt = '_'.join(dcd.split('_')[:3]),
+                    tag = tags[tt],
+                    fmt = fmt
+                ), transparent = transparent)
             fig.clf()
     pass
 
@@ -92,7 +93,8 @@ if __name__ == '__main__':
                         default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]

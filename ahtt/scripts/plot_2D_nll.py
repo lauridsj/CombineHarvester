@@ -84,7 +84,7 @@ def read_nll(points, directories, parameters, intervals, drops, prunesmooth = Fa
         fits.append(interpolated if prunesmooth else originals)
     return result
 
-def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
     alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
@@ -181,7 +181,8 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig.set_dpi(450)
     fig.tight_layout()
 
-    fig.savefig(oname, transparent = transparent)
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
     fig.clf()
 
 def drop_intervals(arg):
@@ -239,7 +240,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     points = args.point
@@ -257,7 +259,7 @@ if __name__ == '__main__':
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
-    draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{args.fmt}",
+    draw_nll([f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{fmt}" for fmt in args.fmt],
              points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.drops, args.prunesmooth, args.maxsigma, args.bestfit,
              args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass

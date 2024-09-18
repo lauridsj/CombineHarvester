@@ -146,7 +146,7 @@ def read_nll(points, directories, name, kinks, skip, rangex, insidex, zeropoint)
         fits.append(dataset)
     return result
 
-def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
+def draw_nll(onames, points, directories, labels, kinks, skip, namelabel,
              rangex, rangey, insidex, zeropoint, legendloc, legendtitle, transparent, plotformat):
     if not hasattr(draw_nll, "colors"):
         draw_nll.settings = OrderedDict([
@@ -209,7 +209,8 @@ def draw_nll(oname, points, directories, labels, kinks, skip, namelabel,
 
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
-    fig.savefig(oname, transparent = transparent)
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
     fig.clf()
 
 if __name__ == '__main__':
@@ -247,7 +248,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     points = args.point
@@ -272,7 +274,7 @@ if __name__ == '__main__':
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
-    draw_nll(f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{args.fmt}",
+    draw_nll([f"{args.odir}/{pstr}_nll_{args.namelabel[0]}{args.ptag}{fmt}" for fmt in args.fmt],
              points, dirs, args.label, args.kinks, args.skip, args.namelabel, args.rangex, args.rangey, args.insidex, args.zeropoint,
              args.legendloc, args.legendtitle, args.transparent, args.fmt)
     pass

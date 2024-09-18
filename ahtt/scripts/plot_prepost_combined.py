@@ -43,7 +43,8 @@ parser.add_argument("--batchah", help = "psfromws output containing sums of chan
                     default = None, dest = "batchah", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
-parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                    type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 parser.add_argument("--signal-scale", help = "scaling to apply on A/H signal (ie not promoted ones (yet!)) in drawing", default = (1., 1.),
                     dest = "sigscale", required = False, type = lambda s: tuplize(s))
 args = parser.parse_args()
@@ -498,7 +499,8 @@ def plot(channel, year, fit,
         sstr = "Combined"
         cstr = channel.replace(r'$\ell\bar{\ell}$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
         ystr = year.replace(" ", "").lower()
-        fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{args.fmt}", transparent = True)#, bbox_inches = extent)
+        for fmt in args.fmt:
+            fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{fmt}", transparent = True)#, bbox_inches = extent)
         fig.clf()
 
 

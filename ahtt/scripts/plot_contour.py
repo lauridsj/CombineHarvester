@@ -47,7 +47,7 @@ def read_contour(cfiles):
 
     return contours
 
-def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, a343bkg, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
@@ -156,7 +156,8 @@ def draw_contour(oname, pair, cfiles, labels, maxsigma, propersig, drawcontour, 
     fig.set_dpi(450)
     fig.tight_layout()
 
-    fig.savefig(oname, transparent = transparent)
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
     plt.close()
 
 if __name__ == '__main__':
@@ -206,7 +207,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
+
     args = parser.parse_args()
 
     if args.point != "":
@@ -270,6 +273,6 @@ if __name__ == '__main__':
 
         print("drawing contours for pair: ", pair)
         print("using the following contours: ", contour)
-        draw_contour("{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.ptag, fmt = args.fmt), pair, contour, args.label,
+        draw_contour(["{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.ptag, fmt = fmt) for fmt in args.fmt], pair, contour, args.label,
                      args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         print()
