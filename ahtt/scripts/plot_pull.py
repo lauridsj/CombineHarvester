@@ -170,7 +170,7 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
             fig, ax = plt.subplots()
             counter = counter - 1
 
-def draw_pull(oname, directories, labels, isimpact, onepoi, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
+def draw_pull(oname, directories, labels, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
     pulls = read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi)
     point = get_point('_'.join(directories[0].split('_')[:3]))
 
