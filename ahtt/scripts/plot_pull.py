@@ -19,7 +19,7 @@ from matplotlib.legend_handler import HandlerErrorbar
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
-nuisance_per_page = 30
+nuisance_per_page = 32
 
 def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
@@ -40,7 +40,19 @@ def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
 
             nuisances = result["params"]
             for nn in nuisances:
-                if nn["name"] != "g":
+                if nn["name"] == "EWK_const":
+                    continue
+                elif nn["name"] == "EWK_yukawa":
+                    if isimpact:
+                        pulls[ii][nn["name"]] = nn["r"]
+                    else:
+                        dummy = nn["fit"]
+                        if dummy[1] < nn["prefit"][1]:
+                            dummy = [(dd - nn["prefit"][1]) / (nn["prefit"][1] - nn["prefit"][0]) for dd in dummy]
+                        else:
+                            dummy = [(dd - nn["prefit"][1]) / (nn["prefit"][2] - nn["prefit"][1]) for dd in dummy]
+                        pulls[ii][nn["name"]] = dummy
+                elif nn["name"] != "g":
                     pulls[ii][nn["name"]] = nn["r"] if isimpact else nn["fit"]
 
     return pulls
