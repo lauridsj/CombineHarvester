@@ -231,10 +231,9 @@ if __name__ == '__main__':
     if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) < 2 else tag for tag in dirs]
-    dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
+    dirs = [[f"{args.point}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.ptag,
               dirs, args.label, isimpact, args.onepoi, args.poiname, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
