@@ -23,7 +23,7 @@ nuisance_per_page = 30
 
 def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
-    for ii, directory, tag in enumerate(directories):
+    for ii, [directory, tag] in enumerate(directories):
         impacts = glob.glob("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dcd = directory,
             tag = tag,
