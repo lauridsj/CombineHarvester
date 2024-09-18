@@ -52,8 +52,8 @@ def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
                         else:
                             dummy = [(dd - nn["prefit"][1]) / (nn["prefit"][2] - nn["prefit"][1]) for dd in dummy]
                         pulls[ii][nn["name"]] = dummy
-                elif nn["name"] != "g":
-                    pulls[ii][nn["name"]] = nn["r"] if isimpact else nn["fit"]
+                else:
+                    pulls[ii][nn["name"]] = poiname if isimpact else nn["fit"]
 
     return pulls
 
