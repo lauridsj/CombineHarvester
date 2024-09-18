@@ -21,14 +21,14 @@ from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_qu
 
 nuisance_per_page = 30
 
-def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
+def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
     for ii, directory, tag in enumerate(directories):
         impacts = glob.glob("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dcd = directory,
             tag = tag,
             pnt = '_'.join(directory.split('_')[:3]),
-            mod = "one-poi" if onepoi else "g-scan",
+            mod = poiname if poiname != "g" else "one-poi" if onepoi else "g-scan",
             gvl = "_g_" + str(gvalue).replace(".", "p") if gvalue >= 0. else "",
             rvl = "_r_" + str(rvalue).replace(".", "p") if rvalue >= 0. and not onepoi else "",
             fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
@@ -200,6 +200,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
+    parser.add_argument("--poi-name", help = "name of poi",
+                        dest = "poiname", default = "g", required = False)
+
     parser.add_argument("--g-value",
                         help = "g to use when evaluating impacts/fit diagnostics/nll. "
                         "does NOT freeze the value, unless --fix-poi is also used. "
@@ -228,5 +231,5 @@ if __name__ == '__main__':
 
     dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
     draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.ptag,
-              dirs, args.label, isimpact, args.onepoi, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
+              dirs, args.label, isimpact, args.onepoi, args.poiname, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
     pass
