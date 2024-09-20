@@ -15,25 +15,25 @@ mkdir -p outdir
 
 # combined plots
 for channel in ll l4pj l3j; do
-    python3 ../scripts/plot_prepost_combined.py --odir $outdir --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --ifileah ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-format ${fmt} --log --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --batchah ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --prefit-signal-from default --preliminary
+    python3 ../scripts/plot_prepost_combined.py --odir $outdir --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --ifileah ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --batchah ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --prefit-signal-from default --preliminary
 done
 
 # prefit only
 
-python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__H_*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-format ${fmt} --log --skip-each --batch yes --skip-postfit --prefit-signal-from default --as-signal 'A,H,EtaT' --preliminary
+python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__H_*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch yes --skip-postfit --prefit-signal-from default --as-signal 'A,H,EtaT' --preliminary
 
 
 # separate postfits
 
 for channel in ll l4pj l3j; do
     # A/H postfit
-    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-format ${fmt} --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --skip-prefit --preliminary
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --skip-prefit --preliminary
 
     # BG only postfit
-    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_b.root --plot-format ${fmt} --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_b.root --skip-prefit --preliminary
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_b.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_b.root --skip-prefit --preliminary
 
     # EtaT postfit
-    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-format ${fmt} --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --skip-ah --preliminary
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --skip-ah --preliminary
 done
 
 
@@ -51,14 +51,14 @@ mkdir -p outdir
 fmt="pdf,png,svg"
 
 cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205
-python3 ${basedir}/scripts/plot_limit.py --tag "lx_smtt" --odir ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 0 --plot-format ${fmt}
+python3 ${basedir}/scripts/plot_limit.py --tag "lx_smtt" --odir ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 0 --plot-formats "${fmt}"
 
 # limits with etat
 outdir="${basedir}/limits_etat"  # also absolute path
 mkdir -p outdir
 
 cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318
-python3 ${basedir}/scripts/plot_limit.py --tag "lx" --odir  ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-format ${fmt}
+python3 ${basedir}/scripts/plot_limit.py --tag "lx" --odir  ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-formats "${fmt}"
 
 # CONTOURS
 
@@ -68,7 +68,7 @@ mkdir -p outdir
 
 # I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows
 pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0' 
-python3 ../scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-format ${fmt}
+python3 ../scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
 
 # CORRELATION
 # this needs both a fitdiagnostics output, and impacts for the sorting
