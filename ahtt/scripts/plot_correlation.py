@@ -129,7 +129,7 @@ with uproot.open(args.infile) as f:
 
     figsize = len(labels) / 5
 
-    fig, ax = plt.subplots(dpi=100, figsize=(figsize,figsize))
+    fig, ax = plt.subplots(dpi=600, figsize=(figsize,figsize))
     ax.xaxis.tick_top()
 
     im = plt.imshow(mvals, cmap="RdBu_r", vmin=-1., vmax=1.)
