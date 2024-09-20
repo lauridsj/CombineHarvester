@@ -15,6 +15,7 @@ parser.add_argument("--only", type=int, help="Plot only the N highest NPs", defa
 parser.add_argument("--include_mcstats", action="store_true")
 parser.add_argument("--nuisance_map", type=str, default=None, help="NP label translation map")
 parser.add_argument("--impacts", type=str, default=None, help="Impact json for sorting")
+parser.add_argument("--preliminary", action="store_true")
 args = parser.parse_args()
 
 poi_names = {
@@ -141,7 +142,10 @@ with uproot.open(args.infile) as f:
     cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.05,ax.get_position().height])
     plt.colorbar(im, label="Correlation coefficient", ticks=[-1.0, -0.5, 0.0, 0.5, 1.0], cax=cax)
 
-    ax.annotate("$\\textbf{CMS}$", (-0.04, 1.04), fontsize = 20, ha = 'right', va = 'bottom', usetex = True, xycoords="axes fraction")
+    ax.annotate("$\\textbf{CMS}$", (-0.3, 1.1), fontsize = 20, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
+
+    if args.preliminary:
+        ax.annotate("$\\textit{Preliminary}$", (-0.3, 1.04), fontsize = 14, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
 
     plt.savefig(args.outfile, bbox_inches="tight")
     plt.close()

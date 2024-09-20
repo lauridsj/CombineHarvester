@@ -46,6 +46,7 @@ parser.add_argument("--prefit-signal-from", help = "read prefit signal templates
 parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
 parser.add_argument("--signal-scale", help = "scaling to apply on A/H signal (ie not promoted ones (yet!)) in drawing", default = (1., 1.),
                     dest = "sigscale", required = False, type = lambda s: tuplize(s))
+parser.add_argument("--preliminary", help="Write 'Preliminary' in caption", action="store_true")
 args = parser.parse_args()
 
 fits = ["p", "sah", "s"]
@@ -308,7 +309,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             color = proc_colors[symbol],
             linewidth = 1.75,
             label = signal_label,
-            zorder = signal_zorder[symbol]
+            zorder = signal_zorder[symbol],
+            edges = False
         )
         handles_signals.append(handle_signal[0])
         labels_signals.append(signal_label)
@@ -482,7 +484,9 @@ def plot(channel, year, fit,
     #    ax2.annotate("\n".join(btxt), (0.01, 0.05), xycoords="axes fraction", va="bottom", ha="left", fontsize=15)
 
     if fitstep == "s":
-        hep.cms.label(ax = ax0, llabel = "", lumi = lumis[year], loc = 0, year = year, fontsize = 24)
+
+        cmslabel = "Preliminary" if args.preliminary else None
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 24)
         fig.align_ylabels()
         fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.025, bottom = 0.045)
         
