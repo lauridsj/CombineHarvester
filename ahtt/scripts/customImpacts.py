@@ -436,10 +436,11 @@ for page in xrange(n):
         CMS_text.SetTextAlign(13)
         CMS_text.SetTextSize(0.055)
 
-        extraText = ROOT.TLatex(left+0.09, top, args.cms_label)
+        extraText = ROOT.TLatex(left, top-0.06, args.cms_label)
         extraText.SetNDC()
         extraText.SetTextFont(52)
-        extraText.SetTextSize(0.055)
+        extraText.SetTextAlign(13)
+        extraText.SetTextSize(0.04)
 
         CMS_text.Draw('same') #Draw 'CMS'
         extraText.Draw('same') #Draw extra label, if any
