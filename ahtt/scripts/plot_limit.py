@@ -346,7 +346,7 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
     #with open(oname.replace(".pdf", ".json").replace(".png", ".json"), "w") as jj: 
     #    json.dump(limits, jj, indent = 1)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(dpi=600)
     handles = []
     ymin = 0.
     ymax = 0.
@@ -493,7 +493,6 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
-    fig.set_dpi(450)
     fig.tight_layout()
     fig.savefig(oname, transparent = transparent)
     plt.close()

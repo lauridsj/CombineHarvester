@@ -407,14 +407,16 @@ def plot(channel, year, fit,
             nrows = 3,
             sharex = True,
             gridspec_kw = {"height_ratios": [0.001, 1, 1]},
-            figsize = (19.2, 6.6)
+            figsize = (19.2, 6.6),
+            dpi=600
         )
         ax0.set_axis_off()
         plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
     else:
         fig, ax2 = plt.subplots(
             nrows = 1,
-            figsize = (19.2, 3.5)
+            figsize = (19.2, 3.5),
+            dpi=600
         )
     if args.lower == "ratio":
         plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
@@ -497,7 +499,6 @@ def plot(channel, year, fit,
         fig.set_size_inches(w = 19.2, h = 1.5 * fig.get_figheight())
     else:
         fig.set_size_inches(w = 19.2, h = 1.0 * fig.get_figheight())
-    fig.set_dpi(450)
     extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
