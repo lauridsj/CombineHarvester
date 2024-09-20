@@ -14,7 +14,7 @@ axes = {
     "ttcoupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}t\bar{t}}}$",
     "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
     "muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
-    "muetat":     r"$\mu^{\eta_{\mathrm{t}}}$",
+    "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
     "yukawa":     r"$y_{\mathrm{t}}$"
 }
 

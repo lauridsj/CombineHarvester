@@ -19,16 +19,16 @@ from matplotlib.legend_handler import HandlerErrorbar
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
-nuisance_per_page = 30
+nuisance_per_page = 32
 
-def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
+def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
-    for ii, directory, tag in enumerate(directories):
+    for ii, [directory, tag] in enumerate(directories):
         impacts = glob.glob("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dcd = directory,
             tag = tag,
             pnt = '_'.join(directory.split('_')[:3]),
-            mod = "one-poi" if onepoi else "g-scan",
+            mod = poiname if poiname != "g" else "one-poi" if onepoi else "g-scan",
             gvl = "_g_" + str(gvalue).replace(".", "p") if gvalue >= 0. else "",
             rvl = "_r_" + str(rvalue).replace(".", "p") if rvalue >= 0. and not onepoi else "",
             fix = "_fixed" if fixpoi and (gvalue >= 0. or rvalue >= 0.) else "",
@@ -40,8 +40,20 @@ def read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi):
 
             nuisances = result["params"]
             for nn in nuisances:
-                if nn["name"] != "g":
-                    pulls[ii][nn["name"]] = nn["r"] if isimpact else nn["fit"]
+                if nn["name"] == "EWK_const":
+                    continue
+                elif nn["name"] == "EWK_yukawa":
+                    if isimpact:
+                        pulls[ii][nn["name"]] = nn["r"]
+                    else:
+                        dummy = nn["fit"]
+                        if dummy[1] < nn["prefit"][1]:
+                            dummy = [(dd - nn["prefit"][1]) / (nn["prefit"][1] - nn["prefit"][0]) for dd in dummy]
+                        else:
+                            dummy = [(dd - nn["prefit"][1]) / (nn["prefit"][2] - nn["prefit"][1]) for dd in dummy]
+                        pulls[ii][nn["name"]] = dummy
+                else:
+                    pulls[ii][nn["name"]] = poiname if isimpact else nn["fit"]
 
     return pulls
 
@@ -102,9 +114,9 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
         if ii % nuisance_per_page == nuisance_per_page - 1 or ii == len(nuisances) - 1:
             ymax = (ii % nuisance_per_page) + 1 if ii == len(nuisances) - 1 else nuisance_per_page
             rmax = max([np.amax(imp[0:, 0:]) for imp in imu] +
-                        [np.amax(imp[0:, 0:]) for imp in imd]) if isimpact else 1.5
+                        [np.amax(imp[0:, 0:]) for imp in imd]) if isimpact else 3.
             rmax = math.ceil(rmax * 10.**int( math.ceil(abs(math.log10(rmax))) )) / 10.**int( math.ceil(abs(math.log10(rmax))) )
-            lmax = -rmax if isimpact else -1.5
+            lmax = -rmax if isimpact else -3.
 
             plots = []
             handles = []
@@ -160,18 +172,19 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
 
             fig.set_size_inches(9., 16.)
             fig.tight_layout()
-            if len(pulls) == 2:
-                fig.savefig(oname + extra + str(counter) + plotformat, bbox_extra_artists = (legend,), transparent = transparent)
-            else:
-                fig.savefig(oname + extra + str(counter) + plotformat, transparent = transparent)
+            for fmt in plotformat:
+                if len(pulls) == 2:
+                    fig.savefig(oname + extra + str(counter) + fmt, bbox_extra_artists = (legend,), transparent = transparent)
+                else:
+                    fig.savefig(oname + extra + str(counter) + fmt, transparent = transparent)
             fig.clf()
 
             fig, ax = plt.subplots()
             counter = counter - 1
 
-def draw_pull(oname, directories, labels, isimpact, onepoi, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
-    pulls = read_pull(directories, isimpact, onepoi, gvalue, rvalue, fixpoi)
-    point = get_point('_'.join(directories[0].split('_')[:3]))
+def draw_pull(oname, directories, labels, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi, mcstat, transparent, plotformat):
+    pulls = read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi)
+    point = get_point('_'.join(directories[0][0].split('_')[:3]))
 
     expth = []
     for pull in pulls:
@@ -200,6 +213,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--one-poi", help = "plot pulls obtained with the g-only model", dest = "onepoi", action = "store_true", required = False)
 
+    parser.add_argument("--poi-name", help = "name of poi",
+                        dest = "poiname", default = "g", required = False)
+
     parser.add_argument("--g-value",
                         help = "g to use when evaluating impacts/fit diagnostics/nll. "
                         "does NOT freeze the value, unless --fix-poi is also used. "
@@ -217,7 +233,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
 
@@ -226,7 +243,10 @@ if __name__ == '__main__':
     if len(args.itag) != len(args.label):
         raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    dirs = [[args.point + '_' + tag.split(':')[0], tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0]] for tag in args.itag]
+    dirs = [tag.split(':') for tag in args.itag]
+    dirs = [tag + tag[:1] if len(tag) < 2 else tag for tag in dirs]
+    dirs = [[f"{args.point}_{tag[0]}"] + tag[1:] for tag in dirs]
+
     draw_pull(args.odir + "/" + args.point + "_{drw}".format(drw = "impact" if isimpact else "pull") + args.ptag,
-              dirs, args.label, isimpact, args.onepoi, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
+              dirs, args.label, isimpact, args.onepoi, args.poiname, args.setg, args.setr, args.fixpoi, args.mcstat, args.transparent, args.fmt)
     pass

@@ -65,11 +65,12 @@ def summarize_chancomp(odir, directories, points, transparent, plotformat):
                 fig.set_size_inches(8., 6.)
             fig.set_dpi(450)
             fig.tight_layout()
-            fig.savefig("{ooo}/{fnm}{fmt}".format(
-                ooo = odir,
-                fnm = obs.split('/')[-1].replace("_obs.root", "_chancomp-result"),
-                fmt = plotformat
-            ), transparent = transparent)
+            for fmt in plotformat:
+                fig.savefig("{ooo}/{fnm}{fmt}".format(
+                    ooo = odir,
+                    fnm = obs.split('/')[-1].replace("_obs.root", "_chancomp-result"),
+                    fmt = fmt
+                ), transparent = transparent)
             fig.clf()
 
             alltoys = recursive_glob(idir[0], obs.split('/')[-1].replace("_obs.root", "_toys*.root"))
@@ -89,11 +90,12 @@ def summarize_chancomp(odir, directories, points, transparent, plotformat):
             fig.set_size_inches(8., 6.)
             fig.set_dpi(450)
             fig.tight_layout()
-            fig.savefig("{ooo}/{fnm}{fmt}".format(
-                ooo = odir,
-                fnm = obs.split('/')[-1].replace("_obs.root", "_chancomp-toys"),
-                fmt = plotformat
-            ), transparent = transparent)
+            for fmt in plotformat:
+                fig.savefig("{ooo}/{fnm}{fmt}".format(
+                    ooo = odir,
+                    fnm = obs.split('/')[-1].replace("_obs.root", "_chancomp-toys"),
+                    fmt = fmt
+                ), transparent = transparent)
             fig.clf()
     pass
 
@@ -105,7 +107,8 @@ if __name__ == '__main__':
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     points = args.point
@@ -117,7 +120,7 @@ if __name__ == '__main__':
         raise RuntimeError("unsupported len > 1. aborting")
 
     dirs = [tag.split(':') for tag in args.itag]
-    dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
+    dirs = [tag + tag[:1] if len(tag) < 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     summarize_chancomp(args.odir, dirs, points, args.transparent, args.fmt)

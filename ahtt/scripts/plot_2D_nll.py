@@ -29,12 +29,16 @@ from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
 
-def read_nll(points, directories, parameters, intervals, prunesmooth = False, maxsigma = 5):
+def read_nll(points, directories, parameters, intervals, drops, prunesmooth = False, maxsigma = 5):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
 
     for ii, (directory, scenario, tag) in enumerate(directories):
+        drop = None
+        if len(drops) > 0:
+            drop = drops[ii if ii < len(drops) else -1]
+
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{parameters[0]}_*_{parameters[1]}_*.root"
         files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, tag = tag, ninterval = 2)]
         best_fit.append(None)
@@ -48,6 +52,8 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False, ma
                 valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), round(2. * dtree.deltaNLL, 5))
 
                 if dtree.quantileExpected >= 0.:
+                    if drop is not None and any([window[0][0] < valuednll[0] < window[0][1] and window[1][0] < valuednll[1] < window[1][1] for window in drop]):
+                        continue
                     originals.append(valuednll)
                 elif best_fit[ii] is None and dtree.quantileExpected == -1.:
                     best_fit[ii] = valuednll
@@ -78,7 +84,7 @@ def read_nll(points, directories, parameters, intervals, prunesmooth = False, ma
         fits.append(interpolated if prunesmooth else originals)
     return result
 
-def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
     alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
@@ -89,6 +95,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
         draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
+        #draw_nll.lines = ['solid', 'dashed', (0, (3, 1, 1, 1)), 'dotted']
 
     ndir = len(directories)
     if ndir > len(draw_nll.colors):
@@ -97,7 +104,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    nlls = read_nll(points, directories, parameters, intervals, prunesmooth, maxsigma)
+    nlls = read_nll(points, directories, parameters, intervals, drops, prunesmooth, maxsigma)
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
@@ -119,7 +126,7 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
 
             ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array(third(nll)),
                           levels = np.array([0., alpha]), colors = colortouse,
-                          linestyles = draw_nll.lines[iline], linewidths = 2, alpha = 1. - (0.05 * isig))
+                          linestyles = [draw_nll.lines[iline]], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(tlabel) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))
@@ -174,8 +181,16 @@ def draw_nll(oname, points, directories, tlabel, parameters, plabels, intervals,
     fig.set_dpi(450)
     fig.tight_layout()
 
-    fig.savefig(oname, transparent = transparent)
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
     fig.clf()
+
+def drop_intervals(arg):
+    result = tokenize_to_list(remove_spaces_quotes(arg), token = '--')
+    result = [tokenize_to_list(rr, token = ':') for rr in result]
+    result = [[tokenize_to_list(ii, token = ';') for ii in rr] for rr in result]
+    result = [[[tokenize_to_list(minmax, astype = float) for minmax in ii] for ii in rr] for rr in result]
+    return result
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -199,6 +214,12 @@ if __name__ == '__main__':
                         help = "smooth the data points by making splines off the pruned points, and then taking their averages.",
                         dest = "prunesmooth", action = "store_true", required = False)
 
+    parser.add_argument("--drops",
+                        help = "syntax: int00:int01:...:int0N -- int10:int11:int1N -- intM0:intM1:intMN, where"
+                        "0..M refers to the number of contours (can be less than len(--tag), in which case the last one is used),"
+                        "0..N refers to the individual intervals, whose syntax is the same as --intervals, specifying the regions where NLL points are not drawn",
+                        dest = "drops", type = drop_intervals, default = [], required = False)
+
     parser.add_argument("--draw-best-fit", help = "draw the best fit point.", dest = "bestfit", action = "store_true", required = False)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "5", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
@@ -219,7 +240,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     points = args.point
@@ -237,7 +259,7 @@ if __name__ == '__main__':
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
-    draw_nll(f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{args.fmt}",
-             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.prunesmooth, args.maxsigma, args.bestfit,
+    draw_nll([f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{fmt}" for fmt in args.fmt],
+             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.drops, args.prunesmooth, args.maxsigma, args.bestfit,
              args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass

@@ -272,12 +272,12 @@ def read_limit(directories, otags, xvalues, onepoi):
             limits[tt][xvalues[jj]] = limit
     return limits
 
-def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_1D(onames, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     if len(limits) > 6:
         raise RuntimeError("current plotting code is not meant for more than 6 tags. aborting")
 
     if len(limits) > 1 and not all([list(ll) == list(limits[0]) for ll in limits]):
-        raise RuntimeError("limits in the tags are not over the same x points for plot " + oname + ". aborting")
+        raise RuntimeError("limits in the tags are not over the same x points for plot " + onames[0] + ". aborting")
 
     if not hasattr(draw_1D, "colors"):
         draw_1D.colors = OrderedDict([
@@ -331,19 +331,19 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
                     cleaned = cleanup_single_crossing(exclusion)
                     if len(cleaned) > 1:
                         print(quantile, cleaned)
-                        raise RuntimeError("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
+                        raise RuntimeError("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + onames[0] +
                                        ", current plotting code is meant to handle only 1 expected exclusion interval. aborting")
                     if len(cleaned) > 0:
                         limit[quantile].append(cleaned[0][0])
                         if cleaned[0][1] != max_g:
                             print(quantile, cleaned)
-                            print("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + oname +
+                            print("tag number " + str(tt) + ", xvalue " + str(xx) + ", quantile " + quantile + ", plot " + onames[0] +
                                   " strange exclusion interval. recheck.\n")
                     else:
                         limit[quantile].append(max_g)
         yvalues.append(limit)
 
-    #with open(oname.replace(".pdf", ".json").replace(".png", ".json"), "w") as jj: 
+    #with open(onames[0].replace(".pdf", ".json").replace(".png", ".json"), "w") as jj:
     #    json.dump(limits, jj, indent = 1)
 
     fig, ax = plt.subplots(dpi=600)
@@ -383,8 +383,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
         ymax = max(ymax, max(yy["exp0"]))
         ymax1 = math.ceil(ymax * 2.) / 2.
 
-    if '_m' in oname or '_w' in oname:
-        fixed_value = oname.split('/')[-1]
+    if '_m' in onames[0] or '_w' in onames[0]:
+        fixed_value = onames[0].split('/')[-1]
         fixed_value = fixed_value.split('_')
         parity = fixed_value[0]
         fixed_value = [ff for ff in fixed_value if ff.startswith('m') or ff.startswith('w') ][0]
@@ -494,7 +494,8 @@ def draw_1D(oname, limits, labels, xaxis, yaxis, ltitle, gcurve, interpolate, dr
 
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
-    fig.savefig(oname, transparent = transparent)
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
     plt.close()
 
 def parse_point_quantile(pqs, var = "mass"):
@@ -503,18 +504,17 @@ def parse_point_quantile(pqs, var = "mass"):
     result = {get_point(pq[0])[other]: tokenize_to_list(pq[1]) for pq in result}
     return result
 
-def draw_natural(oname, points, directories, labels, xaxis, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_natural(onames, points, directories, labels, xaxis, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent):
     masses = [pnt[1] for pnt in points]
     if len(set(masses)) != len(masses):
-        raise RuntimeError("producing " + oname + ", --function natural expects unique mass points only. aborting")
-
+        raise RuntimeError("producing " + onames[0] + ", --function natural expects unique mass points only. aborting")
     if len(masses) < 2:
         print("There are less than 2 masses points. skipping")
 
-    draw_1D(oname, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "",
+    draw_1D(onames, read_limit(directories, masses, onepoi), labels, xaxis, yaxis, "",
             parse_point_quantile(interpolate), drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent)
 
-def draw_variable(var1, oname, points, directories, otags, labels, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent, dump_spline):
+def draw_variable(var1, onames, points, directories, otags, labels, yaxis, interpolate, onepoi, drawband, observed, formal, cmsapp, luminosity, a343bkg, transparent, dump_spline):
     if not hasattr(draw_variable, "settings"):
         draw_variable.settings = OrderedDict([
             ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{%s}}}\,=$ %.1f%% m$_{\mathrm{\mathsf{%s}}}$"}),
@@ -534,7 +534,7 @@ def draw_variable(var1, oname, points, directories, otags, labels, yaxis, interp
 
         axislabel = points[0][0] if var1 == "mass" else (points[0][0], points[0][0])
         legendtext = (points[0][0], vv, points[0][0]) if var1 == "mass" else (points[0][0], vv)
-        draw_1D(oname.format(www = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))),
+        draw_1D([oname.format(www = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))) for oname in onames],
                 read_limit(dirs, otags, var1s, onepoi),
                 labels, axes[var1] % axislabel, yaxis,
                 draw_variable.settings[var1]["label"] % legendtext,
@@ -578,7 +578,8 @@ if __name__ == '__main__':
                         dest = "drawband", action = "store_false", required = False)
     parser.add_argument("--dump-spline", help = "dump the splines used to obtain the cls = 0.05 crossing",
                         dest = "dump_spline", action = "store_true", required = False)
-    parser.add_argument("--plot-format", help = "format to save the plots in", default = ".png", dest = "fmt", required = False, type = lambda s: prepend_if_not_empty(s, '.'))
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
     args = parser.parse_args()
     if len(args.itag) != len(args.label):
@@ -613,20 +614,20 @@ if __name__ == '__main__':
 
     if args.function == "natural":
         if len(apnt) > 0:
-            draw_natural("{ooo}/A_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
+            draw_natural(["{ooo}/A_limit_natural_{mod}{tag}{f}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, f = f) for f in args.fmt],
                          apnt, adir, otags, args.label, axes["mass"] % apnt[0][0], axes["ttcoupling"] % apnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         if len(hpnt) > 0:
-            draw_natural("{ooo}/H_limit_natural_{mod}{tag}{fmt}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, fmt = args.fmt),
+            draw_natural(["{ooo}/H_limit_natural_{mod}{tag}{f}".format(ooo = args.odir, mod = "one-poi" if args.onepoi else "g-scan", tag = args.ptag, f = f) for f in args.fmt],
                          hpnt, hdir, otags, args.label, axes["mass"] % hpnt[0][0], axes["ttcoupling"] % hpnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     else:
         if len(apnt) > 0:
             draw_variable(args.function,
-                          "{ooo}/A_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
-                                                                       tag = args.ptag, fmt = args.fmt),
+                          ["{ooo}/A_limit_{www}_{mod}{tag}{f}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
+                                                                      tag = args.ptag, f = f) for f in args.fmt],
                           apnt, adir, otags, args.label, axes["ttcoupling"] % apnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
         if len(hpnt) > 0:
             draw_variable(args.function,
-                          "{ooo}/H_limit_{www}_{mod}{tag}{fmt}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
-                                                                       tag = args.ptag, fmt = args.fmt),
+                          ["{ooo}/H_limit_{www}_{mod}{tag}{f}".format(ooo = args.odir, www = r"{www}", mod = "one-poi" if args.onepoi else "g-scan",
+                                                                      tag = args.ptag, f = f) for f in args.fmt],
                           hpnt, hdir, otags, args.label, axes["ttcoupling"] % hpnt[0][0], args.interpolate, args.onepoi, args.drawband, args.observed, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent, args.dump_spline)
     pass
