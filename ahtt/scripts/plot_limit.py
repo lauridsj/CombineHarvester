@@ -595,8 +595,8 @@ if __name__ == '__main__':
     hdir = [[pnt for pnt in sorted(glob.glob(f'{args.basedir}H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
     otags = [tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
 
-    apnt = [[get_point(pnt) for pnt in directory] for directory in adir]
-    hpnt = [[get_point(pnt) for pnt in directory] for directory in hdir]
+    apnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in adir]
+    hpnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in hdir]
 
     if not all([pnt == apnt[0]] for pnt in apnt):
         raise RuntimeError("A signal points are not the same between args.itag. aborting")
