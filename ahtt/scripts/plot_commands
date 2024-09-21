@@ -65,17 +65,10 @@ outdir="${basedir}/contours" # change if needed
 fmt="pdf,png,svg"
 mkdir -p outdir
 
-<<<<<<< HEAD
-# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows (nope, the syntax relies on regular grids)
-pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0'
-python3 ../scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
-=======
-
 cd "/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_fc"
-# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows
+# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows (nope, the syntax relies on regular grids)
 pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0' 
 python3 ${basedir}/scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
->>>>>>> 7a9abfd999f68397b0aacdc5efdf90425ae4044c
 
 # CORRELATION
 # this needs both a fitdiagnostics output, and impacts for the sorting
@@ -101,9 +94,10 @@ python scripts/customImpacts.py -i ${infile_data} -ia ${infile_asimov} -o impact
 
 # PARITY TEST
 # no --read-from yet, it still needs to be propagated to other scripts contour etc
-# the --drops are to remove numerically naughty points: obviously only applicable to this particular dNLL contour
+# --drops is used to remove numerically naughty points
 
 mkdir forpaper
 odir="$(readlink -f forpaper)"
+fmt="pdf,png,svg"
 cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah365_res_240411
-./../scripts/plot_2D_nll.py --point 'A_m365_w2p0,H_m365_w2p0' --tag 'lx_10pb:exp-b;lx_10pb:obs' --tag-label 'Expected (b);Observed' --parameters 'r1,r2' --draw-best-fit --arbitrary-resonance-normalization 10 --plot-format pdf --odir "${odir}" --intervals='-1,5;-2,2' --drops='-0.145,-0.135;0.195,0.205 : 0.155,0.165;-0.085,-0.075 -- 0.495,0.505;-0.145,-0.135 : 0.515,0.525;-0.165,-0.155 : 0.535,0.545;-0.185,-0.175 : 0.555,0.565;-0.205,-0.195' --formal --A343-background 0 --cms-append Preliminary --plot-tag lx_pas
+./../scripts/plot_2D_nll.py --point 'A_m365_w2p0,H_m365_w2p0' --tag 'lx_10pb:exp-b;lx_10pb:obs' --tag-label 'Expected (b);Observed' --parameters 'r1,r2' --draw-best-fit --arbitrary-resonance-normalization 10 --plot-format pdf --odir "${odir}" --intervals='-1,5;-2,2' --drops='-0.145,-0.135;0.195,0.205 : 0.155,0.165;-0.085,-0.075 -- 0.495,0.505;-0.145,-0.135 : 0.515,0.525;-0.165,-0.155 : 0.535,0.545;-0.185,-0.175 : 0.555,0.565;-0.205,-0.195' --formal --A343-background 0 --cms-append Preliminary --plot-tag lx_pas --plot-formats "${fmt}"
