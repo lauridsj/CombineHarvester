@@ -21,7 +21,7 @@ import matplotlib.ticker as mtc
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from drawings import default_etat_measurement, etat_blurb
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def ahtt_width_coupling_helper(parity, mah):
     sqrt2 = math.sqrt(2)
