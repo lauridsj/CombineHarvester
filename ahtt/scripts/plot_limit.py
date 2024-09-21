@@ -582,6 +582,9 @@ if __name__ == '__main__':
     parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
                         type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
+    parser.add_argument("--read-from", help = "this is the location where workspace dirs are searched for",
+                        dest = "basedir", default = ".", required = False, type = append_if_not_empty)
+
     args = parser.parse_args()
     if len(args.itag) != len(args.label):
         if len(args.itag) == 1 and len(args.label) == 0:
@@ -589,8 +592,8 @@ if __name__ == '__main__':
         else:
             raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
-    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    adir = [[pnt for pnt in sorted(glob.glob(f'{args.basedir}A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    hdir = [[pnt for pnt in sorted(glob.glob(f'{args.basedir}H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
     otags = [tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
 
     apnt = [[get_point(pnt) for pnt in directory] for directory in adir]
