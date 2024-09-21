@@ -693,7 +693,7 @@ if args.batch is not None:
             sharex = True,
             gridspec_kw = {"height_ratios": [0.001, 1, 1, 1, 1]},
             figsize = (19.2, 17.75),
-            dpi=450
+            dpi=600
         )
         for fitstep in fits:
             print(f"Channel {cltx}, fitstep {fitstep}")

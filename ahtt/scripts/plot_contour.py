@@ -63,7 +63,7 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
         draw_contour.lines = ['solid', 'dashed', 'dashdot', 'dashdotdotted', 'dotted']
 
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(dpi=600)
     handles = []
     sigmas = []
 
@@ -153,7 +153,6 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
-    fig.set_dpi(450)
     fig.tight_layout()
 
     for oname in onames:

@@ -58,14 +58,24 @@ basedir="/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_1
 python3 ../scripts/plot_limit.py --tag "lx" --odir limits_etat --read-from "${basedir}" --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-formats "${fmt}"
 
 # CONTOURS
+# same story re: absolute path, this time its Laurids' dirs
+basedir="/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt"
 
-outdir="." # change if needed
+outdir="${basedir}/contours" # change if needed
 fmt="pdf,png,svg"
 mkdir -p outdir
 
+<<<<<<< HEAD
 # I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows (nope, the syntax relies on regular grids)
 pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0'
 python3 ../scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
+=======
+
+cd "/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_fc"
+# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows
+pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0' 
+python3 ${basedir}/scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
+>>>>>>> 7a9abfd999f68397b0aacdc5efdf90425ae4044c
 
 # CORRELATION
 # this needs both a fitdiagnostics output, and impacts for the sorting
