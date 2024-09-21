@@ -230,7 +230,7 @@ def read_limit(directories, otags, xvalues, onepoi):
 
     for tt, directory in enumerate(directories):
         for jj, dcd in enumerate(directory):
-            #print(dd)
+            pnt = '_'.join(tokenize_to_list(dcd, '/')[-1].split('_')[:3])
             limit = OrderedDict([
                 ("exp-2", []),
                 ("exp-1", []),
@@ -243,7 +243,7 @@ def read_limit(directories, otags, xvalues, onepoi):
             if onepoi:
                 with open("{dcd}/{pnt}_{tag}_limits_one-poi.json".format(
                         dcd = dcd,
-                        pnt = '_'.join(dcd.split('_')[:3]),
+                        pnt = pnt,
                         tag = otags[tt])) as ff:
                     result = json.load(ff)
 
@@ -253,7 +253,7 @@ def read_limit(directories, otags, xvalues, onepoi):
             else:
                 chunks = glob.glob("{dcd}/{pnt}_{tag}_limits_g-scan_n*_i*.json".format(
                     dcd = dcd,
-                    pnt = '_'.join(dcd.split('_')[:3]),
+                    pnt = pnt,
                     tag = otags[tt]))
                 chunks.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
                 for nn in chunks:
@@ -597,7 +597,8 @@ if __name__ == '__main__':
 
     apnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in adir]
     hpnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in hdir]
-
+    #print(apnt)
+    #raise RuntimeError("xxx")
     if not all([pnt == apnt[0]] for pnt in apnt):
         raise RuntimeError("A signal points are not the same between args.itag. aborting")
 
