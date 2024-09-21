@@ -4,7 +4,7 @@
 # for lcg: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_104 x86_64-el9-gcc11-opt
 # EXCEPTION: impact plot, that needs EL7 container + CMSSW
 
-#PRE/POST
+# PRE/POST
 
 etatdir='/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_thrcompat_240530/A_m365_w2p0__H_m365_w2p0_mitetat'
 ahdir='/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_thrcompat_240530/A_m365_w2p0__H_m365_w2p0_lx'
@@ -37,28 +37,25 @@ for channel in ll l4pj l3j; do
 done
 
 
-# LIMITS
+# 1D LIMITS
 
 # these are a bit stupid because they need to be executed in the actual directory where the limits are
 # ... to which you do not have writing permissions if you are not Afiq
 # thus, absolute paths
-
-basedir="/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt" # or whatever your dir is
+# Afiq edit: exactly why the dev shouldn't be the tester too!
 
 # limits without etat
-outdir="${basedir}/limits_smtt"  # also absolute path
-mkdir -p outdir
+mkdir -p limits_smtt
 fmt="pdf,png,svg"
 
-cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205
-python3 ${basedir}/scripts/plot_limit.py --tag "lx_smtt" --odir ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 0 --plot-formats "${fmt}"
+basedir="/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
+python3 ../scripts/plot_limit.py --tag "lx_smtt" --odir limits_smtt --read-from "${basedir}" --observed --formal --cms-append 'Preliminary' --A343-background 0 --plot-formats "${fmt}"
 
 # limits with etat
-outdir="${basedir}/limits_etat"  # also absolute path
-mkdir -p outdir
+mkdir -p limits_etat
 
-cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318
-python3 ${basedir}/scripts/plot_limit.py --tag "lx" --odir  ${outdir} --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-formats "${fmt}"
+basedir="/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318"
+python3 ../scripts/plot_limit.py --tag "lx" --odir limits_etat --read-from "${basedir}" --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-formats "${fmt}"
 
 # CONTOURS
 
@@ -66,8 +63,8 @@ outdir="." # change if needed
 fmt="pdf,png,svg"
 mkdir -p outdir
 
-# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows
-pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0' 
+# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows (nope, the syntax relies on regular grids)
+pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0'
 python3 ../scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
 
 # CORRELATION
@@ -91,3 +88,12 @@ infile_data="/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/a
 infile_asimov="/nfs/dust/cms/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_arc/A_m400_w5p0_lx_etatfit_asimov/A_m400_w5p0_lx_etatfit_asimov_impacts_CMS_EtaT_norm_13TeV_g_0p0_fixed_all.json"
 
 python scripts/customImpacts.py -i ${infile_data} -ia ${infile_asimov} -o impacts_etat_lx -t scripts/nuisance_map.json --per-page 20 --cms-label 'Preliminary'
+
+# PARITY TEST
+# no --read-from yet, it still needs to be propagated to other scripts contour etc
+# the --drops are to remove numerically naughty points: obviously only applicable to this particular dNLL contour
+
+mkdir forpaper
+odir="$(readlink -f forpaper)"
+cd /nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah365_res_240411
+./../scripts/plot_2D_nll.py --point 'A_m365_w2p0,H_m365_w2p0' --tag 'lx_10pb:exp-b;lx_10pb:obs' --tag-label 'Expected (b);Observed' --parameters 'r1,r2' --draw-best-fit --arbitrary-resonance-normalization 10 --plot-format pdf --odir "${odir}" --intervals='-1,5;-2,2' --drops='-0.145,-0.135;0.195,0.205 : 0.155,0.165;-0.085,-0.075 -- 0.495,0.505;-0.145,-0.135 : 0.515,0.525;-0.165,-0.155 : 0.535,0.545;-0.185,-0.175 : 0.555,0.565;-0.205,-0.195' --formal --A343-background 0 --cms-append Preliminary --plot-tag lx_pas
