@@ -387,6 +387,9 @@ if __name__ == '__main__':
 
         print "\nsingle_point_ahtt :: impact remaining fits"
         for nuisance in nuisances:
+            if nuisance in args.frzzero or nuisance in args.frzpost:
+                continue
+
             never_gonna_give_you_up(
                 command = "combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doFits -n _pull {stg} {asm} "
                 "{poi} {nui} {prm} {ext}".format(
