@@ -138,10 +138,12 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     ax.margins(x = 0, y = 0)
 
     if len(handles) > 0 and len(sigmas) > 0:
-        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+        #legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.175, 0.575, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
         ax.add_artist(legend1)
 
-        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        #legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.275, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
         ax.add_artist(legend2)
 
     elif len(handles) > 0:
@@ -168,8 +170,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
 
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
-                  fontsize = 14 if len(btxt) > 1 else 15, frameon = False,
+        #ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.85, 0.75, 0.15, 0.15),
+                  fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
                   handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
@@ -178,7 +181,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
     fig.set_size_inches(8., 8.)
-    fig.set_dpi(450)
+    fig.set_dpi(600)
     fig.tight_layout()
 
     for oname in onames:
