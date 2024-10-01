@@ -611,9 +611,10 @@ def make_pseudodata(ofile, cpn, replaces, injsig = None, assig = None, seed = No
         for pp in processes.keys():
             # meh let's just hack it
             isah = any([ss in pp for ss in ["A_m", "H_m"]])
+            isewk = "EWK_TT_" in pp
             issig = isah or (assig is not None and any([ss in pp for ss in assig]))
             hh = ofile.Get(category + '/' + pp).Clone("hhtmphh")
-            if isah and "_neg" in pp:
+            if (isah or isewk) and "_neg" in pp:
                 scale(hh, -1.)
 
             if not issig or (issig and injsig is not None and any([ss in pp for ss in injsig])):
