@@ -49,8 +49,11 @@ def ahtt_width_coupling_helper(parity, mah):
     term2 = 8. * pi * vev2
 
     term3 = 0.75 * Gf / (pi * sqrt2)
-
-    beta = math.sqrt(1. - (4. * mt2 / mah2))
+    
+    if mah >= 2 * mt:
+        beta = math.sqrt(1. - (4. * mt2 / mah2))
+    else:
+        beta = 0.
     factor = mah * mt2 * term3 * beta
     return factor if parity == 'A' else factor * beta * beta if parity == 'H' else 0.
 

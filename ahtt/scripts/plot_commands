@@ -11,7 +11,7 @@ ahdir='/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_
 
 outdir="." # change if needed
 fmt="pdf,png,svg"
-mkdir -p outdir
+mkdir -p $outdir
 
 # combined plots
 for channel in ll l4pj l3j; do
