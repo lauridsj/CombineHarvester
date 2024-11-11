@@ -456,7 +456,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         skip_nuisance = True
                     else:
                         for rn in replaces:
-                            if len(nds) > 1 and rn.split(':')[0] == nn2:
+                            if len(rn.split(':')) > 1 and rn.split(':')[0] == nn2:
                                 skip_nuisance = False
                                 break
                             else:
@@ -618,6 +618,7 @@ def make_pseudodata(ofile, cpn, replaces, injsig = None, assig = None, seed = No
                 scale(hh, -1.)
 
             if not issig or (issig and injsig is not None and any([ss in pp for ss in injsig])):
+                print("make_datacard :: category " + category + ", adding process " + pp + " to pseudodata")
                 if dd is None:
                     dd = hh.Clone("data_obs")
                 else:
@@ -628,7 +629,7 @@ def make_pseudodata(ofile, cpn, replaces, injsig = None, assig = None, seed = No
             # the assumption here is that the shifting only makes sense for pseudodata
             # as otherwise the shifted model becomes the baseline, which is fitted away
             if replaces is not None:
-                ho = read_original_nominal(odir, pp)
+                ho = read_original_nominal(category, pp)
                 ho.SetName(pp)
                 ofile.cd(category)
                 ho.Write()
