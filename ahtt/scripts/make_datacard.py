@@ -750,11 +750,14 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
 
     realsignal = [] + sigpnt
     notbackground = [] + sigpnt
-    if injsig is not None:
-        notbackground += injsig
-    if assig is not None:
-        notbackground += assig
-        realsignal += assig
+    # FIXME somehow breaks the 'intended' indexing of everything but A/H is signal
+    # dont remember why it's done this way, just commenting for now (maybe 'signal' EWK_TT? that one is retired, so all good)
+    # assumption: all processes have its own parameter - ie known to work only for HIG-22-013 style dcs
+    #if injsig is not None:
+    #    notbackground += injsig
+    #if assig is not None:
+    #    notbackground += assig
+    #    realsignal += assig
 
     cb.AddObservations(['*'], ["ahtt"], ["13TeV"], [""], categories.items())
     for iicc in categories.items():
