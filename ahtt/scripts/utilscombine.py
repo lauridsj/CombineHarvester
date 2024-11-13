@@ -251,7 +251,7 @@ def is_good_fit(fit_fname, fit_names):
     fgood = []
     for fname in fit_names:
         fresult = ffile.Get("{fname}".format(fname = fname))
-        fit_quality = fit_result.covQual()
+        fit_quality = fresult.covQual()
         print ("\nxxx_point_ahtt :: fit with name {fname} has a covariance matrix of status {fql}".format(fname = fname, fql = fit_quality))
         sys.stdout.flush()
         fgood.append(fit_quality != 3)
