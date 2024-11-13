@@ -69,14 +69,15 @@ if __name__ == '__main__':
 
     for pnt in points:
         flush_jobs()
-        if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
+        dorundc = rundc
+        if not dorundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pnt + args.tag + ".tar.gz"))
 
         mode = ""
         hasworkspace = os.path.isfile(pnt + args.tag + "/workspace_g-scan.root") and os.path.isfile(pnt + args.tag + "/workspace_one-poi.root")
-        if not rundc and not hasworkspace:
+        if not dorundc and not hasworkspace:
             syscall("rm -r {ddd}".format(ddd = pnt + args.tag), True, True)
-            rundc = True
+            dorundc = True
             mode = "datacard," + args.mode
 
         if os.path.isdir(pnt + args.tag):
@@ -86,11 +87,11 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pnt = pnt + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
-        if rundc and os.path.isdir(pnt + args.tag):
+        if dorundc and os.path.isdir(pnt + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
             if mode != "":
-                rundc = False
+                dorundc = False
             else:
                 continue
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
         job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_name += "{mod}{poi}{gvl}{rvl}{fix}".format(
-            mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
+            mod = "" if dorundc else "_one-poi" if args.onepoi else "_g-scan",
             poi = "_" + args.poiset.replace(",", "__") if args.poiset != "" else "",
             gvl = "_g_" + str(args.setg).replace('.', 'p') if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace('.', 'p') if args.setr >= 0. and not args.onepoi else "",
@@ -109,13 +110,13 @@ if __name__ == '__main__':
         job_arg = "--point {pnt} --mode {mmm} {sig} {one} {gvl} {rvl} {fix}".format(
             pnt = pnt,
             mmm = mode,
-            sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
+            sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if dorundc else "",
             one = "--one-poi" if args.onepoi else "",
             gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
             rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
             fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
-        args.rundc = rundc
+        args.rundc = dorundc
         job_arg += common_job(args)
 
         if runlimit and not args.onepoi:
@@ -145,7 +146,7 @@ if __name__ == '__main__':
                 )
 
                 submit_job(jname, jarg, args.jobtime, 1, "",
-                           "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+                           "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         elif runpull:
             if args.nnuisance < 0:
                 args.nnuisance = 25
@@ -216,7 +217,7 @@ if __name__ == '__main__':
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
                 submit_job(jname, jarg, args.jobtime, 1, "",
-                           "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+                           "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
@@ -225,5 +226,5 @@ if __name__ == '__main__':
                     continue
 
             submit_job(job_name, job_arg, args.jobtime, 1, "",
-                       "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+                       "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
     flush_jobs()
