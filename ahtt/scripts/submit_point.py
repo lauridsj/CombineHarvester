@@ -11,7 +11,7 @@ import copy
 from collections import OrderedDict
 
 from utilspy import syscall, chunks, index_list
-from utilslab import input_base, input_sig, remove_mjf
+from utilslab import input_base, input_sig, remove_mjf, parities, masses, widths
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, flush_jobs, common_job, make_singularity_command
@@ -49,15 +49,15 @@ if __name__ == '__main__':
     remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    parities = ("A", "H")
-    masses = tuple(["m365", "m380"] + ["m" + str(mm) for mm in range(400, 1001, 25)])
-    widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     points = []
     keep_point = args.point
 
     for parity in parities:
         for mass in masses:
             for width in widths:
+                if mass == "m343" and width != "w2p0":
+                    continue
+
                 pnt = "_".join([parity, mass, width])
 
                 if keep_point == [] or any([kk in pnt for kk in keep_point]):
