@@ -17,7 +17,7 @@ from datetime import datetime
 
 from utilspy import syscall, tuplize, g_in_filename, recursive_glob, index_list, floattopm, uniform, coinflip
 from utilspy import make_timestamp_dir, directory_to_delete, max_nfile_per_dir
-from utilslab import input_base, input_sig, remove_mjf
+from utilslab import input_base, input_sig, remove_mjf, masses, widths
 from utilscombine import problematic_datacard_log, min_g, max_g, expected_scenario
 from utilshtc import submit_job, flush_jobs, common_job
 
@@ -243,14 +243,22 @@ if __name__ == '__main__':
     if len(pairs) == 4:
         pairgrid = [pp.split(",") for pp in pairs]
         if all([mm.startswith("m") for mm in pairgrid[0] + pairgrid[2]]) and all([ww.startswith("w") for ww in pairgrid[1] + pairgrid[3]]):
+            for ii in range(4):
+                if len(pairgrid[ii]) == 1 and '*' in pairgrid[ii][0]:
+                    pairgrid[ii] = masses if ii % 2 == 0 else widths
+
             alla = []
             for mm in pairgrid[0]:
                 for ww in pairgrid[1]:
+                    if mm == "m343" and ww != "w2p0":
+                        continue
                     alla.append("_".join(["A", mm, ww]))
 
             allh = []
             for mm in pairgrid[2]:
                 for ww in pairgrid[3]:
+                    if mm == "m343" and ww != "w2p0":
+                        continue
                     allh.append("_".join(["H", mm, ww]))
 
             pairs = []
