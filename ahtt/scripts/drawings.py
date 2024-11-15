@@ -15,7 +15,11 @@ axes = {
     "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
     "muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
-    "yukawa":     r"$y_{\mathrm{t}}$"
+    "yukawa":     r"$y_{\mathrm{t}}$",
+    "ll":         r"$\ell\bar{\ell}$",
+    "l3j":        r"$\ell$, 3j",
+    "l4pj":       r"$\ell$, $\geq$ 4j",
+    "lj":         r"$\ell$j"
 }
 
 def ith(iterable, idx):
