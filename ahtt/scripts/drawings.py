@@ -20,7 +20,7 @@ axes = {
     "l3j":        r"$\ell$, 3j",
     "l4pj":       r"$\ell$, $\geq$ 4j",
     "lj":         r"$\ell$j",
-    "lx":         r"$\ell\bar{\ell} + \ell$j"
+    "lx":         r"$\ell\bar{\ell}$, $\ell$j"
 }
 
 def ith(iterable, idx):
