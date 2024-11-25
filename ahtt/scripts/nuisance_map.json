@@ -7,10 +7,10 @@
         "QCDscale_ISR_$PROC": "PS ISR ($PROC)",
         "QCDscale_FSR_$PROC": "PS FSR ($PROC)",
 
-        "tmass": "Top quark mass",
+        "tmass": "Top quark mass (QCD MC)",
         "hdamp_TT": "hdamp (t\\bar{t})",
 
-        "EWK_yukawa": "Top quark Yukawa coupling",
+        "EWK_yukawa": "Top quark mass (EW correction)",
         "EWK_scheme": "EW correction scheme",
 
         "CMS_PDF_PCA_0": "PDF",
