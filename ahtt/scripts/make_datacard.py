@@ -107,6 +107,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_FSR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # for binwise SFs: symmetric, and widenable with --experimental
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_ISR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_TT",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -117,6 +118,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("EWK_scheme",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_PDF_alphaS",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_PDF_hessian",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
