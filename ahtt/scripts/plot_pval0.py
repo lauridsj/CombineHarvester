@@ -12,11 +12,15 @@ import math
 import glob
 from collections import OrderedDict
 import json
+
 import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
+import matplotlib.ticker as mtc
 
 from utilscombine import get_fit
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
@@ -125,13 +129,19 @@ def read_pval0(which, var1, ahdirs, ahtag, etatag, etadirs):
         pass
     return result
 
-def really_draw_pval0(onames, pvalues, label, xaxis, legendtext, expected, observed, formal, cmsapp, luminosity, transparent):
+def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent):
     colors = {
         "A":     "#cc0033",
         "H":     "#0033cc",
         "etat":  "#009000",
         "sigma": "#3B444B"
     }
+    yaxis = {
+        'lx': [(1e-15, 5.), [1e-15, 1e-10, 1e-5, 1], [r'$10^{-15}$', r'$10^{-10}$', r'$10^{-5}$', '$1\,$']],
+        'll': [(1e-12, 4.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$']],
+        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$']],
+    }
+    channel = 'll' # hardcoded atm
 
     axe = np.array(first(pvalues['A exp']))
     hxe = np.array(first(pvalues['H exp']))
@@ -142,66 +152,75 @@ def really_draw_pval0(onames, pvalues, label, xaxis, legendtext, expected, obser
     hye = np.array(second(pvalues['H exp']))
     hyo = np.array(second(pvalues['H obs']))
 
-    eye = np.array([pvalues['etat exp'] for x in axe])
-    eyo = np.array([pvalues['etat obs'] for x in axe])
-
     minx, maxx = min([min(axe), min(hxe)]), max([max(axe), max(hxe)])
-    miny, maxy = 1e-21, 5. # e-21, 5 lx, e-14, 5 ll, e-4, 2 lj
+    miny, maxy = yaxis[channel][0]
     handles = []
     fits = []
 
     fig, ax = plt.subplots(dpi = 600)
-    for ii in [0, 3, 5, 7, 9]:
+    for ii in [0, 1, 2, 3, 4, 5, 7, 9]:
+        if miny < 1e-11 and ii in [1, 2, 4]:
+            continue
+
         ax.plot(np.array([minx, maxx]), np.array([normal_2sided_pvalue(ii * ii / 2.), normal_2sided_pvalue(ii * ii / 2.)]), color = colors["sigma"], linestyle = 'dotted', linewidth = 2)
-        plt.annotate(f"${ii}\sigma$", (0.98 * maxx, normal_2sided_pvalue(ii * ii / 2.)), textcoords = "offset points", xytext = (0, 2), ha = 'center', fontsize = 23, color = colors["sigma"])
+        plt.annotate(f"${ii}\sigma$", (0.97 * maxx, normal_2sided_pvalue(ii * ii / 2.)), textcoords = "offset points", xytext = (0, 2), ha = 'center', fontsize = 17, color = colors["sigma"])
 
     if expected:
-        ax.plot(axe, eye, color = colors["etat"], linestyle = 'dashed', linewidth = 3)
-        ax.plot(hxe, hye, color = colors["H"], linestyle = 'dashed', linewidth = 3)
-        ax.plot(axe, aye, color = colors["A"], linestyle = 'dashed', linewidth = 3)
+        ax.plot(hxe, hye, color = colors["H"], linestyle = 'dashed', linewidth = 5)
+        ax.plot(axe, aye, color = colors["A"], linestyle = 'dashed', linewidth = 5)
+        ax.plot(np.array([minx]), np.array([pvalues['etat exp']]),
+                marker = 'x', markersize = 20, color = colors["etat"])
 
     if observed:
-        ax.plot(axe, eyo, color = colors["etat"], linestyle = 'solid', linewidth = 3)
-        ax.plot(hxe, hyo, color = colors["H"], linestyle = 'solid', linewidth = 3)
-        ax.plot(axe, ayo, color = colors["A"], linestyle = 'solid', linewidth = 3)
+        ax.plot(hxe, hyo, color = colors["H"], linestyle = 'solid', linewidth = 5)
+        ax.plot(axe, ayo, color = colors["A"], linestyle = 'solid', linewidth = 5)
+        ax.plot(np.array([minx]), np.array([pvalues['etat obs']]),
+                marker = 9, markersize = 20, color = colors["etat"])
+        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues['etat obs']), textcoords = "offset points", xytext = (10, 10), ha = 'left', fontsize = 17, color = colors["etat"])
 
-    handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = 3), r'$\mathrm{\mathsf{A}}$'))
-    handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = 3), r'$\mathrm{\mathsf{H}}$'))
-    handles.append((mln.Line2D([0], [0], color = colors["etat"], linestyle = 'solid', linewidth = 3), r'$\eta_{\mathrm{t}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{A}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{H}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["etat"], marker = 9, markersize = 20, linewidth = 0), r'$\eta_{\mathrm{t}}$'))
 
     if expected and observed:
-        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', linewidth = 3), r"Expected"))
-        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', linewidth = 3), r"Observed"))
-    ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 31, loc = 'best',
-              bbox_to_anchor = (0.7, 0.275 if miny < 1e-14 else 0.1, 0.3, 0.1),
-              fontsize = 31, handlelength = 2., borderaxespad = 1., frameon = False)
+        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', marker = 'x', markersize = 20, linewidth = 5), r"Expected"))
+        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', marker = 9, markersize = 20, linewidth = 5), r"Observed"))
+
+    plt.xlim((minx, maxx))
+    plt.ylim((miny, maxy))
+    plt.xlabel(xaxis, fontsize = 26, loc = "right")
+    plt.ylabel("Local p-value", fontsize = 26, loc = "top")
+    ax.set_title(label, fontsize = 23)
+    ax.set_yscale('log')
+    ax.margins(x = 0, y = 0)
+
+    ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 21, loc = 'best',
+              bbox_to_anchor = (0.49, 0.25 if miny < 1e-11 else 0.1, 0.5, 0.1),
+              fontsize = 21, handlelength = 1.5, borderaxespad = 1., frameon = False)
 
     if formal:
         xwindow = maxx - minx
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.001 * xwindow + minx, 1.001 * maxy, ctxt, fontsize = 43, ha = 'left', va = 'bottom', usetex = True)
+        ax.text(0.001 * xwindow + minx, 1.001 * maxy, ctxt, fontsize = 31, ha = 'left', va = 'bottom', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text(0.18 * xwindow + minx, 1.005 * maxy, atxt, fontsize = 37, ha = 'left', va = 'bottom', usetex = True)
+            ax.text(0.18 * xwindow + minx, 1.01 * maxy, atxt, fontsize = 26, ha = 'left', va = 'bottom', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(1. * xwindow + minx, 1.03 * maxy, ltxt, fontsize = 37, ha = 'right', va = 'bottom', usetex = True)
+        ax.text(1. * xwindow + minx, 1.08 * maxy, ltxt, fontsize = 23, ha = 'right', va = 'bottom', usetex = True)
 
-    plt.xlim((minx, maxx))
-    plt.ylim((miny, maxy))
-    plt.xlabel(xaxis, fontsize = 33, loc = "right")
-    plt.ylabel("Local p-value", fontsize = 33, loc = "top")
-    ax.set_title(label, fontsize = 31)
-    ax.set_yscale('log')
-    ax.margins(x = 0, y = 0)
+    ax.minorticks_off()
+    ax.tick_params(axis = "both", which = "major", direction = "in", bottom = True, top = True, left = True, right = True)
+    ax.tick_params(axis = "y", which = "major", width = 1, length = 8, labelsize = 22, pad = 3)
+    ax.tick_params(axis = "x", which = "major", width = 1, length = 8, labelsize = 22, pad = 7)
+    if xticks is not None and xlabels is not None:
+        ax.xaxis.set_major_locator(mtc.FixedLocator(xticks))
+        ax.xaxis.set_major_formatter(mtc.FixedFormatter(xlabels))
+    ax.yaxis.set_major_locator(mtc.FixedLocator(yaxis[channel][1]))
+    ax.yaxis.set_major_formatter(mtc.FixedFormatter(yaxis[channel][2]))
 
-    ax.minorticks_on()
-    ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
-    ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 27)
-    ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
-
-    fig.set_size_inches(16., 12.)
+    fig.set_size_inches(8., 8.)
     fig.tight_layout()
     for oname in onames:
         fig.savefig(oname, transparent = transparent)
@@ -221,6 +240,8 @@ def draw_pval0(var1, onames, which, ahdirs, apoints, hpoints, ahtag, etatag, eta
         print(f"running {draw_pval0.settings[var1]['var2']} {vv}")
         av1s = list(set([pnt[draw_pval0.settings[var1]["iv1"]] for pnt in apoints if pnt[draw_pval0.settings[var1]["iv2"]] == vv]))
         hv1s = list(set([pnt[draw_pval0.settings[var1]["iv1"]] for pnt in hpoints if pnt[draw_pval0.settings[var1]["iv2"]] == vv]))
+        xticks = None if var1 != "mass" else [450., 600., 750., 900.]
+        xlabels = None if var1 != "mass" else ['450', '600', '750', '900']
 
         dirs = []
         for dd in ahdirs:
@@ -231,10 +252,13 @@ def draw_pval0(var1, onames, which, ahdirs, apoints, hpoints, ahtag, etatag, eta
 
         legendtext = r"Resonance" if which == "resonance" else r"Full"
         legendtext += draw_pval0.settings[var1]["label"] % vv
+        if int(vv) == vv:
+            legendtext = legendtext.replace('%.1f' % vv, str(int(vv)))
+
         really_draw_pval0(
             [oname.format(fff = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))) for oname in onames],
             read_pval0(which, var1, dirs, ahtag, etatag, etadirs),
-            axes[label] if label != "" and label in axes else label, xaxis, legendtext, expected, observed, formal, cmsapp, luminosity, transparent
+            axes[label] if label != "" and label in axes else label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent
         )
     pass
 
