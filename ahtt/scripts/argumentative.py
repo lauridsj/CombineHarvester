@@ -169,7 +169,7 @@ def parse_args(parser):
             for minmax, njob, in zip(args.nllfullrange, args.nllnjob):
                 mm = minmax.split(',')
                 each = list(np.linspace(float(mm[0]), float(mm[1]), num = njob))
-                each = ["{0},{1}".format(each[ii], each[ii + 1]) for ii in range(len(each) - 1)] if len(each) > 1 else ["{0},{0}".format(each[0])] if len(each) == 1 else []
+                each = ["{0},{1}".format(round(each[ii], 5), round(each[ii + 1], 5)) for ii in range(len(each) - 1)] if len(each) > 1 else ["{0},{0}".format(round(each[0], 5))] if len(each) == 1 else []
                 result.append(each)
             args.nllfullrange = itertools.product(*result)
         else:
