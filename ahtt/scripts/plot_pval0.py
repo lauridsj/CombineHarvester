@@ -136,12 +136,13 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
         "etat":  "#009000",
         "sigma": "#3B444B"
     }
-    yaxis = {
-        'lx': [(1e-15, 5.), [1e-15, 1e-10, 1e-5, 1], [r'$10^{-15}$', r'$10^{-10}$', r'$10^{-5}$', '$1\,$']],
-        'll': [(1e-12, 4.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$']],
-        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$']],
+    # no this doesnt have to make sense - just whatever that needs to be tuned per channel
+    specifics = {
+        'lx': [(1e-21, 1000.), [1e-21, 1e-14, 1e-7, 1], [r'$10^{-21}$', r'$10^{-14}$', r'$10^{-7}$', '$1\,$'], (20, 0), (0.5, 0.25, 0.5, 0.1), (9., 10., 10.)],
+        'll': [(1e-12, 50.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$'], (10, 10), (0.5, 0.2, 0.5, 0.1), (3.8, 4., 4.)],
+        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$'], (20, 0), (0.5, 0.19, 0.5, 0.1), (1.29, 1.3, 1.3)],
     }
-    channel = 'll' # hardcoded atm
+    channel = 'lj' # hardcoded atm
 
     axe = np.array(first(pvalues['A exp']))
     hxe = np.array(first(pvalues['H exp']))
@@ -153,7 +154,7 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
     hyo = np.array(second(pvalues['H obs']))
 
     minx, maxx = min([min(axe), min(hxe)]), max([max(axe), max(hxe)])
-    miny, maxy = yaxis[channel][0]
+    miny, maxy = specifics[channel][0]
     handles = []
     fits = []
 
@@ -164,7 +165,7 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
 
         ax.plot(np.array([minx, maxx]), np.array([normal_2sided_pvalue(ii * ii / 2.), normal_2sided_pvalue(ii * ii / 2.)]), color = colors["sigma"], linestyle = 'dotted', linewidth = 2)
         plt.annotate(f"${ii}\sigma$", (0.97 * maxx, normal_2sided_pvalue(ii * ii / 2.)), textcoords = "offset points", xytext = (0, 2), ha = 'center', fontsize = 17, color = colors["sigma"])
-
+    #ax.plot(np.array([minx, maxx]), np.array([1.35, 1.35]), color = colors["sigma"], linestyle = 'solid', linewidth = 1) # cms calibration line
     if expected:
         ax.plot(hxe, hye, color = colors["H"], linestyle = 'dashed', linewidth = 5)
         ax.plot(axe, aye, color = colors["A"], linestyle = 'dashed', linewidth = 5)
@@ -176,7 +177,7 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
         ax.plot(axe, ayo, color = colors["A"], linestyle = 'solid', linewidth = 5)
         ax.plot(np.array([minx]), np.array([pvalues['etat obs']]),
                 marker = 9, markersize = 20, color = colors["etat"])
-        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues['etat obs']), textcoords = "offset points", xytext = (10, 10), ha = 'left', fontsize = 17, color = colors["etat"])
+        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues['etat obs']), textcoords = "offset points", xytext = specifics[channel][3], ha = 'left', fontsize = 17, color = colors["etat"])
 
     handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{A}}$'))
     handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{H}}$'))
@@ -190,25 +191,26 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
     plt.ylim((miny, maxy))
     plt.xlabel(xaxis, fontsize = 26, loc = "right")
     plt.ylabel("Local p-value", fontsize = 26, loc = "top")
-    ax.set_title(label, fontsize = 23)
+    if label != "":
+        ax.set_title(label, fontsize = 23)
     ax.set_yscale('log')
     ax.margins(x = 0, y = 0)
 
     ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 21, loc = 'best',
-              bbox_to_anchor = (0.49, 0.25 if miny < 1e-11 else 0.1, 0.5, 0.1),
+              bbox_to_anchor = specifics[channel][4],
               fontsize = 21, handlelength = 1.5, borderaxespad = 1., frameon = False)
 
     if formal:
         xwindow = maxx - minx
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.001 * xwindow + minx, 1.001 * maxy, ctxt, fontsize = 31, ha = 'left', va = 'bottom', usetex = True)
+        ax.text(0.01 * xwindow + minx, specifics[channel][5][0], ctxt, fontsize = 31, ha = 'left', va = 'bottom', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text(0.18 * xwindow + minx, 1.01 * maxy, atxt, fontsize = 26, ha = 'left', va = 'bottom', usetex = True)
+            ax.text(0.02 * xwindow + minx, specifics[channel][5][1], atxt, fontsize = 26, ha = 'left', va = 'bottom', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(1. * xwindow + minx, 1.08 * maxy, ltxt, fontsize = 23, ha = 'right', va = 'bottom', usetex = True)
+        ax.text(0.99 * xwindow + minx, specifics[channel][5][2], ltxt, fontsize = 23, ha = 'right', va = 'bottom', usetex = True)
 
     ax.minorticks_off()
     ax.tick_params(axis = "both", which = "major", direction = "in", bottom = True, top = True, left = True, right = True)
@@ -217,8 +219,8 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
     if xticks is not None and xlabels is not None:
         ax.xaxis.set_major_locator(mtc.FixedLocator(xticks))
         ax.xaxis.set_major_formatter(mtc.FixedFormatter(xlabels))
-    ax.yaxis.set_major_locator(mtc.FixedLocator(yaxis[channel][1]))
-    ax.yaxis.set_major_formatter(mtc.FixedFormatter(yaxis[channel][2]))
+    ax.yaxis.set_major_locator(mtc.FixedLocator(specifics[channel][1]))
+    ax.yaxis.set_major_formatter(mtc.FixedFormatter(specifics[channel][2]))
 
     fig.set_size_inches(8., 8.)
     fig.tight_layout()
