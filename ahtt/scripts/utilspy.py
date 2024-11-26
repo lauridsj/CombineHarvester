@@ -37,7 +37,7 @@ def coinflip(probability = 0.5):
     return rng.binomial(1, probability)
 
 def floattopm(value):
-    return str(value).replace(".0", "").replace("-", "m") if math.floor(float(value)) == float(value) else str(round(value, 5)).replace(".", "p").replace("-", "m")
+    return str(value).replace(".0", "").replace("-", "m") if math.floor(float(value)) == float(value) else str(round(float(value), 5)).replace(".", "p").replace("-", "m")
 
 def pmtofloat(string):
     return float(string.replace("p", ".").replace("m", "-"))
