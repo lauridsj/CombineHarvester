@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
+import matplotlib.ticker as mtc
 
 from utilspy import pmtofloat
 from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, withinerror, get_point, stock_labels, valid_nll_fname
@@ -106,6 +107,16 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     sigmas = []
     nlls = read_nll(points, directories, parameters, intervals, drops, prunesmooth, maxsigma)
 
+    xlength = intervals[0][1] - intervals[0][0]
+    ylength = intervals[1][1] - intervals[1][0]
+
+    xmin, xmax = intervals[0]
+    ymin, ymax = intervals[1]
+
+    #if True:
+    #    ax.plot(np.array([xmin, xmax]), np.array([0., 0.]), color = "#3B444B", linewidth = 0.5)
+    #    ax.plot(np.array([0., 0.]), np.array([ymin, ymax]), color = "#3B444B", linewidth = 0.5)
+
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
 
@@ -137,27 +148,28 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     plt.ylim(*intervals[1])
     ax.margins(x = 0, y = 0)
 
+    # for the pas A/H365 plot, lx
+    #bbox_sigmas = (0.175, 0.575, 0.225, 0.3)
+    #bbox_expobs = (0.275, 0., 0.25, 0.2)
+    #bbox_noeta = (0.85, 0.75, 0.15, 0.15)
+
+    # for the paper A/H343 plot, ll
+    bbox_sigmas = (0.96, 0.05, 0.04, 0.25)
+    bbox_expobs = (0.36, 0.725, 0.1, 0.2)
+    bbox_noeta = (0.85, 0.75, 0.15, 0.15)
+
     if len(handles) > 0 and len(sigmas) > 0:
-        #legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
-        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.175, 0.575, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 1., frameon = False)
         ax.add_artist(legend1)
 
-        #legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
-        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.275, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 1., frameon = False)
         ax.add_artist(legend2)
-
     elif len(handles) > 0:
         ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
     elif len(sigmas) > 0:
         ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
-        xlength = intervals[0][1] - intervals[0][0]
-        ylength = intervals[1][1] - intervals[1][0]
-
-        xmin, xmax = intervals[0]
-        ymin, ymax = intervals[1]
-
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
         ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
@@ -168,17 +180,21 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
-        btxt = etat_blurb(a343bkg)
-        bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        #ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.825, 0.55, 0.15, 0.15),
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.85, 0.75, 0.15, 0.15),
-                  fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
-                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        #btxt = etat_blurb(a343bkg)
+        #bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
+        #ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = bbox_noeta,
+        #          fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
+        #          handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 18, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
+
+    if xlength < 5 and xmin == int(xmin) and xmax == int(xmax):
+        ax.xaxis.set_major_locator(mtc.MultipleLocator(base = 1))
+    if ylength < 5 and ymin == int(ymin) and ymax == int(ymax):
+        ax.yaxis.set_major_locator(mtc.MultipleLocator(base = 1))
 
     fig.set_size_inches(8., 8.)
     fig.set_dpi(600)
