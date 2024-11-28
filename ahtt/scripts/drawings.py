@@ -13,7 +13,8 @@ axes = {
     "coupling":   r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
     "ttcoupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}t\bar{t}}}$",
     "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
-    "muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
+    #"muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
+    "muah":       r"$\sigma\left(\mathrm{\mathsf{%s},\ res.}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
     "yukawa":     r"$y_{\mathrm{t}}$",
     "ll":         r"$\ell\bar{\ell}$",
@@ -83,7 +84,7 @@ def stock_labels(parameters, points, resxsecpb = 5):
         if pp in ["g1", "g2"]:
             labels.append(axes["coupling"] % str_point(points[ii]))
         elif pp in ["r1", "r2"]:
-            labels.append(axes["muah"] % (str_point(points[ii]), str(resxsecpb) + r"\,pb"))
+            labels.append(axes["muah"] % (str_point(points[ii]), str(resxsecpb)))
         elif pp == "CMS_EtaT_norm_13TeV":
             labels.append(axes["muetat"])
         elif pp == "EWK_yukawa":
