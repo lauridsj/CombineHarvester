@@ -38,7 +38,7 @@ def normal_2sided_pvalue(dnll):
     dnll = abs(2. * dnll)
     return 2. * stats.norm.sf(math.sqrt(dnll)) if 0. <= dnll <= 100. else 1e-23
 
-def read_pval0(which, var1, ahdirs, ahtag, etatag, etadirs):
+def really_read_pval0(which, var1, ahdirs, ahtag, etatag, etadirs):
     '''
     reads directories, and looks for files that might contain the pvalue0 numbers
     the fn looks first for the F-C version, and then the NLL version as a fallback
@@ -138,22 +138,22 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
     }
     # no this doesnt have to make sense - just whatever that needs to be tuned per channel
     specifics = {
-        'lx': [(1e-21, 1000.), [1e-21, 1e-14, 1e-7, 1], [r'$10^{-21}$', r'$10^{-14}$', r'$10^{-7}$', '$1\,$'], (20, 0), (0.5, 0.25, 0.5, 0.1), (9., 10., 10.)],
-        'll': [(1e-12, 50.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$'], (10, 10), (0.5, 0.2, 0.5, 0.1), (3.8, 4., 4.)],
-        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$'], (20, 0), (0.5, 0.19, 0.5, 0.1), (1.29, 1.3, 1.3)],
+        'lx': [(1e-21, 1000.), [1e-21, 1e-14, 1e-7, 1], [r'$10^{-21}$', r'$10^{-14}$', r'$10^{-7}$', '$1\,$'], (20, 0), [0.2, 0.25, 0.5, 0.1], (9., 10., 10.)],
+        'll': [(1e-12, 50.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$'], (20, 8), [0.225, 0.125, 0.4, 0.1], (3.8, 4., 4.)],
+        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$'], (20, 0), [0.2, 0.19, 0.5, 0.1], (1.29, 1.3, 1.3)],
     }
     channel = 'll' # hardcoded atm
 
-    axe = np.array(first(pvalues['A exp']))
-    hxe = np.array(first(pvalues['H exp']))
+    axe = [np.array(first(pv['A exp'])) for pv in pvalues]
+    hxe = [np.array(first(pv['H exp'])) for pv in pvalues]
 
-    aye = np.array(second(pvalues['A exp']))
-    ayo = np.array(second(pvalues['A obs']))
+    aye = [np.array(second(pv['A exp'])) for pv in pvalues]
+    ayo = [np.array(second(pv['A obs'])) for pv in pvalues]
 
-    hye = np.array(second(pvalues['H exp']))
-    hyo = np.array(second(pvalues['H obs']))
+    hye = [np.array(second(pv['H exp'])) for pv in pvalues]
+    hyo = [np.array(second(pv['H obs'])) for pv in pvalues]
 
-    minx, maxx = min([min(axe), min(hxe)]), max([max(axe), max(hxe)])
+    minx, maxx = min([min(e) for e in axe + hxe]), max([max(e) for e in axe + hxe])
     miny, maxy = specifics[channel][0]
     handles = []
     fits = []
@@ -166,26 +166,40 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
         ax.plot(np.array([minx, maxx]), np.array([normal_2sided_pvalue(ii * ii / 2.), normal_2sided_pvalue(ii * ii / 2.)]), color = colors["sigma"], linestyle = 'dotted', linewidth = 2)
         plt.annotate(f"${ii}\sigma$", (0.97 * maxx, normal_2sided_pvalue(ii * ii / 2.)), textcoords = "offset points", xytext = (0, 2), ha = 'center', fontsize = 17, color = colors["sigma"])
     #ax.plot(np.array([minx, maxx]), np.array([1.35, 1.35]), color = colors["sigma"], linestyle = 'solid', linewidth = 1) # cms calibration line
+
+    lwidth = 4 if len(pvalues) > 1 else 5
     if expected:
-        ax.plot(hxe, hye, color = colors["H"], linestyle = 'dashed', linewidth = 5)
-        ax.plot(axe, aye, color = colors["A"], linestyle = 'dashed', linewidth = 5)
-        ax.plot(np.array([minx]), np.array([pvalues['etat exp']]),
+        if len(pvalues) > 1:
+            ax.plot(hxe[1], hye[1], color = colors["H"], linestyle = 'dashed', linewidth = lwidth)
+            ax.plot(axe[1], aye[1], color = colors["A"], linestyle = 'dashed', linewidth = lwidth)
+
+        ax.plot(hxe[0], hye[0], color = colors["H"], linestyle = 'dashed' if len(pvalues) == 1 else 'solid', linewidth = lwidth)
+        ax.plot(axe[0], aye[0], color = colors["A"], linestyle = 'dashed' if len(pvalues) == 1 else 'solid', linewidth = lwidth)
+        ax.plot(np.array([minx]), np.array([pvalues[0]['etat exp']]),
                 marker = 'x', markersize = 20, color = colors["etat"])
 
     if observed:
-        ax.plot(hxe, hyo, color = colors["H"], linestyle = 'solid', linewidth = 5)
-        ax.plot(axe, ayo, color = colors["A"], linestyle = 'solid', linewidth = 5)
-        ax.plot(np.array([minx]), np.array([pvalues['etat obs']]),
-                marker = 9, markersize = 20, color = colors["etat"])
-        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues['etat obs']), textcoords = "offset points", xytext = specifics[channel][3], ha = 'left', fontsize = 17, color = colors["etat"])
+        if len(pvalues) > 1:
+            ax.plot(hxe[1], hyo[1], color = colors["H"], linestyle = 'dashed', linewidth = lwidth)
+            ax.plot(axe[1], ayo[1], color = colors["A"], linestyle = 'dashed', linewidth = lwidth)
 
-    handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{A}}$'))
-    handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = 5), r'$\mathrm{\mathsf{H}}$'))
+        ax.plot(hxe[0], hyo[0], color = colors["H"], linestyle = 'solid', linewidth = lwidth)
+        ax.plot(axe[0], ayo[0], color = colors["A"], linestyle = 'solid', linewidth = lwidth)
+        ax.plot(np.array([minx]), np.array([pvalues[0]['etat obs']]),
+                marker = 9, markersize = 20, color = colors["etat"])
+        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues[0]['etat obs']), textcoords = "offset points", xytext = specifics[channel][3], ha = 'left', fontsize = 17, color = colors["etat"])
+
+    handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = lwidth), r'$\mathrm{\mathsf{A}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = lwidth), r'$\mathrm{\mathsf{H}}$'))
     handles.append((mln.Line2D([0], [0], color = colors["etat"], marker = 9, markersize = 20, linewidth = 0), r'$\eta_{\mathrm{t}}$'))
 
     if expected and observed:
-        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', marker = 'x', markersize = 20, linewidth = 5), r"Expected"))
-        handles.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', marker = 9, markersize = 20, linewidth = 5), r"Observed"))
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', marker = 'x', markersize = 20, linewidth = lwidth), r"Expected"))
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', marker = 9, markersize = 20, linewidth = lwidth), r"Observed"))
+
+    if len(pvalues) > 1:
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', markersize = 20, linewidth = lwidth), r"Resonance"))
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', markersize = 20, linewidth = lwidth), r"Full"))
 
     plt.xlim((minx, maxx))
     plt.ylim((miny, maxy))
@@ -196,9 +210,17 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
     ax.set_yscale('log')
     ax.margins(x = 0, y = 0)
 
-    ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 21, loc = 'best',
-              bbox_to_anchor = specifics[channel][4],
-              fontsize = 21, handlelength = 1.5, borderaxespad = 1., frameon = False)
+    bbox = specifics[channel][4]
+    if len(fits) > 0:
+        bbox = [bbox[ii] if ii != 1 else bbox[ii] + 0.05 for ii in range(len(bbox))]
+    legend1 = ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 21, loc = tuple(bbox[:2]), bbox_to_anchor = tuple(bbox),
+                        fontsize = 21, handlelength = 1.5, borderaxespad = 1., frameon = False)
+    if len(fits) > 0:
+        ax.add_artist(legend1)
+        bbox = [bbox[ii] if ii != 1 else bbox[ii] - 0.06 for ii in range(len(bbox))]
+        legend2 = ax.legend(first(fits), second(fits), ncols = 2, loc = tuple(bbox[:2]), bbox_to_anchor = tuple(bbox),
+                            fontsize = 19, handlelength = 2, handletextpad = 0.84, borderaxespad = 1., frameon = False)
+        ax.add_artist(legend2)
 
     if formal:
         xwindow = maxx - minx
@@ -228,45 +250,65 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
         fig.savefig(oname, transparent = transparent)
     plt.close()
 
-def draw_pval0(var1, onames, which, ahdirs, apoints, hpoints, ahtag, etatag, etadirs, label, annotate, expected, observed, formal, cmsapp, luminosity, transparent):
+def read_pval0(ahpack, which, var1, var2, iv1, iv2, etatag, etadirs):
+    ahdirs, apoints, hpoints, ahtag = ahpack
+    av1s = list(set([pnt[iv1] for pnt in apoints if pnt[iv2] == var2]))
+    hv1s = list(set([pnt[iv1] for pnt in hpoints if pnt[iv2] == var2]))
+    dirs = []
+    for dd in ahdirs:
+        apnt, hpnt = get_point(dd.split('__')[0]), get_point(dd.split('__')[1])
+        if not (apnt in apoints and hpnt in hpoints):
+            continue
+
+        fora = [(var1 == "mass" and f"A_m{int(v1)}_w{str(var2).replace('.', 'p')}" in dd) or (var1 == "width" and f"A_m{int(var2)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in av1s]
+        forh = [(var1 == "mass" and f"H_m{int(v1)}_w{str(var2).replace('.', 'p')}" in dd) or (var1 == "width" and f"H_m{int(var2)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in hv1s]
+        if any(fora + forh):
+            dirs.append(dd)
+    return really_read_pval0(which, var1, dirs, ahtag, etatag, etadirs)
+
+def draw_pval0(var1, onames, which, ahpacks, etatag, etadirs, label, annotate, expected, observed, formal, cmsapp, luminosity, transparent):
     if not hasattr(draw_pval0, "settings"):
         draw_pval0.settings = OrderedDict([
-            ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r", $\Gamma_{\mathrm{\mathsf{A/H}}}=$ %.1f%% m$_{\mathrm{\mathsf{A/H}}}$"}),
-            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r", m$_{\mathrm{\mathsf{A/H}}}=$ %d GeV"})
+            ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r"$\Gamma_{\mathrm{\mathsf{A/H}}}=$ %.1f%% m$_{\mathrm{\mathsf{A/H}}}$"}),
+            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r"m$_{\mathrm{\mathsf{A/H}}}=$ %d GeV"})
         ])
 
-    var2s = set([pnt[draw_pval0.settings[var1]["iv2"]] for pnt in apoints + hpoints])
+    var2s = set([pnt[draw_pval0.settings[var1]["iv2"]] for ah in ahpacks for pnt in ah[1] + ah[2]])
     xaxis = r'm$_{\mathrm{\mathsf{A/H}}}$ [GeV]' if var1 == "mass" else r'$\Gamma_{\mathrm{\mathsf{A/H}}}$ [% m$_{\mathrm{\mathsf{A/H}}}$]'
+    whiches = ["resonance", "full"] if which == "both" else [which]
 
     for vv in var2s:
         print(f"running {draw_pval0.settings[var1]['var2']} {vv}")
-        av1s = list(set([pnt[draw_pval0.settings[var1]["iv1"]] for pnt in apoints if pnt[draw_pval0.settings[var1]["iv2"]] == vv]))
-        hv1s = list(set([pnt[draw_pval0.settings[var1]["iv1"]] for pnt in hpoints if pnt[draw_pval0.settings[var1]["iv2"]] == vv]))
         xticks = None if var1 != "mass" else [450., 600., 750., 900.]
         xlabels = None if var1 != "mass" else ['450', '600', '750', '900']
 
-        dirs = []
-        for dd in ahdirs:
-            apnt, hpnt = get_point(dd.split('__')[0]), get_point(dd.split('__')[1])
-            if not (apnt in apoints and hpnt in hpoints):
-                continue
-
-            fora = [(var1 == "mass" and f"A_m{int(v1)}_w{str(vv).replace('.', 'p')}" in dd) or (var1 == "width" and f"A_m{int(vv)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in av1s]
-            forh = [(var1 == "mass" and f"H_m{int(v1)}_w{str(vv).replace('.', 'p')}" in dd) or (var1 == "width" and f"H_m{int(vv)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in hv1s]
-            if any(fora + forh):
-                dirs.append(dd)
-
-        legendtext = r"Resonance" if which == "resonance" else r"Full"
+        legendtext = "Observed, " if observed and not expected else "Expected, " if expected and not observed else ""
+        legendtext = legendtext if which == "both" else r"Resonance, " if which == "resonance" else r"Full, "
         legendtext += draw_pval0.settings[var1]["label"] % vv
         if int(vv) == vv:
             legendtext = legendtext.replace('%.1f' % vv, str(int(vv)))
 
+        pvals = [read_pval0(ah, ww, var1, vv, draw_pval0.settings[var1]["iv1"], draw_pval0.settings[var1]["iv2"], etatag, etadirs) for ww, ah in zip(whiches, ahpacks)]
         really_draw_pval0(
             [oname.format(fff = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))) for oname in onames],
-            read_pval0(which, var1, dirs, ahtag, etatag, etadirs),
-            axes[label] if label != "" and label in axes else label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent
+            pvals, axes[label] if label != "" and label in axes else label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent
         )
     pass
+
+def parse_ahtag(ahtag, drop):
+    ahkv = parse_to_kv(ahtag)
+    if len(ahkv[1]) != 2:
+        raise RuntimeError(f"expecting 2 output tags for A/H tag {ahkv[0]}, but found {ahkv[1]}. aborting")
+    ahdirs = sorted(glob.glob('A_m*_w*__H_m*_w*_' + ahkv[0]))
+    drop = [] if ahkv[0] not in drop else drop[ahkv[0]]
+    apnt = [get_point(pnt.split('__')[0]) for pnt in ahdirs if len(drop) == 0 or not any([dd in pnt.split('__')[0] for dd in drop])]
+    hpnt = [get_point(pnt.split('__')[1]) for pnt in ahdirs if len(drop) == 0 or not any([dd in pnt.split('__')[1] for dd in drop])]
+    return [ahdirs, apnt, hpnt, ahkv]
+
+def parse_drop(drop):
+    drop = [dd.split(':') for dd in tokenize_to_list( remove_spaces_quotes(drop), ';')]
+    drop = {dd[0]: [dd[1]] for dd in drop}
+    return drop
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -274,13 +316,14 @@ if __name__ == '__main__':
                         choices = ["mass", "width"], required = False)
 
     parser.add_argument("--which", help = "which pvalues are being plotted?", default = "full",
-                        choices = ["full", "resonance"], required = False)
+                        choices = ["full", "resonance", "both"], required = False)
 
     parser.add_argument("--ah-tag", help = "input tag:output-tag key:value tuples to search, for A/H p-values. "
                         "the tuples are semicolon separated, the k:v's colon-separated, and the values are comma-separated. "
                         "each individual k:v tuple is plotted separately. the values consist of a list, whose length must be 2. "
                         "they're interpreted as the output-tags for the A/H p-values respectively.\n"
-                        "e.g. making pval plots for each channel: 'lx:att,htt; ll:att,htt; lj:att,htt...",
+                        "e.g. making pval plots for each channel: 'lx:att,htt; ll:att,htt; lj:att,htt...\n"
+                        "with --which both, the assumption is that resonance first, full second.",
                         dest = "ahtag", default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     parser.add_argument("--etat-tag", help = "input tag:output-tag key:value tuples to search, for etat p-values.\n"
@@ -289,12 +332,13 @@ if __name__ == '__main__':
                         dest = "etatag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
 
     parser.add_argument("--drop",
-                        help = "comma separated list of points to be dropped. 'XX, YY' means all points containing XX or YY are dropped.",
-                        default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s) ) )
+                        help = "semicolon separated list of tag-points pair to be dropped. 'T0: X, Y; T1: A, B' means, for tag T0, all points containing X or Y are dropped, ditto for T1.",
+                        default = "", required = False, type = parse_drop )
 
     parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
-    parser.add_argument("--label", help = "labels to attach on plot for each A/H tags, semicolon separated", default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
+    parser.add_argument("--label", help = "labels to attach on plot for each A/H tags, semicolon separated. if --which both, second tag follows the label of first.",
+                        default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
 
     parser.add_argument("--annotate", help = "text to annotate the plot, somewhere near the legend", dest = "annotate", default = "", required = False)
 
@@ -315,33 +359,34 @@ if __name__ == '__main__':
     if not (args.expected or args.observed):
         raise RuntimeError("at least one of expected and observed must be true")
 
+    if args.which == "both" and args.expected and args.observed:
+        raise RuntimeError("expected and observed both being true in --which both is unsupported")
+
     if len(args.ahtag) == 0:
         raise RuntimeError("zero A/H tags. aborting")
 
-    if len(args.etatag) != 0 and len(args.etatag) != len(args.ahtag):
+    if (args.which != "both" and len(args.etatag) != 0 and len(args.etatag) != len(args.ahtag)) or (args.which == "both" and len(args.etatag) != 0 and len(args.etatag) != len(args.ahtag) / 2):
         raise RuntimeError("nonzero number of etat tags, but also inequal to ah tags. aborting")
 
     if len(args.label) != 0 and len(args.label) != len(args.ahtag):
         raise RuntimeError("nonzero number of labels, but also inequal to ah tags. aborting")
 
-    for ii in range(len(args.ahtag)):
-        ahtag = parse_to_kv(args.ahtag[ii])
-        if len(ahtag[1]) != 2:
-            raise RuntimeError(f"expecting 2 output tags for A/H tag {ahtag[0]}, but found {ahtag[1]}. aborting")
+    ii, jj = 0, 0
+    for ii in range(0, len(args.ahtag), 2 if args.which == "both" else 1):
+        ahpacks = [parse_ahtag(args.ahtag[ii], args.drop)]
+        if args.which == "both":
+            ahpacks.append(parse_ahtag(args.ahtag[ii + 1], args.drop))
 
-        etatag = parse_to_kv(args.etatag[ii]) if len(args.etatag) != 0 else None
+        etatag = parse_to_kv(args.etatag[jj]) if len(args.etatag) != 0 else None
         if etatag is not None and len(etatag[1]) != 1:
             raise RuntimeError(f"expecting 1 output tag for etat tag {etatag[0]}, but found {etatag[1]}. aborting")
-
-        ahdirs = sorted(glob.glob('A_m*_w*__H_m*_w*_' + ahtag[0]))
-        apnt = [get_point(pnt.split('__')[0]) for pnt in ahdirs if not any([dd in pnt.split('__')[0] for dd in args.drop])]
-        hpnt = [get_point(pnt.split('__')[1]) for pnt in ahdirs if not any([dd in pnt.split('__')[1] for dd in args.drop])]
         etadirs = sorted(glob.glob('A_m*_w*__H_m*_w*_' + etatag[0])) if etatag is not None else []
+        jj += 1
 
-        if len(apnt) > 0 and len(hpnt) > 0:
-            draw_pval0(args.function,
-                          ["{ooo}/AH_pval0_{fff}_{t0}{t1}{f}".format(ooo = args.odir, fff = r"{fff}", t0 = ahtag[0], t1 = args.ptag, f = f) for f in args.fmt],
-                          args.which, ahdirs, apnt, hpnt, ahtag, etatag, etadirs,
-                          args.label[ii] if len(args.label) else "", args.annotate, args.expected, args.observed, args.formal, args.cmsapp, args.luminosity, args.transparent)
+        t0 = ahpacks[0][-1][0] + '_' + ahpacks[1][-1][0] if len(ahpacks) > 1 else ahpacks[0][-1][0]
+        draw_pval0(args.function,
+                   ["{ooo}/AH_pval0_{fff}_{t0}{t1}{f}".format(ooo = args.odir, fff = r"{fff}", t0 = t0, t1 = args.ptag, f = f) for f in args.fmt],
+                   args.which, ahpacks, etatag, etadirs,
+                   args.label[ii] if len(args.label) else "", args.annotate, args.expected, args.observed, args.formal, args.cmsapp, args.luminosity, args.transparent)
         pass
     pass
