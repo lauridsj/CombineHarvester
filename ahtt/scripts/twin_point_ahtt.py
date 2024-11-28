@@ -287,7 +287,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                         while os.path.isfile(mname):
                             jj += 1
                             mname = mrgdir + ff.replace(fmrg, ftmp)
-                        syscall("hadd {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
+                        syscall("hadd -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
                         merged.append(mname)
 
                     jj += 1
