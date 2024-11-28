@@ -131,7 +131,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
             iline = isig if maxsigma <= 3 else isig // 2
 
             if ii == 0 and maxsigma > 1:
-                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), r"$\pm" + str(isig + 1) + r"$ SD"))
 
             alpha = alphas[isig]
 
