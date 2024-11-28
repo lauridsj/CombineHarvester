@@ -142,7 +142,7 @@ def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext
         'll': [(1e-12, 50.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$'], (10, 10), (0.5, 0.2, 0.5, 0.1), (3.8, 4., 4.)],
         'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$'], (20, 0), (0.5, 0.19, 0.5, 0.1), (1.29, 1.3, 1.3)],
     }
-    channel = 'lj' # hardcoded atm
+    channel = 'll' # hardcoded atm
 
     axe = np.array(first(pvalues['A exp']))
     hxe = np.array(first(pvalues['H exp']))
@@ -247,6 +247,10 @@ def draw_pval0(var1, onames, which, ahdirs, apoints, hpoints, ahtag, etatag, eta
 
         dirs = []
         for dd in ahdirs:
+            apnt, hpnt = get_point(dd.split('__')[0]), get_point(dd.split('__')[1])
+            if not (apnt in apoints and hpnt in hpoints):
+                continue
+
             fora = [(var1 == "mass" and f"A_m{int(v1)}_w{str(vv).replace('.', 'p')}" in dd) or (var1 == "width" and f"A_m{int(vv)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in av1s]
             forh = [(var1 == "mass" and f"H_m{int(v1)}_w{str(vv).replace('.', 'p')}" in dd) or (var1 == "width" and f"H_m{int(vv)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in hv1s]
             if any(fora + forh):
