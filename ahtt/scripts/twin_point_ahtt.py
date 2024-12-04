@@ -438,7 +438,7 @@ if __name__ == '__main__':
 
     # parameter ranges for best fit file
     if ahresonly:
-        ranges = ["{rr}: -5, 5".format(rr = rr) for rr in ["r1", "r2"]]
+        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
     else:
         ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
 
