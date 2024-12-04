@@ -106,6 +106,13 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_ISR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("bindingEnergy_ChiT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("tmass_ChiT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("tmass_ChiT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
+            ("QCDscale_MEFac_ChiT",                (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_ISR_ChiT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("QCDscale_FSR_ChiT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
+
             ("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("QCDscale_MEFac_TT",                  (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # for binwise SFs: symmetric, and widenable with --experimental
             ("QCDscale_MERen_TT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -119,6 +126,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("bb4l_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("CMS_PDF_alphaS",                     (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("CMS_PDF_hessian",                    (("2016pre", "2016post", "2017", "2018"), 1.)),
@@ -355,10 +363,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     for c1, c2 in read_category_process_nuisance.aliases.items():
                         nn2 = nn2.replace(c2, c1)
 
-                #  FIXME for now only include these NPs for EtaT (as well as norm, below)
-                #if pp == "EtaT" and not any([ne in nn2 for ne in ["bindingEnergy", "tmass"]]):
-                #    continue
-
                 # obtain the actual up/down/chi2 templates
                 hu = key.ReadObj()
                 hd = ifile.Get(idir + '/' + "Down".join(kname.rsplit("Up", 1)))
@@ -393,8 +397,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         hu = add_scaled_nuisance(hu, ho, ho, 1. / 3.)
                         hd = add_scaled_nuisance(hd, ho, ho, 1. / 3.)
 
-                    # for A/H, apply the SM relative deviation onto A/H nominal
-                    if "_AH" in nn2 or "EtaT" in nn2:
+                    # for signals, apply the SM relative deviation onto nominal
+                    if any([ss in nn2 for ss in ["_AH", "_EtaT", "_ChiT"]]):
                         hc = None
                         hah = read_original_nominal(odir, pp)
                         hsm = read_original_nominal(odir, "TT")
@@ -435,7 +439,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     hd.SetName(nd)
 
                     # remove process tag - correlating the tmass NPs
-                    nn2 = nn2.replace("_TT", "").replace("_AH", "").replace("_EtaT", "")
+                    nn2 = nn2.replace("_TT", "").replace("_AH", "").replace("_EtaT", "").replace("_ChiT", "")
                     mtu = 173
                     mtn = 172
                     mtd = 171
@@ -558,7 +562,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 if chops is not None and any([nn2 in tokenize_to_list(tokenize_to_list(chop, ';')[0]) for chop in chops]):
                     prechop_name, prechop_scale = nuisance.pop()
 
-                    # save unchopped tmass_TT always, for A/H and EtaT
+                    # save unchopped tmass_TT always, for signals
                     if nn2 == "tmass" and pp == "TT":
                         ofile.cd(odir)
                         hu.Write()
@@ -850,15 +854,16 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                 txt.write("\n")
 
     # note: this is not done using the lnN approach because of the normal +-1 prior
-    etatbkg = any(["EtaT" in cpn[cc] for cc in cpn.keys()])
-    if etatbkg:
-        for tt in txts:
-            cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
-            groups[cc]["norm"].append("CMS_EtaT_norm_13TeV")
-            with open(tt, 'a') as txt:
-                #txt.write("\nCMS_EtaT_norm_13TeV param 0 1")
-                txt.write("\nCMS_EtaT_norm_13TeV rateParam * EtaT 0 [-20,20]")
-                txt.write("\n")
+    for bs in ["EtaT", "ChiT"]:
+        bsbkg = any([bs in cpn[cc] for cc in cpn.keys()])
+        if bsbkg:
+            for tt in txts:
+                cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
+                groups[cc]["norm"].append("CMS_{bs}_norm_13TeV".format(bs = bs))
+                with open(tt, 'a') as txt:
+                    #txt.write("\nCMS_{bs}_norm_13TeV param 0 1".format(bs = bs))
+                    txt.write("\nCMS_{bs}_norm_13TeV rateParam * {bs} 0 [-20,20]".format(bs = bs))
+                    txt.write("\n")
 
     for tt in txts:
         cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")

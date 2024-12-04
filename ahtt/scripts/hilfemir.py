@@ -103,8 +103,10 @@ combine_help_messages = {
 
     "--redo-best-fit": "a best fit is performed after datacard creation, to be used in future fits. this option triggers a redoing of the best fit.",
     "--default-workspace": "suppresses the (re)creation of best-fit workspace and forces the use of the default one.",
-    "--freeze-zero": "freezes the comma-separated (groups of) nuisance parameters to zero. not supported for groups of non-mcstat nuisances. specify those individually.",
-    "--freeze-post": "freezes the comma-separated (groups of) nuisance parameters to their postfit values. --freeze-zero takes priority over this option.",
+    "--freeze-zero": "freezes the comma-separated (groups of) nuisance parameters to zero. not supported for non-mcstat nuisance groups. specify those individually.",
+    "--freeze-nonzero": "freezes the comma-separated (groups of) nuisance parameters to a value. syntax 'nuisname: value'. "
+    "not supported for non-mcstat nuisance groups. --freeze-zero takes priority.",
+    "--freeze-post": "freezes the comma-separated (groups of) nuisance parameters to their postfit values. --freeze-(non)zero takes priority.",
 
     "--result-directory": "some modes give too many output files. this option is to specify where to write those files out.",
 

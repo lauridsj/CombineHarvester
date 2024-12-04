@@ -230,7 +230,7 @@ if __name__ == '__main__':
     ranges = ["g: 0, 5"] if args.onepoi else ["r: 0, 2", "g: 0, 5"]
 
     if args.experimental:
-        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
@@ -275,7 +275,7 @@ if __name__ == '__main__':
             ),
             ["g"] if onepoi and not onepoinotg else poiset,
             set_range(ranges),
-            elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+            elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
         )
 
     if runlimit:
@@ -371,7 +371,7 @@ if __name__ == '__main__':
 
         if not args.onepoi and not (args.setg >= 0. and args.fixpoi):
             raise RuntimeError("impact doesn't work correctly with the g-scan model when g is left floating. please freeze it.")
-        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([starting_poi(args.onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
 
         print "\nsingle_point_ahtt :: impact initial fit"
         syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {poi} {prm} {ext}".format(

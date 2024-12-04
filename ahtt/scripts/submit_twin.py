@@ -607,9 +607,7 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-            #job_mem = "12 GB" if runprepost and not (args.frzbb0 or args.frzbbp or args.frznui) else ""
             job_mem = ""
-
             if len([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm and mm != ""]) > 0:
                 submit_job(job_name, job_arg, args.jobtime, 1, job_mem,
                            "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",

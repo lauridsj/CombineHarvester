@@ -57,6 +57,7 @@ def common_fit_forwarded(parser):
     parser.add_argument("--poi-set", help = combine_help_messages["--poi-set"], dest = "poiset", default = "", required = False)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False)
     parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False)
+    parser.add_argument("--freeze-nonzero", help = combine_help_messages["--freeze-nonzero"], dest = "frznzro", default = "", required = False)
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False)
     return parser
 
@@ -67,6 +68,8 @@ def common_fit(parser):
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
                         type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
     parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False,
+                        type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--freeze-nonzero", help = combine_help_messages["--freeze-nonzero"], dest = "frznzro", default = "", required = False,
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False,
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
@@ -143,7 +146,7 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--float-rate", help = combine_help_messages["--float-rate"], dest = "rateparam", default = "", required = False)
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False)
     parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = "assignal", default = "", required = False)
-    parser.add_argument("--exclude-process", help = combine_help_messages["--exclude-process"], dest = "excludeproc", default = "", required = False)
+    parser.add_argument("--exclude-process", help = combine_help_messages["--exclude-process"], dest = "excludeproc", default = "ChiT", required = False)
     parser.add_argument("--ignore-bin", help = combine_help_messages["--ignore-bin"], dest = "ignorebin", default = "", required = False)
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False)
     parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False)
