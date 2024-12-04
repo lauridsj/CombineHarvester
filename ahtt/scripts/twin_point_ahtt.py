@@ -115,8 +115,8 @@ def starting_poi(gvalues, fixpoi, resonly = False):
         return [[], []]
 
     poi = 'r' if resonly else 'g'
-    setpar = [poi + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)]
-    frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)] if fixpoi else []
+    setpar = [poi + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if (resonly and -20 <= float(gg) <= 20) or (not resonly and float(gg) >= 0)]
+    frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -20 <= float(gg) <= 20) or (not resonly and float(gg) >= 0)] if fixpoi else []
 
     return [setpar, frzpar]
 
