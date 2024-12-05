@@ -85,7 +85,8 @@
         "AH": "A/H",
         "AH_int": "A/H int.",
         "AH_res": "A/H res.",
-        "EtaT": "\\eta"
+        "EtaT": "\\eta",
+        "ChiT": "\\chi"
     },
     "years": [
         "2016pre",
