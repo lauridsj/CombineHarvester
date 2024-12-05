@@ -16,6 +16,7 @@ axes = {
     #"muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
     "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
+    "muchit":     r"$\mu(\chi_{\mathrm{t}})$",
     "yukawa":     r"$y_{\mathrm{t}}$",
     "ll":         r"$\ell\bar{\ell}$",
     "l3j":        r"$\ell$, 3j",
@@ -92,6 +93,8 @@ def stock_labels(parameters, points, resxsecpb = 5):
             labels.append(axes["muah"] % (str_point(points[ii], spinstate = True), str(resxsecpb)))
         elif pp == "CMS_EtaT_norm_13TeV":
             labels.append(axes["muetat"])
+        elif pp == "CMS_ChiT_norm_13TeV":
+            labels.append(axes["muchit"])
         elif pp == "EWK_yukawa":
             labels.append(axes["yukawa"])
         else:
