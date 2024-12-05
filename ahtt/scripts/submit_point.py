@@ -176,7 +176,7 @@ if __name__ == '__main__':
                 with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                     nparts = fexp.readlines()
                     nparts = [et.rstrip() for et in nparts]
-                    nparts = list(set(nparts))
+                    nparts = sorted(list(set(nparts)))
                     nsplit = (len(nparts) // args.nnuisance) + 1
                     nparts = chunks(nparts, nsplit)
 
