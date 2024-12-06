@@ -449,8 +449,8 @@ def plot(channel, year, fit,
         fig, (ax0, ax1, ax2) = plt.subplots(
             nrows = 3,
             sharex = True,
-            gridspec_kw = {"height_ratios": [0.001, 1, 1]},
-            figsize = (5.0, 7.5) if args.splitbins else (19.2, 6.6),
+            gridspec_kw = {"height_ratios": [0.105 if args.splitbins else 0.001, 1, 0.9]},
+            figsize = (5.0, 7.0) if args.splitbins else (19.2, 6.6),
             dpi=600
         )
     else:
@@ -479,12 +479,11 @@ def plot(channel, year, fit,
             if args.panel != "upper":
                 ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
     if args.panel != "lower":
-        
         ax1.minorticks_on()
         ax1.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
-
         legend_ncol = 3 if args.splitbins else len(smhists) + 2
-        ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False, reverse = True)
+        ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1, 1, 0.2),
+                   borderaxespad = 0, ncol = legend_ncol, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False, reverse = True)
         ax1.set_xlabel("")
 
     ax2.minorticks_on()
@@ -514,8 +513,8 @@ def plot(channel, year, fit,
     else:       
         tickloc_labels = [f"{t:.0f}" for i in range(num_extrabins) for t in ticklocs]
         ax2.set_xticklabels(tickloc_labels)
-        ax2.set_xlabel(list(binning.keys())[0], fontsize=24)        
-    
+        ax2.set_xlabel(list(binning.keys())[0], fontsize=24)
+
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
     if fit == "p":
         fittype = "Prefit"
@@ -533,42 +532,43 @@ def plot(channel, year, fit,
             va = "bottom"
             ha = "right"
         else:
-            xpos = 0.03 if args.splitbins else 0.01
+            xpos = 0.04 if args.splitbins else 0.01
             ypos = 0.97 if args.splitbins else 0.95
             va = "top"
             ha = "left"
 
         if args.splitbins and args.panel == "upper":
             annstr = title
-        elif args.splitbins:
+        elif args.splitbins and args.panel == "lower":
             annstr = fittype + ", " + title
         else:
             annstr = fittype
         ax2.annotate(annstr, (xpos, ypos), xycoords="axes fraction", va=va, ha=ha, fontsize=20, fontweight="normal" if (args.splitbins and args.panel == "upper") else "bold", zorder=7777)
+        if args.panel == "both":
+            ax1.annotate(title, (0.97, 1.028), xycoords="axes fraction", va="bottom", ha="right", fontsize=20, fontweight="normal", zorder=7777) # xxx
     elif args.panel != "upper":
         ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
     if args.panel != "upper" and "EtaT" not in args.assignal:
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
-        xpos = 0.03 if args.splitbins else 0.01
+        xpos = 0.04 if args.splitbins else 0.01
         ypos = 0.86 if args.panellabels else 0.96
         ax2.annotate(btxt, (xpos, ypos), xycoords="axes fraction", va="top", ha="left", fontsize=20, zorder=7777)
-        
-    if args.panel == "both":
-        ax0.set_title(title)
 
-        cmslabel = "Preliminary" if args.preliminary else None
+    cmslabel = "Preliminary" if args.preliminary else None
+    if args.panel == "both":
+        if not args.splitbins:
+            ax0.set_title(title)
         hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
-        fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.075)
+        fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
     else:
-        cmslabel = "Preliminary" if args.preliminary else None
         hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
         hspace = 0.85 if args.panel == "lower" and len(args.assignal) >= 3 else 0.50
         fig.subplots_adjust(hspace = hspace, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
-    
+
     bbox = ax2.get_position()
-    offset = -0.025 if args.splitbins and args.panel == "lower" else -0.02 if args.splitbins and args.panel == "upper" else -0.015
+    offset = -0.025 if args.splitbins and args.panel == "lower" else -0.02 if args.splitbins and args.panel == "upper" else -0.037
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     figwidth = 6.0 if args.splitbins else 19.2
     if args.panel == "both":
@@ -585,7 +585,9 @@ def plot(channel, year, fit,
         sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\bar{\ell}$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
     ystr = year.replace(" ", "").lower()
-    
+    ax1.margins(x = 0, y = 0)
+    ax2.margins(x = 0, y = 0)
+
     bintexts = []
     for fmt in args.fmt:
         if args.splitbins:    

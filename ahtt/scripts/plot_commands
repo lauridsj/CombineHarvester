@@ -36,6 +36,19 @@ for channel in ll l4pj l3j; do
     python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --skip-ah --preliminary
 done
 
+# separate, split postfits
+for channel in ll l4pj l3j; do
+    for panel in upper lower both; do
+        # A/H postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --preliminary --panel-labels --split-bins --panel ${panel}
+
+        # BG only postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_b.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_b.root --skip-prefit --preliminary --panel-labels --split-bins --panel ${panel}
+
+        # EtaT postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --panel-labels --skip-ah --preliminary --split-bins --panel ${panel}
+    done
+done
 
 # 1D LIMITS
 
