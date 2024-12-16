@@ -5,6 +5,7 @@ import os
 import sys
 import math
 import fnmatch
+import copy
 
 from datetime import datetime
 from desalinator import remove_spaces_quotes, tokenize_to_list, append_if_not_empty
@@ -131,7 +132,7 @@ def elementwise_add(list_of_lists):
     if len(list_of_lists) < 1 or any(len(ll) < 1 or len(ll) != len(list_of_lists[0]) for ll in list_of_lists):
         raise RuntimeError("this method assumes that the argument is a list of lists of nonzero equal lengths!!!")
 
-    result = list(list_of_lists[0])
+    result = copy.deepcopy(list_of_lists[0])
     for ll in range(1, len(list_of_lists)):
         for rr in range(len(result)):
             result[rr] += list_of_lists[ll][rr]

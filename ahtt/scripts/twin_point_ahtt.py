@@ -590,7 +590,7 @@ if __name__ == '__main__':
             for fcexp in args.fcexp:
                 scenario = expected_scenario(fcexp, resonly = ahresonly)
                 identifier = "_" + scenario[0]
-                parameters = [scenario[1]] if scenario[1] != "" else [] 
+                parameters = [scenario[1]] if scenario[1] != "" else []
 
                 # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
                 fcwsp = get_best_fit(
