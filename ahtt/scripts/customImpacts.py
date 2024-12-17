@@ -124,7 +124,7 @@ if args.translate is not None:
         translate = json.load(jsonfile)
 if POI == "CMS_EtaT_norm_13TeV":
     poi_translated = "\\hat{\\mu}(\\eta_{t})"
-if POI == "CMS_ChiT_norm_13TeV":
+elif POI == "CMS_ChiT_norm_13TeV":
     poi_translated = "\\hat{\\mu}(\\chi_{t})"
 else:
     poi_translated = Translate(POI,translate) #Get translated POI name (if available)
