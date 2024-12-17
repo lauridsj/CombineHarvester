@@ -99,6 +99,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("tmass_AH",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("tmass_AH",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
+            ("lhe_mWbWb_cut_EtaT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("bindingEnergy_EtaT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("tmass_EtaT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("tmass_EtaT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
@@ -106,6 +107,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("QCDscale_ISR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_FSR_EtaT",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("lhe_mWbWb_cut_ChiT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("bindingEnergy_ChiT",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("tmass_ChiT",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("tmass_ChiT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
