@@ -911,7 +911,7 @@ if __name__ == '__main__':
         stp = startpoi if args.prepostfit == 's' else starting_poi(gvalues if notah else ["0.", "0."], args.fixpoi if notah else True)
         set_freeze = elementwise_add([stp, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
         del stp
-        fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
+        fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
 
         never_gonna_give_you_up(
             command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
