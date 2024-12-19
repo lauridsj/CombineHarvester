@@ -166,6 +166,7 @@ submit_help_messages = {
     "--run-mc-stats": "in pull/impact mode, run also over the BB nuisances individually. this option does not affect their treatment in any way (analytical minimization)",
 
     "--job-time": "time to assign to each job",
+    "--memory": "memory for each job in MB",
     "--local": "run jobs locally, do not submit to HTC",
     "--force": "force local jobs to run, even if a job log already exists",
     "--no-log": "dont write job logs",
