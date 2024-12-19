@@ -127,6 +127,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
 
+            ("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            ("ttnorm",                             (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))),
+
             ("QCDscale_MEFac_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("QCDscale_MERen_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
 
@@ -198,7 +201,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             read_category_process_nuisance.specials[c2 + '_shape_EWQCD'] = (("2016pre", "2016post", "2017", "2018"), 1.)
 
     if not hasattr(read_category_process_nuisance, "onesides"):
-        read_category_process_nuisance.onesides = ["EWK_scheme", "CR_ERD_TT", "CR_QCD_TT", "CR_Gluon_TT"]
+        read_category_process_nuisance.onesides = ["EWK_scheme", "CR_ERD_TT", "CR_QCD_TT", "CR_Gluon_TT", "herwig_TT"]
 
     processes = []
     nuisances = []
@@ -821,7 +824,21 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
             with open(tt, 'a') as txt:
                 for rp in rateparam:
                     rpp = tokenize_to_list(rp, ':')
-                    txt.write("\nCMS_{rpp}_norm_13TeV rateParam * {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]"))
+                    if len(rpp) > 2 and rpp[2] == "split":
+                        chmap = {"_ll": ["ee", "mm", "em"], "_l3j": ["e3j", "m3j"], "_l4pj": ["e4pj", "m4pj"]}
+                    else:
+                        chmap = {"": [""]}
+                    for rptag, rpchannels in chmap.items():
+                        for rpch in rpchannels:
+                            if rpch != "" and not ("combined" in tt or rpch in tt):
+                                continue
+                            txt.write("\nCMS_{rpp}_norm_13TeV{rptag} rateParam {rpch}* {rpp} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]", rptag=rptag, rpch=rpch))
+                            if rpp[0] == "TT":
+                                print("Adding rateParam also for EWK processes")
+                                for ewkpart in ["const", "lin", "quad"]:
+                                    for ewksign in ["pos", "neg"]:
+                                        txt.write("\nCMS_{rpp}_norm_13TeV{rptag} rateParam {rpch}* EWK_TT_{ewkpart}_{ewksign} 1 {rpr}\n".format(rpp = rpp[0], rpr = '[' + rpp[1] + ']' if len(rpp) > 1 else "[0,2]", ewkpart = ewkpart, ewksign = ewksign, rptag=rptag, rpch=rpch))
+
 
     ewkttbkg = set([pp for pp in cpn[cc] for cc in cpn.keys() if "EWK_TT" in pp and (assig is None or not pp in assig)])
     if len(ewkttbkg) == 6:
