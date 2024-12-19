@@ -21,7 +21,7 @@ import matplotlib.ticker as mtc
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from drawings import default_etat_measurement, etat_blurb
-from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+from desalinator import prepend_if_not_empty, append_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
 def ahtt_width_coupling_helper(parity, mah):
     sqrt2 = math.sqrt(2)
@@ -233,7 +233,7 @@ def read_limit(directories, otags, xvalues, onepoi):
 
     for tt, directory in enumerate(directories):
         for jj, dcd in enumerate(directory):
-            #print(dd)
+            pnt = '_'.join(tokenize_to_list(dcd, '/')[-1].split('_')[:3])
             limit = OrderedDict([
                 ("exp-2", []),
                 ("exp-1", []),
@@ -246,7 +246,7 @@ def read_limit(directories, otags, xvalues, onepoi):
             if onepoi:
                 with open("{dcd}/{pnt}_{tag}_limits_one-poi.json".format(
                         dcd = dcd,
-                        pnt = '_'.join(dcd.split('_')[:3]),
+                        pnt = pnt,
                         tag = otags[tt])) as ff:
                     result = json.load(ff)
 
@@ -256,7 +256,7 @@ def read_limit(directories, otags, xvalues, onepoi):
             else:
                 chunks = glob.glob("{dcd}/{pnt}_{tag}_limits_g-scan_n*_i*.json".format(
                     dcd = dcd,
-                    pnt = '_'.join(dcd.split('_')[:3]),
+                    pnt = pnt,
                     tag = otags[tt]))
                 chunks.sort(key = lambda name: int(name.split('_')[-1].split('.')[0][1:]))
                 for nn in chunks:
@@ -584,6 +584,9 @@ if __name__ == '__main__':
     parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
                         type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 
+    parser.add_argument("--read-from", help = "this is the location where workspace dirs are searched for",
+                        dest = "basedir", default = ".", required = False, type = append_if_not_empty)
+
     args = parser.parse_args()
     if len(args.itag) != len(args.label):
         if len(args.itag) == 1 and len(args.label) == 0:
@@ -591,13 +594,14 @@ if __name__ == '__main__':
         else:
             raise RuntimeError("length of tags isnt the same as labels. aborting")
 
-    adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
-    hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    adir = [[pnt for pnt in sorted(glob.glob(f'{args.basedir}A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    hdir = [[pnt for pnt in sorted(glob.glob(f'{args.basedir}H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
     otags = [tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
 
-    apnt = [[get_point(pnt) for pnt in directory] for directory in adir]
-    hpnt = [[get_point(pnt) for pnt in directory] for directory in hdir]
-
+    apnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in adir]
+    hpnt = [[get_point(tokenize_to_list(pnt, '/')[-1]) for pnt in directory] for directory in hdir]
+    #print(apnt)
+    #raise RuntimeError("xxx")
     if not all([pnt == apnt[0]] for pnt in apnt):
         raise RuntimeError("A signal points are not the same between args.itag. aborting")
 

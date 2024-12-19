@@ -34,13 +34,18 @@ kfactor_file_name = {
     173: input_base + "ahtt_kfactor_sushi/ulkfactor_sushi_mt173p5_241023.root"
 }
 
+parities = ("A", "H")
+masses = tuple(["m343", "m365", "m380"] + ["m" + str(mm) for mm in range(400, 1001, 25)])
+widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
+
 def input_bkg(background, channels):
     if background != "":
         return background
 
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
-        backgrounds.append(input_base + "templates_ULFR2/fix_folding_240224/ll/bkg_ll_3D-33_rate_mtuX_pca_ewk.root")
+        backgrounds.append(input_base + "templates_ULFR2/etat_chit_w2p8_241204/bkg_templates_3D-33_rate_mtuX.root")
+        #backgrounds.append(input_base + "templates_ULFR2/etat_chit_w2p8_cut_241205/bkg_templates_3D-33_rate_mtuX.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
         backgrounds.append(input_base + "templates_ULFR2/dyscales_fix_231020/lj/templates_lj_bkg_rate_mtuX_pca_ewk.root")
 
@@ -51,7 +56,6 @@ def input_sig(signal, points, injects, channels, years):
         return signal
 
     signals = []
-    masses = ["m" + str(im) for im in [343, 365, 380] + list(range(400, 1001, 25))]
     for im in masses:
         if im in points or im in injects:
             if any(cc in channels for cc in ["ee", "em", "mm"]):

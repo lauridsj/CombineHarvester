@@ -73,7 +73,7 @@ class MultiInterferencePlusFixed(PhysicsModelBase_NiceSubclasses):
     def doParametersOfInterest(self):
         for ii, signal in enumerate(self.signals):
             ii0 = ii + 1 if self.nsignal > 1 else ''
-            self.modelBuilder.doVar('g{ss}[0,0,5]'.format(ss = ii0))
+            self.modelBuilder.doVar('g{ss}[1,0,5]'.format(ss = ii0))
 
             if self.nor:
                 self.modelBuilder.factory_('expr::g2_{ss}("@0*@0", g{ss})'.format(ss = ii0))

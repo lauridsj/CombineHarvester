@@ -202,11 +202,16 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
     sys.stdout.flush()
     return workspace
 
-def starting_nuisance(freeze_zero, freeze_post):
+def starting_nuisance(freeze_zero, freeze_nonzero, freeze_post):
     set_freeze = [[], []]
     setp, frzp = set_freeze
 
-    for frz in freeze_zero | freeze_post:
+    freeze_nonzero = [name.split(':') for name in freeze_nonzero]
+    if not all([len(nz) == 2 for nz in freeze_nonzero]) or len(set([nz[0] for nz in freeze_nonzero])) != len(freeze_nonzero):
+        raise RuntimeError("starting_nuisance :: unexpected --freeze-nonzero format, or non-unique specification. aborting. syntax: 'nuisname: value'")
+    freeze_nonzero = {nz[0]: float(nz[1]) for nz in freeze_nonzero}
+
+    for frz in freeze_zero | set(freeze_nonzero.keys()) | freeze_post:
         if frz in ["autoMCStats", "mcstat"]:
             param = r"rgx{prop_bin.*}"
         elif frz in ["experiment", "theory", "norm", "expth"]:
@@ -217,6 +222,8 @@ def starting_nuisance(freeze_zero, freeze_post):
         # --setNuisanceGroups xxx=0 ain't a thing
         if frz in freeze_zero and "__grp__" not in param:
             setp.append("{param}=0".format(param = param))
+        elif frz in freeze_nonzero and "__grp__" not in param:
+            setp.append("{param}={value}".format(param = param, value = freeze_nonzero[frz]))
         frzp.append("{param}".format(param = param))
 
     return set_freeze
@@ -251,7 +258,7 @@ def is_good_fit(fit_fname, fit_names):
     fgood = []
     for fname in fit_names:
         fresult = ffile.Get("{fname}".format(fname = fname))
-        fit_quality = fit_result.covQual()
+        fit_quality = fresult.covQual()
         print ("\nxxx_point_ahtt :: fit with name {fname} has a covariance matrix of status {fql}".format(fname = fname, fql = fit_quality))
         sys.stdout.flush()
         fgood.append(fit_quality != 3)
@@ -465,7 +472,7 @@ def channel_compatibility_masking(datacard, masks):
 def channel_compatibility_hackery(datacard, masks):
     # channel compatibility test, as is currently implemented in the version we use, is far too slow
     # so we go the hacky way of adding the params by hand
-    # currently assumes that this is only of interest for 2D A/H, etat, yukawa
+    # currently assumes that this is only of interest for 2D signals, yukawa
     if "_combined.txt" not in datacard:
         print ("method makes no sense if not for combined datacard, aborting")
         return
@@ -478,7 +485,7 @@ def channel_compatibility_hackery(datacard, masks):
     with open(datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag)), 'a') as txt:
         with open(datacard) as dc:
             for line in dc:
-                if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV"]]):
+                if any([skip in line for skip in ["group =", "EWK_yukawa", "CMS_EtaT_norm_13TeV", "CMS_ChiT_norm_13TeV"]]):
                     continue
                 txt.write(line)
     datacard = datacard.replace("_combined.txt", "_{cct}.txt".format(cct = cctag))
@@ -488,6 +495,7 @@ def channel_compatibility_hackery(datacard, masks):
     ahint = len([proc for proc in processes if (proc.startswith("A") or proc.startswith("H")) and (proc.endswith("_pos") or proc.endswith("_neg"))]) > 0
     ewktt = len([proc for proc in processes if proc.startswith("EWK_TT")]) > 0
     etat = len([proc for proc in processes if proc == "EtaT"]) > 0
+    chit = len([proc for proc in processes if proc == "ChiT"]) > 0
 
     with open(datacard, 'a') as txt:
         if len(ahres):
@@ -506,9 +514,9 @@ def channel_compatibility_hackery(datacard, masks):
                         txt.write("\nmg{iah}_to2_{mm}_product rateParam {cc} {pah} (-@0*@0*@1*@1) g{iah}_global,g{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_neg"))
                     txt.write("\n")
                 else:
-                    txt.write("\nr{iah}_global extArg 0 [-5,5]".format(iah = iah))
+                    txt.write("\nr{iah}_global extArg 0 [-20,20]".format(iah = iah))
                     for cc in set(maskmap.values()):
-                        txt.write("\nr{iah}_{cc} extArg 0 [-5,5]".format(iah = iah, cc = cc))
+                        txt.write("\nr{iah}_{cc} extArg 0 [-20,20]".format(iah = iah, cc = cc))
                     txt.write("\n")
                     for cc, mm in maskmap.items():
                         txt.write("\nr{iah}_{mm}_product rateParam {cc} {pah} (@0*@1) r{iah}_global,r{iah}_{mm}".format(iah = iah, cc = cc, mm = mm, pah = pah + "_res"))
@@ -527,10 +535,19 @@ def channel_compatibility_hackery(datacard, masks):
             txt.write("\n")
 
         if etat:
-            txt.write("\nCMS_EtaT_norm_13TeV_global extArg 1 [-5,5]")
+            txt.write("\nCMS_EtaT_norm_13TeV_global extArg 1 [-20,20]")
             for cc in set(maskmap.values()):
-                txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-5,5]".format(cc = cc))
+                txt.write("\nCMS_EtaT_norm_13TeV_{cc} extArg 1 [-20,20]".format(cc = cc))
             txt.write("\n")
             for cc, mm in maskmap.items():
                 txt.write("\nCMS_EtaT_norm_13TeV_{mm}_product rateParam {cc} EtaT (@0*@1) CMS_EtaT_norm_13TeV_global,CMS_EtaT_norm_13TeV_{mm}".format(cc = cc, mm = mm))
+            txt.write("\n")
+
+        if chit:
+            txt.write("\nCMS_ChiT_norm_13TeV_global extArg 1 [-20,20]")
+            for cc in set(maskmap.values()):
+                txt.write("\nCMS_ChiT_norm_13TeV_{cc} extArg 1 [-20,20]".format(cc = cc))
+            txt.write("\n")
+            for cc, mm in maskmap.items():
+                txt.write("\nCMS_ChiT_norm_13TeV_{mm}_product rateParam {cc} ChiT (@0*@1) CMS_ChiT_norm_13TeV_global,CMS_ChiT_norm_13TeV_{mm}".format(cc = cc, mm = mm))
             txt.write("\n")

@@ -115,8 +115,8 @@ def starting_poi(gvalues, fixpoi, resonly = False):
         return [[], []]
 
     poi = 'r' if resonly else 'g'
-    setpar = [poi + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)]
-    frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -5 <= float(gg) <= 5) or (not resonly and float(gg) >= 0)] if fixpoi else []
+    setpar = [poi + str(ii + 1) + '=' + gg for ii, gg in enumerate(gvalues) if (resonly and -20 <= float(gg) <= 20) or (not resonly and float(gg) >= 0)]
+    frzpar = [poi + str(ii + 1) for ii, gg in enumerate(gvalues) if (resonly and -20 <= float(gg) <= 20) or (not resonly and float(gg) >= 0)] if fixpoi else []
 
     return [setpar, frzpar]
 
@@ -287,7 +287,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                         while os.path.isfile(mname):
                             jj += 1
                             mname = mrgdir + ff.replace(fmrg, ftmp)
-                        syscall("hadd {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
+                        syscall("hadd -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
                         merged.append(mname)
 
                     jj += 1
@@ -429,26 +429,31 @@ if __name__ == '__main__':
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["r1", "r2"] if ahresonly else ["g1", "g2"]
     poiset = sorted(list(set(poiset)))
-    notgah = poiset != ["g1", "g2"]
+    notah = poiset != ["r1", "r2"] if ahresonly else poiset != ["g1", "g2"]
+    startpoi = starting_poi(gvalues, args.fixpoi, ahresonly)
+    # extra handling since FitDiagnostics s fit is hardcoded to float the first POI
+    # therefore postfit plots with H only floating isn't possible otherwise
+    if not notah:
+        poiset = list(set(poiset) - set(startpoi[1])) if len(startpoi[1]) == 1 else poiset
 
     # parameter ranges for best fit file
     if ahresonly:
-        ranges = ["{rr}: -5, 5".format(rr = rr) for rr in ["r1", "r2"]]
+        ranges = ["{rr}: -20, 20".format(rr = rr) for rr in ["r1", "r2"]]
     else:
         ranges = ["{gg}: 0, 5".format(gg = gg) for gg in ["g1", "g2"]]
 
     if args.experimental:
-        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass", "CMS_EtaT_norm_13TeV"] # veeeery wide hedging for theory ME NPs
+        ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
     default_workspace = dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov,
-        "single" if runsingle else "", '__'.join(poiset) if notgah else "",
+        "single" if runsingle else "", '__'.join(poiset) if notah else "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
-        elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
     )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
@@ -497,7 +502,7 @@ if __name__ == '__main__':
             args.resdir = dcdir
 
         # FIXME test that freezing NPs lead to a very peaky distribution (possibly single value)
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
 
         if args.gofrundat:
             print "\ntwin_point_ahtt :: starting goodness of fit, saturated model - data fit"
@@ -585,7 +590,7 @@ if __name__ == '__main__':
             for fcexp in args.fcexp:
                 scenario = expected_scenario(fcexp, resonly = ahresonly)
                 identifier = "_" + scenario[0]
-                parameters = [scenario[1]] if scenario[1] != "" else [] 
+                parameters = [scenario[1]] if scenario[1] != "" else []
 
                 # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
                 fcwsp = get_best_fit(
@@ -593,7 +598,7 @@ if __name__ == '__main__':
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
                     set_range(ranges),
-                    elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+                    elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
                 )
 
                 never_gonna_give_you_up(
@@ -680,10 +685,10 @@ if __name__ == '__main__':
 
     if runcc:
         ccbase = ["r1", "r2"] if ahresonly else ["g1", "g2"]
-        ccbase += ["EWK_yukawa", "CMS_EtaT_norm_13TeV"]
+        ccbase += ["EWK_yukawa", "CMS_EtaT_norm_13TeV", "CMS_ChiT_norm_13TeV"]
 
         if any([cp not in ccbase for cp in poiset]):
-            raise RuntimeError("twin_point_ahtt :: mode chancomp only works with any subset of [g1, g2, EWK_yukawa, CMS_EtaT_norm_13TeV]")
+            raise RuntimeError("twin_point_ahtt :: mode chancomp only works with any subset of [g1, g2, EWK_yukawa, CMS_EtaT_norm_13TeV, CMS_ChiT_norm_13TeV]")
 
         if args.asimov:
             raise RuntimeError("mode gof is meaningless for asimov dataset!!")
@@ -716,7 +721,7 @@ if __name__ == '__main__':
         wspprm = channel_compatibility_set_freeze(
             ccbase,
             channels,
-            elementwise_add([starting_poi(gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, set())]),
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]),
             args.extopt
         )
 
@@ -724,7 +729,7 @@ if __name__ == '__main__':
         chancomp_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_{cct}.root".format(cct = cctag), args.asimov,
-            "", '__'.join(poiset) + "_{cct}".format(cct = cctag) if notgah else "{cct}".format(cct = cctag),
+            "", '__'.join(poiset) + "_{cct}".format(cct = cctag) if notah else "{cct}".format(cct = cctag),
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             ccpois[0],
             "",
@@ -734,7 +739,7 @@ if __name__ == '__main__':
         fitprm = channel_compatibility_set_freeze(
             ccbase,
             channels,
-            elementwise_add([starting_poi(gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, args.frzpost)]),
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)]),
             args.extopt
         )
         scenarii = {"global": fitprm[0], "channel": fitprm[1]}
@@ -744,7 +749,7 @@ if __name__ == '__main__':
                 dcd = args.resdir,
                 ptg = ptag,
                 exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-                poi = '__'.join(poiset) if notgah else "",
+                poi = '__'.join(poiset) if notah else "",
                 cct = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks)
             )
             channel_compatibility_fits(chancomp_workspace, ccpois, scenarii, nonparametric_option(args.extopt), trkparam, oname)
@@ -775,7 +780,7 @@ if __name__ == '__main__':
                 dcd = args.resdir,
                 ptg = ptag,
                 exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
-                poi = '__'.join(poiset) if notgah else "",
+                poi = '__'.join(poiset) if notah else "",
                 cct = "" if len(args.ccmasks) == 0 else "_" + "_".join(args.ccmasks),
                 idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             )
@@ -880,22 +885,22 @@ if __name__ == '__main__':
 
     if runprepost or runpsfromws:
         gfit = g_in_filename(gvalues)
-        set_freeze = elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
         fitdiag_workspace = get_best_fit(
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, dcdir + "workspace_fitdiag.root", args.asimov,
-            "", '__'.join(poiset) + "_fitdiag" if notgah else "fitdiag",
+            "", '__'.join(poiset) + "_fitdiag" if notah else "fitdiag",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             poiset,
             set_range(ranges),
-            elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
         )
 
         fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{poi}{gvl}{fix}_{ftp}.root".format(
             dcd = dcdir,
             ptg = ptag,
             fdo = fdoutput,
-            poi = "_" + '__'.join(poiset) if notgah else "",
+            poi = "_" + '__'.join(poiset) if notah else "",
             gvl = "_" + gfit if gfit != "" else "",
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
@@ -903,12 +908,10 @@ if __name__ == '__main__':
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
-        if args.prepostfit == 's':
-            startpoi = starting_poi(gvalues, args.fixpoi)
-        else:
-            startpoi = starting_poi(gvalues if notgah else ["0.", "0."], args.fixpoi if notgah else True)
-        set_freeze = elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frzpost)])
-        fitopt = "--customStartingPoint --skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
+        stp = startpoi if args.prepostfit == 's' else starting_poi(gvalues if notah else ["0.", "0."], args.fixpoi if notah else True)
+        set_freeze = elementwise_add([stp, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
+        del stp
+        fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
 
         never_gonna_give_you_up(
             command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
@@ -995,7 +998,7 @@ if __name__ == '__main__':
 
         nparam = len(args.nllparam)
         scenario = expected_scenario(args.fcexp[0], gvalues_syntax = True, resonly = ahresonly)
-        set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, args.frzpost)])
+        set_freeze = elementwise_add([starting_poi(scenario[1] if args.fcexp[0] != "obs" else gvalues, args.fixpoi, ahresonly), starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
 
         # fit settings should be identical to the one above, since we just want to choose the wsp by fcexp rather than args.asimov
         fcwsp = get_best_fit(
@@ -1003,20 +1006,18 @@ if __name__ == '__main__':
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             set_range(ranges),
-            elementwise_add([starting_poi(gvalues, args.fixpoi), starting_nuisance(args.frzzero, set())]), args.extopt, masks
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
         )
 
-        isgah = [param in ["g1", "g2", "r1", "r2"] for param in args.nllunconstrained]
-        unconstrained = ",".join([param for param, isg in zip(args.nllunconstrained, isgah) if not isg])
+        unconstrained = ",".join([param for param in args.nllunconstrained if param not in ["g1", "g2", "r1", "r2", "CMS_EtaT_norm_13TeV", "CMS_ChiT_norm_13TeV"]])
 
         if len(args.nllwindow) < nparam:
-            args.nllwindow += ["0,3" if isg else "-5,5" for isg in isgah[len(args.nllwindow):]]
+            args.nllwindow += ["0,3" if param in ["g1", "g2"] else "-5,5" for param in args.nllparam[len(args.nllwindow):]]
         minmax = [(float(values.split(",")[0]), float(values.split(",")[1])) for values in args.nllwindow]
 
         if len(args.nllnpnt) < nparam:
             nsample = 32 # per unit interval
             args.nllnpnt += [nsample * round(minmax[ii][1] - minmax[ii][0]) for ii in range(len(args.nllnpnt), nparam)]
-            args.nllnpnt += [2 * args.nllnpnt[ii] if isgah[ii] else args.nllnpnt[ii] for ii in range(len(args.nllnpnt), nparam)]
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1])) for ii in range(nparam)]
         nllparam = " ".join(["-P {param}".format(param = param) for param in args.nllparam])
 

@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+# draw the cls(g) for some signal points
+# requires matplotlib > 3.3 e.g. source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_100 x86_64-centos7-gcc10-opt
+
+from argparse import ArgumentParser
+import os
+import sys
+import numpy as np
+from scipy import stats
+import math
+
+import glob
+from collections import OrderedDict
+import json
+
+import matplotlib
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpt
+import matplotlib.lines as mln
+import matplotlib.colors as mcl
+import matplotlib.ticker as mtc
+
+from utilscombine import get_fit
+from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
+from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
+
+def parse_to_kv(tag):
+    tag = tag.split(':')
+    key = tag[0]
+    values = tokenize_to_list(tag[1]) if len(tag) > 1 else [key]
+    return [key, values]
+
+def normal_2sided_pvalue(dnll):
+    if dnll < 0.:
+        return 1.
+    dnll = abs(2. * dnll)
+    return 2. * stats.norm.sf(math.sqrt(dnll)) if 0. <= dnll <= 100. else 1e-23
+
+def really_read_pval0(which, var1, ahdirs, ahtag, etatag, etadirs):
+    '''
+    reads directories, and looks for files that might contain the pvalue0 numbers
+    the fn looks first for the F-C version, and then the NLL version as a fallback
+    the NLL version obtains the pvalue in the Gaussian approximation
+    ask Afiq how wonderfully excellent of an idea this is, especially when which = full, if you've time for some comedy
+    the return value is a dict for the pvalues for different scenarii
+    '''
+    pois = ["r1", "r2"] if which == "resonance" else ["g1", "g2"]
+    result = {
+        "A exp": [],
+        "A obs": [],
+        "H exp": [],
+        "H obs": [],
+        "etat exp": 1.,
+        "etat obs": 1.
+    }
+
+    for ahd in ahdirs:
+        apnt = get_point(ahd.split('__')[0])
+        hpnt = get_point(ahd.split('__')[1])
+
+        av1 = apnt[1] if var1 == "mass" else apnt[2]
+        hv1 = hpnt[1] if var1 == "mass" else hpnt[2]
+
+        # F-C json files, names to be checked
+        afce = sorted(glob.glob(ahd + "/*_" + ahtag[1][0] + "_fc-scan_exp-10_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+        afco = sorted(glob.glob(ahd + "/*_" + ahtag[1][0] + "_fc-scan_obs_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+        hfce = sorted(glob.glob(ahd + "/*_" + ahtag[1][1] + "_fc-scan_exp-01_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+        hfco = sorted(glob.glob(ahd + "/*_" + ahtag[1][1] + "_fc-scan_obs_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+
+        # NLL files
+        alle = glob.glob(ahd + "/*_" + ahtag[1][0] + f"_nll_exp-10_{pois[0]}_0to0.root")
+        allo = glob.glob(ahd + "/*_" + ahtag[1][0] + f"_nll_obs_{pois[0]}_0to0.root")
+        hlle = glob.glob(ahd + "/*_" + ahtag[1][1] + f"_nll_exp-01_{pois[1]}_0to0.root")
+        hllo = glob.glob(ahd + "/*_" + ahtag[1][1] + f"_nll_obs_{pois[1]}_0to0.root")
+
+        lookups = {
+            "A exp": [afce, alle],
+            "A obs": [afco, allo],
+            "H exp": [hfce, hlle],
+            "H obs": [hfco, hllo]
+        }
+
+        for scenario, fcnll in lookups.items():
+            fc, nll = fcnll
+            pval = None
+            if len(fc) > 0:
+                pass
+            elif len(nll) > 0:
+                pval = get_fit(nll[0], ["deltaNLL"], qexp_eq_m1 = False)
+                if pval is not None:
+                    pval = normal_2sided_pvalue(pval[0])
+
+            if pval is not None:
+                result[scenario].append((av1 if 'A' in scenario else hv1, pval))
+        pass
+
+    for kk in result.keys():
+        if 'A' in kk or 'H' in kk:
+            result[kk].sort(key = lambda tup: tup[0])
+
+    for etd in etadirs:
+        # F-C json files, names DEFINITELY have to be checked
+        efce = sorted(glob.glob(etd + "/*_" + etatag[1][0] + "_fc-scan_exp-b_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+        efco = sorted(glob.glob(etd + "/*_" + etatag[1][0] + "_fc-scan_obs_*.json"), key = lambda name: int(name.split('_')[-1].split('.')[0]))
+
+        # NLL files
+        elle = glob.glob(etd + "/*_" + etatag[1][0] + "_nll_exp-b_CMS_EtaT_norm_13TeV_0to0.root")
+        ello = glob.glob(etd + "/*_" + etatag[1][0] + "_nll_obs_CMS_EtaT_norm_13TeV_0to0.root")
+
+        lookups = {
+            "etat exp": [efce, elle],
+            "etat obs": [efco, ello],
+        }
+
+        for scenario, fcnll in lookups.items():
+            fc, nll = fcnll
+            pval = None
+            if len(fc) > 0:
+                pass
+            elif len(nll) > 0:
+                pval = get_fit(nll[0], ["deltaNLL"], qexp_eq_m1 = False)
+                if pval is not None:
+                    pval = normal_2sided_pvalue(pval[0])
+
+            if pval is not None:
+                result[scenario] = pval
+        pass
+    return result
+
+def really_draw_pval0(onames, pvalues, label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent):
+    colors = {
+        "A":     "#cc0033",
+        "H":     "#0033cc",
+        "etat":  "#009000",
+        "sigma": "#3B444B"
+    }
+    # no this doesnt have to make sense - just whatever that needs to be tuned per channel
+    specifics = {
+        'lx': [(1e-21, 1000.), [1e-21, 1e-14, 1e-7, 1], [r'$10^{-21}$', r'$10^{-14}$', r'$10^{-7}$', '$1\,$'], (20, 0), [0.2, 0.25, 0.5, 0.1], (9., 10., 10.)],
+        'll': [(1e-12, 50.), [1e-12, 1e-8, 1e-4, 1], [r'$10^{-12}$', r'$10^{-8}$', r'$10^{-4}$', '$1\,$'], (20, 8), [0.225, 0.125, 0.4, 0.1], (3.8, 4., 4.)],
+        'lj': [(1e-2, 2.), [1e-2, 1e-1, 1], [r'$10^{-2}$', r'$10^{-1}$', '$1\,$'], (20, 0), [0.2, 0.19, 0.5, 0.1], (1.29, 1.3, 1.3)],
+    }
+    channel = 'll' # hardcoded atm
+
+    axe = [np.array(first(pv['A exp'])) for pv in pvalues]
+    hxe = [np.array(first(pv['H exp'])) for pv in pvalues]
+
+    aye = [np.array(second(pv['A exp'])) for pv in pvalues]
+    ayo = [np.array(second(pv['A obs'])) for pv in pvalues]
+
+    hye = [np.array(second(pv['H exp'])) for pv in pvalues]
+    hyo = [np.array(second(pv['H obs'])) for pv in pvalues]
+
+    minx, maxx = min([min(e) for e in axe + hxe]), max([max(e) for e in axe + hxe])
+    miny, maxy = specifics[channel][0]
+    handles = []
+    fits = []
+
+    fig, ax = plt.subplots(dpi = 600)
+    for ii in [0, 1, 2, 3, 4, 5, 7, 9]:
+        if miny < 1e-11 and ii in [1, 2, 4]:
+            continue
+
+        ax.plot(np.array([minx, maxx]), np.array([normal_2sided_pvalue(ii * ii / 2.), normal_2sided_pvalue(ii * ii / 2.)]), color = colors["sigma"], linestyle = 'dotted', linewidth = 2)
+        plt.annotate(f"${ii}\sigma$", (0.97 * maxx, normal_2sided_pvalue(ii * ii / 2.)), textcoords = "offset points", xytext = (0, 2), ha = 'center', fontsize = 17, color = colors["sigma"])
+    #ax.plot(np.array([minx, maxx]), np.array([1.35, 1.35]), color = colors["sigma"], linestyle = 'solid', linewidth = 1) # cms calibration line
+
+    lwidth = 4 if len(pvalues) > 1 else 5
+    if expected:
+        if len(pvalues) > 1:
+            ax.plot(hxe[1], hye[1], color = colors["H"], linestyle = 'dashed', linewidth = lwidth)
+            ax.plot(axe[1], aye[1], color = colors["A"], linestyle = 'dashed', linewidth = lwidth)
+
+        ax.plot(hxe[0], hye[0], color = colors["H"], linestyle = 'dashed' if len(pvalues) == 1 else 'solid', linewidth = lwidth)
+        ax.plot(axe[0], aye[0], color = colors["A"], linestyle = 'dashed' if len(pvalues) == 1 else 'solid', linewidth = lwidth)
+        ax.plot(np.array([minx]), np.array([pvalues[0]['etat exp']]),
+                marker = 'x', markersize = 20, color = colors["etat"])
+
+    if observed:
+        if len(pvalues) > 1:
+            ax.plot(hxe[1], hyo[1], color = colors["H"], linestyle = 'dashed', linewidth = lwidth)
+            ax.plot(axe[1], ayo[1], color = colors["A"], linestyle = 'dashed', linewidth = lwidth)
+
+        ax.plot(hxe[0], hyo[0], color = colors["H"], linestyle = 'solid', linewidth = lwidth)
+        ax.plot(axe[0], ayo[0], color = colors["A"], linestyle = 'solid', linewidth = lwidth)
+        ax.plot(np.array([minx]), np.array([pvalues[0]['etat obs']]),
+                marker = 9, markersize = 20, color = colors["etat"])
+        plt.annotate(r"$\eta_{\mathrm{t}},\, \mathrm{m} =$343 GeV", (minx, pvalues[0]['etat obs']), textcoords = "offset points", xytext = specifics[channel][3], ha = 'left', fontsize = 17, color = colors["etat"])
+
+    handles.append((mln.Line2D([0], [0], color = colors["A"], linestyle = 'solid', linewidth = lwidth), r'$\mathrm{\mathsf{A}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["H"], linestyle = 'solid', linewidth = lwidth), r'$\mathrm{\mathsf{H}}$'))
+    handles.append((mln.Line2D([0], [0], color = colors["etat"], marker = 9, markersize = 20, linewidth = 0), r'$\eta_{\mathrm{t}}$'))
+
+    if expected and observed:
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', marker = 'x', markersize = 20, linewidth = lwidth), r"Expected"))
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', marker = 9, markersize = 20, linewidth = lwidth), r"Observed"))
+
+    if len(pvalues) > 1:
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'solid', markersize = 20, linewidth = lwidth), r"Resonance"))
+        fits.append((mln.Line2D([0], [0], color = "0", linestyle = 'dashed', markersize = 20, linewidth = lwidth), r"Full"))
+
+    plt.xlim((minx, maxx))
+    plt.ylim((miny, maxy))
+    plt.xlabel(xaxis, fontsize = 26, loc = "right")
+    plt.ylabel("Local p-value", fontsize = 26, loc = "top")
+    if label != "":
+        ax.set_title(label, fontsize = 23)
+    ax.set_yscale('log')
+    ax.margins(x = 0, y = 0)
+
+    bbox = specifics[channel][4]
+    if len(fits) > 0:
+        bbox = [bbox[ii] if ii != 1 else bbox[ii] + 0.05 for ii in range(len(bbox))]
+    legend1 = ax.legend(first(handles), second(handles), ncols = 3, title = legendtext, title_fontsize = 21, loc = tuple(bbox[:2]), bbox_to_anchor = tuple(bbox),
+                        fontsize = 21, handlelength = 1.5, borderaxespad = 1., frameon = False)
+    if len(fits) > 0:
+        ax.add_artist(legend1)
+        bbox = [bbox[ii] if ii != 1 else bbox[ii] - 0.06 for ii in range(len(bbox))]
+        legend2 = ax.legend(first(fits), second(fits), ncols = 2, loc = tuple(bbox[:2]), bbox_to_anchor = tuple(bbox),
+                            fontsize = 19, handlelength = 2, handletextpad = 0.84, borderaxespad = 1., frameon = False)
+        ax.add_artist(legend2)
+
+    if formal:
+        xwindow = maxx - minx
+        ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
+        ax.text(0.01 * xwindow + minx, specifics[channel][5][0], ctxt, fontsize = 31, ha = 'left', va = 'bottom', usetex = True)
+
+        if cmsapp != "":
+            atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
+            ax.text(0.02 * xwindow + minx, specifics[channel][5][1], atxt, fontsize = 26, ha = 'left', va = 'bottom', usetex = True)
+
+        ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
+        ax.text(0.99 * xwindow + minx, specifics[channel][5][2], ltxt, fontsize = 23, ha = 'right', va = 'bottom', usetex = True)
+
+    ax.minorticks_off()
+    ax.tick_params(axis = "both", which = "major", direction = "in", bottom = True, top = True, left = True, right = True)
+    ax.tick_params(axis = "y", which = "major", width = 1, length = 8, labelsize = 22, pad = 3)
+    ax.tick_params(axis = "x", which = "major", width = 1, length = 8, labelsize = 22, pad = 7)
+    if xticks is not None and xlabels is not None:
+        ax.xaxis.set_major_locator(mtc.FixedLocator(xticks))
+        ax.xaxis.set_major_formatter(mtc.FixedFormatter(xlabels))
+    ax.yaxis.set_major_locator(mtc.FixedLocator(specifics[channel][1]))
+    ax.yaxis.set_major_formatter(mtc.FixedFormatter(specifics[channel][2]))
+
+    fig.set_size_inches(8., 8.)
+    fig.tight_layout()
+    for oname in onames:
+        fig.savefig(oname, transparent = transparent)
+    plt.close()
+
+def read_pval0(ahpack, which, var1, var2, iv1, iv2, etatag, etadirs):
+    ahdirs, apoints, hpoints, ahtag = ahpack
+    av1s = list(set([pnt[iv1] for pnt in apoints if pnt[iv2] == var2]))
+    hv1s = list(set([pnt[iv1] for pnt in hpoints if pnt[iv2] == var2]))
+    dirs = []
+    for dd in ahdirs:
+        apnt, hpnt = get_point(dd.split('__')[0]), get_point(dd.split('__')[1])
+        if not (apnt in apoints and hpnt in hpoints):
+            continue
+
+        fora = [(var1 == "mass" and f"A_m{int(v1)}_w{str(var2).replace('.', 'p')}" in dd) or (var1 == "width" and f"A_m{int(var2)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in av1s]
+        forh = [(var1 == "mass" and f"H_m{int(v1)}_w{str(var2).replace('.', 'p')}" in dd) or (var1 == "width" and f"H_m{int(var2)}_w{str(v1).replace('.', 'p')}" in dd) for v1 in hv1s]
+        if any(fora + forh):
+            dirs.append(dd)
+    return really_read_pval0(which, var1, dirs, ahtag, etatag, etadirs)
+
+def draw_pval0(var1, onames, which, ahpacks, etatag, etadirs, label, annotate, expected, observed, formal, cmsapp, luminosity, transparent):
+    if not hasattr(draw_pval0, "settings"):
+        draw_pval0.settings = OrderedDict([
+            ("mass",  {"var2": "width", "iv1": 1, "iv2": 2, "label": r"$\Gamma_{\mathrm{\mathsf{A/H}}}=$ %.1f%% m$_{\mathrm{\mathsf{A/H}}}$"}),
+            ("width", {"var2": "mass", "iv1": 2, "iv2": 1, "label": r"m$_{\mathrm{\mathsf{A/H}}}=$ %d GeV"})
+        ])
+
+    var2s = set([pnt[draw_pval0.settings[var1]["iv2"]] for ah in ahpacks for pnt in ah[1] + ah[2]])
+    xaxis = r'm$_{\mathrm{\mathsf{A/H}}}$ [GeV]' if var1 == "mass" else r'$\Gamma_{\mathrm{\mathsf{A/H}}}$ [% m$_{\mathrm{\mathsf{A/H}}}$]'
+    whiches = ["resonance", "full"] if which == "both" else [which]
+
+    for vv in var2s:
+        print(f"running {draw_pval0.settings[var1]['var2']} {vv}")
+        xticks = None if var1 != "mass" else [450., 600., 750., 900.]
+        xlabels = None if var1 != "mass" else ['450', '600', '750', '900']
+
+        legendtext = "Observed, " if observed and not expected else "Expected, " if expected and not observed else ""
+        legendtext = legendtext if which == "both" else r"Resonance, " if which == "resonance" else r"Full, "
+        legendtext += draw_pval0.settings[var1]["label"] % vv
+        if int(vv) == vv:
+            legendtext = legendtext.replace('%.1f' % vv, str(int(vv)))
+
+        pvals = [read_pval0(ah, ww, var1, vv, draw_pval0.settings[var1]["iv1"], draw_pval0.settings[var1]["iv2"], etatag, etadirs) for ww, ah in zip(whiches, ahpacks)]
+        really_draw_pval0(
+            [oname.format(fff = 'w' + str(vv).replace('.', 'p') if var1 == "mass" else 'm' + str(int(vv))) for oname in onames],
+            pvals, axes[label] if label != "" and label in axes else label, xaxis, xticks, xlabels, legendtext, expected, observed, formal, cmsapp, luminosity, transparent
+        )
+    pass
+
+def parse_ahtag(ahtag, drop):
+    ahkv = parse_to_kv(ahtag)
+    if len(ahkv[1]) != 2:
+        raise RuntimeError(f"expecting 2 output tags for A/H tag {ahkv[0]}, but found {ahkv[1]}. aborting")
+    ahdirs = sorted(glob.glob('A_m*_w*__H_m*_w*_' + ahkv[0]))
+    drop = [] if ahkv[0] not in drop else drop[ahkv[0]]
+    apnt = [get_point(pnt.split('__')[0]) for pnt in ahdirs if len(drop) == 0 or not any([dd in pnt.split('__')[0] for dd in drop])]
+    hpnt = [get_point(pnt.split('__')[1]) for pnt in ahdirs if len(drop) == 0 or not any([dd in pnt.split('__')[1] for dd in drop])]
+    return [ahdirs, apnt, hpnt, ahkv]
+
+def parse_drop(drop):
+    drop = [dd.split(':') for dd in tokenize_to_list( remove_spaces_quotes(drop), ';')]
+    drop = {dd[0]: [dd[1]] for dd in drop}
+    return drop
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("--function", help = "plot pvalues as a function of?", default = "mass",
+                        choices = ["mass", "width"], required = False)
+
+    parser.add_argument("--which", help = "which pvalues are being plotted?", default = "full",
+                        choices = ["full", "resonance", "both"], required = False)
+
+    parser.add_argument("--ah-tag", help = "input tag:output-tag key:value tuples to search, for A/H p-values. "
+                        "the tuples are semicolon separated, the k:v's colon-separated, and the values are comma-separated. "
+                        "each individual k:v tuple is plotted separately. the values consist of a list, whose length must be 2. "
+                        "they're interpreted as the output-tags for the A/H p-values respectively.\n"
+                        "e.g. making pval plots for each channel: 'lx:att,htt; ll:att,htt; lj:att,htt...\n"
+                        "with --which both, the assumption is that resonance first, full second.",
+                        dest = "ahtag", default = "", required = True, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
+
+    parser.add_argument("--etat-tag", help = "input tag:output-tag key:value tuples to search, for etat p-values.\n"
+                        "syntax is similar to --ah-tag, with the difference that output-tag value must be at most 1. "
+                        "if omitted, tag is used as output-tag. there needs to be as many etat tuples as A/H tuples, or none at all.",
+                        dest = "etatag", default = "", required = False, type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
+
+    parser.add_argument("--drop",
+                        help = "semicolon separated list of tag-points pair to be dropped. 'T0: X, Y; T1: A, B' means, for tag T0, all points containing X or Y are dropped, ditto for T1.",
+                        default = "", required = False, type = parse_drop )
+
+    parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
+    parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False, type = remove_spaces_quotes)
+    parser.add_argument("--label", help = "labels to attach on plot for each A/H tags, semicolon separated. if --which both, second tag follows the label of first.",
+                        default = "", required = False, type = lambda s: tokenize_to_list(s, ';' ))
+
+    parser.add_argument("--annotate", help = "text to annotate the plot, somewhere near the legend", dest = "annotate", default = "", required = False)
+
+    parser.add_argument("--expected", help = "draw expected plots", dest = "expected", action = "store_true", required = False)
+    parser.add_argument("--observed", help = "draw observed plots", dest = "observed", action = "store_true", required = False)
+
+    parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
+                        dest = "formal", action = "store_true", required = False)
+    parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
+    parser.add_argument("--luminosity", help = "integrated luminosity applicable for the plot, written if --formal is used", default = "138", required = False)
+
+    parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
+                        dest = "transparent", action = "store_false", required = False)
+    parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
+                        type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
+    args = parser.parse_args()
+
+    if not (args.expected or args.observed):
+        raise RuntimeError("at least one of expected and observed must be true")
+
+    if args.which == "both" and args.expected and args.observed:
+        raise RuntimeError("expected and observed both being true in --which both is unsupported")
+
+    if len(args.ahtag) == 0:
+        raise RuntimeError("zero A/H tags. aborting")
+
+    if (args.which != "both" and len(args.etatag) != 0 and len(args.etatag) != len(args.ahtag)) or (args.which == "both" and len(args.etatag) != 0 and len(args.etatag) != len(args.ahtag) / 2):
+        raise RuntimeError("nonzero number of etat tags, but also inequal to ah tags. aborting")
+
+    if len(args.label) != 0 and len(args.label) != len(args.ahtag):
+        raise RuntimeError("nonzero number of labels, but also inequal to ah tags. aborting")
+
+    ii, jj = 0, 0
+    for ii in range(0, len(args.ahtag), 2 if args.which == "both" else 1):
+        ahpacks = [parse_ahtag(args.ahtag[ii], args.drop)]
+        if args.which == "both":
+            ahpacks.append(parse_ahtag(args.ahtag[ii + 1], args.drop))
+
+        etatag = parse_to_kv(args.etatag[jj]) if len(args.etatag) != 0 else None
+        if etatag is not None and len(etatag[1]) != 1:
+            raise RuntimeError(f"expecting 1 output tag for etat tag {etatag[0]}, but found {etatag[1]}. aborting")
+        etadirs = sorted(glob.glob('A_m*_w*__H_m*_w*_' + etatag[0])) if etatag is not None else []
+        jj += 1
+
+        t0 = ahpacks[0][-1][0] + '_' + ahpacks[1][-1][0] if len(ahpacks) > 1 else ahpacks[0][-1][0]
+        draw_pval0(args.function,
+                   ["{ooo}/AH_pval0_{fff}_{t0}{t1}{f}".format(ooo = args.odir, fff = r"{fff}", t0 = t0, t1 = args.ptag, f = f) for f in args.fmt],
+                   args.which, ahpacks, etatag, etadirs,
+                   args.label[ii] if len(args.label) else "", args.annotate, args.expected, args.observed, args.formal, args.cmsapp, args.luminosity, args.transparent)
+        pass
+    pass

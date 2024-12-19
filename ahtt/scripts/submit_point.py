@@ -11,7 +11,7 @@ import copy
 from collections import OrderedDict
 
 from utilspy import syscall, chunks, index_list
-from utilslab import input_base, input_sig, remove_mjf
+from utilslab import input_base, input_sig, remove_mjf, parities, masses, widths
 from utilsroot import get_nbin
 from utilscombine import problematic_datacard_log
 from utilshtc import submit_job, flush_jobs, common_job, make_singularity_command
@@ -49,15 +49,15 @@ if __name__ == '__main__':
     remove_mjf()
     scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    parities = ("A", "H")
-    masses = tuple(["m365", "m380"] + ["m" + str(mm) for mm in range(400, 1001, 25)])
-    widths = ("w0p5", "w1p0", "w1p5", "w2p0", "w2p5", "w3p0", "w4p0", "w5p0", "w8p0", "w10p0", "w13p0", "w15p0", "w18p0", "w21p0", "w25p0")
     points = []
     keep_point = args.point
 
     for parity in parities:
         for mass in masses:
             for width in widths:
+                if mass == "m343" and width != "w2p0":
+                    continue
+
                 pnt = "_".join([parity, mass, width])
 
                 if keep_point == [] or any([kk in pnt for kk in keep_point]):
@@ -69,14 +69,15 @@ if __name__ == '__main__':
 
     for pnt in points:
         flush_jobs()
-        if not rundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
+        dorundc = rundc
+        if not dorundc and not os.path.isdir(pnt + args.tag) and os.path.isfile(pnt + args.tag + ".tar.gz"):
             syscall("tar xf {ttt} && rm {ttt}".format(ttt = pnt + args.tag + ".tar.gz"))
 
         mode = ""
         hasworkspace = os.path.isfile(pnt + args.tag + "/workspace_g-scan.root") and os.path.isfile(pnt + args.tag + "/workspace_one-poi.root")
-        if not rundc and not hasworkspace:
+        if not dorundc and not hasworkspace:
             syscall("rm -r {ddd}".format(ddd = pnt + args.tag), True, True)
-            rundc = True
+            dorundc = True
             mode = "datacard," + args.mode
 
         if os.path.isdir(pnt + args.tag):
@@ -86,11 +87,11 @@ if __name__ == '__main__':
                     print("WARNING :: datacard of point {pnt} is tagged as problematic by problematic_datacard_log!!!\n\n\n".format(pnt = pnt + args.tag))
                 syscall("mv {lll} {ddd}".format(lll = ll, ddd = pnt + args.tag))
 
-        if rundc and os.path.isdir(pnt + args.tag):
+        if dorundc and os.path.isdir(pnt + args.tag):
             mode = args.mode.replace("datacard,", "").replace("datacard", "").replace("workspace,", "").replace("workspace", "")
 
             if mode != "":
-                rundc = False
+                dorundc = False
             else:
                 continue
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
         job_name = "single_point_" + pnt + args.otag + "_" + "_".join(tokenize_to_list( remove_spaces_quotes(mode) ))
         job_name += "{mod}{poi}{gvl}{rvl}{fix}".format(
-            mod = "" if rundc else "_one-poi" if args.onepoi else "_g-scan",
+            mod = "" if dorundc else "_one-poi" if args.onepoi else "_g-scan",
             poi = "_" + args.poiset.replace(",", "__") if args.poiset != "" else "",
             gvl = "_g_" + str(args.setg).replace('.', 'p') if args.setg >= 0. else "",
             rvl = "_r_" + str(args.setr).replace('.', 'p') if args.setr >= 0. and not args.onepoi else "",
@@ -109,13 +110,13 @@ if __name__ == '__main__':
         job_arg = "--point {pnt} --mode {mmm} {sig} {one} {gvl} {rvl} {fix}".format(
             pnt = pnt,
             mmm = mode,
-            sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if rundc else "",
+            sig = "--signal " + input_sig(args.signal, pnt, args.inject, args.channel, args.year) if dorundc else "",
             one = "--one-poi" if args.onepoi else "",
             gvl = "--g-value " + str(args.setg) if args.setg >= 0. else "",
             rvl = "--r-value " + str(args.setr) if args.setr >= 0. else "",
             fix = "--fix-poi" if args.fixpoi and (args.setg >= 0. or args.setr >= 0.) else ""
         )
-        args.rundc = rundc
+        args.rundc = dorundc
         job_arg += common_job(args)
 
         if runlimit and not args.onepoi:
@@ -145,7 +146,7 @@ if __name__ == '__main__':
                 )
 
                 submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                           "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+                           "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         elif runpull:
             if args.nnuisance < 0:
                 args.nnuisance = 25
@@ -175,7 +176,7 @@ if __name__ == '__main__':
                 with open(pnt + args.tag + "/ahtt_nuisance.txt") as fexp:
                     nparts = fexp.readlines()
                     nparts = [et.rstrip() for et in nparts]
-                    nparts = list(set(nparts))
+                    nparts = sorted(list(set(nparts)))
                     nsplit = (len(nparts) // args.nnuisance) + 1
                     nparts = chunks(nparts, nsplit)
 
@@ -215,8 +216,13 @@ if __name__ == '__main__':
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
+<<<<<<< HEAD
                 submit_job(jname, jarg, args.jobtime, 1, args.memory,
                            "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+=======
+                submit_job(jname, jarg, args.jobtime, 1, "",
+                           "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+>>>>>>> ahtt_run2ul_dev
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
@@ -224,6 +230,11 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
+<<<<<<< HEAD
             submit_job(job_name, job_arg, args.jobtime, 1, args.memory,
                        "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+=======
+            submit_job(job_name, job_arg, args.jobtime, 1, "",
+                       "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
+>>>>>>> ahtt_run2ul_dev
     flush_jobs()

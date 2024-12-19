@@ -13,9 +13,16 @@ axes = {
     "coupling":   r"$\mathrm{g}_{\mathrm{\mathsf{%s}}}$",
     "ttcoupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}t\bar{t}}}$",
     "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
-    "muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
+    #"muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
+    "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
-    "yukawa":     r"$y_{\mathrm{t}}$"
+    "muchit":     r"$\mu(\chi_{\mathrm{t}})$",
+    "yukawa":     r"$y_{\mathrm{t}}$",
+    "ll":         r"$\ell\bar{\ell}$",
+    "l3j":        r"$\ell$, 3j",
+    "l4pj":       r"$\ell$, $\geq$ 4j",
+    "lj":         r"$\ell$j",
+    "lx":         r"$\ell\bar{\ell}$, $\ell$j"
 }
 
 def ith(iterable, idx):
@@ -41,9 +48,14 @@ def get_point(sigpnt):
     pnt = sigpnt.split('_')
     return (pnt[0][0], float(pnt[1][1:]), float(pnt[2][1:].replace('p', '.')))
 
-def str_point(sigpnt):
+def str_point(sigpnt, spinstate = False):
+    term = {
+        'A': '\mathrm{{}^{1} S_{0}}',
+        'H': '\mathrm{{}^{3} P_{0}}'
+    }
     pnt = sigpnt.split('_')
-    return pnt[0][0] + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)'
+    parity = term[pnt[0][0]] if spinstate else pnt[0][0]
+    return parity + '(' + pnt[1][1:] + ',\, ' + pnt[2][1:].replace('p0', '').replace('p', '.') + ' \%)'
 
 def default_etat_measurement(arg = ""):
     result = tokenize_to_list(remove_spaces_quotes(arg), astype = float)
@@ -78,9 +90,11 @@ def stock_labels(parameters, points, resxsecpb = 5):
         if pp in ["g1", "g2"]:
             labels.append(axes["coupling"] % str_point(points[ii]))
         elif pp in ["r1", "r2"]:
-            labels.append(axes["muah"] % (str_point(points[ii]), str(resxsecpb) + r"\,pb"))
+            labels.append(axes["muah"] % (str_point(points[ii], spinstate = True), str(resxsecpb)))
         elif pp == "CMS_EtaT_norm_13TeV":
             labels.append(axes["muetat"])
+        elif pp == "CMS_ChiT_norm_13TeV":
+            labels.append(axes["muchit"])
         elif pp == "EWK_yukawa":
             labels.append(axes["yukawa"])
         else:

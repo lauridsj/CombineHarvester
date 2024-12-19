@@ -7,8 +7,10 @@
         "QCDscale_ISR_$PROC": "PS ISR ($PROC)",
         "QCDscale_FSR_$PROC": "PS FSR ($PROC)",
 
-        "tmass": "Top quark mass",
+        "bb4l_TT": "bb4l (t\\bar{t} + tW)",
+        "tmass": "Top quark mass (QCD MC)",
         "hdamp_TT": "hdamp (t\\bar{t})",
+        "herwig_TT": "Pythia vs Herwig (t\\bar{t})",
 
         "EWK_yukawa": "Top quark Yukawa coupling",
         "EWK_scheme": "EW correction scheme",
@@ -85,7 +87,8 @@
         "AH": "A/H",
         "AH_int": "A/H int.",
         "AH_res": "A/H res.",
-        "EtaT": "\\eta"
+        "EtaT": "\\eta_{t}",
+        "ChiT": "\\chi_{t}"
     },
     "years": [
         "2016pre",

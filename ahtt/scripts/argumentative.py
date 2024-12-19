@@ -57,6 +57,7 @@ def common_fit_forwarded(parser):
     parser.add_argument("--poi-set", help = combine_help_messages["--poi-set"], dest = "poiset", default = "", required = False)
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False)
     parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False)
+    parser.add_argument("--freeze-nonzero", help = combine_help_messages["--freeze-nonzero"], dest = "frznzro", default = "", required = False)
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False)
     return parser
 
@@ -67,6 +68,8 @@ def common_fit(parser):
     parser.add_argument("--mask", help = combine_help_messages["--mask"], dest = "mask", default = "", required = False,
                         type = lambda s: [] if s == "" else update_mask( tokenize_to_list( remove_spaces_quotes(s) ) ))
     parser.add_argument("--freeze-zero", help = combine_help_messages["--freeze-zero"], dest = "frzzero", default = "", required = False,
+                        type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--freeze-nonzero", help = combine_help_messages["--freeze-nonzero"], dest = "frznzro", default = "", required = False,
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
     parser.add_argument("--freeze-post", help = combine_help_messages["--freeze-post"], dest = "frzpost", default = "", required = False,
                         type = lambda s: set() if s == "" else set(tokenize_to_list( remove_spaces_quotes(s) )))
@@ -144,7 +147,7 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--float-rate", help = combine_help_messages["--float-rate"], dest = "rateparam", default = "", required = False)
     parser.add_argument("--inject-signal", help = combine_help_messages["--inject-signal"], dest = "inject", default = "", required = False)
     parser.add_argument("--as-signal", help = combine_help_messages["--as-signal"], dest = "assignal", default = "", required = False)
-    parser.add_argument("--exclude-process", help = combine_help_messages["--exclude-process"], dest = "excludeproc", default = "", required = False)
+    parser.add_argument("--exclude-process", help = combine_help_messages["--exclude-process"], dest = "excludeproc", default = "ChiT", required = False)
     parser.add_argument("--ignore-bin", help = combine_help_messages["--ignore-bin"], dest = "ignorebin", default = "", required = False)
     parser.add_argument("--projection", help = combine_help_messages["--projection"], default = "", required = False)
     parser.add_argument("--chop-up", help = combine_help_messages["--chop-up"], dest = "chop", default = "", required = False)
@@ -170,7 +173,7 @@ def parse_args(parser):
             for minmax, njob, in zip(args.nllfullrange, args.nllnjob):
                 mm = minmax.split(',')
                 each = list(np.linspace(float(mm[0]), float(mm[1]), num = njob))
-                each = ["{0},{1}".format(each[ii], each[ii + 1]) for ii in range(len(each) - 1)] if len(each) > 1 else ["{0},{0}".format(each[0])] if len(each) == 1 else []
+                each = ["{0},{1}".format(round(each[ii], 5), round(each[ii + 1], 5)) for ii in range(len(each) - 1)] if len(each) > 1 else ["{0},{0}".format(round(each[0], 5))] if len(each) == 1 else []
                 result.append(each)
             args.nllfullrange = itertools.product(*result)
         else:
