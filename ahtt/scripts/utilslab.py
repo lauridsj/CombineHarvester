@@ -29,9 +29,9 @@ condorrun = condordir + "condorRun.sh" if "desy" in input_base else condordir + 
 
 
 kfactor_file_name = {
-    171: input_base + "ahtt_kfactor_sushi/ulkfactor_final_mt171p5_230329.root",
-    172: input_base + "ahtt_kfactor_sushi/ulkfactor_final_220129.root",
-    173: input_base + "ahtt_kfactor_sushi/ulkfactor_final_mt173p5_230329.root"
+    171: input_base + "ahtt_kfactor_sushi/ulkfactor_sushi_mt171p5_241023.root",
+    172: input_base + "ahtt_kfactor_sushi/ulkfactor_sushi_mt172p5_241023.root",
+    173: input_base + "ahtt_kfactor_sushi/ulkfactor_sushi_mt173p5_241023.root"
 }
 
 def input_bkg(background, channels):
@@ -51,7 +51,7 @@ def input_sig(signal, points, injects, channels, years):
         return signal
 
     signals = []
-    masses = ["m" + str(im) for im in [365, 380] + list(range(400, 1001, 25))]
+    masses = ["m" + str(im) for im in [343, 365, 380] + list(range(400, 1001, 25))]
     for im in masses:
         if im in points or im in injects:
             if any(cc in channels for cc in ["ee", "em", "mm"]):
