@@ -464,20 +464,21 @@ if __name__ == '__main__':
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
         syscall("combine -v 0 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
-                    dcd = workspace,
-                    mmm = mstr,
-                    snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
-                    par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                    stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
-                    toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
-                ))
+            dcd = workspace,
+            mmm = mstr,
+            snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+            par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
+            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
+            toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
+            poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset)),
+        ))
 
-        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{ptg}_toys_{exp}_{poi}{toy}{idx}.root".format(
             opd = args.toyloc,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             ptg = ptag,
-            gvl = "_" + gstr if gstr != "" else "",
-            fix = "_fixed" if args.fixpoi and gstr != "" else "",
+            exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            poi = '__'.join(poiset) if notah else "",
             toy = "_n" + str(args.ntoy),
             idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             mmm = mstr,
