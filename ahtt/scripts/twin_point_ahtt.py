@@ -467,7 +467,7 @@ if __name__ == '__main__':
             dcd = workspace,
             mmm = mstr,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
-            par = set_parameter(elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())])),
+            par = set_parameter(elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks),
             stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
             toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
             poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset))
