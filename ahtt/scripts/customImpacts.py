@@ -26,8 +26,8 @@ ROOT.TH1.AddDirectory(0)
 # //--------------------------------------------
 parser = argparse.ArgumentParser()
 #MAIN ARGS
-parser.add_argument('--input' ,'-i', help='Input json file for observed results')
-parser.add_argument('--asimov-input','-ia', help='Input json file for asimov/expected results')
+parser.add_argument('--input' ,'-i', help='Input json file for observed results', default=None)
+parser.add_argument('--asimov-input','-ia', help='Input json file for asimov/expected results', default=None)
 parser.add_argument('--output', '-o', help='Name of output file to create (without .pdf extension)')
 parser.add_argument('--translate', '-t', help='json file for remapping of parameter names')
 parser.add_argument('--POI', default=None, help='Specify a POI to draw') #E.g. 'r'
@@ -42,6 +42,12 @@ args = parser.parse_args()
 
 # //--------------------------------------------
 # //--------------------------------------------
+
+has_data = args.input is not None
+has_asimov = args.asimov_input is not None
+
+if not has_data and not has_asimov:
+    raise ValueError("Need to give at least one of data and asimov input")
 
 externalPullDef = False
 if args.pullDef is not None:
@@ -94,14 +100,20 @@ def GetRounded(nom, e_hi, e_lo):
     return (s_nom, s_hi, s_lo)
 
 #Load json output of combineTool.py -M Impacts (observed)
-data = {}
-with open(args.input) as jsonfile:
-    data = json.load(jsonfile)
+if has_data:
+    data = {}
+    with open(args.input) as jsonfile:
+        data = json.load(jsonfile)
+    if not has_asimov:
+        asidata = data
 
 #Load json output of combineTool.py -M Impacts (expected/asimov)
-asidata = {}
-with open(args.asimov_input) as asifile:
-    asidata = json.load(asifile)
+if has_asimov:
+    asidata = {}
+    with open(args.asimov_input) as asifile:
+        asidata = json.load(asifile)
+    if not has_data:
+        data = asidata
 
 #Set global plotting style
 plot.ModTDRStyle(l=0.4, b=0.10, width=700)
@@ -192,12 +204,16 @@ for page in xrange(n):
 
     #-- Define main objects
     h_pulls = ROOT.TH2F("pulls", "pulls", 6, -2.9, 2.9, n_params, 0, n_params) #TH2F defining the frame, bkg style, etc.
-    g_pulls = ROOT.TGraphAsymmErrors(n_params) #Pulls obs
-    g_pullsA = ROOT.TGraphAsymmErrors(n_params) #Pulls exp
-    g_impacts_hi = ROOT.TGraphAsymmErrors(n_params) #Obs impact
-    g_impacts_lo = ROOT.TGraphAsymmErrors(n_params) #Obs impact
-    g_impactsA_hi = ROOT.TGraphAsymmErrors(n_params) #Exp impact
-    g_impactsA_lo = ROOT.TGraphAsymmErrors(n_params) #Exp impact
+    
+    if has_data:
+        g_pulls = ROOT.TGraphAsymmErrors(n_params) #Pulls obs  
+        g_impacts_hi = ROOT.TGraphAsymmErrors(n_params) #Obs impact
+        g_impacts_lo = ROOT.TGraphAsymmErrors(n_params) #Obs impact
+
+    if has_asimov:
+        g_pullsA = ROOT.TGraphAsymmErrors(n_params) #Pulls exp
+        g_impactsA_hi = ROOT.TGraphAsymmErrors(n_params) #Exp impact
+        g_impactsA_lo = ROOT.TGraphAsymmErrors(n_params) #Exp impact
     g_check = ROOT.TGraphAsymmErrors()
 
     #-- Read values, fill pull histogram
@@ -244,8 +260,9 @@ for page in xrange(n):
                 pull_lo =  pull - pull_lo
 
 
-            g_pulls.SetPoint(i, pull, float(i) + 0.5)
-            g_pulls.SetPointError(i, pull_lo, pull_hi, 0., 0.)
+            if has_data:
+                g_pulls.SetPoint(i, pull, float(i) + 0.5)
+                g_pulls.SetPointError(i, pull_lo, pull_hi, 0., 0.)
 
             pre_err_hi = (preA[2] - preA[1])
             pre_err_lo = (preA[1] - preA[0])
@@ -264,11 +281,13 @@ for page in xrange(n):
                 pull_lo = (pull_lo/pre_err_hi) if pull_lo >= 0 else (pull_lo/pre_err_lo)
                 pull_lo =  pull - pull_lo
 
-            g_pullsA.SetPoint(i, pull, float(i) + 0.5)
-            g_pullsA.SetPointError(
-                i, pull_lo, pull_hi, 0.5, 0.5)
+            if has_asimov:
+                g_pullsA.SetPoint(i, pull, float(i) + 0.5)
+                g_pullsA.SetPointError(
+                    i, pull_lo, pull_hi, 0.5, 0.5)
         else: #Unconstrained, hide point
-            g_pulls.SetPoint(i, 0., 9999.)
+            if has_data:
+                g_pulls.SetPoint(i, 0., 9999.)
             y1 = ROOT.gStyle.GetPadBottomMargin()
             y2 = 1. - ROOT.gStyle.GetPadTopMargin()
             x1 = ROOT.gStyle.GetPadLeftMargin()
@@ -281,27 +300,31 @@ for page in xrange(n):
             text_entries.append((x1, y1, '%s^{#plus%s}_{#minus%s}' % (s_nom, s_hi, s_lo)))
             redo_boxes.append(i)
 
-        g_impacts_hi.SetPoint(i, 0, float(i) + 0.5)
-        g_impacts_lo.SetPoint(i, 0, float(i) + 0.5)
-        g_impactsA_hi.SetPoint(i, 0, float(i) + 0.5)
-        g_impactsA_lo.SetPoint(i, 0, float(i) + 0.5)
+        if has_data:
+            g_impacts_hi.SetPoint(i, 0, float(i) + 0.5)
+            g_impacts_lo.SetPoint(i, 0, float(i) + 0.5)
+        if has_asimov:
+            g_impactsA_hi.SetPoint(i, 0, float(i) + 0.5)
+            g_impactsA_lo.SetPoint(i, 0, float(i) + 0.5)
         imp = pdata[p][POI]
         impA = asipdata[asipnum][POI]
-        if imp[2]-imp[1]>0:
-            g_impacts_hi.SetPointError(i, 0, imp[2] - imp[1], 0.0, 0.0)
-            g_impacts_lo.SetPointError(i, imp[1] - imp[0], 0, 0.0, 0.0)
-        else:
-            g_impacts_hi.SetPointError(i,  imp[1] - imp[2],0, 0.0, 0.0)
-            g_impacts_lo.SetPointError(i, 0, imp[0] - imp[1],  0.0, 0.0)
+        if has_data:
+            if imp[2]-imp[1]>0:
+                g_impacts_hi.SetPointError(i, 0, imp[2] - imp[1], 0.0, 0.0)
+                g_impacts_lo.SetPointError(i, imp[1] - imp[0], 0, 0.0, 0.0)
+            else:
+                g_impacts_hi.SetPointError(i,  imp[1] - imp[2],0, 0.0, 0.0)
+                g_impacts_lo.SetPointError(i, 0, imp[0] - imp[1],  0.0, 0.0)
         max_impact = max(max_impact, abs(imp[1] - imp[0]), abs(imp[2] - imp[1]))
         max_impact = max(max_impact, abs(impA[1] - impA[0]), abs(impA[2] - impA[1]))
         col = colors.get(tp, 2)
-        if impA[2]-impA[1]>0:
-            g_impactsA_hi.SetPointError(i, 0, impA[2] - impA[1], 0.49, 0.49)
-            g_impactsA_lo.SetPointError(i, impA[1] - impA[0], 0, 0.49, 0.49)
-        else:
-            g_impactsA_hi.SetPointError(i,  impA[1] - impA[2],0, 0.49, 0.49)
-            g_impactsA_lo.SetPointError(i, 0, impA[0] - impA[1],  0.49, 0.49)
+        if has_asimov:
+            if impA[2]-impA[1]>0:
+                g_impactsA_hi.SetPointError(i, 0, impA[2] - impA[1], 0.49, 0.49)
+                g_impactsA_lo.SetPointError(i, impA[1] - impA[0], 0, 0.49, 0.49)
+            else:
+                g_impactsA_hi.SetPointError(i,  impA[1] - impA[2],0, 0.49, 0.49)
+                g_impactsA_lo.SetPointError(i, 0, impA[0] - impA[1],  0.49, 0.49)
 
         thisname = Translate(thisname,translate)
         h_pulls.GetYaxis().SetBinLabel(i + 1, ('#color[%i]{%s}'% (col, thisname)))
@@ -364,33 +387,40 @@ for page in xrange(n):
     #-- Draw the pulls graph
     pads[0].cd()
     alpha = 0.7
-    plot.Set(g_pulls, MarkerSize=0.8, LineWidth=2)
-    g_pullsA.SetLineWidth(0)
-    g_pullsA.SetFillColor(plot.CreateTransparentColor(15, alpha))
-    g_pullsA.Draw('2SAME')
-    g_pulls.Draw('PSAME')
+    if has_data:
+        plot.Set(g_pulls, MarkerSize=0.8, LineWidth=2)
+    if has_asimov:
+        g_pullsA.SetLineWidth(0)
+        g_pullsA.SetFillColor(plot.CreateTransparentColor(15, alpha))
+        g_pullsA.Draw('2SAME')
+    if has_data:
+        g_pulls.Draw('PSAME')
 
     #-- Draw impacts graphs
     pads[1].cd()
     alpha = 0.7
-    g_impactsA_hi.SetFillColor(plot.CreateTransparentColor(46, alpha))
-    g_impactsA_hi.SetLineWidth(0)
-    g_impactsA_lo.SetLineWidth(0)
-    g_impactsA_lo.SetFillColor(plot.CreateTransparentColor(38, alpha))
-    g_impacts_hi.SetLineWidth(2)
-    g_impacts_lo.SetLineWidth(2)
-    g_impacts_hi.SetLineStyle(1)
-    g_impactsA_hi.SetMarkerSize(0)
-    g_impacts_hi.SetLineColor(ROOT.kRed+1)
-    g_impacts_lo.SetLineColor(ROOT.kAzure+4)
-    g_impactsA_lo.SetLineStyle(1)
-    g_impactsA_lo.SetLineWidth(0)
-    g_impacts_lo.SetMarkerSize(0)
-    g_impacts_hi.SetMarkerSize(0)
-    g_impactsA_hi.Draw('2 SAME')
-    g_impactsA_lo.Draw('2 SAME')
-    g_impacts_hi.Draw('E SAME')
-    g_impacts_lo.Draw('E SAME')
+
+    if has_asimov:
+        g_impactsA_hi.SetFillColor(plot.CreateTransparentColor(46, alpha))
+        g_impactsA_hi.SetLineWidth(0)
+        g_impactsA_lo.SetLineWidth(0)
+        g_impactsA_lo.SetFillColor(plot.CreateTransparentColor(38, alpha))
+        g_impactsA_hi.SetMarkerSize(0)
+        g_impactsA_lo.SetLineStyle(1)
+        g_impactsA_lo.SetLineWidth(0)
+        g_impactsA_hi.Draw('2 SAME')
+        g_impactsA_lo.Draw('2 SAME')
+
+    if has_data:
+        g_impacts_hi.SetLineWidth(2)
+        g_impacts_lo.SetLineWidth(2)
+        g_impacts_hi.SetLineStyle(1)
+        g_impacts_hi.SetLineColor(ROOT.kRed+1)
+        g_impacts_lo.SetLineColor(ROOT.kAzure+4)
+        g_impacts_lo.SetMarkerSize(0)
+        g_impacts_hi.SetMarkerSize(0)
+        g_impacts_hi.Draw('E SAME')
+        g_impacts_lo.Draw('E SAME')
     pads[1].RedrawAxis()
     pads[1].RedrawAxis()
 
@@ -402,12 +432,14 @@ for page in xrange(n):
     legend.SetFillStyle(0)
     legend.SetTextSize(legendtextsize)
     legend.SetNColumns(3)
-    legend.AddEntry(g_pulls, 'Fit constraint (obs.)', 'LP')
-    legend.AddEntry(g_impacts_hi, '+1#sigma impact (obs.)', 'l')
-    legend.AddEntry(g_impacts_lo, '-1#sigma impact (obs.)', 'l')
-    legend.AddEntry(g_pullsA, 'Fit constraint (exp.)', 'F')
-    legend.AddEntry(g_impactsA_hi, '+1#sigma impact (exp.)', 'F')
-    legend.AddEntry(g_impactsA_lo, '-1#sigma impact (exp.)', 'F')
+    if has_data:
+        legend.AddEntry(g_pulls, 'Fit constraint (obs.)', 'LP')
+        legend.AddEntry(g_impacts_hi, '+1#sigma impact (obs.)', 'l')
+        legend.AddEntry(g_impacts_lo, '-1#sigma impact (obs.)', 'l')
+    if has_asimov:
+        legend.AddEntry(g_pullsA, 'Fit constraint (exp.)', 'F')
+        legend.AddEntry(g_impactsA_hi, '+1#sigma impact (exp.)', 'F')
+        legend.AddEntry(g_impactsA_lo, '-1#sigma impact (exp.)', 'F')
     legend.Draw()
 
     #-- Draw CMS logo
