@@ -128,6 +128,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))),
             ("bb4l_TT",                            (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("bb4l_TT",                            (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))),
 
@@ -140,7 +141,6 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("CR_Gluon_TT",                        (("2016pre", "2016post", "2017", "2018"), 1.)),
             #("CMS_ColorRec_13TeV",                 (("2016pre", "2016post", "2017", "2018"), 1.)),
 
-            ("herwig_TT",                          (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("ttnorm",                             (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))),
 
             ("QCDscale_MEFac_TQ",                  (("2016pre", "2016post", "2017", "2018"), 1.)),
