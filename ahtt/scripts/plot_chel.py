@@ -126,13 +126,14 @@ parser.add_argument("--outdir", "-o", default=".")
 parser.add_argument("--ext", choices=('pdf', 'svg', 'png'), default="pdf")
 parser.add_argument("--mtt_min", type=int, default=320)
 parser.add_argument("--mtt_max", type=int, default=1700)
-parser.add_argument("--etat", action="store_true")
-parser.add_argument("--skipah", action="store_true")
+parser.add_argument("--signals", type=str, default="EtaT")
 parser.add_argument("--mass", "-m", default=400, type=int, help="A/H mass point")
 parser.add_argument("--width", "-w", default=2.0, type=float, help="A/H relative width point")
 parser.add_argument("--gA", "-gA", default=1.0, type=float, help="A/H coupling modifier")
 parser.add_argument("--gH", "-gH", default=1.0, type=float, help="A/H coupling modifier")
 args = parser.parse_args()
+
+signals_to_plot = args.signals.split(",")
 
 bgs = ['TT', 'DY', 'VV', 'TTV', 'TB', 'TQ', 'TW']
 bgs.extend(f"EWK_TT_{part}_{sign}" for part in ["const", "lin", "quad"] for sign in ["pos", "neg"])
@@ -154,15 +155,20 @@ for fittype in ["prefit", "postfit"]:
 
     muetat = 1.
 
-    shapes = "shapes_prefit" if fittype == "prefit" else "shapes_fit_s"
+
+    shapes = "shapes_prefit" if fittype == "prefit" else \
+        ("shapes_fit_b" if "result_b" in args.infile else "shapes_fit_s")
     with uproot.open(args.infile) as f:
         total_covar = f[f"{shapes}/overall_total_covar"].values()
 
         if fittype == "postfit":
             ftree = f["tree_fit_sb"]
-            #muetat = ftree["CMS_EtaT_norm_13TeV"].array()[0]
-            gAbest = ftree["g1"].array()[0] if "g1" in ftree else 0.
-            gHbest = ftree["g2"].array()[0] if "g2" in ftree else 0.
+            if "EtaT" in signals_to_plot:
+                muetat = ftree["CMS_EtaT_norm_13TeV"].array()[0]
+            if "A" in signals_to_plot:
+                gAbest = ftree["g1"].array()[0] if "g1" in ftree else 0.
+            if "H" in signals_to_plot:
+                gHbest = ftree["g2"].array()[0] if "g2" in ftree else 0.
 
         for c in channels:
             for y in years:
@@ -170,39 +176,46 @@ for fittype in ["prefit", "postfit"]:
                     v_bg = f[f"{shapes}/{c}_{y}/{p}"].values()
                     yield_bg += v_bg
                     #var_bg += f[f"{shapes}/{c}_{y}/{p}"].variances()
-                #yield_EtaT += f[f"{shapes}/{c}_{y}/{sigEtaT}"].values()
-                yield_A += f[f"{shapes}/{c}_{y}/{sigA}_res"].values()
-                yield_A += f[f"{shapes}/{c}_{y}/{sigA}_pos"].values()
-                yield_A += f[f"{shapes}/{c}_{y}/{sigA}_neg"].values()
-                yield_H += f[f"{shapes}/{c}_{y}/{sigH}_res"].values()
-                yield_H += f[f"{shapes}/{c}_{y}/{sigH}_pos"].values()
-                yield_H += f[f"{shapes}/{c}_{y}/{sigH}_neg"].values()
+                if "EtaT" in signals_to_plot:
+                    yield_EtaT += f[f"{shapes}/{c}_{y}/{sigEtaT}"].values()
+                if "A" in signals_to_plot:
+                    yield_A += f[f"{shapes}/{c}_{y}/{sigA}_res"].values()
+                    yield_A += f[f"{shapes}/{c}_{y}/{sigA}_pos"].values()
+                    yield_A += f[f"{shapes}/{c}_{y}/{sigA}_neg"].values()
+                if "H" in signals_to_plot:
+                    yield_H += f[f"{shapes}/{c}_{y}/{sigH}_res"].values()
+                    yield_H += f[f"{shapes}/{c}_{y}/{sigH}_pos"].values()
+                    yield_H += f[f"{shapes}/{c}_{y}/{sigH}_neg"].values()
                 
                 yield_data += f[f"{shapes}/{c}_{y}/data"].values()[1] 
 
     sum_axis = 2 if args.which == 'chel' else 1
-    yield_bg_sum = yield_bg.reshape(3,3,20).T.sum(axis=sum_axis)
-    #var_bg_sum = var_bg.reshape(3,3,20).T.sum(axis=sum_axis)
-    #yield_EtaT_sum = yield_EtaT.reshape(3,3,20).T.sum(axis=sum_axis)
-    yield_A_sum = yield_A.reshape(3,3,20).T.sum(axis=sum_axis)
-    yield_H_sum = yield_H.reshape(3,3,20).T.sum(axis=sum_axis)
-    yield_data_sum = yield_data.reshape(3,3,20).T.sum(axis=sum_axis)
-    
+
     mtt_binning = [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845,
                     890, 935, 985, 1050, 1140, 1300, 1700]
     imttmin = mtt_binning.index(args.mtt_min)
     imttmax = mtt_binning.index(args.mtt_max)
 
+    yield_bg_sum = yield_bg.reshape(3,3,20).T.sum(axis=sum_axis)
     yield_bg_sl = yield_bg_sum[imttmin:imttmax].sum(axis=0)
+    #var_bg_sum = var_bg.reshape(3,3,20).T.sum(axis=sum_axis)
     #var_bg_sl = var_bg_sum[imttmin:imttmax].sum(axis=0)
-    #yield_EtaT_sl = yield_EtaT_sum[imttmin:imttmax].sum(axis=0)
-    yield_A_sl = yield_A_sum[imttmin:imttmax].sum(axis=0)
-    yield_H_sl = yield_H_sum[imttmin:imttmax].sum(axis=0)
+
+    if "EtaT" in signals_to_plot:
+        yield_EtaT_sum = yield_EtaT.reshape(3,3,20).T.sum(axis=sum_axis)
+        yield_EtaT_sl = yield_EtaT_sum[imttmin:imttmax].sum(axis=0)
+    if "A" in signals_to_plot:  
+        yield_A_sum = yield_A.reshape(3,3,20).T.sum(axis=sum_axis)
+        yield_A_sl = yield_A_sum[imttmin:imttmax].sum(axis=0)
+    if "H" in signals_to_plot:
+        yield_H_sum = yield_H.reshape(3,3,20).T.sum(axis=sum_axis)
+        yield_H_sl = yield_H_sum[imttmin:imttmax].sum(axis=0)
+    yield_data_sum = yield_data.reshape(3,3,20).T.sum(axis=sum_axis)
     yield_data_sl = yield_data_sum[imttmin:imttmax].sum(axis=0)
 
     err_bg_sl = unc_from_covar(total_covar, imttmin, imttmax, which=args.which)
 
-    if fittype == "prefit":# or fittype == "postfit":
+    if fittype == "prefit" and ("A" in signals_to_plot or "H" in signals_to_plot):
         yield_A = np.zeros(180)
         yield_H = np.zeros(180)
         for sig, ysig in zip([sigA, sigH], [yield_A, yield_H]):
@@ -227,24 +240,24 @@ for fittype in ["prefit", "postfit"]:
     outfile = os.path.join(args.outdir, f"{args.which}_mtt_{args.mtt_min}_to_{args.mtt_max}_{fittype}.{args.ext}")
 
     signals = {}
-    if args.etat:
-        signals['EtaT'] = yield_EtaT_sl 
-    if not args.skipah:# and fittype == "prefit":
+    labels_signals = {}
+
+    if "EtaT" in signals_to_plot:
+        signals['EtaT'] = yield_EtaT_sl
+        labels_signals['EtaT'] = f"$\\eta_t$, $\\mu(\\eta_t) = {'1' if fittype == 'prefit' else f'{muetat:.2f}'}$"
+    if "A" in signals_to_plot:
         signals['A'] = yield_A_sl
-        #signals['H'] = yield_H_sl
+        labels_signals['A'] = f"A({args.mass}, {args.width:.0f}%), $g_A = {(args.gA if fittype == 'prefit' else gAbest):.2f}$"
+    if "H" in signals_to_plot:
+        signals['H'] = yield_H_sl
+        labels_signals['H'] = f"H({args.mass}, {args.width:.0f}%), $g_H = {(args.gH if fittype == 'prefit' else gHbest):.1f}$"
 
     plot(
         yields_bg = yield_bg_sl,
         errs_bg = err_bg_sl,
         yields_data = yield_data_sl,
         yields_signals = signals,
-        labels_signals = {
-            'EtaT': f"$\\eta_t$, $\\mu(\\eta_t) = {'1' if fittype == 'prefit' else f'{muetat:.2f}'}$",
-            #'A': f"A({args.mass}, {args.width:.0f}%), $g_A = {(args.gA):.2f}$",
-            #'H': f"H({args.mass}, {args.width:.0f}%), $g_H = {(args.gH):.2f}$"
-            'A': f"A({args.mass}, {args.width:.0f}%), $g_A = {(args.gA if fittype == 'prefit' else gAbest):.2f}$",
-            'H': f"H({args.mass}, {args.width:.0f}%), $g_H = {(args.gH if fittype == 'prefit' else gHbest):.1f}$"
-        },
+        labels_signals = labels_signals,
         colors_signals = {
             'EtaT': 'forestgreen',
             'A': "#cc0033",
