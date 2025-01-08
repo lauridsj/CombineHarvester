@@ -216,13 +216,8 @@ if __name__ == '__main__':
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
-<<<<<<< HEAD
                 submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                           "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
-=======
-                submit_job(jname, jarg, args.jobtime, 1, "",
                            "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
->>>>>>> ahtt_run2ul_dev
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
 
@@ -230,11 +225,6 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-<<<<<<< HEAD
             submit_job(job_name, job_arg, args.jobtime, 1, args.memory,
-                       "." if rundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
-=======
-            submit_job(job_name, job_arg, args.jobtime, 1, "",
                        "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
->>>>>>> ahtt_run2ul_dev
     flush_jobs()

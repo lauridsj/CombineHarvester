@@ -397,13 +397,8 @@ if __name__ == '__main__':
                         opd = "--toy-location " + toylocs[ii] if toylocs[ii] != "" else ""
                     )
 
-<<<<<<< HEAD
                     submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                               "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
-=======
-                    submit_job(jname, jarg, args.jobtime, 1, "",
                                "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
->>>>>>> ahtt_run2ul_dev
 
             if rungof:
                 toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = [-1, -1], indices = idxs)
@@ -442,13 +437,8 @@ if __name__ == '__main__':
 
                     if not ("--gof-skip-data" in jarg and "--n-toy 0" in jarg):
                         expnres += 2 if firstjob and gofrundat else 2 if writelog else 1
-<<<<<<< HEAD
                         submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                                   "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
-=======
-                        submit_job(jname, jarg, args.jobtime, 1, "",
                                    "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
->>>>>>> ahtt_run2ul_dev
 
             if runfc:
                 if args.fcmode != "" and ggrid == "":
@@ -524,13 +514,8 @@ if __name__ == '__main__':
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             expnres += 2 * len(args.fcexp + args.fcsubalso) if firstjob and fcrundat else 2 if writelog else 1
-<<<<<<< HEAD
                             submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
-=======
-                            submit_job(jname, jarg, args.jobtime, 1, "",
                                        "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
->>>>>>> ahtt_run2ul_dev
 
             if runcc:
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "chancomp-result")
@@ -589,13 +574,8 @@ if __name__ == '__main__':
                     uco = clamp_with_quote(string = ",".join(args.nllunconstrained), prefix = '--nll-unconstrained '),
                 )
 
-<<<<<<< HEAD
                 submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                           "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-=======
-                submit_job(jname, jarg, args.jobtime, 1, "",
                            "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
->>>>>>> ahtt_run2ul_dev
                            True, args.runlocal, args.writelog)
 
         elif runprepost or runpsfromws:
@@ -617,13 +597,8 @@ if __name__ == '__main__':
                 ) if runpsfromws else ""
             )
 
-<<<<<<< HEAD
             submit_job(jname, jarg, args.jobtime, 1, args.memory,
-                       "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-=======
-            submit_job(jname, jarg, args.jobtime, 1, "",
                        "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
->>>>>>> ahtt_run2ul_dev
                        True, args.runlocal, args.writelog)
         else:
             logs = glob.glob(pstr + args.tag + "/" + job_name + ".o*")
@@ -632,16 +607,9 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-<<<<<<< HEAD
 
             if len([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm and mm != ""]) > 0:
                 submit_job(job_name, job_arg, args.jobtime, 1, args.memory,
-                           "." if rundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
-=======
-            job_mem = ""
-            if len([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm and mm != ""]) > 0:
-                submit_job(job_name, job_arg, args.jobtime, 1, job_mem,
                            "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
->>>>>>> ahtt_run2ul_dev
                            True, runcompile or args.runlocal, args.writelog)
     flush_jobs()
