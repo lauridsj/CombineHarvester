@@ -397,7 +397,7 @@ if __name__ == '__main__':
                         opd = "--toy-location " + toylocs[ii] if toylocs[ii] != "" else ""
                     )
 
-                    submit_job(jname, jarg, args.jobtime, 1, "",
+                    submit_job(jname, jarg, args.jobtime, 1, args.memory,
                                "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if rungof:
@@ -437,7 +437,7 @@ if __name__ == '__main__':
 
                     if not ("--gof-skip-data" in jarg and "--n-toy 0" in jarg):
                         expnres += 2 if firstjob and gofrundat else 2 if writelog else 1
-                        submit_job(jname, jarg, args.jobtime, 1, "",
+                        submit_job(jname, jarg, args.jobtime, 1, args.memory,
                                    "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if runfc:
@@ -514,7 +514,7 @@ if __name__ == '__main__':
 
                         if not ("--fc-skip-data" in jarg and "--n-toy 0" in jarg):
                             expnres += 2 * len(args.fcexp + args.fcsubalso) if firstjob and fcrundat else 2 if writelog else 1
-                            submit_job(jname, jarg, args.jobtime, 1, "",
+                            submit_job(jname, jarg, args.jobtime, 1, args.memory,
                                        "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
             if runcc:
@@ -550,7 +550,7 @@ if __name__ == '__main__':
 
                     if not ("--cc-skip-data" in jarg and "--n-toy 0" in jarg):
                         expnres += 2 if firstjob and ccrundat else 2 if writelog else 1
-                        submit_job(jname, jarg, args.jobtime, 1, "",
+                        submit_job(jname, jarg, args.jobtime, 1, args.memory,
                                    "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py", True, args.runlocal, writelog)
 
         elif runnll:
@@ -574,7 +574,7 @@ if __name__ == '__main__':
                     uco = clamp_with_quote(string = ",".join(args.nllunconstrained), prefix = '--nll-unconstrained '),
                 )
 
-                submit_job(jname, jarg, args.jobtime, 1, "",
+                submit_job(jname, jarg, args.jobtime, 1, args.memory,
                            "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                            True, args.runlocal, args.writelog)
 
@@ -597,7 +597,7 @@ if __name__ == '__main__':
                 ) if runpsfromws else ""
             )
 
-            submit_job(jname, jarg, args.jobtime, 1, "",
+            submit_job(jname, jarg, args.jobtime, 1, args.memory,
                        "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                        True, args.runlocal, args.writelog)
         else:
@@ -607,9 +607,9 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-            job_mem = ""
+
             if len([mm for mm in mode.replace(" ", "").split(",") if "clean" not in mm and mm != ""]) > 0:
-                submit_job(job_name, job_arg, args.jobtime, 1, job_mem,
+                submit_job(job_name, job_arg, args.jobtime, 1, args.memory,
                            "." if dorundc else pstr + args.tag, scriptdir + "/twin_point_ahtt.py",
                            True, runcompile or args.runlocal, args.writelog)
     flush_jobs()

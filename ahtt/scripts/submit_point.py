@@ -145,7 +145,7 @@ if __name__ == '__main__':
                     idx = "--raster-i " + str(idx)
                 )
 
-                submit_job(jname, jarg, args.jobtime, 1, "",
+                submit_job(jname, jarg, args.jobtime, 1, args.memory,
                            "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         elif runpull:
             if args.nnuisance < 0:
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                 jarg = job_arg
                 jarg += " --impact-nuisances '{grp};{nui}'".format(grp = group, nui = ",".join(nuisance))
 
-                submit_job(jname, jarg, args.jobtime, 1, "",
+                submit_job(jname, jarg, args.jobtime, 1, args.memory,
                            "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
         else:
             logs = glob.glob(pnt + args.tag + "/" + job_name + ".o*")
@@ -225,6 +225,6 @@ if __name__ == '__main__':
                 if len(logs) > 0:
                     continue
 
-            submit_job(job_name, job_arg, args.jobtime, 1, "",
+            submit_job(job_name, job_arg, args.jobtime, 1, args.memory,
                        "." if dorundc else pnt + args.tag, scriptdir + "/single_point_ahtt.py", True, args.runlocal, args.writelog)
     flush_jobs()
