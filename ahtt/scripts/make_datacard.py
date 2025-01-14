@@ -670,7 +670,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                 ("lumi_13TeV", ("2016post",), "all", 1.012),
             )),
             (("2016pre",), (
-                ("lumi_13TeV", ("2017pre",), "all", 1.012),
+                ("lumi_13TeV", ("2016pre",), "all", 1.012),
             )),
             (("2016post", "2016pre"), (
                 ("lumi_13TeV_16",      ("2016pre", "2016post"), "all", 1.01),
