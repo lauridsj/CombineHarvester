@@ -287,7 +287,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                         while os.path.isfile(mname):
                             jj += 1
                             mname = mrgdir + ff.replace(fmrg, ftmp)
-                        syscall("hadd -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
+                        syscall("hadd -f -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
                         merged.append(mname)
 
                     jj += 1
@@ -1052,7 +1052,7 @@ if __name__ == '__main__':
             )
 
         if nelement > 1:
-            syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+            syscall("hadd -f -k {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
                 dcd = dcdir,
                 ptg = ptag,
                 exp = args.fcexp[0],
