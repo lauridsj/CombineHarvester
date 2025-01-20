@@ -91,7 +91,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     if not hasattr(draw_nll, "colors"):
         draw_nll.colors = OrderedDict([
             (1    , ["0"]),
-            (2    , ["#cc0033", "0"]),
+            (2    , ["#696969", "0"]),
             (3    , ["#0033cc", "#cc0033", "0"]),
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
