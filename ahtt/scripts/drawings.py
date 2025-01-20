@@ -302,3 +302,31 @@ def get_poi_values(fname, signals, tname):
                 result = result | {(flag[0], None, None): (0., 0.)}
     result = {k: v if len(v) < 3 or abs(v[1] - v[2]) / v[1] > 0.1 else (v[0], v[1]) for k, v in result.items()}
     return result
+
+def get_model_at_minimum(fname):
+    '''
+    fname is the filename of the root file that is the output of the fit with mode 'single'
+    '''
+    ffile = ROOT.TFile.Open(fname, "read")
+    if "limit" not in ffile.GetListOfKeys():
+        return {}
+    ttree = ffile.Get("limit")
+    for i in ttree:
+        if tres.quantileExpected != -1:
+            continue
+        result = ttree.__dict__
+    result = {k: [v, 0., 0.] for k, v in result.items()}
+    for i in ttree:
+        if tres.quantileExpected == -1:
+            continue
+        qq = 1 if tres.quantileExpected > 0 else 2
+        for kk in result.keys():
+            result[kk][qq] = getattr(tres, kk)
+    return result
+
+def apply_model(templates, model):
+    # implement https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part2/settinguptheanalysis/#binned-shape-analyses
+    # where templates is the dict containing postfit templates, for all channels and years before summing
+    # and model is the output of get_model_at_minimum()
+    # dont forget the special handling of yt
+    pass
