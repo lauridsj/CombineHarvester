@@ -123,6 +123,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("infile", help="FitDiagnostics output root file")
 parser.add_argument("--which", choices=('chel', 'chan'), default='chel')
 parser.add_argument("--outdir", "-o", default=".")
+parser.add_argument("--plotname", type=str, default=None)
 parser.add_argument("--ext", choices=('pdf', 'svg', 'png'), default="pdf")
 parser.add_argument("--mtt_min", type=int, default=320)
 parser.add_argument("--mtt_max", type=int, default=1700)
@@ -157,7 +158,7 @@ for fittype in ["prefit", "postfit"]:
 
 
     shapes = "shapes_prefit" if fittype == "prefit" else \
-        ("shapes_fit_b" if "result_b" in args.infile else "shapes_fit_s")
+        ("shapes_fit_b" if "_b.root" in args.infile else "shapes_fit_s")
     with uproot.open(args.infile) as f:
         total_covar = f[f"{shapes}/overall_total_covar"].values()
 
@@ -237,7 +238,10 @@ for fittype in ["prefit", "postfit"]:
         yield_A_sl = yield_A_sum[imttmin:imttmax].sum(axis=0)
         yield_H_sl = yield_H_sum[imttmin:imttmax].sum(axis=0)
 
-    outfile = os.path.join(args.outdir, f"{args.which}_mtt_{args.mtt_min}_to_{args.mtt_max}_{fittype}.{args.ext}")
+    if args.plotname is not None:
+        outfile = os.path.join(args.outdir, f"{args.which}_mtt_{args.mtt_min}_to_{args.mtt_max}_{fittype}_{args.plotname}.{args.ext}")
+    else:
+        outfile = os.path.join(args.outdir, f"{args.which}_mtt_{args.mtt_min}_to_{args.mtt_max}_{fittype}.{args.ext}")
 
     signals = {}
     labels_signals = {}
