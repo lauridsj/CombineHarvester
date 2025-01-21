@@ -43,7 +43,7 @@ def input_bkg(background, channels):
     backgrounds = []
     if any(cc in channels for cc in ["ee", "em", "mm"]):
         backgrounds.append(input_base + "templates_ULFR2/etat_chit_w2p8_241204/bkg_templates_3D-33_rate_mtuX.root")
-        #backgrounds.append(input_base + "templates_ULFR2/etat_chit_w2p8_cut_241205/bkg_templates_3D-33_rate_mtuX.root")
+        #backgrounds.append(input_base + "templates_ULFR2/mbbllspin_w2p8_120125/ll_pca/bkg_templates_mbbllspin_rate_mtuX.root")
     if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
         backgrounds.append(input_base + "templates_ULFR2/dyscales_fix_231020/lj/templates_lj_bkg_rate_mtuX_pca_ewk.root")
 
@@ -58,6 +58,7 @@ def input_sig(signal, points, injects, channels, years):
         if im in points or im in injects:
             if any(cc in channels for cc in ["ee", "em", "mm"]):
                 signals.append(input_base + "templates_ULFR2/breaktype3_mtAH_230314/ll/sig_ll_3D-33_" + im + ".root")
+                #signals.append(input_base + "templates_ULFR2/mbbllspin_w2p8_120125/ll_pca/sig_ll_mbbllspin__m365_w2p0.root")
             if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
                 signals.append(input_base + "templates_ULFR2/breaktype3_mtAH_230314/lj/templates_lj_sig_" + im + ".root")
 
