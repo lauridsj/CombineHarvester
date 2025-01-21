@@ -15,16 +15,14 @@ else:
 
 def input_storage_base_directory():
     if cluster == "naf":
-        return "/nfs/dust/cms/group/exotica-desy/HeavyHiggs/"
+        return "/data/dust/group/cms/exotica-desy/HeavyHiggs/"
     if cluster == "lxplus":
         return "/eos/cms/store/user/afiqaize/"
 
 input_base = input_storage_base_directory()
-#condordir = "/nfs/dust/cms/user/afiqaize/cms/sft/condor/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
-condordir = os.path.dirname(os.path.realpath(__file__)) + "/" if "desy" in input_base else "/afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/"
-# These are not used as far as I can tell
-#condorsub = condordir + "condorSubmit.sh"
-#condorpar = condordir + "condorParam.txt" if "desy" in input_base else condordir + "condorParam_lxpCombine.txt"
+condordir = os.path.dirname(os.path.realpath(__file__)) + "/"
+if "desy" not in input_base:
+    raise NotImplementedError("Afiq chose to discontinue lxplus support for now. please include /afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/condorRun_lxpCombine.sh into this repo, remove this raise, and test that everything works correctly. probably not, unless you also take care of the EL9 stuff.")
 condorrun = condordir + "condorRun.sh" if "desy" in input_base else condordir + "condorRun_lxpCombine.sh"
 
 

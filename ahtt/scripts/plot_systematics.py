@@ -40,15 +40,43 @@ else:
 def plot_syst(subf, proc, systname, ann, outfile):
     fig, (ax1, ax2) = plt.subplots(
         nrows=2, sharex=True, gridspec_kw={"height_ratios": [1, 1]}, figsize=(8,6))
-    
+
     vals_nom = subf[proc].values()
     err_nom = subf[proc].errors()
 
-    vals_up = subf[f"{proc}_{systname}Up"].values()
-    vals_down = subf[f"{proc}_{systname}Down"].values()
+    if systname == "EWK_yukawa":
+        vals_nom = subf["TT"].values()
+        err_nom = subf["TT"].errors()
+        vals_up = vals_nom.copy()
+        vals_down = vals_nom.copy()
+
+        for proc in ["quad_pos", "quad_neg", "lin_pos", "lin_neg", "const_pos", "const_neg"]:
+            sign = -1 if "neg" in proc else 1
+            hi = 1.11**2 if "quad" in proc else 1.11 if "lin" in proc else 1
+            lo = 0.88**2 if "quad" in proc else 0.88 if "lin" in proc else 1
+            vals_nom += sign * subf[f'EWK_TT_{proc}'].values()
+            vals_up += hi * sign * subf[f'EWK_TT_{proc}'].values()
+            vals_down += lo * sign * subf[f'EWK_TT_{proc}'].values()
+            err_nom = (err_nom**2 + subf[f'EWK_TT_{proc}'].errors()**2)**0.5
+        proc = "TT"
+    elif systname == "EWK_scheme":
+        vals_nom = subf["TT"].values()
+        err_nom = subf["TT"].errors()
+        vals_up = vals_nom.copy()
+        vals_down = vals_nom.copy()
+
+        for proc in ["quad_pos", "quad_neg", "lin_pos", "lin_neg", "const_pos", "const_neg"]:
+            sign = -1 if "neg" in proc else 1
+            vals_nom += sign * subf[f'EWK_TT_{proc}'].values()
+            vals_up += sign * subf[f'EWK_TT_{proc}_{systname}Up'].values()
+            vals_down += sign * subf[f'EWK_TT_{proc}_{systname}Down'].values()
+            err_nom = (err_nom**2 + subf[f'EWK_TT_{proc}'].errors()**2)**0.5
+        proc = "TT"
+    else:
+        vals_up = subf[f"{proc}_{systname}Up"].values()
+        vals_down = subf[f"{proc}_{systname}Down"].values()
 
     edges = np.arange(len(vals_nom)+1)
-
     mplhep.histplot(
             vals_nom,
             edges,
@@ -69,7 +97,7 @@ def plot_syst(subf, proc, systname, ann, outfile):
 
     ratio_unc = err_nom / vals_nom
     ratio_unc = np.concatenate([ratio_unc, [ratio_unc[-1]]])
-    ax2.fill_between(edges, 1-ratio_unc, 1+ratio_unc, step="post", color="lightgrey", label="MC stat unc.", zorder=-50)
+    #ax2.fill_between(edges, 1-ratio_unc, 1+ratio_unc, step="post", color="lightgrey", label="MC stat unc.", zorder=-50)
     
     ax2.hlines(1., edges[0], edges[-1], color="black", linestyle="dashed", linewidth=0.7)
 
@@ -156,7 +184,7 @@ with uproot.open(args.input) as f:
                 os.makedirs(outfolder, exist_ok=True)
 
                 if args.syst is not None:
-                    if not (f"{p}_{args.syst}Down" in subf and f"{p}_{args.syst}Up" in subf):
+                    if not (f"{p}_{args.syst}Down" in subf and f"{p}_{args.syst}Up" in subf) and "EWK_" not in args.syst:
                         print(f"Systematic {args.syst} for process {p} not found. Skipping process")
                         continue
                     systs = [args.syst]

@@ -2,10 +2,10 @@
 # the recipe is based on the latest results (02/08/2022)
 # the recipe is fully sequential, whenever jobs are submitted wait until it finishes!!
 
-#0 some preliminary stuff - needed every time
+#0 some preliminary stuff - needed every session
 #0a this gets the condor_check command which helps telling which jobs dont complete
-source /nfs/dust/cms/user/afiqaize/cms/sft/condor/condorUtil.sh # at desy naf
-source /afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/condorUtil.sh # at cern lxplus
+source /data/dust/user/afiqaize/cms/sft/condor/condorUtil.sh # at desy naf
+source /afs/cern.ch/work/a/afiqaize/public/randomThings/misc/condor/condorUtil.sh # at cern lxplus, NOT SUPPORTED ANYMORE
 
 #1 list down the pairs to run on, and a few other variables
 #1a default settings here are what has been found to have good job efficiency (DESY default HTC slot) for the combined fits
@@ -23,15 +23,15 @@ ntoy='43'
 idxs='..13'
 #exps='exp-b,exp-s,exp-01,exp-10'
 exps='exp-b'
-keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK_scheme,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD'
-drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa,bindingEnergy,herwig,bb4l'
+keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK_scheme,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD,herwig,bb4l'
+drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,EWK_yukawa,bindingEnergy'
 
 #2 make the datacard
 ./../scripts/submit_twin.py --mode 'datacard,validate' --point "${pairs}" --sushi-kfactor --lnN-under-threshold --year "${years}" --channel "${channels}" --tag "${tag}" --keep "${keeps}" --drop "${drops}" --unblind
 
 #3 generating the shared (0, 0) toys - IGNORE FOR NOW
 #3a toy locations:
-#naf-desy: /nfs/dust/cms/group/exotica-desy/HeavyHiggs/toys_ULFR2/unblind_stage3_20231129/lx/ # or ll
+#naf-desy: /data/dust/group/cms/exotica-desy/HeavyHiggs/toys_ULFR2/unblind_stage3_20231129/lx/ # or ll
 #lxplus: 
 ./../scripts/submit_twin.py --mode generate --point "${pairs}" --tag "${tag}" --g-values '0.0,0.0' --n-toy "${ntoy}" --run-idxs "${idxs}" --toy-location <directory of shared toys> --unblind
 

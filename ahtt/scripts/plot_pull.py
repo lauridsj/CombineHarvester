@@ -11,7 +11,9 @@ import math
 import glob
 from collections import OrderedDict
 import json
+
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.lines as mln
 from matplotlib.legend_handler import HandlerErrorbar
@@ -19,11 +21,16 @@ from matplotlib.legend_handler import HandlerErrorbar
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 
-nuisance_per_page = 32
+nuisance_per_page = 33
 
 def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
     pulls = [OrderedDict() for directory in directories]
     for ii, [directory, tag] in enumerate(directories):
+        if ii == 0:
+            poiname = "EWK_const"
+        else:
+            poiname = "EWK_const"
+
         impacts = glob.glob("{dcd}/{pnt}_{tag}_impacts_{mod}{gvl}{rvl}{fix}*.json".format(
             dcd = directory,
             tag = tag,
@@ -40,7 +47,7 @@ def read_pull(directories, isimpact, onepoi, poiname, gvalue, rvalue, fixpoi):
 
             nuisances = result["params"]
             for nn in nuisances:
-                if nn["name"] == "EWK_const":
+                if nn["name"] == "EWK_const" or nn["name"] == "CMS_EtaT_norm_13TeV":
                     continue
                 elif nn["name"] == "EWK_yukawa":
                     if isimpact:
@@ -148,7 +155,8 @@ def plot_pull(oname, labels, isimpact, pulls, nuisances, extra, point, reverse, 
             if isimpact:
                 plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance impacts", fontsize = 21, labelpad = 10)
             else:
-                plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
+                #plt.xlabel(point[0] + '(' + str(int(point[1])) + ", " + str(point[2]) + "%) nuisance pulls", fontsize = 21, labelpad = 10)
+                plt.xlabel("nuisance pulls", fontsize = 21, labelpad = 10)
             ax.margins(x = 0, y = 0)
             plt.xlim((lmax, rmax))
             plt.ylim((-0.5, ymax - 0.5))

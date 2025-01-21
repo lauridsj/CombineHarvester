@@ -9,7 +9,7 @@ import os
 mplhep.style.use(mplhep.style.CMS)
 
 # currently hardcoded to read the A/H prefit signals from...
-ah_signals_dir = "/nfs/dust/cms/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
+ah_signals_dir = "/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
 
 def unc_from_covar(total_covar, ittmin, ittmax, which="chel"):
     variance = np.zeros((3,3))

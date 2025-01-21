@@ -91,7 +91,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     if not hasattr(draw_nll, "colors"):
         draw_nll.colors = OrderedDict([
             (1    , ["0"]),
-            (2    , ["#cc0033", "0"]),
+            (2    , ["#696969", "0"]),
             (3    , ["#0033cc", "#cc0033", "0"]),
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
@@ -153,9 +153,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     #bbox_expobs = (0.275, 0., 0.25, 0.2)
     #bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
-    # for the paper A/H343 plot, ll
+    # for the paper etachi, ll
     bbox_sigmas = (0.96, 0.05, 0.04, 0.25)
-    bbox_expobs = (0.36, 0.725, 0.1, 0.2)
+    bbox_expobs = (0.91, 0.725, 0.1, 0.2)
     bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
     if len(handles) > 0 and len(sigmas) > 0:

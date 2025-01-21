@@ -287,7 +287,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
                         while os.path.isfile(mname):
                             jj += 1
                             mname = mrgdir + ff.replace(fmrg, ftmp)
-                        syscall("hadd -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
+                        syscall("hadd -f -k {ff} {fg} && rm {fg}".format(ff = mname, fg = " ".join(tm)))
                         merged.append(mname)
 
                     jj += 1
@@ -463,21 +463,22 @@ if __name__ == '__main__':
 
     if rungen and args.ntoy > 0:
         print "\ntwin_point_ahtt :: starting toy generation"
-        syscall("combine -v 0 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} --setParameters '{par}' {stg} {toy}".format(
-                    dcd = workspace,
-                    mmm = mstr,
-                    snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
-                    par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
-                    stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
-                    toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
-                ))
+        syscall("combine -v 0 -M GenerateOnly -d {dcd} -m {mmm} -n _{snm} {par} {stg} {toy} {poi}".format(
+            dcd = workspace,
+            mmm = mstr,
+            snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
+            par = set_parameter(elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks),
+            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
+            toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
+            poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset))
+        ))
 
-        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{ptg}_toys{gvl}{fix}{toy}{idx}.root".format(
+        syscall("mv higgsCombine_{snm}.GenerateOnly.mH{mmm}*.root {opd}{ptg}_toys_{exp}_{poi}{toy}{idx}.root".format(
             opd = args.toyloc,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             ptg = ptag,
-            gvl = "_" + gstr if gstr != "" else "",
-            fix = "_fixed" if args.fixpoi and gstr != "" else "",
+            exp = "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            poi = '__'.join(poiset) if notah else "",
             toy = "_n" + str(args.ntoy),
             idx = "_" + str(args.runidx) if not args.runidx < 0 else "",
             mmm = mstr,
@@ -1051,7 +1052,7 @@ if __name__ == '__main__':
             )
 
         if nelement > 1:
-            syscall("hadd {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+            syscall("hadd -f -k {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
                 dcd = dcdir,
                 ptg = ptag,
                 exp = args.fcexp[0],

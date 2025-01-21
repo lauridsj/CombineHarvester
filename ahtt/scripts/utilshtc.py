@@ -91,7 +91,7 @@ def submit_job(job_name, job_arg, job_time, job_cpu, job_mem, job_dir, executabl
         lname = ""
         if writelog:
             lname = "{log}.olocal.1".format(log = job_dir + '/' + job_name)
-            syscall("touch {log}".format(log = lname), False)
+            syscall("echo '' > {log}".format(log = lname), False)
 
         command = '{executable} {job_arg}{log}'.format(executable = executable, job_arg = job_arg, log = " |& tee -a " + lname if lname != "" else "")
 
@@ -219,7 +219,7 @@ def make_singularity_command(command):
     command = condorrun + " '" + command.replace("'", '"') + "'"
     
     if cluster == "naf":
-        bind_folders = ["/afs", "/cvmfs", "/nfs"]
+        bind_folders = ["/afs", "/cvmfs", "/data"]
     elif cluster == "lxplus":
         bind_folders = ["/afs", "/cvmfs", "/eos"]
     else:
