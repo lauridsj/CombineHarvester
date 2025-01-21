@@ -219,7 +219,7 @@ def make_singularity_command(command):
     command = condorrun + " '" + command.replace("'", '"') + "'"
     
     if cluster == "naf":
-        bind_folders = ["/afs", "/cvmfs", "/nfs"]
+        bind_folders = ["/afs", "/cvmfs", "/data"]
     elif cluster == "lxplus":
         bind_folders = ["/afs", "/cvmfs", "/eos"]
     else:
