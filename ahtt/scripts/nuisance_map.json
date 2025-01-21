@@ -11,6 +11,7 @@
         "tmass": "Top quark mass (QCD MC)",
         "hdamp_TT": "hdamp (t\\bar{t})",
         "herwig_TT": "Pythia vs Herwig (t\\bar{t})",
+        "ttnorm": "Pythia vs Herwig (t\\bar{t}, rate)",
 
         "EWK_yukawa": "Top quark Yukawa coupling",
         "EWK_scheme": "EW correction scheme",
@@ -18,8 +19,8 @@
         "CMS_PDF_PCA_0": "PDF",
         "CMS_PDF_alphaS": "PDF \\alpha_{s}",
 
-        "CR_ERD_TT": "Color reconnection (Early resonance decays)",
-        "CR_QCD_TT": "Color reconnection (QCD-inspired)",
+        "CR_ERD_TT": "Color rec. (ERD)",
+        "CR_QCD_TT": "Color rec. (QCD-inspired)",
         "CR_GluonMove_TT": "Color reconnection (GluonMove)",
 
         "CMS_EWQCD_$CHAN_norm_13TeV_$YEAR": "EW + QCD rate ($CHAN, $YEAR)",
