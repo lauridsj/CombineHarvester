@@ -70,7 +70,8 @@ parser.add_argument("--project-to", help = "which variables to project down to, 
 parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut on mtt. must be sorted, otherwise applies no cut. if one value is outside mass range, plots binwise.",
                     dest = "cut", default = "", required = False,
                     type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
-
+parser.add_argument("--apply-model-of", help = "read the lhood model from this file, and apply onto current fit. only for prefit.",
+                    default = "", dest = "applymodel", required = False)
 args = parser.parse_args()
 
 fits = []
@@ -652,6 +653,18 @@ with uproot.open(args.ifile) as f:
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
+        dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
+        if dname not in f:
+            continue
+        directory = f[dname]
+        if channel in ("ee", "em", "mm"):
+            nbins = len(directory["TT"].to_hist().values()) / (len(binning[r"$c_{\mathrm{hel}}$"]) - 1)
+            nbins /= len(binning[r"$c_{\mathrm{han}}$"]) - 1
+            if nbins == len(binning[r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"]) - 1:
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)"}
+            else:
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"}
+
         num_extrabins = np.prod(list(len(edges) - 1 for edges in list(binning.values())[1:]))
         extra_axes = {k: v for i, (k, v) in enumerate(binning.items()) if i != 0}
         first_ax_binning = list(binning.values())[0]
@@ -661,12 +674,6 @@ with uproot.open(args.ifile) as f:
         bins = np.r_[0, bins]
         centers = (bins[1:] + bins[:-1]) / 2
 
-        dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
-
-        if dname not in f:
-            continue
-
-        directory = f[dname]
         smhists = {}
         signals = {}
         promotions = {}
@@ -765,6 +772,10 @@ with uproot.open(args.ifile) as f:
             "log": args.log,
             "cuts": [""]
         }
+        if args.applymodel != "":
+            apply_model(kwargs,
+                        args.applymodel,
+                        f"{os.path.dirname(args.ifile)}/ahtt_input.root")
 
         if args.each:
             plot(**kwargs)
@@ -807,7 +818,7 @@ if args.batch is not None:
                 sums["total"] = total
 
                 if args.project != "none":
-                    binedges = [list(bb.values()) for cc, bb in binnings.items() if cmrg[0] in cc][0]
+                    binedges = [bb.values() for vv, bb in sums["binning"].items()][0]
                     cut = args.cut if len(args.cut) == 2 and sorted(args.cut) else [binedges[0][0], binedges[0][-1]]
                     matrix = None
                     with uproot.open(args.ifile) as ff:
