@@ -162,7 +162,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             ptg = ptag(point, tags[0]),
             asm = "exp" if asimov else "obs",
             mod = "_" + modifier if modifier != "" else "",
-            ppw = "_fitdiag" if prepostws and "fitdiag" not in modifier else ""
+            ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag) else ""
         ))
 
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
@@ -172,7 +172,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
                 ptg = ptag(point, tags[1]),
                 asm = "exp" if asimov else "obs",
                 mod = "_" + modifier if modifier != "" else "",
-                ppw = "_fitdiag" if prepostws and "fitdiag" not in modifier else ""
+                ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag) else ""
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
@@ -199,7 +199,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
                 mod = "_" + modifier if modifier != "" else "",
-                ppw = "_fitdiag" if prepostws and "fitdiag" not in modifier else ""
+                ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag) else ""
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
