@@ -189,7 +189,7 @@ def common_job(args):
                   asm = "--unblind" if not args.asimov else "",
                   com = "--compress" if args.rundc else "",
                   dbg = "--experimental" if args.experimental else "",
-                  sns = "--load-snapshot" if args.snapshot else "",
+                  sns = clamp_with_quote(string = args.snapshot, prefix = '--load-snapshot '),
                   ppw = "--prepost-ws" if args.prepostws else "",
                   ext = clamp_with_quote(
                       string = args.extopt,

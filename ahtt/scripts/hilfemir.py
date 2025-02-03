@@ -5,7 +5,7 @@
 # for options that occur on scripts that run combine directly
 combine_help_messages = {
     "--experimental": "usually does nothing. but sometimes is used to enable experimental features.",
-    "--load-snapshot": "load best fit snapshot.",
+    "--load-snapshot": "load best fit snapshot file. give 'default' to use standard best fit, or a file name to load something else.",
     "--prepost-ws": "use prepost ws ws in non-prepost modes. is slow.",
 
     "--tag": "extra tag on datacard directory names",
