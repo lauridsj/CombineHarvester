@@ -28,6 +28,7 @@ def common_common(parser):
     parser.add_argument("--no-mc-stats", help = combine_help_messages["--no-mc-stats"], dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--tag", help = combine_help_messages["--tag"], default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--experimental", help = combine_help_messages["--experimental"], dest = "experimental", action = "store_true", required = False)
+    parser.add_argument("--load-snapshot", help = combine_help_messages["--load-snapshot"], dest = "snapshot", action = "store_true", required = False)
     parser.add_argument("--prepost-ws", help = combine_help_messages["--prepost-ws"], dest = "prepostws", action = "store_true", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     return parser

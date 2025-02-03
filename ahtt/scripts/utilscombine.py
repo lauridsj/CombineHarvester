@@ -149,7 +149,7 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     return bfs if loop_all else bf
 
 def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, runmode,
-                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], prepostws = False):
+                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], snapshot = False, prepostws = False):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
     if usedefault:
@@ -174,7 +174,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
-            return workspace[0]
+            return workspace[0] + "-w w --snapshotName 'MultiDimFit'" if snapshot else workspace[0]
         else:
             useexisting = False
 
@@ -196,8 +196,9 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
+            nll = get_fit(workspace, ["nll"])
+            workspace += "-w w --snapshotName 'MultiDimFit'" if snapshot else ""
 
-    nll = get_fit(workspace, ["nll"])
     print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll))
     print ("WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!")
     print ("WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!")

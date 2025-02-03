@@ -453,7 +453,7 @@ if __name__ == '__main__':
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
-        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.prepostws
+        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, args.prepostws
     )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
@@ -599,7 +599,7 @@ if __name__ == '__main__':
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
                     set_range(ranges),
-                    elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+                    elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, False
                 )
 
                 never_gonna_give_you_up(
@@ -894,7 +894,7 @@ if __name__ == '__main__':
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             poiset,
             set_range(ranges),
-            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, True
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, True
         )
 
         fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{poi}{gvl}{fix}_{ftp}.root".format(
@@ -1007,7 +1007,7 @@ if __name__ == '__main__':
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             set_range(ranges),
-            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot
         )
 
         unconstrained = ",".join([param for param in args.nllunconstrained if param not in ["g1", "g2", "r1", "r2", "CMS_EtaT_norm_13TeV", "CMS_ChiT_norm_13TeV"]])
