@@ -594,7 +594,11 @@ if __name__ == '__main__':
                 ppm = clamp_with_quote(
                     string = ','.join(args.prepostmerge),
                     prefix = "--prepost-merge "
-                ) if runpsfromws else ""
+                ) if runpsfromws else "",
+                ppr = clamp_with_quote(
+                    string = ','.join(args.prepostres),
+                    prefix = "--prepost-result "
+                ) if runpsfromws else "",
             )
 
             submit_job(jname, jarg, args.jobtime, 1, args.memory,

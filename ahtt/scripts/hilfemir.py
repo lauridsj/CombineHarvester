@@ -142,6 +142,7 @@ combine_help_messages = {
 
     "--prepost-fit": "type of fit to run in prepost and psfromws modes; s or b",
     "--prepost-merge": "comma-separated list of channel_year combinations to be summed up in mode psfromws",
+    "--prepost-result": "in psfromws, use this fit result file instead",
 
     "--nll-parameter": "comma-separated list of parameters to evaluate the NLL for.",
     "--nll-npoint": "comma-separated list of number of points to sample equidistantly along each parameter.\n"

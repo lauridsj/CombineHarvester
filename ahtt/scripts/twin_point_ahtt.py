@@ -907,6 +907,8 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
         ) for fdoutput in ["result", "shape"]]
+        if os.path.isfile(args.prepostres):
+            fitdiag_result = args.prepostres
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
@@ -985,7 +987,7 @@ if __name__ == '__main__':
                 "psfromws_{ppm}".format(ppm = args.prepostmerge[0] if nicemerge else "-".join(prepostmerge))
             ),
             fdr = fitdiag_result,
-            ftp = args.prepostfit
+            ftp = args.prepostfit,
         ))
         syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
 
