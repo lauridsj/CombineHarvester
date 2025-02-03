@@ -157,6 +157,9 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
     if usedefault:
         return default
     elif useexisting:
+        if snapshot != "" and snapshot != "default":
+            return snapshot + " -w w --snapshotName MultiDimFit"
+
         workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}{ppw}.root".format(
             dcd = dcdir,
             ptg = ptag(point, tags[0]),
@@ -180,8 +183,6 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
                 return workspace[0]
             elif snapshot == "default":
                 return workspace[0] + " -w w --snapshotName MultiDimFit"
-            else:
-                return snapshot + " -w w --snapshotName MultiDimFit"
         else:
             useexisting = False
 
