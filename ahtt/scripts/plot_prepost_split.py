@@ -397,6 +397,13 @@ def plot(channel, year, fit,
     if "j" in channel:
         ticklocs = np.linspace(500, 1500, 3)
         ticklocs_minor = np.linspace(400, 1600, 13)
+    elif r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]:
+        if single_slice:
+            ticklocs = np.linspace(200, 800, 4)
+            ticklocs_minor = np.arange(150, 900, 50)
+        else:
+            ticklocs = np.linspace(300, 700, 2)
+            ticklocs_minor = np.arange(200, 900, 100)
     else:
         if single_slice:
             ticklocs = np.linspace(400, 1300, 4)
@@ -491,7 +498,9 @@ def plot(channel, year, fit,
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     # FIXME brittle! assumes exclusive toponia vs A/H
-    if any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
+    if len(allsigs) == 0:
+        sstr = "bkg_"
+    elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
         sstr = "__".join(args.assignal)
     else:
         sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if ss[0] != r"$\eta_{\mathrm{t}}$"]
@@ -593,7 +602,7 @@ def project(planes, nbins, target, cut, icut, matrix):
     }
     masses = {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$": "mtt",
-        r"$m_{\mathrm{b}\bar{\mathrm{b}}\ell\bar{\ell}}$": "mbbll"
+        r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$": "mbbll"
     }
     target = targets.get(target, 0)
     ret = planes.copy()
