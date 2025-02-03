@@ -5,6 +5,7 @@
 # for options that occur on scripts that run combine directly
 combine_help_messages = {
     "--experimental": "usually does nothing. but sometimes is used to enable experimental features.",
+    "--prepost-ws": "use prepost ws ws in non-prepost modes. is slow.",
 
     "--tag": "extra tag on datacard directory names",
     "--point": "comma-separated list of signal points to run on",

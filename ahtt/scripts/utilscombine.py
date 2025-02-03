@@ -149,26 +149,28 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     return bfs if loop_all else bf
 
 def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, runmode,
-                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = []):
+                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], prepostws = False):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
 
     if usedefault:
         return default
     elif useexisting:
-        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
+        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}{ppw}.root".format(
             dcd = dcdir,
             ptg = ptag(point, tags[0]),
             asm = "exp" if asimov else "obs",
             mod = "_" + modifier if modifier != "" else "",
+            ppw = "_fitdiag" if prepostws else ""
         ))
 
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}{ppw}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[1]),
                 asm = "exp" if asimov else "obs",
                 mod = "_" + modifier if modifier != "" else "",
+                ppw = "_fitdiag" if prepostws else ""
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
@@ -183,13 +185,14 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}.root".format(
+            newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}{ppw}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
                 rnm = "single" if "single" in runmode else "best-fit",
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
                 mod = "_" + modifier if modifier != "" else "",
+                ppw = "_fitdiag" if prepostws else ""
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname

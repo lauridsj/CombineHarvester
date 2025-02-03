@@ -445,7 +445,7 @@ if __name__ == '__main__':
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
-    default_workspace = dcdir + "workspace_twin-g.root"
+    default_workspace = dcdir + "workspace_fitdiag.root" if args.prepostws else dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov,
@@ -453,7 +453,7 @@ if __name__ == '__main__':
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
-        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.prepostws
     )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
