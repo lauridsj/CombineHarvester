@@ -589,7 +589,7 @@ if __name__ == '__main__':
                     continue
 
             jarg = job_arg
-            jarg += " {ppf} {ppm}".format(
+            jarg += " {ppf} {ppm} {ppr}".format(
                 ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '),
                 ppm = clamp_with_quote(
                     string = ','.join(args.prepostmerge),
