@@ -206,7 +206,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
             nll = get_fit(workspace, ["nll"])
             workspace += " -w w --snapshotName MultiDimFit" if snapshot == "default" else ""
 
-    print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll))
+    print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(nll = nll))
     print ("WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!")
     print ("WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!")
     print ("\n")

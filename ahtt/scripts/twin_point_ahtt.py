@@ -598,6 +598,7 @@ if __name__ == '__main__':
                     dcdir, "__".join(points), [args.otag, args.tag],
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+                    poiset,
                     set_range(ranges),
                     elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, False
                 )
@@ -1006,6 +1007,7 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            poiset,
             set_range(ranges),
             elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot
         )
