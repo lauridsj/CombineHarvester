@@ -596,7 +596,7 @@ if __name__ == '__main__':
                     prefix = "--prepost-merge "
                 ) if runpsfromws else "",
                 ppr = clamp_with_quote(
-                    string = ','.join(args.prepostres),
+                    string = args.prepostres,
                     prefix = "--prepost-result "
                 ) if runpsfromws else "",
             )
