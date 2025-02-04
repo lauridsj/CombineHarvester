@@ -20,6 +20,8 @@ axes = {
     "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
     "muchit":     r"$\mu(\chi_{\mathrm{t}})$",
+    "sigmaetat":  r"$\sigma\left(\eta_{\mathrm{t}}\right)$ [pb]",
+    "sigmachit":  r"$\sigma\left(\chi_{\mathrm{t}}\right)$ [pb]",
     "yukawa":     r"$y_{\mathrm{t}}$",
     "ll":         r"$\ell\ell$",
     "l3j":        r"$\ell$, 3j",
@@ -168,7 +170,7 @@ def etat_blurb(cfg):
         ]
     return blurb
 
-def stock_labels(parameters, points, resxsecpb = 5):
+def stock_labels(parameters, points, resxsecpb = 5, toxsec = False):
     labels = []
     for ii, pp in enumerate(parameters):
         if pp in ["g1", "g2"]:
@@ -176,9 +178,9 @@ def stock_labels(parameters, points, resxsecpb = 5):
         elif pp in ["r1", "r2"]:
             labels.append(axes["muah"] % (str_point(points[ii], spinstate = True), str(resxsecpb)))
         elif pp == "CMS_EtaT_norm_13TeV":
-            labels.append(axes["muetat"])
+            labels.append(axes["sigmaetat"] if toxsec else axes["muetat"])
         elif pp == "CMS_ChiT_norm_13TeV":
-            labels.append(axes["muchit"])
+            labels.append(axes["sigmachit"] if toxsec else axes["muchit"])
         elif pp == "EWK_yukawa":
             labels.append(axes["yukawa"])
         else:

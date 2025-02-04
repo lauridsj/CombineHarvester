@@ -30,7 +30,7 @@ from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
 
-def read_nll(points, directories, parameters, intervals, drops, prunesmooth = False, maxsigma = 5):
+def read_nll(points, directories, parameters, scales, intervals, drops, prunesmooth = False, maxsigma = 5):
     result = [[], []]
     best_fit, fits = result
     pstr = "__".join(points)
@@ -39,6 +39,11 @@ def read_nll(points, directories, parameters, intervals, drops, prunesmooth = Fa
         drop = None
         if len(drops) > 0:
             drop = drops[ii if ii < len(drops) else -1]
+            if len(scales) > 0:
+                drop = [[
+                    [drp[0][0] * scales[0], drp[0][1] * scales[0]],
+                    [drp[1][0] * scales[1 if len(scales) > 1 else 0], drp[1][1] * scales[1 if len(scales) > 1 else 0]]
+                ] for drp in drop]
 
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{parameters[0]}_*_{parameters[1]}_*.root"
         files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, tag = tag, ninterval = 2)]
@@ -51,6 +56,8 @@ def read_nll(points, directories, parameters, intervals, drops, prunesmooth = Fa
 
             for i in dtree:
                 valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), round(2. * dtree.deltaNLL, 5))
+                if len(scales) > 0:
+                    valuednll = (valuednll[0] * scales[0], valuednll[1] * scales[1 if len(scales) > 1 else 0], valuednll[2])
 
                 if dtree.quantileExpected >= 0.:
                     if drop is not None and any([window[0][0] < valuednll[0] < window[0][1] and window[1][0] < valuednll[1] < window[1][1] for window in drop]):
@@ -85,7 +92,7 @@ def read_nll(points, directories, parameters, intervals, drops, prunesmooth = Fa
         fits.append(interpolated if prunesmooth else originals)
     return result
 
-def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
     alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
@@ -105,7 +112,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, intervals
     fig, ax = plt.subplots()
     handles = []
     sigmas = []
-    nlls = read_nll(points, directories, parameters, intervals, drops, prunesmooth, maxsigma)
+    nlls = read_nll(points, directories, parameters, pscales, intervals, drops, prunesmooth, maxsigma)
 
     xlength = intervals[0][1] - intervals[0][0]
     ylength = intervals[1][1] - intervals[1][0]
@@ -227,6 +234,8 @@ if __name__ == '__main__':
                         dest = "params", type = lambda s: tokenize_to_list(remove_spaces_quotes(s)), default = ["g1", "g2"], required = False)
     parser.add_argument("--parameter-labels", help = "semicolon-separated labels of those parameters. must be either not given, or exactly 2.",
                         dest = "plabels", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), ';'), default = [], required = False)
+    parser.add_argument("--parameter-scales", help = "comma-separated scales to multiply the parameters with. either 0, 1 or 2 numbers.",
+                        dest = "pscales", type = lambda s: tokenize_to_list(remove_spaces_quotes(s), astype = float), default = [], required = False)
     parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
                         dest = "intervals", type = lambda s: [tokenize_to_list(minmax, astype = float) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [], required = False)
     parser.add_argument("--prune-smoothing",
@@ -272,13 +281,13 @@ if __name__ == '__main__':
         raise RuntimeError("length of tags isnt the same as tag labels. aborting")
 
     if len(args.plabels) == 0:
-        args.plabels = stock_labels(args.params, args.point, args.arbnorm)
+        args.plabels = stock_labels(args.params, args.point, args.arbnorm, all(any([pp in param] for pp in ["EtaT", "ChiT", "PsiT"]) for param in args.params) and len(args.pscales) > 0)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll([f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{fmt}" for fmt in args.fmt],
-             points, dirs, args.tlabel, args.params, args.plabels, args.intervals, args.drops, args.prunesmooth, args.maxsigma, args.bestfit,
+             points, dirs, args.tlabel, args.params, args.plabels, args.pscales, args.intervals, args.drops, args.prunesmooth, args.maxsigma, args.bestfit,
              args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass
