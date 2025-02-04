@@ -979,13 +979,20 @@ if __name__ == '__main__':
         inputfiles = [inputfiles[0], ppmtxt, ppmwsp]
 
         print "\ntwin_point_ahtt :: merging postfit plots as per fit result"
-        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
+        tofreeze = [frz for frz in set_freeze[1]]
+        for ifrz in range(len(tofreeze)):
+            for pset in set_freeze[0]:
+                if tofreeze[ifrz] in pset:
+                    tofreze[ifrz] = pset
+                    break
+        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit {frz} --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
             dcd = ppmtxt,
             fdw = ppmwsp,
             fds = fitdiag_shape.replace(
                 "fitdiagnostics_shape",
                 "psfromws_{ppm}".format(ppm = args.prepostmerge[0] if nicemerge else "-".join(prepostmerge))
             ),
+            frz = "--freeze '{frz}'".format(frz = ','.join(tofreeze)) if len(tofreeze) > 0 else "",
             fdr = fitdiag_result,
             ftp = args.prepostfit,
         ))
