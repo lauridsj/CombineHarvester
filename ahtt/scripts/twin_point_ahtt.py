@@ -983,7 +983,7 @@ if __name__ == '__main__':
         for ifrz in range(len(tofreeze)):
             for pset in set_freeze[0]:
                 if tofreeze[ifrz] in pset:
-                    tofreze[ifrz] = pset
+                    tofreeze[ifrz] = pset
                     break
         syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit {frz} --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
             dcd = ppmtxt,
