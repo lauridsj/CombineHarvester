@@ -268,7 +268,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
         fittype += ")"
     else:
         fittype = "Postfit (BG + A/H)"
-    if not single_slice:
+    if not single_slice or len(signals) == 0:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
         labels.insert(0, " "*len(fittype))
     if not single_slice or len(handles) < 2:
@@ -397,6 +397,13 @@ def plot(channel, year, fit,
     if "j" in channel:
         ticklocs = np.linspace(500, 1500, 3)
         ticklocs_minor = np.linspace(400, 1600, 13)
+    elif r'$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$' in list(binning.keys())[0]:
+        if single_slice:
+            ticklocs = np.linspace(200, 800, 4)
+            ticklocs_minor = np.arange(150, 900, 50)
+        else:
+            ticklocs = np.linspace(300, 700, 2)
+            ticklocs_minor = np.arange(200, 900, 100)
     else:
         if single_slice:
             ticklocs = np.linspace(400, 1300, 4)
@@ -461,7 +468,7 @@ def plot(channel, year, fit,
     elif args.panel != "upper":
         ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
-    if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]):
+    if args.panel != "upper" and len(allsigs) > 0 and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]):
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
         xpos = 0.04 if single_slice else 0.01
@@ -491,7 +498,9 @@ def plot(channel, year, fit,
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     # FIXME brittle! assumes exclusive toponia vs A/H
-    if any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
+    if len(allsigs) == 0:
+        sstr = "BGOnly"
+    elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
         sstr = "__".join(args.assignal)
     else:
         sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if ss[0] != r"$\eta_{\mathrm{t}}$"]
@@ -593,16 +602,21 @@ def project(planes, nbins, target, cut, icut, matrix):
     }
     masses = {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$": "mtt",
-        r"$m_{\mathrm{b}\bar{\mathrm{b}}\ell\bar{\ell}}$": "mbbll"
+        r'$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$': "mbbll"
     }
     target = targets.get(target, 0)
     ret = planes.copy()
 
+    print("Projecting SM...")
     ret["smhists"] = {k: actually_project(ret["smhists"][k], nbins, target, cut, icut, matrix) for k in ret["smhists"]}
+    print("Projecting data...")
     ret["datavalues"] = actually_project(ret["datavalues"], nbins, target, cut, icut, matrix)
+    print("Projecting total...")
     ret["total"] = actually_project(ret["total"], nbins, target, cut, icut, matrix)
+    print("Projecting signals...")
     ret["promotions"] = {k: actually_project(ret["promotions"][k], nbins, target, cut, icut, matrix) for k in ret["promotions"]}
     ret["signals"] = {k: actually_project(ret["signals"][k], nbins, target, cut, icut, matrix) for k in ret["signals"]}
+    print("Projecting data errors...")
     dataerr_lo = (actually_project(ret["datahist_errors"][0]**2, nbins, target, cut, icut, matrix))**.5
     dataerr_hi = (actually_project(ret["datahist_errors"][1]**2, nbins, target, cut, icut, matrix))**.5
     ret["datahist_errors"] = np.array([dataerr_lo, dataerr_hi])
@@ -612,7 +626,7 @@ def project(planes, nbins, target, cut, icut, matrix):
     ret["first_ax_binning"] = list(ret["binning"].values())[0] if target == 0 else np.array([-1, -1/3, 1/3, 1])
     ret["first_ax_width"] = ret["first_ax_binning"][-1] - ret["first_ax_binning"][0] if target == 0 else 0
     binwidths = np.diff(ret["first_ax_binning"])
-    ret["bins"] = ret["first_ax_binning"]
+    ret["bins"] = np.array(ret["first_ax_binning"]) - ret["first_ax_binning"][0] if target == 0 else ret["first_ax_binning"]
     ret["centers"] = (ret["bins"][1:] + ret["bins"][:-1]) / 2
     ret["cuts"] = cut_string(
         list(planes["binning"].keys())[0].replace(" (GeV)", ""),
@@ -620,6 +634,7 @@ def project(planes, nbins, target, cut, icut, matrix):
         cut,
         masses[ list(planes["binning"].keys())[0].replace(" (GeV)", "") ]
     )
+    print("projection done.")
     return ret
 
 def plot_projection(sums, binedges, cut, matrix):
@@ -648,12 +663,18 @@ gvalues_p = None
 
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
-with uproot.open(args.ifile) as f:
+actual_infile = args.applymodel if args.applymodel != "" else args.ifile
+with uproot.open(actual_infile) as f:
     for channel, year, fit in product(channels, years, fits):
+        if args.applymodel != "" and fit != "s":
+            continue
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
-        dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
+        if args.applymodel != "":
+            dname = f"{channel}_{year}_postfit"
+        else:
+            dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
         if dname not in f:
             continue
         directory = f[dname]
@@ -661,7 +682,7 @@ with uproot.open(args.ifile) as f:
             nbins = len(directory["TT"].to_hist().values()) / (len(binning[r"$c_{\mathrm{hel}}$"]) - 1)
             nbins /= len(binning[r"$c_{\mathrm{han}}$"]) - 1
             if nbins == len(binning[r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"]) - 1:
-                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)"}
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$ (GeV)"}
             else:
                 binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"}
 
@@ -673,7 +694,7 @@ with uproot.open(args.ifile) as f:
         bins = (np.cumsum(binwidths)[None] + (np.arange(num_extrabins) * first_ax_width)[:, None]).flatten()
         bins = np.r_[0, bins]
         centers = (bins[1:] + bins[:-1]) / 2
-
+        
         smhists = {}
         signals = {}
         promotions = {}
@@ -738,7 +759,10 @@ with uproot.open(args.ifile) as f:
             gvalues = gvalues_p
         else:
             gvalues = {}
-        datavalues = directory["data"].values()[1][:len(centers)]
+        if args.applymodel != "":
+            datavalues = directory["data_obs"].values()[:len(centers)]
+        else:
+            datavalues = directory["data"].values()[1][:len(centers)]
         #total = directory["total_background"].to_hist()[:len(centers)]
         total = reduce(lambda a,b: a+b, smhists.values())
 
@@ -748,7 +772,10 @@ with uproot.open(args.ifile) as f:
         #        total += -1. * promotion
         #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
         #total = add_covariance(total, covariance)
-        datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
+        if args.applymodel != "":
+            datahist_errors = np.array([directory["data_obs"].errors(), directory["data_obs"].errors()])[:, :len(centers)]
+        else:
+            datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
 
         kwargs = {
             "channel": channel,
@@ -818,12 +845,14 @@ if args.batch is not None:
                 sums["total"] = total
 
                 if args.project != "none":
-                    binedges = [bb.values() for vv, bb in sums["binning"].items()][0]
-                    cut = args.cut if len(args.cut) == 2 and sorted(args.cut) else [binedges[0][0], binedges[0][-1]]
+                    binedges = [bb for vv, bb in sums["binning"].items()]
+                    cut = args.cut if len(args.cut) == 2 else None
+                    if cut is None and (args.project == "mtt" or args.project == "mbbll"):
+                        cut = [binedges[0][0], binedges[0][-1]]
                     matrix = None
                     with uproot.open(args.ifile) as ff:
                         matrix = ff[f"shapes_fit_{fit}"]["overall_total_covar"].values()
-                    if all([binedges[0][0] <= cc <= binedges[0][1] for cc in cut]):
+                    if cut is not None and all([binedges[0][0] <= cc <= binedges[0][-1] for cc in cut]):
                         plot_projection(sums, binedges, cut, matrix)
                     else:
                         for imin in range(len(binedges[0]) - 1):
