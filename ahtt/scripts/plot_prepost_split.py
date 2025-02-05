@@ -410,8 +410,8 @@ def plot(channel, year, fit,
         ticklocs_minor = np.linspace(400, 1600, 13)
     elif ismbbll:
         if single_slice:
-            ticklocs = np.array([200, 400, 900]) if log[0] else np.linspace(200, 800, 4)
-            ticklocs_minor = np.array([200, 300, 400, 600, 900]) if log[0] else np.arange(150, 900, 50)
+            ticklocs = np.array([100, 200, 400, 900]) if log[0] else np.linspace(200, 800, 4)
+            ticklocs_minor = np.array([10, 100, 200, 300, 400, 600, 900]) if log[0] else np.arange(150, 900, 50)
         else:
             ticklocs = np.linspace(300, 700, 2)
             ticklocs_minor = np.arange(200, 900, 100)
@@ -536,7 +536,7 @@ def plot(channel, year, fit,
                 else:
                     bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 if first_ax_width > 0:
-                    ax2.set_xlim(140 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
+                    ax2.set_xlim(10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
                 if args.splitbins:
