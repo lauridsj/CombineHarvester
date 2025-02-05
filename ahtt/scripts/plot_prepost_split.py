@@ -36,12 +36,15 @@ from drawings import get_poi_values
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "ratio", required = False)
+parser.add_argument("--logx", action = "store_true", required = False)
+parser.add_argument("--logy", action = "store_true", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
 parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted. give any string to draw only batched prefit.",
                     default = None, dest = "batch", required = False)
+parser.add_argument("--read-from-batch", help = "read all plots from --batch, not ifile. mainly for morphed model.", action = "store_true", dest = "readbatch", required = False)
 parser.add_argument("--skip-postfit", help = "skip plotting postfit", action = "store_false", dest = "postfit", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
@@ -70,9 +73,11 @@ parser.add_argument("--project-to", help = "which variables to project down to, 
 parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut on mtt. must be sorted, otherwise applies no cut. if one value is outside mass range, plots binwise.",
                     dest = "cut", default = "", required = False,
                     type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
-parser.add_argument("--apply-model-of", help = "read the lhood model from this file, and apply onto current fit. only for prefit.",
-                    default = "", dest = "applymodel", required = False)
 args = parser.parse_args()
+args.logy = args.log or args.logy
+args.readbatch = args.readbatch and os.path.isfile(args.batch)
+if args.readbatch:
+    args.prefit = False
 
 fits = []
 if args.postfit:
@@ -134,7 +139,9 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         zorder = -90
     )
     ax.set_ylabel("<Events> / $10^{3}$" if angular else "<Events / GeV>", fontsize=24)
-    if log:
+    if log[0]:
+        ax.set_xscale("log")
+    if log[1]:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width / factor)
         if args.splitbins:
@@ -147,7 +154,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
 
 
 
-def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
+def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, log):
     single_slice = args.splitbins or args.project != "none"
     ax.errorbar(
         centers,
@@ -274,6 +281,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
     if not single_slice or len(handles) < 2:
         handles.append(handle_unc)
         labels.append("Uncertainty")
+    if log[0]:
+        ax.set_xscale("log")
     legend_ncol = 1 if single_slice else 5
     ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
@@ -349,6 +358,8 @@ def plot(channel, year, fit,
         return
 
     single_slice = args.splitbins or args.project != "none"
+    ismbbll = r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]
+    print(list(binning.values())[0], first_ax_binning, first_ax_width)
     allsigs = signals | promotions
     if args.panel == "both":
         fig, (ax0, ax1, ax2) = plt.subplots(
@@ -372,7 +383,7 @@ def plot(channel, year, fit,
         plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
     if args.panel != "upper":
         if args.lower == "ratio":
-            plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
+            plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit, log)
         elif args.lower == "diff":
             plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
         else:
@@ -397,10 +408,10 @@ def plot(channel, year, fit,
     if "j" in channel:
         ticklocs = np.linspace(500, 1500, 3)
         ticklocs_minor = np.linspace(400, 1600, 13)
-    elif r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]:
+    elif ismbbll:
         if single_slice:
-            ticklocs = np.linspace(200, 800, 4)
-            ticklocs_minor = np.arange(150, 900, 50)
+            ticklocs = np.array([200, 400, 900]) if log[0] else np.linspace(200, 800, 4)
+            ticklocs_minor = np.array([200, 300, 400, 600, 900]) if log[0] else np.arange(150, 900, 50)
         else:
             ticklocs = np.linspace(300, 700, 2)
             ticklocs_minor = np.arange(200, 900, 100)
@@ -487,7 +498,7 @@ def plot(channel, year, fit,
         fig.subplots_adjust(hspace = hspace, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
 
     bbox = ax2.get_position()
-    offset = -0.025 if single_slice and args.panel == "lower" else -0.02 if single_slice and args.panel == "upper" else -0.037
+    offset = -0.025 if single_slice and args.panel == "lower" else -0.02 if single_slice and args.panel == "upper" else -0.053
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     figwidth = 6.0 if single_slice else 19.2
     if args.panel == "both":
@@ -497,7 +508,6 @@ def plot(channel, year, fit,
     extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
-    # FIXME brittle! assumes exclusive toponia vs A/H
     if len(allsigs) == 0:
         sstr = "bkg_"
     elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
@@ -526,7 +536,7 @@ def plot(channel, year, fit,
                 else:
                     bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 if first_ax_width > 0:
-                    ax2.set_xlim(first_ax_width*i, first_ax_width*(i+1))
+                    ax2.set_xlim(140 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
                 if args.splitbins:
@@ -621,7 +631,7 @@ def project(planes, nbins, target, cut, icut, matrix):
     ret["first_ax_binning"] = list(ret["binning"].values())[0] if target == 0 else np.array([-1, -1/3, 1/3, 1])
     ret["first_ax_width"] = ret["first_ax_binning"][-1] - ret["first_ax_binning"][0] if target == 0 else 0
     binwidths = np.diff(ret["first_ax_binning"])
-    ret["bins"] = ret["first_ax_binning"]
+    ret["bins"] = np.array(ret["first_ax_binning"]) - ret["first_ax_binning"][0] if target == 0 else ret["first_ax_binning"]
     ret["centers"] = (ret["bins"][1:] + ret["bins"][:-1]) / 2
     ret["cuts"] = cut_string(
         list(planes["binning"].keys())[0].replace(" (GeV)", ""),
@@ -657,12 +667,17 @@ gvalues_p = None
 
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
-with uproot.open(args.ifile) as f:
+with uproot.open(args.batch if args.readbatch else args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
-        dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
+        if args.readbatch:
+            if not args.batch.endswith(f"_{fit}.root"):
+                continue
+            dname = f"{channel}_{year}_postfit"
+        else:
+            dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
         if dname not in f:
             continue
         directory = f[dname]
@@ -747,17 +762,18 @@ with uproot.open(args.ifile) as f:
             gvalues = gvalues_p
         else:
             gvalues = {}
-        datavalues = directory["data"].values()[1][:len(centers)]
-        #total = directory["total_background"].to_hist()[:len(centers)]
-        total = reduce(lambda a,b: a+b, smhists.values())
 
-        # FIXME actual error: axes not mergable error when reading EtaT from args.ipf (needed because muetat = 0 at prefit, so hist = 0)
-        #if fit != 'p':
-        #    for promotion in promotions.values():
-        #        total += -1. * promotion
-        #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
-        #total = add_covariance(total, covariance)
-        datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
+        total = reduce(lambda a,b: a+b, smhists.values())
+        #total = directory["total_background"].to_hist()[:len(centers)]
+
+        if args.readbatch:
+            with uproot.open(args.ifile) as ff:
+                dd = ff[f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"]
+                datavalues = dd["data"].values()[1][:len(centers)]
+                datahist_errors = np.array([dd["data"].errors("low")[1], dd["data"].errors("high")[1]])[:, :len(centers)]
+        else:
+            datavalues = directory["data"].values()[1][:len(centers)]
+            datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
 
         kwargs = {
             "channel": channel,
@@ -778,13 +794,9 @@ with uproot.open(args.ifile) as f:
             "first_ax_width": first_ax_width,
             "bins": bins,
             "centers": centers,
-            "log": args.log,
+            "log": (args.logx, args.logy),
             "cuts": [""]
         }
-        if args.applymodel != "":
-            apply_model(kwargs,
-                        args.applymodel,
-                        f"{os.path.dirname(args.ifile)}/ahtt_input.root")
 
         if args.each:
             plot(**kwargs)
@@ -827,12 +839,14 @@ if args.batch is not None:
                 sums["total"] = total
 
                 if args.project != "none":
-                    binedges = [bb.values() for vv, bb in sums["binning"].items()][0]
-                    cut = args.cut if len(args.cut) == 2 and sorted(args.cut) else [binedges[0][0], binedges[0][-1]]
+                    binedges = [bb for vv, bb in sums["binning"].items()]
+                    cut = args.cut if len(args.cut) == 2 else None
+                    if cut is None and (args.project == "mtt" or args.project == "mbbll"):
+                        cut = [binedges[0][0], binedges[0][-1]]
                     matrix = None
                     with uproot.open(args.ifile) as ff:
                         matrix = ff[f"shapes_fit_{fit}"]["overall_total_covar"].values()
-                    if all([binedges[0][0] <= cc <= binedges[0][1] for cc in cut]):
+                    if cut is not None and all([binedges[0][0] <= cc <= binedges[0][-1] for cc in cut]):
                         plot_projection(sums, binedges, cut, matrix)
                     else:
                         for imin in range(len(binedges[0]) - 1):
