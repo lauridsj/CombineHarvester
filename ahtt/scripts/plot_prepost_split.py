@@ -359,7 +359,6 @@ def plot(channel, year, fit,
 
     single_slice = args.splitbins or args.project != "none"
     ismbbll = r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]
-    print(list(binning.values())[0], first_ax_binning, first_ax_width)
     allsigs = signals | promotions
     if args.panel == "both":
         fig, (ax0, ax1, ax2) = plt.subplots(
