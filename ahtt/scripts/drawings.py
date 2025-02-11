@@ -87,9 +87,12 @@ binnings = {
     }
 }
 ratiolabels = {
-    "b": "Ratio to background",
-    "s": "Ratio to background",
-    "p": "Ratio to background",
+    #"b": "Ratio to background",
+    #"s": "Ratio to background",
+    #"p": "Ratio to background",
+    "b": "Ratio to FO pQCD + BG",
+    "s": "Ratio to FO pQCD + BG",
+    "p": "Ratio to FO pQCD + BG",
 }
 lumis = {
     "2016pre": "19.5",
@@ -202,7 +205,7 @@ def valid_nll_fname(fname, tag, ninterval = 1):
             nvalidto += 1
     return nvalidto == ninterval
 
-def get_poi_values(fname, signals, tname):
+def get_poi_values(fname, signals, tname, sf = 1):
     signals = list(signals.keys())
     signals = [sig for sig in signals if sig != ("Total", None, None)]
     twing = len(signals) == 2 and sum([1 if sig[0] == "A" or sig[0] == "H" else 0 for sig in signals]) == 2
@@ -233,17 +236,18 @@ def get_poi_values(fname, signals, tname):
 
     fres = ffile.Get("fit_s")
     result = {}
+    ndigit = 2 if abs(sf) > 2 else 3
 
     if onepoi:
         if fres and tres is None:
             gg = fres.floatParsFinal().find('g')
-            result = {signals[0]: (round(gg.getValV(), 3), round(gg.getError(), 3))}
+            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
         elif tres is not None:
             values = [0., 0., 0.]
             for i in tres:
                 qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
                 values[qq] = tres.g
-            result = {signals[0]: (round(values[0], 3), round(abs(values[1] - values[0]), 3), round(abs(values[2] - values[0]), 3))}
+            result = {signals[0]: (round(values[0], ndigit), round(abs(values[1] - values[0]), ndigit), round(abs(values[2] - values[0]), ndigit))}
         else:
             result = {signals[0]: (0., 0.)}
     elif twing:
@@ -266,8 +270,8 @@ def get_poi_values(fname, signals, tname):
                 else:
                     values[0][qq] = tres.g1 if args.onlyres else tres.r1
                     values[1][qq] = tres.g2 if args.onlyres else tres.r2
-            result[signals[0]] = (round(values[0][0], 3), round(abs(values[0][1] - values[0][0]), 3), round(abs(values[0][2] - values[0][0]), 3))
-            result[signals[1]] = (round(values[1][0], 3), round(abs(values[1][1] - values[1][0]), 3), round(abs(values[1][2] - values[1][0]), 3))
+            result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
+            result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
         else:
             result = {signals[0]: (0., 0.), signals[1]: (0., 0.)}
     elif oneg:
@@ -282,7 +286,7 @@ def get_poi_values(fname, signals, tname):
             else:
                 raise ValueError()
             gg = fres.floatParsFinal().find(parname)
-            result = {signals[0]: (round(gg.getValV(), 3), round(gg.getError(), 3))}
+            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
         elif tres is not None:
             raise NotImplementedError()
         else:
@@ -292,7 +296,7 @@ def get_poi_values(fname, signals, tname):
         if flag[1]:
             if fres and tres is None:
                 muhat = fres.floatParsFinal().find(name)
-                result = result | {(flag[0], None, None): (round(muhat.getValV(), 3), round(muhat.getError(), 3))}
+                result = result | {(flag[0], None, None): (round(muhat.getValV() * sf, ndigit), round(muhat.getError() * sf, ndigit))}
             elif tres is not None:
                 values = [0., 0., 0.]
                 for i in tres:
@@ -300,97 +304,8 @@ def get_poi_values(fname, signals, tname):
                     tmp = getattr(tres, name)
                     if qq == 0 or (qq != 0 and tmp != values[0]):
                         values[qq] = tmp
-                result = result | {(flag[0], None, None): (round(values[0], 3), round(abs(values[1] - values[0]), 3), round(abs(values[2] - values[0]), 3))}
+                result = result | {(flag[0], None, None): (round(values[0] * sf, ndigit), round(abs(values[1] - values[0]) * sf, ndigit), round(abs(values[2] - values[0]) * sf, ndigit))}
             else:
                 result = result | {(flag[0], None, None): (0., 0.)}
     result = {k: v if len(v) < 3 or abs(v[1] - v[2]) / v[1] > 0.1 else (v[0], v[1]) for k, v in result.items()}
     return result
-
-def get_model_at_minimum(fname):
-    '''
-    fname is the filename of the *fitdiagnostics_result* file in some other setting, that is passed as --ifile to plot_prepost*.py scripts
-    '''
-    ffile = ROOT.TFile.Open(fname, "read")
-    if "fit_s" not in ffile.GetListOfKeys() and "fit_b" not in ffile.GetListOfKeys():
-        return {}
-    fres = ffile.Get("fit_s")
-    fcov = ffile.Get("covariance_fit_s")
-    if fres is None:
-        fres = ffile.Get("fit_b")
-        fcov = ffile.Get("covariance_fit_b")
-
-    values = {pp.GetName(): (pp.getValV(), pp.getError()) for pp in fres.floatParsFinal()}
-    values = {k: v for k, v in result.items() if all([abs(vv) > 1e-7 for vv in v])}
-    correlation = {}
-    params = list(values.keys())
-    nbins = fcov.GetXaxis().GetNbins()
-    for i0, n0 in enumerate(params):
-        for i1 in range(i0 + 1, len(params)):
-            ix = iy = -1
-            for ibin in range(1, nbins + 1):
-                label = fcov.GetXaxis().GetBinLabel(ibin)
-                if label == n0:
-                    ix = ibin
-                elif label == params[i1]:
-                    iy == ibin
-                if ix != -1 and iy != -1:
-                    break
-            correlation[ (n0, params[i1]) ] = cov[ix][iy] / math.sqrt(cov[ix][ix] * cov[iy][iy])
-    return {"value": values, "correlation": correlations}
-
-def combine_shape_impl(value, dup, ddo):
-    ds = dup + ddo
-    dd = dup - ddo
-    t0 = dd * value
-    t1 = ds / 8.
-    t2 = (3. * value**6.) - (10. * value**4.) + (15 * value**2.)
-    return (t0 + (t1 * t2)) / 2.
-
-def combine_shape_interpolation(value, nominal, up, down):
-    # implements 'shape' interpolation ala https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part2/settinguptheanalysis/#binned-shape-analyses
-    # value is the desired np value to interpolate to
-    # remaining args are the template shapes, assumed to be of the form (norm, binwise fractions), passed to combine
-    result = (0., np.zeros(len(nominal[1])))
-    inorm = interpolate.interp1d([-1, 0, 1], [math.log(down[0]), math.log(nominal[0]), math.log(up[0])], fill_value = "extrapolate")
-    result[0] = max(float(inorm(value)), 0.)
-    for ii in range(len(nominal[1])):
-        if value > 1 or value < -1:
-            delta = up[1][ii] - nominal[1][ii] if value > 1 else down[1][ii] - nominal[1][ii]
-            result[1][ii] = delta * value
-        else:
-            du = up[1][ii] - nominal[1][ii]
-            dd = down[1][ii] - nominal[1][ii]
-            result[1][ii] = max(combine_shape_impl(value, du, dd), 0.)
-    return result
-
-def apply_model(templates, model, prefit):
-    # where templates is the dict containing postfit templates, for all channels and years before summing
-    # model is the output of get_model_at_minimum()
-    # and prefit is the file name with prefit templates ie ahtt_input.root
-    model = get_model_at_minimum(model)
-    #hnew = hist.Hist(*[ax.copy() for ax in h.axes], storage="Weight")
-    ccyy = f"{templates[channel]}_{templates[year]}"
-    shapes = {}
-    with uproot.open(prefit) as ff:
-        procs = list(sm_procs.keys())
-        ahtt = [f"{ss[0]}_m{ss[1]}_w{str(ss[2]).replace('.', 'p')}" for ss in signals if ss[0] != "Total"]
-        procs += [f"{ah}_{pp}" for ah in ahtt for pp in ["res", "pos", "neg"]]
-
-        tmp = {proc: ff["{ccyy}"][proc] for proc in procs}
-        tmp = {k: v for k, v in tmp.items() if v is not None}
-        tmp = {k: (sum(v.values()), v / sum(v.values())) for k, v in tmp.items()}
-        shapes["nominal"] = tmp
-
-        for param in model["value"].keys():
-            shapes[param] = {}
-            for dd in zip(["u", "d"], ["Up", "Down"]):
-                tmp = {proc: ff["{ccyy}"][f"{proc}_{param}{dd[1]}"] for proc in procs}
-                tmp = {k: v for k, v in tmp.items() if v is not None}
-                tmp = {k: (sum(v.values()), v / sum(v.values())) for k, v in tmp.items()}
-                shapes[param][dd[0]] = tmp
-
-    # TODO actual application of the "model"
-    # probably start from prefit nominal, and then shift by deltas as per NP value
-    # and the variance is added based on further shifts by NP value +- unc
-    # to check: ordering of application +- unc for shape (as above), lnN (overall scaling, on prefit nominal or final?), rateparam (same as lnN?)...
-    pass

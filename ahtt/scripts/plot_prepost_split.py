@@ -73,6 +73,7 @@ parser.add_argument("--project-to", help = "which variables to project down to, 
 parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut on mtt. must be sorted, otherwise applies no cut. if one value is outside mass range, plots binwise.",
                     dest = "cut", default = "", required = False,
                     type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
+parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
 args = parser.parse_args()
 args.logy = args.log or args.logy
 args.readbatch = args.readbatch and os.path.isfile(args.batch)
@@ -204,6 +205,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             elif symbol == r"$\psi_{\mathrm{t}}$":
                 signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
+            poi = ("sigma" if args.xsec else "mu", " \,\\mathrm{pb}" if args.xsec else "")
             if symbol == "A" or symbol == "H":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
@@ -215,27 +217,27 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\\mu(\\eta_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
             elif symbol == r"$\chi_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\mu(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\mu(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\\mu(\\chi_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
             elif symbol == r"$\psi_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\\mu(\\psi_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
@@ -263,9 +265,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     if fit == "p":
         fittype = "Prefit"
     elif fit == "b":
-        fittype = "Postfit (BG only)"
+        fittype = "Postfit (FO pQCD + BG)"
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (BG "
+        fittype = "Postfit (FO pQCD + BG "
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
         if "ChiT" in args.assignal:
@@ -274,7 +276,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
         fittype += ")"
     else:
-        fittype = "Postfit (BG + A/H)"
+        fittype = "Postfit (FO pQCD + BG + A/H)"
     if not single_slice:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
         labels.insert(0, " "*len(fittype))
@@ -441,9 +443,9 @@ def plot(channel, year, fit,
     if fit == "p":
         fittype = "Prefit"
     elif fit == "b":
-        fittype = "Postfit (BG only)"
+        fittype = "Postfit (FO pQCD + BG)"
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (BG "
+        fittype = "Postfit (FO pQCD + BG "
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
         if "ChiT" in args.assignal:
@@ -452,7 +454,7 @@ def plot(channel, year, fit,
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
         fittype += ")"
     else:
-        fittype = "Postfit (BG + A/H)"
+        fittype = "Postfit (FO pQCD + BG + A/H)"
     
     if args.panellabels:
         if args.panel == "upper":
@@ -478,7 +480,7 @@ def plot(channel, year, fit,
     elif args.panel != "upper":
         ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
-    if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]):
+    if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]) and fit != "b":
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
         xpos = 0.04 if single_slice else 0.01
@@ -508,7 +510,7 @@ def plot(channel, year, fit,
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
     if len(allsigs) == 0:
-        sstr = "bkg_"
+        sstr = "bkg"
     elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
         sstr = "__".join(args.assignal)
     else:
@@ -757,7 +759,7 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
 
         if fit != "p":
             if gvalues_p is None:
-                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi)
+                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi, 6.43 if args.xsec else 1)
             gvalues = gvalues_p
         else:
             gvalues = {}
