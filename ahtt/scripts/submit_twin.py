@@ -33,9 +33,9 @@ q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else 
 default_ndivision = 4 # i.e. in step of 1
 gstr_precision = 3
 
-def make_initial_grid(ndivision):
+def make_initial_grid(grange, ndivision):
     grid = []
-    gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
+    gvls = [list(np.linspace(grange[0], grange[1], num = ndivision)), list(np.linspace(grange[0], grange[1], num = ndivision))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
             grid.append( (ig1, ig2, 0) )
@@ -48,7 +48,15 @@ def default_nminmax(arg = ""):
         result.append(defaults[len(result)])
     return result
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = default_ndivision, randaround = (-1., -1.), randnminmax = default_nminmax()):
+def default_g_range(arg = ""):
+    result = [] if arg == "" else tokenize_to_list(remove_spaces_quotes(arg), ",", astype = float)
+    if len(result) >= 2:
+        result = result[:2]
+    if not (len(result) == 2 and sorted(result) and all([min_g <= rr <= max_g for rr in result])):
+        result = [min_g, max_g]
+    return result
+
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = default_g_range(), ndivision = default_ndivision, randaround = (-1., -1.), randnminmax = default_nminmax()):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -88,7 +96,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gtorun = [max(min_g, min(round(gvalue + (delta * sign), gstr_precision), max_g)) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    gtorun = [max(grange[0], min(round(gvalue + (delta * sign), gstr_precision), grange[1])) for gvalue, delta, sign in zip(around, deltas, signs)]
                     if tuple(gtorun) not in galready:
                         g_grid.append( tuple(gtorun) + (0,) )
                         ipoint += 1
@@ -165,13 +173,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
                             tmpgrid.append(gt + (0,))
-                    tmpgrid = list(set(make_initial_grid( ((ndivision - 1) * 2) + 1 )) - set(tmpgrid) - set(g_grid))
+                    tmpgrid = list(set(make_initial_grid(grange, ((ndivision - 1) * 2) + 1 )) - set(tmpgrid) - set(g_grid))
                 g_grid += tmpgrid
 
         return g_grid
 
     # default LO case
-    return make_initial_grid(ndivision)
+    return make_initial_grid(grange, ndivision)
 
 def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_dir):
     toylocs = []
@@ -218,6 +226,9 @@ if __name__ == '__main__':
                         type = lambda s: float(remove_spaces_quotes(s)))
     parser.add_argument("--fc-submit-also", help = submit_help_messages["--fc-submit-also"], default = "", dest = "fcsubalso", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
+
+    parser.add_argument("--fc-g-min-max", help = submit_help_messages["--fc-g-min-max"], default = default_g_range(),
+                        dest = "fcgrange", required = False, type = default_g_range)
 
     parser.add_argument("--fc-random-around", help = submit_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
                         required = False, type = lambda s: tuple([float(ss) for ss in tokenize_to_list( remove_spaces_quotes(s) )]))
@@ -456,8 +467,8 @@ if __name__ == '__main__':
                     gvalues = [tuple([float(gg) for gg in args.gvalues]) + (0,)]
                     toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
-                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
-                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else default_ndivision,
+                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, args.fcgrange,
+                                              int(math.ceil((args.fcgrange[1] - args.fcgrange[0]) / args.fcinit)) + 1 if args.fcgrange[0] < args.fcinit < args.fcgrange[1] else default_ndivision,
                                               args.fcrandaround, args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
