@@ -197,7 +197,7 @@ submit_help_messages = {
     "--fc-initial-distance": "initial distance between g grid points for FC scans",
     "--fc-submit-also": "sometimes, only one grid needs refining etc, but why not compute also the dNLL for other scenarii? it's cheap. same syntax as --fc-expect",
 
-    "--fc-g-min-max": "comma separated list of interval to scan g. reverts to default if format is unexpected.",
+    "--fc-g-min-max": "comma separated list of interval to scan g. can specify two intervals as [mina, maxa, minh, maxh]. reverts to default if format is unexpected.",
 
     "--fc-random-around": "g1, g2 point around which to sprinkle points and run toys for",
     "--fc-random-n-min-max": "relevant only in --fc-mode random. comma-separated list of three values.\n"

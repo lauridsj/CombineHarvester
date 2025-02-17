@@ -30,12 +30,12 @@ sqd = lambda p1, p2: sum([(pp2 - pp1)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 angle = lambda p1, p2: math.atan2(p2[1] - p1[1], p2[0] - p1[0])
 q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else sys.float_info.max
-default_ndivision = 4 # i.e. in step of 1
 gstr_precision = 3
 
-def make_initial_grid(grange, ndivision):
+def make_initial_grid(grange, spacing):
     grid = []
-    gvls = [list(np.linspace(grange[0], grange[1], num = ndivision)), list(np.linspace(grange[0], grange[1], num = ndivision))]
+    gvls = [list(np.linspace(grange[0], grange[1], num = math.ceil((grange[0] - grange[1]) / spacing[0]) + 1)),
+            list(np.linspace(grange[2], grange[3], num = math.ceil((grange[3] - grange[2]) / spacing[1]) + 1))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
             grid.append( (ig1, ig2, 0) )
@@ -48,15 +48,33 @@ def default_nminmax(arg = ""):
         result.append(defaults[len(result)])
     return result
 
-def default_g_range(arg = ""):
+def default_initial_distance(arg = ""):
     result = [] if arg == "" else tokenize_to_list(remove_spaces_quotes(arg), ",", astype = float)
     if len(result) >= 2:
         result = result[:2]
-    if not (len(result) == 2 and sorted(result) and all([min_g <= rr <= max_g for rr in result])):
-        result = [min_g, max_g]
+    elif len(result) == 1:
+        result = [result[0], result[0]]
+    if not (len(result) == 2 and all([0. < rr <= 1. for rr in result])):
+        result = (1., 1.)
+    return tuple(result)
+
+def default_g_range(arg = ""):
+    result = [] if arg == "" else tokenize_to_list(remove_spaces_quotes(arg), ",", astype = float)
+    if len(result) >= 4:
+        result = result[:4]
+    elif len(result) >= 2:
+        result = result[:2]
+
+    onerange = len(result) == 2 and sorted(result) and all([min_g <= rr <= max_g for rr in result])
+    tworange = len(result) == 4 and sorted(result[:2]) and sorted(result[2:4]) and all([min_g <= rr <= max_g for rr in result[:2]]) and all([min_g <= rr <= max_g for rr in result[2:4]])
+
+    if not (onerange or tworange):
+        result = [min_g, max_g, min_g, max_g]
+    elif onerange:
+        result += result
     return result
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = default_g_range(), ndivision = default_ndivision, randaround = (-1., -1.), randnminmax = default_nminmax()):
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = default_g_range(), initial_distance = (1., 1.), randaround = (-1., -1.), randnminmax = default_nminmax()):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -165,7 +183,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
                                 for half in halfsies:
                                     tmpgrid.append(half + (0,))
 
-                if len(tmpgrid) == 0 and ndivision <= 31:
+                if len(tmpgrid) == 0 and any([initdist >= 0.125 for initdist in initial_distance]):
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
                     # 31 is NNLO, if we have nothing within max sigma at 0.125 granularity uh oh that's a lot of points to scan
@@ -173,13 +191,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
                             tmpgrid.append(gt + (0,))
-                    tmpgrid = list(set(make_initial_grid(grange, ((ndivision - 1) * 2) + 1 )) - set(tmpgrid) - set(g_grid))
+                    tmpgrid = list(set(make_initial_grid(grange, (max(initial_distance[0] / 2., 0.125), max(initial_distance[1] / 2., 0.125)))) - set(tmpgrid) - set(g_grid))
                 g_grid += tmpgrid
 
         return g_grid
 
     # default LO case
-    return make_initial_grid(grange, ndivision)
+    return make_initial_grid(grange, initial_distance)
 
 def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_dir):
     toylocs = []
@@ -222,8 +240,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--fc-g-grid", help = submit_help_messages["--fc-g-grid"], default = "", dest = "fcgrid", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
-    parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
-                        type = lambda s: float(remove_spaces_quotes(s)))
+    parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = default_initial_distance(), dest = "fcinit", required = False,
+                        type = default_initial_distance)
     parser.add_argument("--fc-submit-also", help = submit_help_messages["--fc-submit-also"], default = "", dest = "fcsubalso", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
 
@@ -467,9 +485,7 @@ if __name__ == '__main__':
                     gvalues = [tuple([float(gg) for gg in args.gvalues]) + (0,)]
                     toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
-                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, args.fcgrange,
-                                              int(math.ceil((args.fcgrange[1] - args.fcgrange[0]) / args.fcinit)) + 1 if args.fcgrange[0] < args.fcinit < args.fcgrange[1] else default_ndivision,
-                                              args.fcrandaround, args.fcrandnminmax)
+                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, args.fcgrange, args.fcinit, args.fcrandaround, args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
