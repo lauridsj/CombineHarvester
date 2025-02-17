@@ -34,7 +34,7 @@ gstr_precision = 3
 
 def make_initial_grid(grange, spacing):
     grid = []
-    gvls = [list(np.linspace(grange[0], grange[1], num = math.ceil((grange[0] - grange[1]) / spacing[0]) + 1)),
+    gvls = [list(np.linspace(grange[0], grange[1], num = math.ceil((grange[1] - grange[0]) / spacing[0]) + 1)),
             list(np.linspace(grange[2], grange[3], num = math.ceil((grange[3] - grange[2]) / spacing[1]) + 1))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
