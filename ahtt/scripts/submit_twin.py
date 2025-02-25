@@ -132,7 +132,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
             if gmode == "refine":
                 mintoy = sys.maxsize
                 for gv in contour["g-grid"].keys():
-                    mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
+                    mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None and contour["g-grid"][gv]["pass"] < generate_g_grid.nomore else sys.maxsize)
 
                 cuts = [mintoy > (generate_g_grid.atleast / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cut else 0 for cut in cuts]) < 1:
@@ -142,9 +142,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
-                # add the best fit point into list of grid points, by construction the 0 sigma point
-                gts.append((round(best_fit[0], gstr_precision), round(best_fit[1], gstr_precision)))
-                effs.append(1.)
+                # DO NOT ADD THE BEST FIT POINT - IT BREAKS REGULARITY AND AMPLIFIES POISSON NOISE
 
                 tmpgrid = []
                 nnearest = 3
