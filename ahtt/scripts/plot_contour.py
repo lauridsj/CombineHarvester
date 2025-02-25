@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 import matplotlib.lines as mln
 import matplotlib.colors as mcl
+import matplotlib.ticker as mtc
 
 from drawings import min_g, max_g, epsilon, axes, first, second, get_point, str_point
 from drawings import default_etat_measurement, etat_blurb
@@ -43,11 +44,11 @@ def read_contour(cfiles):
             contours[ii]["g1"].append( float(gv.replace(" ", "").split(",")[0]) )
             contours[ii]["g2"].append( float(gv.replace(" ", "").split(",")[1]) )
             contours[ii]["eff"].append( cc["g-grid"][gv]["pass"] / cc["g-grid"][gv]["total"] )
-            contours[ii]["min"] = min(contours[ii]["min"], cc["g-grid"][gv]["total"])
+            contours[ii]["min"] = min(contours[ii]["min"], cc["g-grid"][gv]["total"]) if cc["g-grid"][gv]["pass"] < 25 else contours[ii]["min"]
 
     return contours
 
-def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, a343bkg, transparent):
+def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, drawcontour, bestfit, scatter, formal, cmsapp, luminosity, a343bkg, transparent):
     contours = read_contour(cfiles)
     ncontour = len(contours)
     alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
@@ -66,6 +67,12 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
     fig, ax = plt.subplots(dpi=600)
     handles = []
     sigmas = []
+
+    xlength = intervals[0][1] - intervals[0][0]
+    ylength = intervals[1][1] - intervals[1][0]
+
+    xmin, xmax = intervals[0]
+    ymin, ymax = intervals[1]
 
     for ic, contour in enumerate(contours):
         colortouse = draw_contour.colors[len(contours)][ic]
@@ -92,7 +99,7 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
 
         for isig in range(maxsigma):
             if ic == 0 and maxsigma > 1:
-                if isig > 1:
+                if isig > 1 or propersig:
                     sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"$\pm" + str(isig + 1) + r"\sigma$"))
                 elif isig == 1:
                     sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_contour.lines[isig], linewidth = 2), r"95% CL"))
@@ -115,14 +122,16 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
 
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 26, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 26, loc = "top")
+    plt.xlim(*intervals[0])
+    plt.ylim(*intervals[1])
     ax.margins(x = 0, y = 0)
 
     if not scatter:
         if len(handles) > 0 and len(sigmas) > 0:
-            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = (0.75, 0.65, 0.225, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 1., frameon = False)
+            legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'lower left', bbox_to_anchor = (0.6, 0.0, 0.2, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 0.5, frameon = False)
             ax.add_artist(legend1)
 
-            legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = (0.75, 0., 0.25, 0.2), fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+            legend2 = ax.legend(first(handles), second(handles), loc = 'lower left', bbox_to_anchor = (0., 0.73, 0.1, 0.15), fontsize = 21, handlelength = 2., borderaxespad = 0.5, frameon = False)
             ax.add_artist(legend2)
 
         elif len(handles) > 0:
@@ -132,18 +141,18 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
 
     if formal:
         ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text(0.03 * max_g, 0.96 * max_g, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
+        ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
         if cmsapp != "":
             atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text(0.03 * max_g, 0.90 * max_g, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+            ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
 
         ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text(0.985 * max_g, 0.97 * max_g, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+        ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = (0.85, 0.55, 0.15, 0.15),
+        ax.legend(bbln, btxt, loc = 'lower left', bbox_to_anchor = (0.56, 0.82, 0.15, 0.15),
                   fontsize = 17 if len(btxt) > 1 else 17, frameon = False,
                   handlelength = 0, handletextpad = 0, borderaxespad = 0.4)
 
@@ -152,7 +161,15 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, drawcontour,
     ax.tick_params(axis = "both", which = "major", width = 1, length = 8, labelsize = 22, pad = 10)
     ax.tick_params(axis = "both", which = "minor", width = 1, length = 3)
 
+    ax.xaxis.set_major_locator(mtc.MultipleLocator(base = 0.5))
+    ax.yaxis.set_major_locator(mtc.MultipleLocator(base = 0.5))
+    #if xlength < 5 and xmin == int(xmin) and xmax == int(xmax):
+    #    ax.xaxis.set_major_locator(mtc.MultipleLocator(base = 1))
+    #if ylength < 5 and ymin == int(ymin) and ymax == int(ymax):
+    #    ax.yaxis.set_major_locator(mtc.MultipleLocator(base = 1))
+
     fig.set_size_inches(8., 8.)
+    fig.set_dpi(600)
     fig.tight_layout()
 
     for oname in onames:
@@ -193,7 +210,8 @@ if __name__ == '__main__':
                         dest = "drawcontour", action = "store_false", required = False)
     parser.add_argument("--proper-sigma", help = "use proper 1 or 2 sigma CLs instead of 68% and 95% in alphas",
                         dest = "propersig", action = "store_true", required = False)
-
+    parser.add_argument("--intervals", help = "semicolon-separated intervals of above 2 parameters to draw. an interval is specified as comma-separated minmax. must be either not given, or exactly 2.",
+                        dest = "intervals", type = lambda s: [tokenize_to_list(minmax, astype = float) for minmax in tokenize_to_list(remove_spaces_quotes(s), token = ';')], default = [[min_g, max_g], [min_g, max_g]], required = False)
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
                         dest = "formal", action = "store_true", required = False)
     parser.add_argument("--cms-append", help = "text to append to the CMS text, if --formal is used", dest = "cmsapp", default = "", required = False)
@@ -273,5 +291,5 @@ if __name__ == '__main__':
         print("drawing contours for pair: ", pair)
         print("using the following contours: ", contour)
         draw_contour(["{ooo}/{prs}_fc-contour{tag}{fmt}".format(ooo = args.odir, prs = pstr, tag = args.ptag, fmt = fmt) for fmt in args.fmt], pair, contour, args.label,
-                     args.maxsigma, args.propersig, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
+                     args.maxsigma, args.propersig, args.intervals, args.drawcontour, args.bestfit, args.scatter, args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
         print()
