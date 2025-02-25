@@ -110,11 +110,12 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
                 if imax <= imin:
                     imin, imax = default_nminmax()[1:]
                 ipoint = 0
+                gminmax = [[grange[0], grange[1]], [grange[2], grange[3]]]
 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gtorun = [max(grange[0], min(round(gvalue + (delta * sign), gstr_precision), grange[1])) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    gtorun = [round(max(gmm[0], min(gvalue + (delta * sign), gmm[1])), gstr_precision) for gvalue, delta, sign, gmm in zip(around, deltas, signs, gminmax)]
                     if tuple(gtorun) not in galready:
                         g_grid.append( tuple(gtorun) + (0,) )
                         ipoint += 1
@@ -146,7 +147,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
 
                 tmpgrid = []
                 nnearest = 3
-                minsqd = 2.**-9
+                minsqd = 2.**-10
                 for gt, eff in zip(gts, effs):
                     unary_q1sqd = lambda pp: q1sqd(gt, pp[0])
                     gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
@@ -181,7 +182,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = d
                                 for half in halfsies:
                                     tmpgrid.append(half + (0,))
 
-                if len(tmpgrid) == 0 and any([initdist >= 0.125 for initdist in initial_distance]):
+                if len(tmpgrid) == 0 and any([initdist >= math.sqrt(minsqd) for initdist in initial_distance]):
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
                     # 31 is NNLO, if we have nothing within max sigma at 0.125 granularity uh oh that's a lot of points to scan
