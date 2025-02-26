@@ -115,9 +115,9 @@ def single_point_scan(args):
                     [syscall, "rm {fn}".format(fn = fname), False]
                 ],
 
-                all_strategies = [(False, 1, 0), (False, 1, 1), (False, 2, 1)],
+                all_strategies = [(False, 0, 0), (False, 0, 1), (False, 0, 2), (False, 0, 3), (False, 1, 3), (False, 2, 3)],
                 throw_upon_failure = False,
-                first_fit_strategy = first_strategy if first_strategy > -1 else 1
+                first_fit_strategy = first_strategy if first_strategy > -1 else 0
             )
 
             limit = get_limit(fname)
@@ -288,7 +288,7 @@ if __name__ == '__main__':
                 dcd = workspace,
                 mmm = mstr,
                 acc = accuracies,
-                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 asm = "--run blind -t -1" if args.asimov else "",
                 msk = "--setParameters '" + ",".join(masks) + "'" if len(masks) > 0 else "",
                 poi = "--redefineSignalPOIs '{poi}'".format(poi = poiset[0]) if len(poiset) == 1 else ""
@@ -377,7 +377,7 @@ if __name__ == '__main__':
         syscall("combineTool.py -v 0 -M Impacts -d {dcd} -m {mmm} --doInitialFit -n _pull {stg} {asm} {poi} {prm} {ext}".format(
             dcd = workspace,
             mmm = mstr,
-            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1, robust = True, use_hesse = args.usehesse),
+            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0, robust = True, use_hesse = args.usehesse),
             asm = "-t -1" if args.asimov else "",
             poi = "--redefineSignalPOIs '{poi}'".format(poi = poiset[0]),
             prm = set_parameter(set_freeze, args.extopt, masks),
@@ -411,7 +411,7 @@ if __name__ == '__main__':
                 #],
 
                 usehesse = args.usehesse,
-                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
         print "\nsingle_point_ahtt :: collecting impact results"

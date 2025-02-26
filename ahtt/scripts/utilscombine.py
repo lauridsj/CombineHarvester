@@ -285,7 +285,7 @@ def is_good_fit(fit_fname, fit_names):
     return all_good
 
 def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result_names = None, post_conditions = [], failure_cleanups = [],
-                            usehesse = False, robustness = [True, False], strategies = list(range(1, 3)), tolerances = list(range(2)),
+                            usehesse = False, robustness = [True, False], strategies = list(range(3)), tolerances = list(range(2)),
                             all_strategies = None, throw_upon_failure = True, first_fit_strategy = -1):
     '''
     run fits with multiple settings until one works
@@ -310,7 +310,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
 
     the rest of the args are bunch of fit settings to try
     '''
-    if first_fit_strategy > 1:
+    if first_fit_strategy > 0:
         istrat = strategies.index(first_fit_strategy)
         strategies[0], strategies[istrat] = strategies[istrat], strategies[0]
     all_strategies = [(irobust, istrat, itol) for irobust in robustness for istrat in strategies for itol in tolerances] if all_strategies is None else all_strategies

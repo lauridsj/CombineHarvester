@@ -194,7 +194,7 @@ def channel_compatibility_fits(workspace, pois, scenarii, extopt, trkparam, onam
 
             tolerances = list(range(4)),
             usehesse = args.usehesse,
-            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
         )
 
         syscall("mv higgsCombine_{sce}.MultiDimFit.mH*.root xxtmpxx_{sce}.root".format(sce = scenario), False, True)
@@ -468,7 +468,7 @@ if __name__ == '__main__':
             mmm = mstr,
             snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
             par = set_parameter(elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks),
-            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+            stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
             toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys",
             poi = "--redefineSignalPOIs '{poi}'".format(poi = ','.join(poiset))
         ))
@@ -531,7 +531,7 @@ if __name__ == '__main__':
 
                 tolerances = list(range(4)),
                 usehesse = args.usehesse,
-                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
             syscall("mv higgsCombine_{snm}.GoodnessOfFit.mH{mmm}*.root {dcd}{ptg}_{snm}.root".format(
@@ -550,7 +550,7 @@ if __name__ == '__main__':
                 dcd = workspace,
                 mmm = mstr,
                 snm = scan_name,
-                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                 opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                 svt = "--saveToys" if args.savetoy else "",
@@ -633,7 +633,7 @@ if __name__ == '__main__':
 
                     tolerances = list(range(4)),
                     usehesse = args.usehesse,
-                    first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+                    first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
                 )
 
                 syscall("mv higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root {dcd}{ptg}_fc-scan_{snm}.root".format(
@@ -657,7 +657,7 @@ if __name__ == '__main__':
                         msk = "," + ",".join(masks) if len(masks) > 0 else "",
                         nus = "",
                         nuf = "",
-                        stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+                        stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
                         ext = nonparametric_option(args.extopt),
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
@@ -763,7 +763,7 @@ if __name__ == '__main__':
                 mmm = mstr,
                 snm = "toygen_" + str(args.runidx) if not args.runidx < 0 else "toygen",
                 prm = set_parameter(wspprm[0], "", []),
-                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 1),
+                stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                 toy = "-s -1 --toysFrequentist -t " + str(args.ntoy) + " --saveToys"
             ))
             tname = "{ptg}_toys_{cct}{toy}{idx}.root".format(
@@ -942,7 +942,7 @@ if __name__ == '__main__':
 
             optimize = False,
             usehesse = args.usehesse,
-            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+            first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
         )
 
     if runpsfromws:
@@ -1059,7 +1059,7 @@ if __name__ == '__main__':
                 ],
 
                 usehesse = args.usehesse,
-                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 1
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
         if nelement > 1:
