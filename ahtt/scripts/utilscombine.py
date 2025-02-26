@@ -16,7 +16,7 @@ TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
 min_g = 0.
-max_g = 3.
+max_g = 1.5
 
 def problematic_datacard_log(logfile):
     if not hasattr(problematic_datacard_log, "problems"):
@@ -179,14 +179,14 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
     if not usedefault and not useexisting:
         # ok there really isnt a best fit file, make them
         print ("\nxxx_point_ahtt :: making best fits")
-        for asm in [not asimov, asimov]:
+        for asm in ([True] if asimov else [True, False]):
             workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
             syscall("rm robustHesse_*.root", False, True)
 
             newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
-                rnm = "single" if "single" in runmode else "best-fit",
+                rnm = "cross" if "cross" in runmode else "single" if "single" in runmode else "best-fit",
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
                 mod = "_" + modifier if modifier != "" else "",
@@ -361,7 +361,7 @@ def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, e
 def make_datacard_with_args(scriptdir, args):
     syscall("{scr}/make_datacard.py --signal {sig} --background {bkg} --point {pnt} --channel {ch} --year {yr} "
             "{psd} {inj} {ass} {exc} {tag} {drp} {kee} {kfc} {thr} {lns} {shp} {mcs} {rpr} "
-            "{igb} {prj} {cho} {rep} {arn} {rsd}".format(
+            "{igb} {prj} {cho} {rep} {arn} {rsd} {esj} {esl} {ess}".format(
                 scr = scriptdir,
                 pnt = ','.join(args.point),
                 sig = args.signal,
@@ -388,6 +388,9 @@ def make_datacard_with_args(scriptdir, args):
                 rep = clamp_with_quote(string = args.repnom, prefix = '--replace-nominal '),
                 arn = clamp_with_quote(string = args.arbnorm, prefix = '--arbitrary-resonance-normalization '),
                 rsd = clamp_with_quote(string = str(args.seed), prefix = '--seed '),
+                esj = clamp_with_quote(string = args.esu_scale_json, prefix = '--esu-scale-json '),
+                esl = clamp_with_quote(string = args.esu_scale_to_lumi, prefix = '--esu-scale-to-lumi '),
+                ess = "--esu-scale-systs" if args.esu_scale_systs else "",
             ))
 
 def update_mask(masks):

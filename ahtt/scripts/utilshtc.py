@@ -155,7 +155,7 @@ def flush_jobs():
 
 def common_job(args):
     argstr = (" {sus} {inj} {ass} {exc} {tag} {drp} {kee} {bkg} {cha} {yyy} {thr} {lns} {shp} {mcs} {rpr} {msk} {igb} {prj} "
-              "{cho} {rep} {arn} {fst} {hes} {kbf} {dws} {fr0} {frn} {frp} {rsd} {poi} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
+              "{cho} {rep} {arn} {esj} {esl} {ess} {fst} {hes} {kbf} {dws} {fr0} {frn} {frp} {rsd} {poi} {asm} {com} {dbg} {ext} {otg} {bsd}").format(
                   sus = "--sushi-kfactor" if args.kfactor else "",
                   inj = clamp_with_quote(string = args.inject, prefix = '--inject-signal '),
                   ass = clamp_with_quote(string = args.assignal, prefix = '--as-signal '),
@@ -194,7 +194,10 @@ def common_job(args):
                       prefix = '--extra-option{s}'.format(s = '=' if args.extopt.startswith('-') else ' ')
                   ),
                   otg = clamp_with_quote(string = args.otag, prefix = '--output-tag '),
-                  bsd = "" if args.rundc else "--base-directory " + os.path.abspath("./")
+                  bsd = "" if args.rundc else "--base-directory " + os.path.abspath("./"),
+                  esj = clamp_with_quote(string = args.esu_scale_json, prefix = '--esu-scale-json '),
+                  esl = clamp_with_quote(string = args.esu_scale_to_lumi, prefix = '--esu-scale-to-lumi '),
+                  ess = "--esu-scale-systs" if args.esu_scale_systs else "",
               )
     return argstr
 

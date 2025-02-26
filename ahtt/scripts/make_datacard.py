@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import os
 import sys
 import math
+import json
 
 import glob
 from datetime import datetime
@@ -73,6 +74,56 @@ def get_lo_ratio(sigpnt, channel, mtop):
 
     # ratio of [res, pos, neg] xsecs, syst / nominal, in the syst ordering above
     return rvals
+
+def apply_esu_scaling(h, procname):
+    fac = 1.
+    if esu_scale_dict is not None:
+        if procname in esu_scale_dict:
+            fac *= esu_scale_dict[procname]
+    if args.esu_scale_to_lumi is not None:
+        fac *= args.esu_scale_to_lumi / 138.
+    #print "Scaling proc " + procname + " by " + str(fac)
+    scale(h, fac)
+
+    # adjust MC error
+    if args.esu_scale_systs:
+        if "EWQCD" in procname:
+            # data-driven - scale by lumi
+            sfac = math.sqrt(138. / args.esu_scale_to_lumi)
+        else:
+            # MC stats - assumed to be neglibile
+            sfac = 0.
+        for ii in range(1, h.GetNbinsX() + 1):
+            h.SetBinError(ii, h.GetBinError(ii) * abs(sfac))
+
+def apply_esu_scaling_syst(h, odir, process, systname):
+    if args.esu_scale_systs:
+        theory_systs = ["QCDscale", "tmass", "hdamp", "EWK_scheme", "CR_", "PDF", "UEtune", "EWQCD"]
+        exp_systs = ["eff_e", "eff_mu", "eff_trigger", "eff_b", "fake_b", "JEC", "JER", "pileup"]
+        sfac = 1
+        if any([s in systname for s in theory_systs]):
+            sfac = 0.5
+        elif any([s in systname for s in exp_systs]) and args.esu_scale_to_lumi is not None:
+            sfac = math.sqrt(138. / args.esu_scale_to_lumi)
+        
+        if sfac != 1:
+            print "Scaling syst " + systname + " by " + str(sfac)
+            hnom = read_original_nominal(odir, process)
+            hn = h.GetName()
+            h = add_scaled_nuisance(h, hnom, hnom, sfac)
+            h.SetName(hn)
+    return h
+
+def apply_esu_scaling_lnN(lnN, systname):
+    if args.esu_scale_systs:
+        theory_systs = ["norm_13TeV", "EWK_yukawa"]
+        exp_systs = ["lumi"]
+        if any([s in systname for s in theory_systs]):
+            return 0.5 * lnN
+        elif any([s in systname for s in exp_systs]) and args.esu_scale_to_lumi is not None:
+            sfac = math.sqrt(138. / args.esu_scale_to_lumi)
+            return sfac * lnN
+    return lnN
 
 # assumption is some specific list is fully correlated, others fully uncorrelated
 def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata,
@@ -254,10 +305,12 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                         ofile.cd(odir)
 
                         hn = key.ReadObj()
+                        apply_esu_scaling(hn, kname)
                         if bin_masks is not None:
                             zero_out(hn, bin_masks)
                         if projection_rule != "":
                             hn = project(hn, projection_rule)
+                        
 
                         zero_out(hn)
                         hn.Write()
@@ -295,6 +348,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                 processes.append((pnt, fname))
 
                 hn = ifile.Get(idir + '/' + pnt)
+                apply_esu_scaling(hn, pnt)
                 if bin_masks is not None:
                     zero_out(hn, bin_masks)
                 if projection_rule != "":
@@ -314,6 +368,8 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     if arbfactor is not None:
                         scale(hn, arbfactor)
 
+                
+                
                 ofile.cd(odir)
                 hn.Write()
 
@@ -376,6 +432,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
                     continue
                 hc = ifile.Get(idir + '/' + "_chi2".join(kname.rsplit("Up", 1))) if keys.Contains("_chi2".join(kname.rsplit("Up", 1))) else None
 
+                apply_esu_scaling(hu, pp)
+                apply_esu_scaling(hd, pp)
+
                 if bin_masks is not None:
                     zero_out(hu, bin_masks)
                     zero_out(hd, bin_masks)
@@ -392,7 +451,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 # extra messing around for tmass
                 # also set the keys determining which kfactor to be read
-                if "tmass" in nn2:
+                if "tmass" in nn2 and drops != ['*'] and not "tmass" in drops:
                     # original template names to be used later
                     nu = hu.GetName()
                     nd = hd.GetName()
@@ -545,6 +604,9 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
 
                 hu.SetName(hu.GetName().replace(nn1, nn2))
                 hd.SetName(hd.GetName().replace(nn1, nn2))
+
+                hu = apply_esu_scaling_syst(hu, odir, pp, nn2)
+                hd = apply_esu_scaling_syst(hd, odir, pp, nn2)
 
                 if replaces is not None:
                     for rn in replaces:
@@ -747,7 +809,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                 ("CMS_TQ_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TQ", 1.15),
                 ("CMS_TW_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TW", 1.15),
                 ("CMS_TB_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TB", 1.15),
-                ("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (0.948, 1.044)), # down, up
+                #("CMS_TT_norm_13TeV", ("2016pre", "2016post", "2017", "2018"), "TT", (0.948, 1.044)), # down, up
             ))
         ])
         write_datacard.lnNs["ee"] = write_datacard.lnNs["ll"]
@@ -817,7 +879,8 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
                     if year in lnN[1] and (lnN[2] == "all" or lnN[2] == process):
                         if rateparam is None or all(["CMS_{rp}_norm_13TeV".format(rp = rp) != lnN[0] for rp in rateparam]):
                             groups[cc]["norm"].append(lnN[0])
-                            cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnN[3]))
+                            lnnunc = 1 + apply_esu_scaling_lnN(lnN[3] - 1, lnN[0])
+                            cb.cp().process([process]).AddSyst(cb, lnN[0], "lnN", ch.SystMap("bin_id")([ii], lnnunc))
 
     cb.cp().backgrounds().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     cb.cp().signals().ExtractShapes(oname, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -855,13 +918,15 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
 
 
     ewkttbkg = set([pp for pp in cpn[cc] for cc in cpn.keys() if "EWK_TT" in pp and (assig is None or not pp in assig)])
-    if len(ewkttbkg) == 6:
+    if len(ewkttbkg) == 6 and not "EWK_yukawa" in drops:
         for tt in txts:
             cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
             groups[cc]["theory"].append("EWK_yukawa")
             groups[cc]["norm"].append("EWK_const")
+            yt_up = round(apply_esu_scaling_lnN(0.11, "EWK_yukawa"), 3)
+            yt_down = round(apply_esu_scaling_lnN(0.12, "EWK_yukawa"), 3)
             with open(tt, 'a') as txt:
-                txt.write("\nEWK_yukawa param 1 -0.12/+0.11")
+                txt.write("\nEWK_yukawa param 1 -{ytd}/+{ytu}".format(ytd=yt_down, ytu=yt_up))
                 txt.write("\nEWK_yukawa rateParam * EWK_TT_lin_pos 1 [0,5]")
                 txt.write("\nmEWK_yukawa rateParam * EWK_TT_lin_neg (-@0) EWK_yukawa")
                 txt.write("\nEWK_yukawa2 rateParam * EWK_TT_quad_pos (@0*@0) EWK_yukawa")
@@ -950,6 +1015,9 @@ if __name__ == '__main__':
                         type = lambda s: None if s == "" else 5. if s.lower() in ["true", "default"] else float(s))
 
     parser.add_argument("--add-pseudodata", help = combine_help_messages["--add-pseudodata"], dest = "pseudodata", action = "store_true", required = False)
+    parser.add_argument("--esu-scale-json", default=None, dest="esu_scale_json")
+    parser.add_argument("--esu-scale-to-lumi", default=None, dest="esu_scale_to_lumi", type=float)
+    parser.add_argument("--esu-scale-systs", action="store_true", dest="esu_scale_systs")
     args = parser.parse_args()
 
     allyears = ["2016pre", "2016post", "2017", "2018"]
@@ -972,6 +1040,12 @@ if __name__ == '__main__':
         raise RuntimeError("unexpected projection instruction syntax. aborting")
     prj_rules = {tuple(tokenize_to_list(pp[0])): pp[1:] for pp in prj_summary}
 
+    if args.esu_scale_json is not None and args.esu_scale_json != "":
+        with open(args.esu_scale_json) as jf:
+            esu_scale_dict = json.load(jf)
+    else:
+        esu_scale_dict = None
+    
     if args.inject is not None:
         args.pseudodata = True
 

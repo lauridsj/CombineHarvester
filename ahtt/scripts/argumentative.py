@@ -154,6 +154,9 @@ def make_datacard_forwarded(parser):
     parser.add_argument("--replace-nominal", help = combine_help_messages["--replace-nominal"], dest = "repnom", default = "", required = False)
     parser.add_argument("--arbitrary-resonance-normalization", help = combine_help_messages["--arbitrary-resonance-normalization"],
                         dest = "arbnorm", default = "", required = False)
+    parser.add_argument("--esu-scale-json", default="", dest="esu_scale_json")
+    parser.add_argument("--esu-scale-to-lumi", default="", dest="esu_scale_to_lumi")
+    parser.add_argument("--esu-scale-systs", action="store_true", dest="esu_scale_systs")
     return parser
 
 def parse_args(parser):
