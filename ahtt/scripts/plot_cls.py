@@ -91,6 +91,9 @@ if __name__ == '__main__':
     parser.add_argument("--drop",
                         help = "comma separated list of points to be dropped. 'XX, YY' means all points containing XX or YY are dropped.",
                         default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
+    parser.add_argument("--keep",
+                        help = "comma separated list of points to be kept. 'XX, YY' means all points containing XX or YY are kept.",
+                        default = "", required = False, type = lambda s: [] if s == "" else tokenize_to_list( remove_spaces_quotes(s) ) )
     parser.add_argument("--opaque-background", help = "make the background white instead of transparent",
                         dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
@@ -99,6 +102,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     adir = [[pnt for pnt in sorted(glob.glob('A*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
     hdir = [[pnt for pnt in sorted(glob.glob('H*_w*' + tag.split(':')[0])) if len(args.drop) == 0 or not any([dd in pnt for dd in args.drop])] for tag in args.itag]
+    if len(args.keep) > 0:
+        adir = [[pnt for pnt in l if any(k in pnt for k in args.keep)] for l in adir]
+        hdir = [[pnt for pnt in l if any(k in pnt for k in args.keep)] for l in hdir]
     otags = [tag.split(':')[1] if len(tag.split(':')) > 1 else tag.split(':')[0] for tag in args.itag]
 
     apnt = [[get_point(pnt) for pnt in directory] for directory in adir]
