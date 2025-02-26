@@ -343,7 +343,7 @@ if __name__ == '__main__':
     print "the following channel x year combinations will be masked:", args.mask
 
     allmodes = ["datacard", "workspace", "validate",
-                "best", "best-fit", "single",
+                "best", "best-fit", "single", "cross",
                 "generate", "gof", "fc-scan", "contour", "chancomp",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
@@ -357,6 +357,7 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
     runsingle = "single" in modes
+    runcross = "cross" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
@@ -371,11 +372,15 @@ if __name__ == '__main__':
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
-    runbest = runsingle or runbest or rundc
+    runbest = runsingle or runbest or rundc or runcross
     args.keepbest = False if runbest else args.keepbest
 
     if runsingle:
         args.extopt += " --algo singles --cl=0.68"
+    if runcross:
+        args.extopt += " --algo cross --cl=0.68"
+    if runsingle and runcross:
+        raise RuntimeError("too stupid to do cross and single in same run")
 
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
@@ -449,7 +454,7 @@ if __name__ == '__main__':
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov,
-        "single" if runsingle else "", '__'.join(poiset) if notah else "",
+        "cross" if runcross else "single" if runsingle else "", '__'.join(poiset) if notah else "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
@@ -613,7 +618,8 @@ if __name__ == '__main__':
                         stg = "{fit_strategy}",
                         asm = "-t -1" if fcexp != "obs" else "",
                         toy = "-s -1",
-                        ext = nonparametric_option(args.extopt),
+                        #ext = nonparametric_option(args.extopt),
+                        ext = args.extopt,
                         #wsp = "--saveWorkspace --saveSpecifiedNuis=all" if False else ""
                     ),
 
@@ -647,6 +653,11 @@ if __name__ == '__main__':
             print "\ntwin_point_ahtt :: performing the FC scan for toys"
 
             setpar, frzpar = ([], [])
+            nus = ""
+            nuf = ""
+            if len(args.frznzro) > 0:
+                nus = "," + ",".join([s.split(":")[0] + "=" + s.split(":")[1] for s in args.frznzro])
+                nuf = "--freezeParameters " + ",".join([s.split(":")[0] for s in args.frznzro])
             syscall("combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed --fixedPointPOIs '{par}' "
                     "--setParameters '{par}{msk}{nus}' {nuf} {stg} {toy} {ext} {opd} {svt}".format(
                         dcd = workspace,
@@ -654,11 +665,12 @@ if __name__ == '__main__':
                         snm = scan_name + identifier,
                         par = "g1=" + gvalues[0] + ",g2=" + gvalues[1],
                         msk = "," + ",".join(masks) if len(masks) > 0 else "",
-                        nus = "",
-                        nuf = "",
+                        nus = nus,
+                        nuf = nuf,
                         stg = fit_strategy(strategy = args.fitstrat if args.fitstrat > -1 else 0),
                         toy = "-s -1 --toysFrequentist -t " + str(args.ntoy),
-                        ext = nonparametric_option(args.extopt),
+                        #ext = nonparametric_option(args.extopt),
+                        ext = args.extopt,
                         opd = "--toysFile '" + args.toyloc + "'" if readtoy else "",
                         #byp = "--bypassFrequentistFit --fastScan" if False else "",
                         svt = "--saveToys" if args.savetoy else ""

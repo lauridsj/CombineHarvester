@@ -316,7 +316,7 @@ if __name__ == '__main__':
             syscall("rm {fexp}".format(fexp = fexp), False, True)
             limits = OrderedDict()
 
-            gvals = chunks(list(np.linspace(min_g, max_g, num = 193)), args.nchunk)[args.ichunk]
+            gvals = chunks(list(np.linspace(min_g, max_g, num = 97)), args.nchunk)[args.ichunk]
             lll = dotty_scan(
                 (gvals, workspace, mstr, args.fitstrat, accuracies, args.asimov, masks)
             )
