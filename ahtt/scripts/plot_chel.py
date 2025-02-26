@@ -11,7 +11,7 @@ mplhep.style.use(mplhep.style.CMS)
 # currently hardcoded to read the A/H prefit signals from...
 ah_signals_dir = "/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
 
-def unc_from_covar(total_covar, ittmin, ittmax, which="chel"):
+def projected_covar(total_covar, ittmin, ittmax, which="chel"):
     variance = np.zeros((3,3))
 
     channels = ["ee", "em", "mm"]
@@ -47,8 +47,8 @@ def unc_from_covar(total_covar, ittmin, ittmax, which="chel"):
                 continue
             variance[isum,jsum] += total_covar[i,j]
 
-    err = np.sqrt(np.diag(variance))
-    return err
+    #err = np.sqrt(np.diag(variance))
+    return variance
 
 def plot(yields_bg, errs_bg, yields_data, yields_signals, labels_signals, colors_signals, fittype, whichvar, outfile):
     fig, (ax1,ax2) = plt.subplots(nrows=2,dpi=600, figsize=(8,10), sharex=True)
@@ -117,7 +117,24 @@ def plot(yields_bg, errs_bg, yields_data, yields_signals, labels_signals, colors
     plt.savefig(outfile)
     plt.close()
 
-
+def plot_covar(covar, which, labels, outfile):
+    plt.figure(figsize=(7,7))
+    edges = np.linspace(-1,1,4)
+    widths = (edges[1:]-edges[:-1])
+    centers = edges[:-1] +widths/2
+    #plt.imshow(covar, origin="lower", extent=[edges[0],edges[-1],edges[0],edges[-1]])
+    varlabel = "$c_{\\mathrm{hel}}$" if which == "chel" else "$c_{\\mathrm{han}}$"
+    #binlabels = [
+    #    f"{edges[i]:.1f} < {varlabel} < {edges[i+1]:.1f}" for i in range(len(edges)-1)
+    #]
+    #plt.xticks(centers, binlabels, rotation=45, fontsize=13)
+    #plt.yticks(centers, binlabels, fontsize=13)
+    #plt.colorbar()
+    mplhep.hist2dplot(np.around(covar, 2), xbins=edges, ybins=edges, labels=labels)
+    plt.xlabel(varlabel)
+    plt.ylabel(varlabel)
+    plt.savefig(outfile, bbox_inches="tight")
+    plt.close()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("infile", help="FitDiagnostics output root file")
@@ -214,7 +231,8 @@ for fittype in ["prefit", "postfit"]:
     yield_data_sum = yield_data.reshape(3,3,20).T.sum(axis=sum_axis)
     yield_data_sl = yield_data_sum[imttmin:imttmax].sum(axis=0)
 
-    err_bg_sl = unc_from_covar(total_covar, imttmin, imttmax, which=args.which)
+    covar_bg_sl = projected_covar(total_covar, imttmin, imttmax, which=args.which)
+    err_bg_sl = np.sqrt(np.diag(covar_bg_sl))
 
     if fittype == "prefit" and ("A" in signals_to_plot or "H" in signals_to_plot):
         yield_A = np.zeros(180)
@@ -270,4 +288,21 @@ for fittype in ["prefit", "postfit"]:
         fittype=fittype,
         whichvar=args.which,
         outfile=outfile
+    )
+
+    plot_covar(
+        covar=covar_bg_sl,
+        which=args.which,
+        labels=False,
+        outfile=outfile.split("." + args.ext)[0] + "_covar." + args.ext
+    )
+
+    covar_inv = np.diag(1 / np.sqrt(np.diag(covar_bg_sl)))
+    corr = covar_inv @ covar_bg_sl @ covar_inv
+
+    plot_covar(
+        covar=corr,
+        which=args.which,
+        labels=True,
+        outfile=outfile.split("." + args.ext)[0] + "_corr." + args.ext
     )
