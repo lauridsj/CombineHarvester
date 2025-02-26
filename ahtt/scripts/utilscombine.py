@@ -149,30 +149,40 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     return bfs if loop_all else bf
 
 def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, runmode,
-                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = []):
+                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], snapshot = "", prepostws = False):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
+    if snapshot != "" and snapshot != "default":
+        useexisting = True
 
     if usedefault:
         return default
     elif useexisting:
-        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
+        if snapshot != "" and snapshot != "default":
+            return snapshot + " -w w --snapshotName MultiDimFit"
+
+        workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}{ppw}.root".format(
             dcd = dcdir,
             ptg = ptag(point, tags[0]),
             asm = "exp" if asimov else "obs",
             mod = "_" + modifier if modifier != "" else "",
+            ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag") else ""
         ))
 
         if len(workspace) == 0 or not os.path.isfile(workspace[0]):
             # try again, but using tag instead of otag
-            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}.root".format(
+            workspace = glob.glob("{dcd}{ptg}_best-fit_{asm}*{mod}{ppw}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[1]),
                 asm = "exp" if asimov else "obs",
                 mod = "_" + modifier if modifier != "" else "",
+                ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag") else ""
             ))
 
         if len(workspace) and os.path.isfile(workspace[0]):
-            return workspace[0]
+            if snapshot == "":
+                return workspace[0]
+            elif snapshot == "default":
+                return workspace[0] + " -w w --snapshotName MultiDimFit"
         else:
             useexisting = False
 
@@ -180,22 +190,24 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
         # ok there really isnt a best fit file, make them
         print ("\nxxx_point_ahtt :: making best fits")
         for asm in ([True] if asimov else [True, False]):
-            workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks)
+            workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks, prepostws)
             syscall("rm robustHesse_*.root", False, True)
 
-            newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}.root".format(
+            newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}{ppw}.root".format(
                 dcd = dcdir,
                 ptg = ptag(point, tags[0]),
                 rnm = "cross" if "cross" in runmode else "single" if "single" in runmode else "best-fit",
                 asm = "exp" if asm else "obs",
                 sce = "_" + scenario if scenario != "" else "",
                 mod = "_" + modifier if modifier != "" else "",
+                ppw = "_fitdiag" if prepostws and not modifier.endswith("_fitdiag") else ""
             )
             syscall("mv {wsp} {nwn}".format(wsp = workspace, nwn = newname), False)
             workspace = newname
+            nll = get_fit(workspace, ["nll"])
+            workspace += " -w w --snapshotName MultiDimFit" if snapshot == "default" else ""
 
-    nll = get_fit(workspace, ["nll"])
-    print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(poi = ', '.join(poiset), nll = nll))
+    print ("\nxxx_point_ahtt :: the dNLL of the best fit point wrt the model zero point (0, ...) is {nll}".format(nll = nll))
     print ("WARNING :: the model zero point is based on the 'nll0' branch, which includes the values of ALL NPs, not only POIs!!")
     print ("WARNING :: this means no NP profiling is done, so do NOT use this value directly for compatibility tests!!")
     print ("\n")
@@ -336,7 +348,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
     else:
         return False
 
-def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, extopt = "", masks = []):
+def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, extopt = "", masks = [], prepostws = False):
     fname = point + "_best_fit_" + right_now()
     never_gonna_give_you_up(
         command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {poi} {wsp} {prm} {ext}".format(
@@ -353,7 +365,9 @@ def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, e
 
         failure_cleanups = [
             [syscall, "rm higgsCombine*{bff}.MultiDimFit*.root".format(bff = fname), False]
-        ]
+        ],
+
+        optimize = not prepostws
     )
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)

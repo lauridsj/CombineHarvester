@@ -36,12 +36,15 @@ from drawings import get_poi_values
 parser = ArgumentParser()
 parser.add_argument("--ifile", help = "input file ie fitdiagnostic results", default = "", required = True)
 parser.add_argument("--lower", choices = ["ratio", "diff"], default = "ratio", required = False)
+parser.add_argument("--logx", action = "store_true", required = False)
+parser.add_argument("--logy", action = "store_true", required = False)
 parser.add_argument("--log", action = "store_true", required = False)
 parser.add_argument("--odir", help = "output directory to dump plots in", default = ".", required = False)
 parser.add_argument("--plot-tag", help = "extra tag to append to plot names", dest = "ptag", default = "", required = False, type = prepend_if_not_empty)
 parser.add_argument("--skip-each", help = "skip plotting each channel x year combination", action = "store_false", dest = "each", required = False)
 parser.add_argument("--batch", help = "psfromws output containing sums of channel x year combinations to be plotted. give any string to draw only batched prefit.",
                     default = None, dest = "batch", required = False)
+parser.add_argument("--read-from-batch", help = "read all plots from --batch, not ifile. mainly for morphed model.", action = "store_true", dest = "readbatch", required = False)
 parser.add_argument("--skip-postfit", help = "skip plotting postfit", action = "store_false", dest = "postfit", required = False)
 parser.add_argument("--skip-prefit", help = "skip plotting prefit", action = "store_false", dest = "prefit", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
@@ -70,9 +73,12 @@ parser.add_argument("--project-to", help = "which variables to project down to, 
 parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut on mtt. must be sorted, otherwise applies no cut. if one value is outside mass range, plots binwise.",
                     dest = "cut", default = "", required = False,
                     type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
-parser.add_argument("--apply-model-of", help = "read the lhood model from this file, and apply onto current fit. only for prefit.",
-                    default = "", dest = "applymodel", required = False)
+parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
 args = parser.parse_args()
+args.logy = args.log or args.logy
+args.readbatch = args.readbatch and os.path.isfile(args.batch)
+if args.readbatch:
+    args.prefit = False
 
 fits = []
 if args.postfit:
@@ -134,7 +140,9 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         zorder = -90
     )
     ax.set_ylabel("<Events> / $10^{3}$" if angular else "<Events / GeV>", fontsize=24)
-    if log:
+    if log[0]:
+        ax.set_xscale("log")
+    if log[1]:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width / factor)
         if args.splitbins:
@@ -147,7 +155,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
 
 
 
-def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
+def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, log):
     single_slice = args.splitbins or args.project != "none"
     ax.errorbar(
         centers,
@@ -197,6 +205,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             elif symbol == r"$\psi_{\mathrm{t}}$":
                 signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
+            poi = ("sigma" if args.xsec else "mu", " \,\\mathrm{pb}" if args.xsec else "")
             if symbol == "A" or symbol == "H":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
@@ -208,27 +217,27 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\\mu(\\eta_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
             elif symbol == r"$\chi_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\mu(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\mu(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\\mu(\\chi_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
             elif symbol == r"$\psi_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\\mu(\\psi_{{\\mathrm{{t}}}}) = 0$"
+                    signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
@@ -256,9 +265,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
     if fit == "p":
         fittype = "Prefit"
     elif fit == "b":
-        fittype = "Postfit (BG only)"
+        fittype = "Postfit (FO pQCD + BG)"
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (BG "
+        fittype = "Postfit (FO pQCD + BG "
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
         if "ChiT" in args.assignal:
@@ -267,13 +276,15 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit):
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
         fittype += ")"
     else:
-        fittype = "Postfit (BG + A/H)"
+        fittype = "Postfit (FO pQCD + BG + A/H)"
     if not single_slice or len(signals) == 0:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
         labels.insert(0, " "*len(fittype))
     if not single_slice or len(handles) < 2:
         handles.append(handle_unc)
         labels.append("Uncertainty")
+    if log[0]:
+        ax.set_xscale("log")
     legend_ncol = 1 if single_slice else 5
     ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
@@ -349,6 +360,7 @@ def plot(channel, year, fit,
         return
 
     single_slice = args.splitbins or args.project != "none"
+    ismbbll = r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]
     allsigs = signals | promotions
     if args.panel == "both":
         fig, (ax0, ax1, ax2) = plt.subplots(
@@ -372,7 +384,7 @@ def plot(channel, year, fit,
         plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
     if args.panel != "upper":
         if args.lower == "ratio":
-            plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
+            plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit, log)
         elif args.lower == "diff":
             plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
         else:
@@ -397,10 +409,10 @@ def plot(channel, year, fit,
     if "j" in channel:
         ticklocs = np.linspace(500, 1500, 3)
         ticklocs_minor = np.linspace(400, 1600, 13)
-    elif r'$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$' in list(binning.keys())[0]:
+    elif ismbbll:
         if single_slice:
-            ticklocs = np.linspace(200, 800, 4)
-            ticklocs_minor = np.arange(150, 900, 50)
+            ticklocs = np.array([100, 200, 400, 900]) if log[0] else np.linspace(200, 800, 4)
+            ticklocs_minor = np.array([10, 100, 200, 300, 400, 600, 900]) if log[0] else np.arange(150, 900, 50)
         else:
             ticklocs = np.linspace(300, 700, 2)
             ticklocs_minor = np.arange(200, 900, 100)
@@ -431,9 +443,9 @@ def plot(channel, year, fit,
     if fit == "p":
         fittype = "Prefit"
     elif fit == "b":
-        fittype = "Postfit (BG only)"
+        fittype = "Postfit (FO pQCD + BG)"
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (BG "
+        fittype = "Postfit (FO pQCD + BG "
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
         if "ChiT" in args.assignal:
@@ -442,7 +454,7 @@ def plot(channel, year, fit,
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
         fittype += ")"
     else:
-        fittype = "Postfit (BG + A/H)"
+        fittype = "Postfit (FO pQCD + BG + A/H)"
     
     if args.panellabels:
         if args.panel == "upper":
@@ -468,7 +480,7 @@ def plot(channel, year, fit,
     elif args.panel != "upper":
         ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
-    if args.panel != "upper" and len(allsigs) > 0 and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]):
+    if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]) and fit != "b":
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
         btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
         xpos = 0.04 if single_slice else 0.01
@@ -487,7 +499,7 @@ def plot(channel, year, fit,
         fig.subplots_adjust(hspace = hspace, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
 
     bbox = ax2.get_position()
-    offset = -0.025 if single_slice and args.panel == "lower" else -0.02 if single_slice and args.panel == "upper" else -0.037
+    offset = -0.025 if single_slice and args.panel == "lower" else -0.02 if single_slice and args.panel == "upper" else -0.053
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     figwidth = 6.0 if single_slice else 19.2
     if args.panel == "both":
@@ -497,9 +509,8 @@ def plot(channel, year, fit,
     extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
 
     sstr = [ss for ss in allsigs.keys() if ss[0] != "Total"]
-    # FIXME brittle! assumes exclusive toponia vs A/H
     if len(allsigs) == 0:
-        sstr = "BGOnly"
+        sstr = "bkg"
     elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
         sstr = "__".join(args.assignal)
     else:
@@ -526,7 +537,7 @@ def plot(channel, year, fit,
                 else:
                     bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 if first_ax_width > 0:
-                    ax2.set_xlim(first_ax_width*i, first_ax_width*(i+1))
+                    ax2.set_xlim(10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
                 if args.splitbins:
@@ -602,7 +613,7 @@ def project(planes, nbins, target, cut, icut, matrix):
     }
     masses = {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$": "mtt",
-        r'$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$': "mbbll"
+        r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$": "mbbll"
     }
     target = targets.get(target, 0)
     ret = planes.copy()
@@ -663,15 +674,14 @@ gvalues_p = None
 
 signal_name_pat = re.compile(r"(A|H)_m(\d+)_w(\d+p?\d*)_")
 year_summed = {}
-actual_infile = args.applymodel if args.applymodel != "" else args.ifile
-with uproot.open(actual_infile) as f:
+with uproot.open(args.batch if args.readbatch else args.ifile) as f:
     for channel, year, fit in product(channels, years, fits):
-        if args.applymodel != "" and fit != "s":
-            continue
         for binning_channels, binning in binnings.items():
             if channel in binning_channels:
                 break
-        if args.applymodel != "":
+        if args.readbatch:
+            if not args.batch.endswith(f"_{fit}.root"):
+                continue
             dname = f"{channel}_{year}_postfit"
         else:
             dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
@@ -755,26 +765,20 @@ with uproot.open(actual_infile) as f:
 
         if fit != "p":
             if gvalues_p is None:
-                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi)
+                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi, 6.43 if args.xsec else 1)
             gvalues = gvalues_p
         else:
             gvalues = {}
-        if args.applymodel != "":
-            datavalues = directory["data_obs"].values()[:len(centers)]
+        total = reduce(lambda a,b: a+b, smhists.values())
+        #total = directory["total_background"].to_hist()[:len(centers)]
+
+        if args.readbatch:
+            with uproot.open(args.ifile) as ff:
+                dd = ff[f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"]
+                datavalues = dd["data"].values()[1][:len(centers)]
+                datahist_errors = np.array([dd["data"].errors("low")[1], dd["data"].errors("high")[1]])[:, :len(centers)]
         else:
             datavalues = directory["data"].values()[1][:len(centers)]
-        #total = directory["total_background"].to_hist()[:len(centers)]
-        total = reduce(lambda a,b: a+b, smhists.values())
-
-        # FIXME actual error: axes not mergable error when reading EtaT from args.ipf (needed because muetat = 0 at prefit, so hist = 0)
-        #if fit != 'p':
-        #    for promotion in promotions.values():
-        #        total += -1. * promotion
-        #covariance = directory["total_covar"].to_hist()[:len(centers), :len(centers)]
-        #total = add_covariance(total, covariance)
-        if args.applymodel != "":
-            datahist_errors = np.array([directory["data_obs"].errors(), directory["data_obs"].errors()])[:, :len(centers)]
-        else:
             datahist_errors = np.array([directory["data"].errors("low")[1], directory["data"].errors("high")[1]])[:, :len(centers)]
 
         kwargs = {
@@ -796,13 +800,9 @@ with uproot.open(actual_infile) as f:
             "first_ax_width": first_ax_width,
             "bins": bins,
             "centers": centers,
-            "log": args.log,
+            "log": (args.logx, args.logy),
             "cuts": [""]
         }
-        if args.applymodel != "":
-            apply_model(kwargs,
-                        args.applymodel,
-                        f"{os.path.dirname(args.ifile)}/ahtt_input.root")
 
         if args.each:
             plot(**kwargs)

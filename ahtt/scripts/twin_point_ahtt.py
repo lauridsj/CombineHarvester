@@ -450,7 +450,7 @@ if __name__ == '__main__':
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
-    default_workspace = dcdir + "workspace_twin-g.root"
+    default_workspace = dcdir + "workspace_fitdiag.root" if args.prepostws else dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov,
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
-        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, args.prepostws
     )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:
@@ -603,8 +603,9 @@ if __name__ == '__main__':
                     dcdir, "__".join(points), [args.otag, args.tag],
                     args.defaultwsp, args.keepbest, default_workspace, fcexp != "obs", "", "",
                     "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+                    poiset,
                     set_range(ranges),
-                    elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+                    elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, False
                 )
 
                 never_gonna_give_you_up(
@@ -906,7 +907,7 @@ if __name__ == '__main__':
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
             poiset,
             set_range(ranges),
-            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, True
         )
 
         fitdiag_result, fitdiag_shape = ["{dcd}{ptg}_fitdiagnostics_{fdo}{poi}{gvl}{fix}_{ftp}.root".format(
@@ -918,6 +919,8 @@ if __name__ == '__main__':
             fix = "_fixed" if args.fixpoi and gfit != "" else "",
             ftp = args.prepostfit
         ) for fdoutput in ["result", "shape"]]
+        if os.path.isfile(args.prepostres):
+            fitdiag_result = args.prepostres
 
     if runprepost:
         print "\ntwin_point_ahtt :: making pre- and postfit plots and covariance matrices"
@@ -988,15 +991,22 @@ if __name__ == '__main__':
         inputfiles = [inputfiles[0], ppmtxt, ppmwsp]
 
         print "\ntwin_point_ahtt :: merging postfit plots as per fit result"
-        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
+        tofreeze = [frz for frz in set_freeze[1]]
+        for ifrz in range(len(tofreeze)):
+            for pset in set_freeze[0]:
+                if tofreeze[ifrz] in pset:
+                    tofreeze[ifrz] = pset
+                    break
+        syscall("PostFitShapesFromWorkspace -d {dcd} -w {fdw} -o {fds} --print --postfit {frz} --covariance --sampling --skip-prefit --skip-proc-errs --total-shapes -f {fdr}:fit_{ftp}".format(
             dcd = ppmtxt,
             fdw = ppmwsp,
             fds = fitdiag_shape.replace(
                 "fitdiagnostics_shape",
                 "psfromws_{ppm}".format(ppm = args.prepostmerge[0] if nicemerge else "-".join(prepostmerge))
             ),
+            frz = "--freeze '{frz}'".format(frz = ','.join(tofreeze)) if len(tofreeze) > 0 else "",
             fdr = fitdiag_result,
-            ftp = args.prepostfit
+            ftp = args.prepostfit,
         ))
         syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
 
@@ -1018,8 +1028,9 @@ if __name__ == '__main__':
             dcdir, "__".join(points), [args.otag, args.tag],
             args.defaultwsp, args.keepbest, default_workspace, args.fcexp[0] != "obs", "", "",
             "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
+            poiset,
             set_range(ranges),
-            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks
+            elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot
         )
 
         unconstrained = ",".join([param for param in args.nllunconstrained if param not in ["g1", "g2", "r1", "r2", "CMS_EtaT_norm_13TeV", "CMS_ChiT_norm_13TeV"]])

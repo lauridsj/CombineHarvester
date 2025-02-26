@@ -30,12 +30,12 @@ sqd = lambda p1, p2: sum([(pp2 - pp1)**2. for pp1, pp2 in zip(p1, p2)], 0.)
 halfway = lambda p1, p2: tuple([(pp1 + pp2) / 2. for pp1, pp2 in zip(p1, p2)])
 angle = lambda p1, p2: math.atan2(p2[1] - p1[1], p2[0] - p1[0])
 q1sqd = lambda p1, p2: sqd(p1, p2) if 0. <= angle(p1, p2) / math.pi <= 0.5 else sys.float_info.max
-default_ndivision = 4 # i.e. in step of 1
 gstr_precision = 3
 
-def make_initial_grid(ndivision):
+def make_initial_grid(grange, spacing):
     grid = []
-    gvls = [list(np.linspace(min_g, max_g, num = ndivision)), list(np.linspace(min_g, max_g, num = ndivision))]
+    gvls = [list(np.linspace(grange[0], grange[1], num = math.ceil((grange[1] - grange[0]) / spacing[0]) + 1)),
+            list(np.linspace(grange[2], grange[3], num = math.ceil((grange[3] - grange[2]) / spacing[1]) + 1))]
     for ig1 in gvls[0]:
         for ig2 in gvls[1]:
             grid.append( (ig1, ig2, 0) )
@@ -48,7 +48,33 @@ def default_nminmax(arg = ""):
         result.append(defaults[len(result)])
     return result
 
-def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision = default_ndivision, randaround = (-1., -1.), randnminmax = default_nminmax()):
+def default_initial_distance(arg = ""):
+    result = [] if arg == "" else tokenize_to_list(remove_spaces_quotes(arg), ",", astype = float)
+    if len(result) >= 2:
+        result = result[:2]
+    elif len(result) == 1:
+        result = [result[0], result[0]]
+    if not (len(result) == 2 and all([0. < rr <= 1. for rr in result])):
+        result = (1., 1.)
+    return tuple(result)
+
+def default_g_range(arg = ""):
+    result = [] if arg == "" else tokenize_to_list(remove_spaces_quotes(arg), ",", astype = float)
+    if len(result) >= 4:
+        result = result[:4]
+    elif len(result) >= 2:
+        result = result[:2]
+
+    onerange = len(result) == 2 and sorted(result) and all([min_g <= rr <= max_g for rr in result])
+    tworange = len(result) == 4 and sorted(result[:2]) and sorted(result[2:4]) and all([min_g <= rr <= max_g for rr in result[:2]]) and all([min_g <= rr <= max_g for rr in result[2:4]])
+
+    if not (onerange or tworange):
+        result = [min_g, max_g, min_g, max_g]
+    elif onerange:
+        result += result
+    return result
+
+def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, grange = default_g_range(), initial_distance = (1., 1.), randaround = (-1., -1.), randnminmax = default_nminmax()):
     if not hasattr(generate_g_grid, "alphas"):
         generate_g_grid.alphas = [0.6827, 0.9545, 0.9973, 0.999937, 0.9999997] if propersig else [0.68, 0.95, 0.9973, 0.999937, 0.9999997]
         generate_g_grid.alphas = [1. - pval for pval in generate_g_grid.alphas]
@@ -84,11 +110,12 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 if imax <= imin:
                     imin, imax = default_nminmax()[1:]
                 ipoint = 0
+                gminmax = [[grange[0], grange[1]], [grange[2], grange[3]]]
 
                 while ipoint < npoint:
                     deltas = [uniform(imin, imax), uniform(imin, imax)]
                     signs = [1. if coinflip() else -1., 1. if coinflip() else -1.]
-                    gtorun = [max(min_g, min(round(gvalue + (delta * sign), gstr_precision), max_g)) for gvalue, delta, sign in zip(around, deltas, signs)]
+                    gtorun = [round(max(gmm[0], min(gvalue + (delta * sign), gmm[1])), gstr_precision) for gvalue, delta, sign, gmm in zip(around, deltas, signs, gminmax)]
                     if tuple(gtorun) not in galready:
                         g_grid.append( tuple(gtorun) + (0,) )
                         ipoint += 1
@@ -106,7 +133,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
             if gmode == "refine":
                 mintoy = sys.maxsize
                 for gv in contour["g-grid"].keys():
-                    mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None else sys.maxsize)
+                    mintoy = min(mintoy, contour["g-grid"][gv]["total"] if contour["g-grid"][gv] is not None and contour["g-grid"][gv]["pass"] < generate_g_grid.nomore else sys.maxsize)
 
                 cuts = [mintoy > (generate_g_grid.atleast / alpha) for alpha in generate_g_grid.alphas]
                 if sum([1 if cut else 0 for cut in cuts]) < 1:
@@ -116,13 +143,11 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                 gts = [tuplize(gv) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
                 effs = [float(contour["g-grid"][gv]["pass"]) / float(contour["g-grid"][gv]["total"]) for gv in contour["g-grid"].keys() if contour["g-grid"][gv] is not None]
 
-                # add the best fit point into list of grid points, by construction the 0 sigma point
-                gts.append((round(best_fit[0], gstr_precision), round(best_fit[1], gstr_precision)))
-                effs.append(1.)
+                # DO NOT ADD THE BEST FIT POINT - IT BREAKS REGULARITY AND AMPLIFIES POISSON NOISE
 
                 tmpgrid = []
                 nnearest = 3
-                minsqd = 2.**-9
+                minsqd = 2.**-10
                 for gt, eff in zip(gts, effs):
                     unary_q1sqd = lambda pp: q1sqd(gt, pp[0])
                     gxy = sorted([(gg, ee) for gg, ee in zip(gts, effs)], key = unary_q1sqd)
@@ -157,7 +182,7 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                                 for half in halfsies:
                                     tmpgrid.append(half + (0,))
 
-                if len(tmpgrid) == 0 and ndivision <= 31:
+                if len(tmpgrid) == 0 and any([initdist >= math.sqrt(minsqd) for initdist in initial_distance]):
                     # if we cant refine the grid, it can only mean nothing belongs to the contour
                     # the bane of good sensitivity - can only regenerate LO, but with a finer comb
                     # 31 is NNLO, if we have nothing within max sigma at 0.125 granularity uh oh that's a lot of points to scan
@@ -165,13 +190,13 @@ def generate_g_grid(pair, ggrids = "", gmode = "", propersig = False, ndivision 
                         if contour["g-grid"][gv] is not None:
                             gt = tuplize(gv)
                             tmpgrid.append(gt + (0,))
-                    tmpgrid = list(set(make_initial_grid( ((ndivision - 1) * 2) + 1 )) - set(tmpgrid) - set(g_grid))
+                    tmpgrid = list(set(make_initial_grid(grange, (max(initial_distance[0] / 2., 0.125), max(initial_distance[1] / 2., 0.125)))) - set(tmpgrid) - set(g_grid))
                 g_grid += tmpgrid
 
         return g_grid
 
     # default LO case
-    return make_initial_grid(ndivision)
+    return make_initial_grid(grange, initial_distance)
 
 def toy_locations(base, savetoy, gvalues, indices, max_per_dir = max_nfile_per_dir):
     toylocs = []
@@ -214,10 +239,13 @@ if __name__ == '__main__':
 
     parser.add_argument("--fc-g-grid", help = submit_help_messages["--fc-g-grid"], default = "", dest = "fcgrid", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' ))
-    parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = 0.5, dest = "fcinit", required = False,
-                        type = lambda s: float(remove_spaces_quotes(s)))
+    parser.add_argument("--fc-initial-distance", help = submit_help_messages["--fc-initial-distance"], default = default_initial_distance(), dest = "fcinit", required = False,
+                        type = default_initial_distance)
     parser.add_argument("--fc-submit-also", help = submit_help_messages["--fc-submit-also"], default = "", dest = "fcsubalso", required = False,
                         type = lambda s: tokenize_to_list( remove_spaces_quotes(s), ';' if ';' in s or re.search(r',[^eo]', remove_spaces_quotes(s)) else ',' ))
+
+    parser.add_argument("--fc-g-min-max", help = submit_help_messages["--fc-g-min-max"], default = default_g_range(),
+                        dest = "fcgrange", required = False, type = default_g_range)
 
     parser.add_argument("--fc-random-around", help = submit_help_messages["--fc-random-around"], default = "-1., -1.", dest = "fcrandaround",
                         required = False, type = lambda s: tuple([float(ss) for ss in tokenize_to_list( remove_spaces_quotes(s) )]))
@@ -456,9 +484,7 @@ if __name__ == '__main__':
                     gvalues = [tuple([float(gg) for gg in args.gvalues]) + (0,)]
                     toylocs = [""] + toy_locations(base = args.toyloc, savetoy = args.savetoy, gvalues = args.gvalues, indices = idxs)
                 else:
-                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig,
-                                              int(math.ceil((max_g - min_g) / args.fcinit)) + 1 if min_g < args.fcinit < max_g else default_ndivision,
-                                              args.fcrandaround, args.fcrandnminmax)
+                    gvalues = generate_g_grid(points, ggrid, args.fcmode, args.propersig, args.fcgrange, args.fcinit, args.fcrandaround, args.fcrandnminmax)
 
                 sumtoy = args.ntoy * len(idxs)
                 resdir = make_timestamp_dir(base = pstr + args.tag, prefix = "fc-result")
@@ -589,12 +615,16 @@ if __name__ == '__main__':
                     continue
 
             jarg = job_arg
-            jarg += " {ppf} {ppm}".format(
+            jarg += " {ppf} {ppm} {ppr}".format(
                 ppf = clamp_with_quote(string = args.prepostfit, prefix = '--prepost-fit '),
                 ppm = clamp_with_quote(
                     string = ','.join(args.prepostmerge),
                     prefix = "--prepost-merge "
-                ) if runpsfromws else ""
+                ) if runpsfromws else "",
+                ppr = clamp_with_quote(
+                    string = args.prepostres,
+                    prefix = "--prepost-result "
+                ) if runpsfromws else "",
             )
 
             submit_job(jname, jarg, args.jobtime, 1, args.memory,

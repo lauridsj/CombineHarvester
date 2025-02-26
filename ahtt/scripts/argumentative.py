@@ -28,6 +28,8 @@ def common_common(parser):
     parser.add_argument("--no-mc-stats", help = combine_help_messages["--no-mc-stats"], dest = "mcstat", action = "store_false", required = False)
     parser.add_argument("--tag", help = combine_help_messages["--tag"], default = "", required = False, type = prepend_if_not_empty)
     parser.add_argument("--experimental", help = combine_help_messages["--experimental"], dest = "experimental", action = "store_true", required = False)
+    parser.add_argument("--load-snapshot", help = combine_help_messages["--load-snapshot"], dest = "snapshot", default = "", required = False)
+    parser.add_argument("--prepost-ws", help = combine_help_messages["--prepost-ws"], dest = "prepostws", action = "store_true", required = False)
     parser.add_argument("--seed", help = combine_help_messages["--seed"], default = -1, required = False, type = lambda s: int(remove_spaces_quotes(s)))
     return parser
 
@@ -111,6 +113,8 @@ def common_2D(parser):
     parser.add_argument("--prepost-merge", help = combine_help_messages["--prepost-merge"], dest = "prepostmerge",
                         default = [], required = False,
                         type = lambda s: [] if s == "" else sorted(tokenize_to_list( remove_spaces_quotes(s) )))
+    parser.add_argument("--prepost-result", help = combine_help_messages["--prepost-result"], dest = "prepostres",
+                        default = "", required = False, type = remove_spaces_quotes)
 
     parser.add_argument("--nll-parameter", help = combine_help_messages["--nll-parameter"], dest = "nllparam", default = "", required = False,
                         type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s)))

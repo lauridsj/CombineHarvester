@@ -20,6 +20,8 @@ axes = {
     "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
     "muchit":     r"$\mu(\chi_{\mathrm{t}})$",
+    "sigmaetat":  r"$\sigma\left(\eta_{\mathrm{t}}\right)$ [pb]",
+    "sigmachit":  r"$\sigma\left(\chi_{\mathrm{t}}\right)$ [pb]",
     "yukawa":     r"$y_{\mathrm{t}}$",
     "ll":         r"$\ell\ell$",
     "l3j":        r"$\ell$, 3j",
@@ -73,7 +75,7 @@ binnings = {
     ("ee", "em", "mm"): {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
             [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
-        r"$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$ (GeV)":
+        r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)":
             [140, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
         r"$c_{\mathrm{hel}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
         r"$c_{\mathrm{han}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
@@ -85,9 +87,12 @@ binnings = {
     }
 }
 ratiolabels = {
-    "b": "Ratio to background",
-    "s": "Ratio to background",
-    "p": "Ratio to background",
+    #"b": "Ratio to background",
+    #"s": "Ratio to background",
+    #"p": "Ratio to background",
+    "b": "Ratio to FO pQCD + BG",
+    "s": "Ratio to FO pQCD + BG",
+    "p": "Ratio to FO pQCD + BG",
 }
 lumis = {
     "2016pre": "19.5",
@@ -168,7 +173,7 @@ def etat_blurb(cfg):
         ]
     return blurb
 
-def stock_labels(parameters, points, resxsecpb = 5):
+def stock_labels(parameters, points, resxsecpb = 5, toxsec = False):
     labels = []
     for ii, pp in enumerate(parameters):
         if pp in ["g1", "g2"]:
@@ -176,9 +181,9 @@ def stock_labels(parameters, points, resxsecpb = 5):
         elif pp in ["r1", "r2"]:
             labels.append(axes["muah"] % (str_point(points[ii], spinstate = True), str(resxsecpb)))
         elif pp == "CMS_EtaT_norm_13TeV":
-            labels.append(axes["muetat"])
+            labels.append(axes["sigmaetat"] if toxsec else axes["muetat"])
         elif pp == "CMS_ChiT_norm_13TeV":
-            labels.append(axes["muchit"])
+            labels.append(axes["sigmachit"] if toxsec else axes["muchit"])
         elif pp == "EWK_yukawa":
             labels.append(axes["yukawa"])
         else:
@@ -326,92 +331,3 @@ def get_poi_values(fname, signals, tname, sf = 1, onlyres = False, use_cross = F
                 result = result | {(flag[0], None, None): (0., 0.)}
     result = {k: v if len(v) < 3 or abs(v[1] - v[2]) / v[1] > 0.1 else (v[0], v[1]) for k, v in result.items()}
     return result
-
-def get_model_at_minimum(fname):
-    '''
-    fname is the filename of the *fitdiagnostics_result* file in some other setting, that is passed as --ifile to plot_prepost*.py scripts
-    '''
-    ffile = ROOT.TFile.Open(fname, "read")
-    if "fit_s" not in ffile.GetListOfKeys() and "fit_b" not in ffile.GetListOfKeys():
-        return {}
-    fres = ffile.Get("fit_s")
-    fcov = ffile.Get("covariance_fit_s")
-    if fres is None:
-        fres = ffile.Get("fit_b")
-        fcov = ffile.Get("covariance_fit_b")
-
-    values = {pp.GetName(): (pp.getValV(), pp.getError()) for pp in fres.floatParsFinal()}
-    values = {k: v for k, v in result.items() if all([abs(vv) > 1e-7 for vv in v])}
-    correlation = {}
-    params = list(values.keys())
-    nbins = fcov.GetXaxis().GetNbins()
-    for i0, n0 in enumerate(params):
-        for i1 in range(i0 + 1, len(params)):
-            ix = iy = -1
-            for ibin in range(1, nbins + 1):
-                label = fcov.GetXaxis().GetBinLabel(ibin)
-                if label == n0:
-                    ix = ibin
-                elif label == params[i1]:
-                    iy == ibin
-                if ix != -1 and iy != -1:
-                    break
-            correlation[ (n0, params[i1]) ] = cov[ix][iy] / math.sqrt(cov[ix][ix] * cov[iy][iy])
-    return {"value": values, "correlation": correlations}
-
-def combine_shape_impl(value, dup, ddo):
-    ds = dup + ddo
-    dd = dup - ddo
-    t0 = dd * value
-    t1 = ds / 8.
-    t2 = (3. * value**6.) - (10. * value**4.) + (15 * value**2.)
-    return (t0 + (t1 * t2)) / 2.
-
-def combine_shape_interpolation(value, nominal, up, down):
-    # implements 'shape' interpolation ala https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/part2/settinguptheanalysis/#binned-shape-analyses
-    # value is the desired np value to interpolate to
-    # remaining args are the template shapes, assumed to be of the form (norm, binwise fractions), passed to combine
-    result = (0., np.zeros(len(nominal[1])))
-    inorm = interpolate.interp1d([-1, 0, 1], [math.log(down[0]), math.log(nominal[0]), math.log(up[0])], fill_value = "extrapolate")
-    result[0] = max(float(inorm(value)), 0.)
-    for ii in range(len(nominal[1])):
-        if value > 1 or value < -1:
-            delta = up[1][ii] - nominal[1][ii] if value > 1 else down[1][ii] - nominal[1][ii]
-            result[1][ii] = delta * value
-        else:
-            du = up[1][ii] - nominal[1][ii]
-            dd = down[1][ii] - nominal[1][ii]
-            result[1][ii] = max(combine_shape_impl(value, du, dd), 0.)
-    return result
-
-def apply_model(templates, model, prefit):
-    # where templates is the dict containing postfit templates, for all channels and years before summing
-    # model is the output of get_model_at_minimum()
-    # and prefit is the file name with prefit templates ie ahtt_input.root
-    model = get_model_at_minimum(model)
-    #hnew = hist.Hist(*[ax.copy() for ax in h.axes], storage="Weight")
-    ccyy = f"{templates[channel]}_{templates[year]}"
-    shapes = {}
-    with uproot.open(prefit) as ff:
-        procs = list(sm_procs.keys())
-        ahtt = [f"{ss[0]}_m{ss[1]}_w{str(ss[2]).replace('.', 'p')}" for ss in signals if ss[0] != "Total"]
-        procs += [f"{ah}_{pp}" for ah in ahtt for pp in ["res", "pos", "neg"]]
-
-        tmp = {proc: ff["{ccyy}"][proc] for proc in procs}
-        tmp = {k: v for k, v in tmp.items() if v is not None}
-        tmp = {k: (sum(v.values()), v / sum(v.values())) for k, v in tmp.items()}
-        shapes["nominal"] = tmp
-
-        for param in model["value"].keys():
-            shapes[param] = {}
-            for dd in zip(["u", "d"], ["Up", "Down"]):
-                tmp = {proc: ff["{ccyy}"][f"{proc}_{param}{dd[1]}"] for proc in procs}
-                tmp = {k: v for k, v in tmp.items() if v is not None}
-                tmp = {k: (sum(v.values()), v / sum(v.values())) for k, v in tmp.items()}
-                shapes[param][dd[0]] = tmp
-
-    # TODO actual application of the "model"
-    # probably start from prefit nominal, and then shift by deltas as per NP value
-    # and the variance is added based on further shifts by NP value +- unc
-    # to check: ordering of application +- unc for shape (as above), lnN (overall scaling, on prefit nominal or final?), rateparam (same as lnN?)...
-    pass

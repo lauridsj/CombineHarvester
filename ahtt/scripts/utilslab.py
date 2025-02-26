@@ -59,7 +59,7 @@ def input_sig(signal, points, injects, channels, years):
         if im in points or im in injects:
             if any(cc in channels for cc in ["ee", "em", "mm"]):
                 signals.append(input_base + "templates_ULFR2/breaktype3_mtAH_230314/ll/sig_ll_3D-33_" + im + ".root")
-                #signals.append(input_base + "templates_ULFR2/mbbllspin_w2p8_120125/ll_pca/sig_ll_mbbllspin__m365_w2p0.root")
+                #signals.append(input_base + "templates_ULFR2/mbbllspin_w2p8_120125/ll_pca/sig_ll_mbbllspin_m365_w2p0.root")
             if any(cc in channels for cc in ["e3j", "e4pj", "m3j", "m4pj"]):
                 signals.append(input_base + "templates_ULFR2/breaktype3_mtAH_230314/lj/templates_lj_sig_" + im + ".root")
 

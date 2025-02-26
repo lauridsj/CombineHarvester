@@ -51,24 +51,24 @@ for channel in ll l4pj l3j; do
 done
 
 # 1D LIMITS
+# updated to the ones going into paper
 
-# these are a bit stupid because they need to be executed in the actual directory where the limits are
-# ... to which you do not have writing permissions if you are not Afiq
-# thus, absolute paths
-# Afiq edit: exactly why the dev shouldn't be the tester too!
-
-# limits without etat
-mkdir -p limits_smtt
+mkdir lim1D && cd lim1D
+for idir in smtt etat; do for ichan in lx ll lj; do mkdir -p ${idir}/${ichan}; done; done
 fmt="pdf,png,svg"
 
+# limits w/o etat
 basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
-python3 ../scripts/plot_limit.py --tag "lx_smtt" --odir limits_smtt --read-from "${basedir}" --observed --formal --cms-append 'Preliminary' --A343-background 0 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "lx_smtt" --odir smtt/lx --read-from "${basedir}" --observed --formal --A343-background 0 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll_smtt" --odir smtt/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/unblind_stage3_1D_231205"
+python3 ../../scripts/plot_limit.py --tag "lj_smtt" --odir smtt/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
 
 # limits with etat
-mkdir -p limits_etat
-
 basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318"
-python3 ../scripts/plot_limit.py --tag "lx" --odir limits_etat --read-from "${basedir}" --observed --formal --cms-append 'Preliminary' --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "lx" --odir etat/lx --read-from "${basedir}" --observed --formal --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll" --odir etat/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "lj" --odir etat/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"
 
 # CONTOURS
 # same story re: absolute path, this time its Laurids' dirs
