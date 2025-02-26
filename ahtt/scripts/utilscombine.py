@@ -16,7 +16,7 @@ TH1.AddDirectory(False)
 TH1.SetDefaultSumw2(True)
 
 min_g = 0.
-max_g = 1.5
+max_g = 3.
 
 def problematic_datacard_log(logfile):
     if not hasattr(problematic_datacard_log, "problems"):
