@@ -97,7 +97,7 @@ def plot_syst(subf, proc, systname, ann, outfile):
 
     ratio_unc = err_nom / vals_nom
     ratio_unc = np.concatenate([ratio_unc, [ratio_unc[-1]]])
-    #ax2.fill_between(edges, 1-ratio_unc, 1+ratio_unc, step="post", color="lightgrey", label="MC stat unc.", zorder=-50)
+    ax2.fill_between(edges, 1-ratio_unc, 1+ratio_unc, step="post", color="lightgrey", label="MC stat unc.", zorder=-50)
     
     ax2.hlines(1., edges[0], edges[-1], color="black", linestyle="dashed", linewidth=0.7)
 
