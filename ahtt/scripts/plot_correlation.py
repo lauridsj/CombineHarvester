@@ -16,6 +16,8 @@ parser.add_argument("--include_mcstats", action="store_true")
 parser.add_argument("--nuisance_map", type=str, default=None, help="NP label translation map")
 parser.add_argument("--impacts", type=str, default=None, help="Impact json for sorting")
 parser.add_argument("--preliminary", action="store_true")
+parser.add_argument("--skip_poi", action="store_true")
+parser.add_argument("--add_poi", action="store_true")
 args = parser.parse_args()
 
 poi_names = {
@@ -90,21 +92,28 @@ if args.nuisance_map is not None:
         nuisance_map = json.load(f)
 
 with uproot.open(args.infile) as f:
-    matrix = f["covariance_fit_s"]
+    matrix = f["covariance_fit_b" if args.infile.endswith("_b.root") else "covariance_fit_s"]
     mvals = matrix.values()
     mvals = mvals[::-1, :]
     labels = matrix.axes[0].labels()
     labels = labels[::-1]
+
+    if args.skip_poi:
+        keep = [l != poi for l in labels]
+        mvals = mvals[keep, :][:, keep]
+        labels = [l for l in labels if l != poi]
+
+    if args.add_poi:
+        mvals_new = np.eye(len(mvals)+1)
+        mvals_new[1:,1:] = mvals
+        mvals = mvals_new
+        labels.insert(0, poi)
 
     if not args.include_mcstats:
         keep = ["prop" not in l for l in labels]
         mvals = mvals[keep, :][:, keep]
         labels = [l for l in labels if "prop" not in l]
 
-    if not poi in labels:
-        raise ValueError("POI not found")
-    
-    poi_ind = labels.index(poi)
     if args.impacts is not None:
         with open(args.impacts) as jsonfile:
             impact_data = json.load(jsonfile)
@@ -115,6 +124,10 @@ with uproot.open(args.infile) as f:
                     for param in labels]
         sorting = np.argsort(impacts)[::-1]
     else: 
+        if not poi in labels:
+            raise ValueError("POI not found")
+    
+        poi_ind = labels.index(poi)
         poi_corr = mvals[poi_ind, :]
         sorting = np.argsort(abs(poi_corr))[::-1]
 
