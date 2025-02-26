@@ -74,6 +74,7 @@ parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut o
                     dest = "cut", default = "", required = False,
                     type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
 parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
+parser.add_argument('--no-total', help = "dont plot the total signal", action="store_false", dest="total")
 args = parser.parse_args()
 args.logy = args.log or args.logy
 args.readbatch = args.readbatch and os.path.isfile(args.batch)
@@ -198,12 +199,11 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
         if fit == "p":
             if symbol == "A" or symbol == "H":
                 signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = 1$"
-            elif symbol == r"$\eta_{\mathrm{t}}$":
-                signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\mu(\\eta_{{\\mathrm{{t}}}}) = 1$"
-            elif symbol == r"$\chi_{\mathrm{t}}$":
-                signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\mu(\\chi_{{\\mathrm{{t}}}}) = 1$"
-            elif symbol == r"$\psi_{\mathrm{t}}$":
-                signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\mu(\\psi_{{\\mathrm{{t}}}}) = 1$"
+            elif symbol in [r"$\eta_{\mathrm{t}}$", r"$\chi_{\mathrm{t}}$", r"$\psi_{\mathrm{t}}$"]:
+                if args.xsec:
+                    signal_label = f"{symbol}, $\\sigma({symbol[1:-1]}) = 6.43$ pb"
+                else:
+                    signal_label = f"{symbol}, $\\mu({symbol[1:-1]}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
             poi = ("sigma" if args.xsec else "mu", " \,\\mathrm{pb}" if args.xsec else "")
             if symbol == "A" or symbol == "H":
@@ -264,22 +264,29 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     ax.set_ylabel(ratiolabels[fit], fontsize=24)
     if fit == "p":
         fittype = "Prefit"
+        fittypelen = len(fittype)
     elif fit == "b":
         fittype = "Postfit (FO pQCD + BG)"
+        fittypelen = len(fittype)
     elif fit == "s" and len(args.assignal):
         fittype = "Postfit (FO pQCD + BG "
+        fittypelen = len(fittype)
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
+            fittypelen += len(" + x")
         if "ChiT" in args.assignal:
             fittype += "+ $\mathbf{\chi_{\mathrm{t}}}$"
+            fittypelen += len(" + x")
         if "PsiT" in args.assignal:
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
+            fittypelen += len(" + x")
         fittype += ")"
     else:
         fittype = "Postfit (FO pQCD + BG + A/H)"
+        fittypelen = len(fittype)
     if not single_slice or len(signals) == 0:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
-        labels.insert(0, " "*len(fittype))
+        labels.insert(0, " "*(fittypelen+10))
     if not single_slice or len(handles) < 2:
         handles.append(handle_unc)
         labels.append("Uncertainty")
@@ -692,7 +699,7 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
             nbins = len(directory["TT"].to_hist().values()) / (len(binning[r"$c_{\mathrm{hel}}$"]) - 1)
             nbins /= len(binning[r"$c_{\mathrm{han}}$"]) - 1
             if nbins == len(binning[r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"]) - 1:
-                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\bar{\mathrm{b}}\ell\ell}$ (GeV)"}
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)"}
             else:
                 binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"}
 
@@ -757,10 +764,10 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
                     else:
                         signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
 
-            if len(signals) > 1 and len(promotions) == 0:
+            if args.total and len(signals) > 1 and len(promotions) == 0:
                 signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
 
-        if len(signals) == 0 and len(promotions) > 1:
+        if args.total and len(signals) == 0 and len(promotions) > 1:
             signals[("Total", None, None)] = sum(promotions.values())
 
         if fit != "p":
