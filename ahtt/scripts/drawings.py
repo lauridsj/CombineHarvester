@@ -200,7 +200,7 @@ def valid_nll_fname(fname, tag, ninterval = 1):
             nvalidto += 1
     return nvalidto == ninterval
 
-def get_poi_values(fname, signals, tname):
+def get_poi_values(fname, signals, tname, sf = 1, onlyres = False, use_cross = False):
     signals = list(signals.keys())
     signals = [sig for sig in signals if sig != ("Total", None, None)]
     twing = len(signals) == 2 and sum([1 if sig[0] == "A" or sig[0] == "H" else 0 for sig in signals]) == 2
@@ -217,7 +217,11 @@ def get_poi_values(fname, signals, tname):
     tres = None
     if tname != "":
         if tname == "default":
-            tname = fname.replace("fitdiagnostics_result", "single_obs")
+            if use_cross:
+                tname = fname.replace("fitdiagnostics_result", "cross_obs")
+            else:
+                tname = fname.replace("fitdiagnostics_result", "single_obs")
+            tname = tname.replace("obs_s", "obs")
             if "_fixed_" in tname:
                 pois = tname.split("_fixed_")[0].split("_g1_")[0].split("_obs_")[1]
                 pois = pois.replace(".root", "")
@@ -231,41 +235,60 @@ def get_poi_values(fname, signals, tname):
 
     fres = ffile.Get("fit_s")
     result = {}
+    ndigit = 2 if abs(sf) > 2 else 3
 
     if onepoi:
         if fres and tres is None:
             gg = fres.floatParsFinal().find('g')
-            result = {signals[0]: (round(gg.getValV(), 3), round(gg.getError(), 3))}
+            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
         elif tres is not None:
             values = [0., 0., 0.]
             for i in tres:
                 qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
                 values[qq] = tres.g
-            result = {signals[0]: (round(values[0], 3), round(abs(values[1] - values[0]), 3), round(abs(values[2] - values[0]), 3))}
+            result = {signals[0]: (round(values[0], ndigit), round(abs(values[1] - values[0]), ndigit), round(abs(values[2] - values[0]), ndigit))}
         else:
             result = {signals[0]: (0., 0.)}
     elif twing:
         if fres and tres is None:
-            g1 = fres.floatParsFinal().find('r1' if args.onlyres else 'g1')
-            g2 = fres.floatParsFinal().find('r2' if args.onlyres else 'g2')
+            g1 = fres.floatParsFinal().find('r1' if onlyres else 'g1')
+            g2 = fres.floatParsFinal().find('r2' if onlyres else 'g2')
             result[signals[0]] = (round(g1.getValV(), 2), round(g1.getError(), 2))
             result[signals[1]] = (round(g2.getValV(), 2), round(g2.getError(), 2))
+        elif tres is not None and use_cross:
+            values = [[0., 0., 0.], [0., 0., 0.]]
+            g1_contour = []
+            g2_contour = []
+            for i in tres:
+                if tres.quantileExpected == -1:
+                    values[0][0] = tres.r1 if onlyres else tres.g1
+                    values[1][0] = tres.r2 if onlyres else tres.g2
+                else:
+                    g1_contour.append(tres.r1 if onlyres else tres.g1)
+                    g2_contour.append(tres.r2 if onlyres else tres.g2)
+            values[0][1] = min(g1_contour)
+            values[0][2] = max(g1_contour)
+            values[1][1] = min(g2_contour)
+            values[1][2] = max(g2_contour)
+            result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
+            result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
+
         elif tres is not None:
             values = [[0., 0., 0.], [0., 0., 0.]]
             for i in tres:
                 qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
                 if qq != 0:
-                    tmp = tres.g1 if args.onlyres else tres.r1
+                    tmp = tres.r1 if onlyres else tres.g1
                     if tmp != values[0][0]:
                         values[0][qq] = tmp
-                    tmp = tres.g2 if args.onlyres else tres.r2
+                    tmp = tres.r2 if onlyres else tres.g2
                     if tmp != values[1][0]:
                         values[1][qq] = tmp
                 else:
-                    values[0][qq] = tres.g1 if args.onlyres else tres.r1
-                    values[1][qq] = tres.g2 if args.onlyres else tres.r2
-            result[signals[0]] = (round(values[0][0], 3), round(abs(values[0][1] - values[0][0]), 3), round(abs(values[0][2] - values[0][0]), 3))
-            result[signals[1]] = (round(values[1][0], 3), round(abs(values[1][1] - values[1][0]), 3), round(abs(values[1][2] - values[1][0]), 3))
+                    values[0][qq] = tres.r1 if onlyres else tres.g1
+                    values[1][qq] = tres.r2 if onlyres else tres.g2
+            result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
+            result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
         else:
             result = {signals[0]: (0., 0.), signals[1]: (0., 0.)}
     elif oneg:
@@ -280,7 +303,7 @@ def get_poi_values(fname, signals, tname):
             else:
                 raise ValueError()
             gg = fres.floatParsFinal().find(parname)
-            result = {signals[0]: (round(gg.getValV(), 3), round(gg.getError(), 3))}
+            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
         elif tres is not None:
             raise NotImplementedError()
         else:
@@ -290,7 +313,7 @@ def get_poi_values(fname, signals, tname):
         if flag[1]:
             if fres and tres is None:
                 muhat = fres.floatParsFinal().find(name)
-                result = result | {(flag[0], None, None): (round(muhat.getValV(), 3), round(muhat.getError(), 3))}
+                result = result | {(flag[0], None, None): (round(muhat.getValV() * sf, ndigit), round(muhat.getError() * sf, ndigit))}
             elif tres is not None:
                 values = [0., 0., 0.]
                 for i in tres:
@@ -298,7 +321,7 @@ def get_poi_values(fname, signals, tname):
                     tmp = getattr(tres, name)
                     if qq == 0 or (qq != 0 and tmp != values[0]):
                         values[qq] = tmp
-                result = result | {(flag[0], None, None): (round(values[0], 3), round(abs(values[1] - values[0]), 3), round(abs(values[2] - values[0]), 3))}
+                result = result | {(flag[0], None, None): (round(values[0] * sf, ndigit), round(abs(values[1] - values[0]) * sf, ndigit), round(abs(values[2] - values[0]) * sf, ndigit))}
             else:
                 result = result | {(flag[0], None, None): (0., 0.)}
     result = {k: v if len(v) < 3 or abs(v[1] - v[2]) / v[1] > 0.1 else (v[0], v[1]) for k, v in result.items()}
