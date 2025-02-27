@@ -57,7 +57,7 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
     if not hasattr(draw_contour, "colors"):
         draw_contour.colors = OrderedDict([
             (1    , ["0"]),
-            (2    , ["#696969", "0"]),
+            (2    , ["#E4717A", "0"]),
             (3    , ["#0033cc", "#cc0033", "0"]),
             (4    , ["#33cc00", "#0033cc", "#cc0033", "0"]),
         ])
