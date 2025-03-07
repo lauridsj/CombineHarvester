@@ -102,6 +102,8 @@ def full_extent(ax, pad = 0.0):
 def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel):
     single_slice = args.splitbins or args.project != "none"
     angular = args.project in ["chel", "chan"]
+    #factor = 1000. if angular else 1.
+    factor = 1
     if fit == "p":
         fstage = "Pre"
         ftype = " "
@@ -109,12 +111,12 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         fstage = "Post"
         ftype = " (s + b) " if fit == "s" else " (b) "
 
-    width = np.diff(bins)
+    width = np.ones(len(bins)-1) if angular else np.diff(bins)
     colors = [proc_colors[k] for k in smhists.keys()]
-    unclabel = "Unc." if single_slice else f"{fstage}fit uncertainty"
+    unclabel = "Unc." if single_slice else f"{fstage}fit{ftype}uncertainty"
     for ibin in range(len(bins) - 1):
-        vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin]
-        vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin]
+        vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin] / factor
+        vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin] / factor
         ax.fill_between(
             bins[ibin : ibin + 2],
             np.array(vhi, vhi),
@@ -124,13 +126,13 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
             **hatchstyle)
     ax.errorbar(
         centers,
-        data[0] / width,
-        yerr = data[1] / width,
+        data[0] / width / factor,
+        yerr = data[1] / width / factor,
         label = "Data",
         **datastyle
     )
     hep.histplot(
-        [hist.values() / width for hist in smhists.values()],
+        [hist.values() / width / factor for hist in smhists.values()],
         bins = bins,
         ax = ax,
         stack = True,
@@ -144,21 +146,16 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         ax.set_xscale("log")
     if log[1]:
         ax.set_yscale("log")
-        ymin = 0.5 * np.amin(data[0] / width)
-        if args.splitbins:
-            ymax = 1.08
+        ymin = 0.5 * np.amin(data[0] / width / factor)
+        if args.splitbins or single_slice:
+            ymax = 1.05
         else:
-            ymax = 1.08 if "j" in channel else 1.14
+            ymax = 1.08 if "j" in channel else 1.12
         ax.set_ylim(ymin, ax.transData.inverted().transform(ax.transAxes.transform([0, ymax]))[1])
     else:
         ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
-        ax.yaxis.get_offset_text().set_x(-0.15)
-        ax.yaxis.get_offset_text().set_y(1.08)
         ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
-
-    ax.minorticks_on()
-    ax.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
-    
+        ax.yaxis.get_offset_text().set_x(-0.15)
 
 
 
@@ -187,7 +184,6 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     )
     handles = []
     labels = []
-    xslabel = ""
     for key, signal in signals.items():
         symbol, mass, decaywidth = key
         idx = 1 if symbol == 'H' else 0
@@ -208,43 +204,56 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
                 signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = 1$"
             elif symbol in [r"$\eta_{\mathrm{t}}$", r"$\chi_{\mathrm{t}}$", r"$\psi_{\mathrm{t}}$"]:
                 if args.xsec:
-                    xslabel = f"$\\sigma({symbol[1:-1]}) = 6.43$ pb"
+                    signal_label = f"{symbol}, $\\sigma({symbol[1:-1]}) = 6.43$ pb"
                 else:
-                    xslabel = f"$\\mu({symbol[1:-1]}) = 1$"
+                    signal_label = f"{symbol}, $\\mu({symbol[1:-1]}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
             poi = ("sigma" if args.xsec else "mu", " \,\\mathrm{pb}" if args.xsec else "")
             if symbol == "A" or symbol == "H":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        xslabel = f"$\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                        signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
                     else:
-                        xslabel = f"$\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]}_{{-{gvalues[key][2]}}}^{{+{gvalues[key][1]}}}$"
+                        signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]}_{{-{gvalues[key][2]}}}^{{+{gvalues[key][1]}}}$"
                 elif fit == "b":
-                    xslabel = f"$\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = 0$"
-            elif symbol in [r"$\eta_{\mathrm{t}}$", r"$\chi_{\mathrm{t}}$", r"$\psi_{\mathrm{t}}$"]:
+                    signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = 0$"
+            elif symbol == r"$\eta_{\mathrm{t}}$":
                 if fit == "s":
                     if len(gvalues[key]) == 2:
-                        xslabel = f"$\\{poi[0]}({symbol[1:-1]}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
                     else:
-                        xslabel = f"$\\{poi[0]}({symbol[1:-1]}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
+                        signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
                 elif fit == "b":
-                    xslabel = f"$\\{poi[0]}({symbol[1:-1]}) = 0{poi[1]}$"
-        if xslabel != "":
-            signal_label += ", " + xslabel
+                    signal_label = f"$\\eta_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\eta_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
+            elif symbol == r"$\chi_{\mathrm{t}}$":
+                if fit == "s":
+                    if len(gvalues[key]) == 2:
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
+                    else:
+                        signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
+                elif fit == "b":
+                    signal_label = f"$\\chi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\chi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
+            elif symbol == r"$\psi_{\mathrm{t}}$":
+                if fit == "s":
+                    if len(gvalues[key]) == 2:
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f} \\pm {gvalues[key][1]:.1f}{poi[1]}$"
+                    else:
+                        signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = {gvalues[key][0]:.1f}_{{-{gvalues[key][2]:.1f}}}^{{+{gvalues[key][1]:.1f}}}{poi[1]}$"
+                elif fit == "b":
+                    signal_label = f"$\\psi_{{\\mathrm{{t}}}}$, $\\{poi[0]}(\\psi_{{\\mathrm{{t}}}}) = 0{poi[1]}$"
 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,
-            yerr = False,
+            yerr = np.zeros(len(signal.axes[0])),
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
             linewidth = 1.75,
             label = signal_label,
-            zorder = signal_zorder[symbol],
-            edges = False
+            zorder = signal_zorder[symbol]
         )
-        handles.append(handle_signal[0][0])
+        handles.append(handle_signal[0])
         labels.append(signal_label)
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
@@ -281,7 +290,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     else:
         fittype = "Postfit (FO pQCD + BG + A/H)"
         fittypelen = len(fittype)
-    if not single_slice or len(signals) == 0:
+    if not single_slice:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
         labels.insert(0, " "*(fittypelen+10))
     if not (single_slice and args.panel == "both"):
@@ -289,14 +298,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
         labels.append("Uncertainty")
     if log[0]:
         ax.set_xscale("log")
-    legend_ncol = 1 if single_slice else 5
-    if single_slice and args.panel == "both":
-        #ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", frameon = False)
-        angular = args.project in ["chel", "chan"]
-        xpos = 0.97 if not angular else 0.03
-        ha = "right" if not angular else "left"
-        ax.annotate(xslabel, (xpos, 0.88), xycoords="axes fraction", ha=ha, va="top", fontsize=20, zorder=7777)
-    else:
+    if not (single_slice and args.panel == "both" and len(signals) == 0):
+        legend_ncol = 1 if single_slice else 5
         ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
 
@@ -373,14 +376,12 @@ def plot(channel, year, fit,
     single_slice = args.splitbins or args.project != "none"
     ismbbll = r'$m_{\mathrm{b}\mathrm{b}\ell\ell}$' in list(binning.keys())[0]
     allsigs = signals | promotions
-    cornerlegend = single_slice and num_extrabins < 2 and (cuts == "" or cuts[1].count("<") < 2) 
-    angular = args.project in ["chel", "chan"]
     if args.panel == "both":
         fig, (ax0, ax1, ax2) = plt.subplots(
             nrows = 3,
             sharex = True,
-            gridspec_kw = {"height_ratios": [0.001 if single_slice else 0.01, 1, 1]},
-            figsize = (5.0, 10.0) if single_slice else (19.2, 6.6),
+            gridspec_kw = {"height_ratios": [0.115 if single_slice else 0.001, 1, 0.9]},
+            figsize = (5.0, 6.6) if single_slice else (19.2, 6.6),
             dpi=600
         )
     else:
@@ -409,26 +410,11 @@ def plot(channel, year, fit,
             if args.panel != "upper":
                 ax2.axvline(x = pos, linestyle = "--", linewidth = 0.5, color = "gray")
     if args.panel != "lower":
-        legend_ncol = 2 if single_slice else len(smhists) + 2
-        if single_slice:
-            handles, labels = ax1.get_legend_handles_labels()
-            handles2, labels2 = ax2.get_legend_handles_labels()     
-            if len(allsigs) > 0:
-                siglabels = [k[0] for k in allsigs.keys()]
-                handles = [*handles[1:-1:][::-1], handles[-1], handles[0], *handles2[1:]]
-                labels = [*labels[1:-1][::-1], labels[-1], labels[0], *siglabels]
-            else:
-                #empty_handle = Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.)
-                handles = [*handles[1:-1:][::-1], handles[-1], handles[0]]
-                labels = [*labels[1:-1][::-1], labels[-1], labels[0]]
-            ypos = 0.58 if not cornerlegend else 0.685
-            ax1.legend(handles, labels, loc = "lower left", bbox_to_anchor = (0.5, ypos, 0.46, 0.4),
-                    borderaxespad = 0, ncol = legend_ncol, mode = "expand", frameon = False, reverse = False,
-                    handlelength = 1.3, handletextpad = 0.3, labelspacing = 0.3, columnspacing=0.5,
-                    fontsize = 19 )
-        else:
-            ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1, 1, 0.2),
-                    borderaxespad = 0, ncol = legend_ncol, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False, reverse = True)
+        ax1.minorticks_on()
+        ax1.tick_params(axis="both", which="both", direction="in", bottom=True, top=True, left=True, right=True)
+        legend_ncol = 3 if single_slice else len(smhists) + 2
+        ax1.legend(loc = "lower left", bbox_to_anchor = (0, 1, 1, 0.2),
+                   borderaxespad = 0, ncol = legend_ncol, mode = "expand", edgecolor = "black", framealpha = 1, fancybox = False, reverse = True)
         ax1.set_xlabel("")
 
     ax2.minorticks_on()
@@ -491,20 +477,20 @@ def plot(channel, year, fit,
             va = "bottom"
             ha = "right"
         else:
-            xpos = (0.97 if not angular else 0.03) if single_slice else 0.01
+            xpos = 0.04 if single_slice else 0.01
             ypos = 0.97 if single_slice else 0.95
             va = "top"
-            ha = "right" if single_slice and not angular else "left"
+            ha = "left"
 
         if single_slice and args.panel == "upper":
             annstr = title
         elif single_slice and args.panel == "lower":
-            annstr = fittype + ", " + title
+            annstr = fittype# + ", " + title
         else:
             annstr = fittype
         ax2.annotate(annstr, (xpos, ypos), xycoords="axes fraction", va=va, ha=ha, fontsize=20, fontweight="normal" if (single_slice and args.panel == "upper") else "bold", zorder=7777)
         #if args.panel == "both":
-        #    ax1.annotate(title, (0.03, 0.95), xycoords="axes fraction", va="top", ha="left", fontsize=19, fontweight="normal", zorder=7777) # xxx
+        #    ax1.annotate(title, (0.97, 1.028), xycoords="axes fraction", va="bottom", ha="right", fontsize=20, fontweight="normal", zorder=7777) # xxx
     elif args.panel != "upper":
         ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
@@ -519,20 +505,32 @@ def plot(channel, year, fit,
     if args.panel == "both":
         if not single_slice:
             ax0.set_title(title)
-        hep.cms.label(ax = ax1 if single_slice else ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
-        fig.subplots_adjust(hspace = 0.03 if single_slice else 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
+        fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
     else:
         hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
-        hspace = 0.81 if args.panel == "lower" and len(args.assignal) >= 2 else 0.50
+        if len(allsigs) == 3:
+            hspace = 1.5
+        else:
+            hspace = 0.3 * (len(allsigs) + 1) - 0.06 if args.panel == "lower" else 0.50
         fig.subplots_adjust(hspace = hspace, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
 
-    bbox = ax2.get_position()        
-    if not (single_slice and args.panel == "both"):
-        offset = -0.025 if single_slice and args.panel == "lower" else -0.02 if single_slice and args.panel == "upper" else -0.02
-        ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
+    bbox = ax2.get_position()
+    offset = -0.01
+    if single_slice:
+        if args.panel == "both":
+            if len(allsigs) == 0:
+                offset = 0.05
+            elif len(allsigs) == 1:
+                offset = -0.012
+            elif len(allsigs) == 3:
+                offset = -0.11
+        else:
+            offset = -0.025 if args.panel == "lower" else -0.02
+    ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
     figwidth = 6.0 if single_slice else 19.2
-    if args.panel == "both" and not single_slice:
-        fig.set_size_inches(w = figwidth, h = 1.3 * fig.get_figheight())
+    if args.panel == "both":
+        fig.set_size_inches(w = figwidth, h = 1.5 * fig.get_figheight())
     else:
         fig.set_size_inches(w = figwidth, h = 1.0 * fig.get_figheight())
     extent = 'tight'# if args.plotupper else full_extent(ax2).transformed(fig.dpi_scale_trans.inverted())
@@ -558,36 +556,17 @@ def plot(channel, year, fit,
                     txt.remove()
                 bintexts = []
                 ypos = 0.08 if args.panel == "lower" else 0.9 if single_slice else 0.912
-                xpos = 0.1 if not cornerlegend else 0. 
-                xrange = 0.8 if not cornerlegend else 0.43 
                 if args.splitbins:
                     for j, (variable, edges) in enumerate(reversed(extra_axes.items())):
                         edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
                         text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-                        bintexts.append(ax1.text(xpos + xrange / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
+                        bintexts.append(ax1.text(1 / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 else:
-                    bintexts.append(ax1.text(xpos + xrange / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
+                    bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 if first_ax_width > 0:
                     ax2.set_xlim(10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
-                if args.panel != "lower":
-                    #if log[0] and ismbbll:
-                    #    ibin = np.where(np.log10(np.array(first_ax_binning)[1:]) - 1 <= np.log10(first_ax_width)*0.5)[0]
-                    #else:
-                    ibin = np.where(np.array(first_ax_binning)[:-1] - first_ax_binning[0] >= first_ax_width *0.5)[0]
-                    datanorm = datavalues / np.diff(bins)
-                    databin = np.amax(datanorm[(len(first_ax_binning)-1)*i + ibin])
-                    datamax = np.amax(datanorm[(len(first_ax_binning)-1)*i:(len(first_ax_binning)-1)*(i+1)])
-                    if ismbbll:
-                        databin = datamax
-                    ymax = 2.0 if not cornerlegend else 1.5
-                    if log[1]:
-                        ymin = ax1.get_ylim()[0]
-                        ymax = max(ymax*np.log10(databin/ymin), 1.05*np.log10(datamax/ymin))
-                        ax1.set_ylim(ymin, ymin*np.power(10, ymax))
-                    else:
-                        ax1.set_ylim(0, max(ymax*databin, 1.05*datamax))
                 fig.align_ylabels()
                 if args.splitbins:
                     fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}_bin{i+1}{fmt}", transparent = True, bbox_inches = extent)
@@ -600,8 +579,7 @@ def plot(channel, year, fit,
                         edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
                         text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
                         if not single_slice:
-                            
-                            ax1.text(1. / num_extrabins * (i + 0.5), 0.79 + j * 0.12, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes)
+                            ax1.text(1 / num_extrabins * (i + 0.5), 0.912 - j * 0.11, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes)
             fig.align_ylabels()
             fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}{fmt}", transparent = True, bbox_inches = extent)
     fig.clf()
@@ -822,7 +800,8 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
 
         if fit != "p":
             if gvalues_p is None:
-                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi, 6.43 if args.xsec else 1)
+                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi,
+                                          6.43 if args.xsec else 1, use_cross="cross" in args.poi)
             gvalues = gvalues_p
         else:
             gvalues = {}
