@@ -9,6 +9,7 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 import math
 
+import mplhep
 import glob
 from collections import OrderedDict
 import json
@@ -128,10 +129,12 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
 
     if not scatter:
         if len(handles) > 0 and len(sigmas) > 0:
+            # FIXME bbox for the CL legend
             legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'lower left', bbox_to_anchor = (0.6, 0.0, 0.2, 0.3), fontsize = 21, handlelength = 2, borderaxespad = 0.5, frameon = False)
             ax.add_artist(legend1)
 
-            legend2 = ax.legend(first(handles), second(handles), loc = 'lower left', bbox_to_anchor = (0., 0.73, 0.1, 0.15), fontsize = 21, handlelength = 2., borderaxespad = 0.5, frameon = False)
+            # FIXME bbox for the exp obs legend
+            legend2 = ax.legend(first(handles), second(handles), loc = 'lower left', bbox_to_anchor = (0.55, 0.6, 0.1, 0.15), fontsize = 21, handlelength = 2., borderaxespad = 0.5, frameon = False)
             ax.add_artist(legend2)
 
         elif len(handles) > 0:
@@ -140,19 +143,21 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
             ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
-        ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
+        mplhep.cms.label(ax = ax, data = True, year = "", lumi = " 138", fontsize = 27)
+        #ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
+        #ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
-        if cmsapp != "":
-            atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+        #if cmsapp != "":
+        #    atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
+        #    ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
 
-        ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+        #ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
+        #ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower left', bbox_to_anchor = (0.56, 0.82, 0.15, 0.15),
+        # FIXME bbox for the etat flavor text
+        ax.legend(bbln, btxt, loc = 'lower left', bbox_to_anchor = (0.3, 0.825, 0.15, 0.15),
                   fontsize = 17 if len(btxt) > 1 else 17, frameon = False,
                   handlelength = 0, handletextpad = 0, borderaxespad = 0.4)
 
