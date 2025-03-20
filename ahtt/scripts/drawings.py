@@ -55,6 +55,8 @@ proc_colors = {
     r"Other": "C1", #"#f89c20",
     r"$\mathrm{t}\bar{\mathrm{t}}$":  "#F3E5AB", #"#e42536",
     #r"EW + QCD": "#58A279", #"#964a8b",
+    #r"$\eta_{\mathrm{t}}$": "forestgreen",
+    #r"$\chi_{\mathrm{t}}$": "darkorange",
     r"$\eta_{\mathrm{t}}$": "#cc0033",
     r"$\chi_{\mathrm{t}}$": "#0033cc",
     r"$\psi_{\mathrm{t}}$": "#009000",
@@ -221,7 +223,7 @@ def get_poi_values(fname, signals, tname, sf = 1, onlyres = False, use_cross = F
     tfile = None
     tres = None
     if tname != "":
-        if tname == "default":
+        if tname == "default" or tname == "cross":
             if use_cross:
                 tname = fname.replace("fitdiagnostics_result", "cross_obs")
             else:
@@ -242,92 +244,105 @@ def get_poi_values(fname, signals, tname, sf = 1, onlyres = False, use_cross = F
     result = {}
     ndigit = 2 if abs(sf) > 2 else 3
 
-    if onepoi:
-        if fres and tres is None:
-            gg = fres.floatParsFinal().find('g')
-            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
-        elif tres is not None:
-            values = [0., 0., 0.]
-            for i in tres:
-                qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
-                values[qq] = tres.g
-            result = {signals[0]: (round(values[0], ndigit), round(abs(values[1] - values[0]), ndigit), round(abs(values[2] - values[0]), ndigit))}
-        else:
-            result = {signals[0]: (0., 0.)}
-    elif twing:
-        if fres and tres is None:
-            g1 = fres.floatParsFinal().find('r1' if onlyres else 'g1')
-            g2 = fres.floatParsFinal().find('r2' if onlyres else 'g2')
-            result[signals[0]] = (round(g1.getValV(), 2), round(g1.getError(), 2))
-            result[signals[1]] = (round(g2.getValV(), 2), round(g2.getError(), 2))
-        elif tres is not None and use_cross:
-            values = [[0., 0., 0.], [0., 0., 0.]]
-            g1_contour = []
-            g2_contour = []
-            for i in tres:
-                if tres.quantileExpected == -1:
-                    values[0][0] = tres.r1 if onlyres else tres.g1
-                    values[1][0] = tres.r2 if onlyres else tres.g2
-                else:
-                    g1_contour.append(tres.r1 if onlyres else tres.g1)
-                    g2_contour.append(tres.r2 if onlyres else tres.g2)
-            values[0][1] = min(g1_contour)
-            values[0][2] = max(g1_contour)
-            values[1][1] = min(g2_contour)
-            values[1][2] = max(g2_contour)
-            result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
-            result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
-
-        elif tres is not None:
-            values = [[0., 0., 0.], [0., 0., 0.]]
-            for i in tres:
-                qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
-                if qq != 0:
-                    tmp = tres.r1 if onlyres else tres.g1
-                    if tmp != values[0][0]:
-                        values[0][qq] = tmp
-                    tmp = tres.r2 if onlyres else tres.g2
-                    if tmp != values[1][0]:
-                        values[1][qq] = tmp
-                else:
-                    values[0][qq] = tres.r1 if onlyres else tres.g1
-                    values[1][qq] = tres.r2 if onlyres else tres.g2
-            result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
-            result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
-        else:
-            result = {signals[0]: (0., 0.), signals[1]: (0., 0.)}
-    elif oneg:
-        if fres and tres is None:
-            allparams = [p.GetName() for p in fres.floatParsFinal()]
-            if signals[0][0] == "A" and "g1" in allparams:
-                parname = "g1"
-            elif signals[0][0] == "H" and "g2" in allparams:
-                parname = "g2"
-            elif "g" in allparams:
-                parname = "g"
+    if tres is not None and use_cross:
+        if len(signals) != 2:
+                raise ValueError("cross needs exactly two signals")
+        poi_map = {
+            "A": "r1" if onlyres else "g1",
+            "H": "r2" if onlyres else "g2",
+            r"$\eta_{\mathrm{t}}$": "CMS_EtaT_norm_13TeV",
+            r"$\chi_{\mathrm{t}}$": "CMS_ChiT_norm_13TeV",
+            r"$\psi_{\mathrm{t}}$": "CMS_PsiT_norm_13TeV"
+        }
+        sfs = [1. if ss[0] == 'A' or ss[0] == 'H' else sf for ss in signals]
+        pois = [poi_map[ss[0]] for ss in signals]
+        values = [[0., 0., 0.], [0., 0., 0.]]
+        g1_contour = []
+        g2_contour = []
+        for i in tres:
+            if tres.quantileExpected == -1:
+                values[0][0] = getattr(tres,pois[0])*sfs[0]
+                values[1][0] = getattr(tres,pois[1])*sfs[1]
             else:
-                raise ValueError()
-            gg = fres.floatParsFinal().find(parname)
-            result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
-        elif tres is not None:
-            raise NotImplementedError()
-        else:
-            result = {signals[0]: (0., 0.)}
-
-    for flag, name in [(etat, 'CMS_EtaT_norm_13TeV'), (chit, 'CMS_ChiT_norm_13TeV'), (psit, 'CMS_PsiT_norm_13TeV')]:
-        if flag[1]:
+                g1_contour.append(getattr(tres,pois[0])*sfs[0])
+                g2_contour.append(getattr(tres,pois[1])*sfs[1])
+        values[0][1] = max(g1_contour)
+        values[0][2] = min(g1_contour)
+        values[1][1] = max(g2_contour)
+        values[1][2] = min(g2_contour)
+        result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
+        result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
+    
+    else:
+        if onepoi:
             if fres and tres is None:
-                muhat = fres.floatParsFinal().find(name)
-                result = result | {(flag[0], None, None): (round(muhat.getValV() * sf, ndigit), round(muhat.getError() * sf, ndigit))}
+                gg = fres.floatParsFinal().find('g')
+                result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
             elif tres is not None:
                 values = [0., 0., 0.]
                 for i in tres:
                     qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
-                    tmp = getattr(tres, name)
-                    if qq == 0 or (qq != 0 and tmp != values[0]):
-                        values[qq] = tmp
-                result = result | {(flag[0], None, None): (round(values[0] * sf, ndigit), round(abs(values[1] - values[0]) * sf, ndigit), round(abs(values[2] - values[0]) * sf, ndigit))}
+                    values[qq] = tres.g
+                result = {signals[0]: (round(values[0], ndigit), round(abs(values[1] - values[0]), ndigit), round(abs(values[2] - values[0]), ndigit))}
             else:
-                result = result | {(flag[0], None, None): (0., 0.)}
+                result = {signals[0]: (0., 0.)}
+        elif twing:
+            if fres and tres is None:
+                g1 = fres.floatParsFinal().find('r1' if onlyres else 'g1')
+                g2 = fres.floatParsFinal().find('r2' if onlyres else 'g2')
+                result[signals[0]] = (round(g1.getValV(), 2), round(g1.getError(), 2))
+                result[signals[1]] = (round(g2.getValV(), 2), round(g2.getError(), 2))
+            elif tres is not None:
+                values = [[0., 0., 0.], [0., 0., 0.]]
+                for i in tres:
+                    qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
+                    if qq != 0:
+                        tmp = tres.r1 if onlyres else tres.g1
+                        if tmp != values[0][0]:
+                            values[0][qq] = tmp
+                        tmp = tres.r2 if onlyres else tres.g2
+                        if tmp != values[1][0]:
+                            values[1][qq] = tmp
+                    else:
+                        values[0][qq] = tres.r1 if onlyres else tres.g1
+                        values[1][qq] = tres.r2 if onlyres else tres.g2
+                result[signals[0]] = (round(values[0][0], ndigit), round(abs(values[0][1] - values[0][0]), ndigit), round(abs(values[0][2] - values[0][0]), ndigit))
+                result[signals[1]] = (round(values[1][0], ndigit), round(abs(values[1][1] - values[1][0]), ndigit), round(abs(values[1][2] - values[1][0]), ndigit))
+            else:
+                result = {signals[0]: (0., 0.), signals[1]: (0., 0.)}
+        elif oneg:
+            if fres and tres is None:
+                allparams = [p.GetName() for p in fres.floatParsFinal()]
+                if signals[0][0] == "A" and "g1" in allparams:
+                    parname = "g1"
+                elif signals[0][0] == "H" and "g2" in allparams:
+                    parname = "g2"
+                elif "g" in allparams:
+                    parname = "g"
+                else:
+                    raise ValueError()
+                gg = fres.floatParsFinal().find(parname)
+                result = {signals[0]: (round(gg.getValV(), ndigit), round(gg.getError(), ndigit))}
+            elif tres is not None:
+                raise NotImplementedError()
+            else:
+                result = {signals[0]: (0., 0.)}
+
+
+        for flag, name in [(etat, 'CMS_EtaT_norm_13TeV'), (chit, 'CMS_ChiT_norm_13TeV'), (psit, 'CMS_PsiT_norm_13TeV')]:
+            if flag[1]:
+                if fres and tres is None:
+                    muhat = fres.floatParsFinal().find(name)
+                    result = result | {(flag[0], None, None): (round(muhat.getValV() * sf, ndigit), round(muhat.getError() * sf, ndigit))}
+                elif tres is not None:
+                    values = [0., 0., 0.]
+                    for i in tres:
+                        qq = 0 if tres.quantileExpected == -1 else 1 if tres.quantileExpected > 0 else 2
+                        tmp = getattr(tres, name)
+                        if qq == 0 or (qq != 0 and tmp != values[0]):
+                            values[qq] = tmp
+                    result = result | {(flag[0], None, None): (round(values[0] * sf, ndigit), round(abs(values[1] - values[0]) * sf, ndigit), round(abs(values[2] - values[0]) * sf, ndigit))}
+                else:
+                    result = result | {(flag[0], None, None): (0., 0.)}
     result = {k: v if len(v) < 3 or abs(v[1] - v[2]) / v[1] > 0.1 else (v[0], v[1]) for k, v in result.items()}
     return result

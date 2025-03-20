@@ -12,6 +12,7 @@ from functools import cmp_to_key
 
 from ROOT import TFile, TTree
 
+import mplhep
 import glob
 from collections import OrderedDict
 import json
@@ -127,7 +128,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
 
-        if bestfit:
+        if bestfit and directories[ii][1] == "obs":
             ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X', markersize = 10.0, color = colortouse)
             if ii == 0:
                 sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
@@ -162,36 +163,37 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
 
     # for the paper etachi, ll
     bbox_sigmas = (0.96, 0.05, 0.04, 0.25)
-    bbox_expobs = (0.91, 0.725, 0.1, 0.2)
-    bbox_noeta = (0.85, 0.75, 0.15, 0.15)
+    bbox_expobs = (0.85, 0.775, 0.1, 0.2)
+    bbox_noeta = (0.85, 0.7, 0.15, 0.15)
 
     if len(handles) > 0 and len(sigmas) > 0:
-        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 1., frameon = False)
+        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
         ax.add_artist(legend1)
 
-        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 1., frameon = False)
+        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
         ax.add_artist(legend2)
     elif len(handles) > 0:
-        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 23, handlelength = 2., borderaxespad = 1., frameon = False)
     elif len(sigmas) > 0:
         ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
-        ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
-        ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
+        mplhep.cms.label(ax = ax, label="Private work", data = True, year = None, lumi = " 138", fontsize = 27)
+        #ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
+        #ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
-        if cmsapp != "":
-            atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
-            ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
+        #if cmsapp != "":
+        #    atxt = "{app}".format(app = r" $\textit{" + cmsapp + r"}$")
+        #    ax.text((0.03 * xlength) + xmin, (0.90 * ylength) + ymin, atxt, fontsize = 26, ha = 'left', va = 'top', usetex = True)
 
-        ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
-        ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
+        #ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
+        #ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
-        #btxt = etat_blurb(a343bkg)
-        #bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        #ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = bbox_noeta,
-        #          fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
-        #          handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        btxt = etat_blurb(a343bkg)
+        bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
+        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = bbox_noeta,
+                  fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
+                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)

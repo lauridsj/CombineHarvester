@@ -43,6 +43,8 @@ parser.add_argument("--batchah", help = "psfromws output containing sums of chan
                     default = None, dest = "batchah", required = False)
 parser.add_argument("--prefit-signal-from", help = "read prefit signal templates from this file instead",
                     default = "", dest = "ipf", required = False)
+parser.add_argument("--best-fit-from", help = "read best fit poi from this file instead",
+                    default = "", dest = "poi", required = False)
 parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
                     type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
 parser.add_argument("--signal-scale", help = "scaling to apply on A/H signal (ie not promoted ones (yet!)) in drawing", default = (1., 1.),
@@ -195,7 +197,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         label = "Data",
         **datastyle
     )
-    ax.set_ylabel("<Events / GeV>", fontsize=24)
+    ax.set_ylabel("Events / GeV", fontsize=24)
     if log:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width)
@@ -254,7 +256,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
                 if fit == "s":
                     #signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f}$"
                     if len(gvalues[key]) >= 3:
-                        signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f}_{{-{gvalues[key][1]:.2f}}}^{{+{gvalues[key][2]:.2f}}}$"
+                        signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f}_{{-{gvalues[key][2]:.2f}}}^{{+{gvalues[key][1]:.2f}}}$"
                     else:
                         signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
                 elif fit == "b":
@@ -453,7 +455,7 @@ def plot(channel, year, fit,
     if fitstep == "s":
 
         cmslabel = "Preliminary" if args.preliminary else None
-        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 24)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None, fontsize = 24)
         fig.align_ylabels()
         fig.subplots_adjust(hspace = 0.3, left = 0.055, right = 1 - 0.003, top = 1 - 0.035, bottom = 0.07)
         
@@ -596,11 +598,11 @@ for channel, year in product(channels, years):
         if fit != "p":
             if fitstep == "sah":
                 if gvalues_ah is None:
-                    gvalues_ah = get_poi_values(ifile, signals | promotions, "default", use_cross=True)
+                    gvalues_ah = get_poi_values(ifile, signals | promotions, args.poi, use_cross="cross" in args.poi)
                 gvalues = gvalues_ah
             elif fitstep == "s":
                 if gvalues_etat is None:
-                    gvalues_etat = get_poi_values(ifile, signals | promotions, "default", use_cross=True)
+                    gvalues_etat = get_poi_values(ifile, signals | promotions, args.poi, use_cross="cross" in args.poi)
                 gvalues = gvalues_etat
         else:
             gvalues = {}

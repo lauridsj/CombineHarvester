@@ -171,6 +171,7 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
     fig.set_size_inches(8., 8.)
     fig.set_dpi(600)
     fig.tight_layout()
+    #plt.subplots_adjust(left=0.1, top=0.98, bottom=0.1, right=0.98)
 
     for oname in onames:
         fig.savefig(oname, transparent = transparent)

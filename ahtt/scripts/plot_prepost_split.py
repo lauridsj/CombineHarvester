@@ -27,8 +27,10 @@ import hist  # noqa:E402
 from hist import Hist  # noqa:E402
 import ROOT
 import math
+import numba
 
-from utilspy import tuplize, index_1n, index_n1
+from utilspy import tuplize
+from utilsmath import index_1n, index_n1
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
 from drawings import etat_blurb, channels, years, sm_procs, proc_colors, signal_zorder, binnings, ratiolabels, lumis, hatchstyle, datastyle
 from drawings import get_poi_values
@@ -72,7 +74,7 @@ parser.add_argument("--project-to", help = "which variables to project down to, 
                     dest = "project", choices = ["none", "mtt", "mbbll", "chel", "chan"], default = "none", required = False)
 parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut on mtt. must be sorted, otherwise applies no cut. if one value is outside mass range, plots binwise.",
                     dest = "cut", default = "", required = False,
-                    type = lambda s: [] if s == "" else sorted(tokenize_to_list(remove_spaces_quotes(s), astype = int)))
+                    type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s), astype = int))
 parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
 parser.add_argument('--no-total', help = "dont plot the total signal", action="store_false", dest="total")
 args = parser.parse_args()
@@ -80,6 +82,9 @@ args.logy = args.log or args.logy
 args.readbatch = args.readbatch and os.path.isfile(args.batch)
 if args.readbatch:
     args.prefit = False
+
+bgstring = "FO pQCD + BG"
+#bgstring = "BG"
 
 fits = []
 if args.postfit:
@@ -141,7 +146,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         color = colors,
         zorder = -90
     )
-    ax.set_ylabel("Events" if angular else "Events / GeV", fontsize=24)
+    ax.set_ylabel("Events" if angular else "<Events / GeV>", fontsize=24)
     if log[0]:
         ax.set_xscale("log")
     if log[1]:
@@ -245,7 +250,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,
-            yerr = np.zeros(len(signal.axes[0])),
+            yerr = False,
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
@@ -253,7 +258,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
-        handles.append(handle_signal[0])
+        handles.append(handle_signal[0][0])
         labels.append(signal_label)
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
@@ -272,10 +277,10 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
         fittype = "Prefit"
         fittypelen = len(fittype)
     elif fit == "b":
-        fittype = "Postfit (FO pQCD + BG)"
+        fittype = f"Postfit ({bgstring})"
         fittypelen = len(fittype)
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (FO pQCD + BG "
+        fittype = f"Postfit ({bgstring} "
         fittypelen = len(fittype)
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
@@ -288,7 +293,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             fittypelen += len(" + x")
         fittype += ")"
     else:
-        fittype = "Postfit (FO pQCD + BG + A/H)"
+        fittype = f"Postfit ({bgstring} + A/H)"
         fittypelen = len(fittype)
     if not single_slice:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
@@ -425,8 +430,8 @@ def plot(channel, year, fit,
         ticklocs_minor = np.linspace(400, 1600, 13)
     elif ismbbll:
         if single_slice:
-            ticklocs = np.array([100, 200, 400, 900]) if log[0] else np.linspace(200, 800, 4)
-            ticklocs_minor = np.array([10, 100, 200, 300, 400, 600, 900]) if log[0] else np.arange(150, 900, 50)
+            ticklocs = np.array([150, 200, 400, 800]) if log[0] else np.linspace(200, 800, 4)
+            ticklocs_minor = np.array([140, 200, 300, 400, 500, 600, 700, 800, 900]) if log[0] else np.arange(150, 900, 50)
         else:
             ticklocs = np.linspace(300, 700, 2)
             ticklocs_minor = np.arange(200, 900, 100)
@@ -436,30 +441,31 @@ def plot(channel, year, fit,
             ticklocs_minor = np.arange(300, 1500, 100)
         else:
             ticklocs = np.linspace(600, 1200, 2)
-            ticklocs_minor = np.linspace(450, 1350, 7)
+            ticklocs_minor = np.linspace(450, 1350, 7)  
     ticks = np.concatenate(
         [ticklocs - first_ax_binning[0] + i * first_ax_width
         for i in range(num_extrabins)])
     ticks_minor = np.concatenate(
         [ticklocs_minor - first_ax_binning[0] + i * first_ax_width
         for i in range(num_extrabins)])
-    ax2.set_xticks(ticks if first_ax_width > 0 else [-1, 0, 1], minor=False)
+    
     ax2.set_xticks(ticks_minor if first_ax_width > 0 else [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1], minor=True)
     if args.noxaxis:
+        ax2.set_xticks(ticks if first_ax_width > 0 else [-1, 0, 1], minor=False)
         ax2.set_xticklabels([])
         ax2.set_xlabel("")
     else:       
         tickloc_labels = [f"{t:.0f}" for i in range(num_extrabins) for t in ticklocs] if first_ax_width > 0 else ["-1", "0", "1"]
-        ax2.set_xticklabels(tickloc_labels)
+        ax2.set_xticks(ticks if first_ax_width > 0 else [-1, 0, 1], tickloc_labels, minor=False)
         ax2.set_xlabel(list(binning.keys())[0], fontsize=24)
 
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
     if fit == "p":
         fittype = "Prefit"
     elif fit == "b":
-        fittype = "Postfit (FO pQCD + BG)"
+        fittype = f"Postfit ({bgstring})"
     elif fit == "s" and len(args.assignal):
-        fittype = "Postfit (FO pQCD + BG "
+        fittype = f"Postfit ({bgstring} "
         if "EtaT" in args.assignal:
             fittype += "+ $\mathbf{\eta_{\mathrm{t}}}$"
         if "ChiT" in args.assignal:
@@ -468,7 +474,7 @@ def plot(channel, year, fit,
             fittype += "+ $\mathbf{\psi_{\mathrm{t}}}$"
         fittype += ")"
     else:
-        fittype = "Postfit (FO pQCD + BG + A/H)"
+        fittype = f"Postfit ({bgstring} + A/H)"
     
     if args.panellabels:
         if args.panel == "upper":
@@ -501,14 +507,14 @@ def plot(channel, year, fit,
         ypos = 0.86 if args.panellabels else 0.96
         ax2.annotate(btxt, (xpos, ypos), xycoords="axes fraction", va="top", ha="left", fontsize=20, zorder=7777)
 
-    cmslabel = "Preliminary" if args.preliminary else None
+    cmslabel = "Private work" if args.preliminary else None
     if args.panel == "both":
         if not single_slice:
             ax0.set_title(title)
-        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 19 if args.preliminary else 24)
         fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
     else:
-        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = year, fontsize = 19 if args.preliminary else 24)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 19 if args.preliminary else 24)
         if len(allsigs) == 3:
             hspace = 1.5
         else:
@@ -541,7 +547,7 @@ def plot(channel, year, fit,
     elif any([ss in sstr[0][0] for ss in ["eta", "chi", "psi"]]):
         sstr = "__".join(args.assignal)
     else:
-        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if ss[0] != r"$\eta_{\mathrm{t}}$"]
+        sstr = [ss[0] + "_m" + str(ss[1]) + "_w" + str(float(ss[2])).replace(".", "p") for ss in sstr if (ss[0] == "A" or ss[0] == "H")]
         sstr = "__".join(sstr)
     cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
     ystr = year.replace(" ", "").lower()
@@ -564,7 +570,7 @@ def plot(channel, year, fit,
                 else:
                     bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
                 if first_ax_width > 0:
-                    ax2.set_xlim(10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
+                    ax2.set_xlim(first_ax_width*i+10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
                 fig.align_ylabels()
@@ -609,25 +615,32 @@ def cut_string(variable, binedges, cut, mstr):
     else:
         return [f"_{mstr}{cut[0]}to{cut[1]}", f"{cut[0]} < {variable} < {cut[1]} GeV"]
 
-def actually_project(plane, nbins, target, cut, icut, matrix):
-    isarray = isinstance(plane, np.ndarray)
+@numba.njit(cache=True, nogil=True)
+def actually_project_numba(plane, nbins, target, cut, icut, matrix, lenyears, isarray):
     values = np.zeros(nbins[target])
     variances = None if isarray else np.zeros(nbins[target])
-    for ibin in range(math.prod(nbins)):
+    for ibin in range(np.prod(nbins)):
         idxs = index_1n(ibin, nbins)
         if icut[0] <= idxs[0] < icut[1]:
-            values[ idxs[target] ] += plane[ibin] if isarray else plane.values()[ibin]
+            values[ idxs[target] ] += plane[ibin]
             if not isarray:
-                nchannel = int(len(matrix) / len(years) / math.prod(nbins))
-                for iyear in range(len(years)):
+                nchannel = int(len(matrix) / lenyears / np.prod(nbins))
+                for iyear in range(lenyears):
                     for ichannel in range(nchannel):
-                        iycb0 = index_n1(idxs + [iyear, ichannel], nbins + [len(years), nchannel])
+                        iycb0 = index_n1(np.append(idxs, [iyear, ichannel]), np.append(nbins, [lenyears, nchannel]))
                         for iycb1 in range(len(matrix)):
-                            iother = index_1n(iycb1, nbins + [len(years), nchannel])
+                            iother = index_1n(iycb1, np.append(nbins, [lenyears, nchannel]))
                             if iother[target] != idxs[target]:
                                 continue
                             if icut[0] <= iother[0] < icut[1]:
                                 variances[ idxs[target] ] += matrix[iycb0, iycb1]
+    return values, variances
+
+def actually_project(plane, nbins, target, cut, icut, matrix):
+    isarray = isinstance(plane, np.ndarray)
+    values, variances = actually_project_numba(plane if isarray else np.array(plane.values()), 
+                                               np.array(nbins), target, np.array(cut), np.array(icut), matrix,
+                                               len(years), isarray)
     histogram = None
     if not isarray:
         histogram = Hist.new.Regular(nbins[target], -1 if target != 0 else cut[0], 1 if target != 0 else cut[1], name = "").Weight()
@@ -730,6 +743,8 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
                 binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)"}
             else:
                 binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"}
+                #if args.logx:
+                #    binning[list(binning.keys())[0]][0] = 0
 
         num_extrabins = np.prod(list(len(edges) - 1 for edges in list(binning.values())[1:]))
         extra_axes = {k: v for i, (k, v) in enumerate(binning.items()) if i != 0}
@@ -880,19 +895,23 @@ if args.batch is not None:
                     total.view().value -= promotion.values()
                 sums["total"] = total
 
-                if args.project != "none":
-                    binedges = [bb for vv, bb in sums["binning"].items()]
-                    cut = args.cut if len(args.cut) == 2 else None
-                    if cut is None and (args.project == "mtt" or args.project == "mbbll"):
-                        cut = [binedges[0][0], binedges[0][-1]]
-                    matrix = None
-                    with uproot.open(args.ifile) as ff:
-                        matrix = ff[f"shapes_fit_{fit}"]["overall_total_covar"].values()
-                    if cut is not None and all([binedges[0][0] <= cc <= binedges[0][-1] for cc in cut]):
+            if args.project != "none":
+                binedges = [bb for vv, bb in sums["binning"].items()]
+                cut = args.cut if len(args.cut) == 2 else None
+                if cut is None and (args.project == "mtt" or args.project == "mbbll"):
+                    cut = [binedges[0][0], binedges[0][-1]]
+                if cut is not None and cut[0] == -1:
+                    cut[0] = binedges[0][0]
+                if cut is not None and cut[1] == -1:
+                    cut[1] = binedges[0][-1]
+                matrix = None
+                with uproot.open(args.ifile) as ff:
+                    matrix = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["overall_total_covar"].values()
+                if cut is not None and all([binedges[0][0] <= cc <= binedges[0][-1] for cc in cut]):
+                    plot_projection(sums, binedges, cut, matrix)
+                else:
+                    for imin in range(len(binedges[0]) - 1):
+                        cut = [binedges[0][imin], binedges[0][imin + 1]]
                         plot_projection(sums, binedges, cut, matrix)
-                    else:
-                        for imin in range(len(binedges[0]) - 1):
-                            cut = [binedges[0][imin], binedges[0][imin + 1]]
-                            plot_projection(sums, binedges, cut, matrix)
-                    continue
+                continue
             plot(**sums)
