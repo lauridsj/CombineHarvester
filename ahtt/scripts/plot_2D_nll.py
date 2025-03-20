@@ -164,7 +164,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     # for the paper etachi, ll
     bbox_sigmas = (0.96, 0.05, 0.04, 0.25)
     bbox_expobs = (0.85, 0.775, 0.1, 0.2)
-    bbox_noeta = (0.85, 0.7, 0.15, 0.15)
+    bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
     if len(handles) > 0 and len(sigmas) > 0:
         legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
