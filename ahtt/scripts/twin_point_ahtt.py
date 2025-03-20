@@ -347,7 +347,7 @@ if __name__ == '__main__':
                 "generate", "gof", "fc-scan", "contour", "chancomp",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
-                "nll", "likelihood"]
+                "nll", "likelihood", "statonly"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -367,6 +367,7 @@ if __name__ == '__main__':
     runprepost = "prepost" in modes or "corrmat" in modes
     runpsfromws = "psfromws" in modes
     runnll = "nll" in modes or "likelihood" in modes
+    runstatonly = "statonly" in modes
 
     if len(args.fcexp) > 0 and not all([expected_scenario(exp) is not None for exp in args.fcexp]):
         print "given expected scenarii:", args.fcexp
@@ -1010,7 +1011,7 @@ if __name__ == '__main__':
         ))
         syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
 
-    if runnll:
+    if runnll or runstatonly:
         if len(args.nllparam) < 1:
             raise RuntimeError("what parameter is the nll being scanned against??")
 
@@ -1045,26 +1046,27 @@ if __name__ == '__main__':
         interval = [list(np.linspace(minmax[ii][0], minmax[ii][1], num = args.nllnpnt[ii if ii < nparam else -1])) for ii in range(nparam)]
         nllparam = " ".join(["-P {param}".format(param = param) for param in args.nllparam])
 
-        nelement = 0
-        for element in itertools.product(*interval):
-            nelement += 1
-            nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
-            nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
-
-            never_gonna_give_you_up(
-                command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
-                "{exp} {stg} {asm} {ext} --saveNLL".format(
+        if runstatonly:
+            param_ranges = ["{param}={pmin},{pmax}".format(param=args.nllparam[ii], pmin=minmax[ii][0], pmax=minmax[ii][1]) for ii in range(nparam)]
+            param_ranges = ":".join(param_ranges)
+            npoint = np.prod([ii-1 for ii in args.nllnpnt])
+            nllname = args.fcexp[0] + "_" + param_ranges.replace(".","p").replace(",","to").replace("=","_").replace(":","_").replace("-","m")
+            command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo grid {par} --fastScan --skipInitialFit --setParameterRanges {prn} --points {pnt} {uco} {exp} {stg} {asm} {ext}".format(
                     dcd = fcwsp,
                     mmm = mstr,
                     snm = nllname,
-                    pnt = nllpnt,
+                    pnt = npoint,
+                    prn = param_ranges,
                     par = nllparam,
                     uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
                     exp = set_parameter(set_freeze, args.extopt, masks),
                     stg = "{fit_strategy}",
                     asm = "-t -1" if args.fcexp[0] != "obs" else "",
                     ext = nonparametric_option(args.extopt),
-                ),
+                )
+
+            never_gonna_give_you_up(
+                command = command,
 
                 failure_cleanups = [
                     [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
@@ -1074,8 +1076,7 @@ if __name__ == '__main__':
                 first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
             )
 
-        if nelement > 1:
-            syscall("hadd -f -k {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+            syscall("mv higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root {dcd}{ptg}_statonly_nll_{exp}_{fit}.root".format(
                 dcd = dcdir,
                 ptg = ptag,
                 exp = args.fcexp[0],
@@ -1084,14 +1085,53 @@ if __name__ == '__main__':
                 mmm = mstr
             ))
         else:
-            syscall("mv higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root {dcd}{ptg}_nll_{exp}_{fit}.root".format(
-                dcd = dcdir,
-                ptg = ptag,
-                exp = args.fcexp[0],
-                fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
-                par = "*".join(args.nllparam),
-                mmm = mstr
-            ))
+            nelement = 0
+            for element in itertools.product(*interval):
+                nelement += 1
+                nllpnt = ",".join(["{param}={value}".format(param = param, value = value) for param, value in zip(args.nllparam, element)])
+                nllname = args.fcexp[0] + "_".join([""] + ["{param}_{value}".format(param = param, value = floattopm(round(value, 5))) for param, value in zip(args.nllparam, element)])
+
+                never_gonna_give_you_up(
+                    command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -m {mmm} -n _{snm} --algo fixed {par} --fixedPointPOIs '{pnt}' {uco} "
+                    "{exp} {stg} {asm} {ext} --saveNLL".format(
+                        dcd = fcwsp,
+                        mmm = mstr,
+                        snm = nllname,
+                        pnt = nllpnt,
+                        par = nllparam,
+                        uco = "--redefineSignalPOIs '{uco}'".format(uco = unconstrained) if len(unconstrained) else "",
+                        exp = set_parameter(set_freeze, args.extopt, masks),
+                        stg = "{fit_strategy}",
+                        asm = "-t -1" if args.fcexp[0] != "obs" else "",
+                        ext = nonparametric_option(args.extopt),
+                    ),
+
+                    failure_cleanups = [
+                        [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
+                    ],
+
+                    usehesse = args.usehesse,
+                    first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
+                )
+
+            if nelement > 1:
+                syscall("hadd -f -k {dcd}{ptg}_nll_{exp}_{fit}.root higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root && rm higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root".format(
+                    dcd = dcdir,
+                    ptg = ptag,
+                    exp = args.fcexp[0],
+                    fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                    par = "*".join(args.nllparam),
+                    mmm = mstr
+                ))
+            else:
+                syscall("mv higgsCombine_{exp}_{par}*MultiDimFit.mH{mmm}.root {dcd}{ptg}_nll_{exp}_{fit}.root".format(
+                    dcd = dcdir,
+                    ptg = ptag,
+                    exp = args.fcexp[0],
+                    fit = "_".join(["{pp}_{mi}to{ma}".format(pp = pp, mi = floattopm(mm[0]), ma = floattopm(mm[1])) for pp, mm in zip(args.nllparam, minmax)]),
+                    par = "*".join(args.nllparam),
+                    mmm = mstr
+                ))
 
     if args.compress:
         syscall(("tar -czf {dcd}.tar.gz {dcd} && rm -r {dcd}").format(
