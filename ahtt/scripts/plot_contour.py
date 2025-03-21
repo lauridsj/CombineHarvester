@@ -75,12 +75,16 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
     xmin, xmax = intervals[0]
     ymin, ymax = intervals[1]
 
+    xautomax = 0.
+    yautomax = 0.
+
     for ic, contour in enumerate(contours):
         colortouse = draw_contour.colors[len(contours)][ic]
 
         if bestfit:
-            ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
-                    marker = 'X', markersize = 10.0, color = colortouse)
+            if labels[ic] == "Observed":
+                ax.plot(np.array([contour["best_fit"][0]]), np.array([contour["best_fit"][1]]),
+                        marker = 'X', markersize = 10.0, color = colortouse)
             if ic == 0:
                 sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
 
@@ -114,13 +118,27 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
                 drawcontour = False
 
             if drawcontour:
-                ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
+                tric = ax.tricontour(np.array(contour["g1"]), np.array(contour["g2"]), contour["eff"],
                               levels = np.array([alpha, 2.]), colors = colortouse,
                               linestyles = [draw_contour.lines[isig]], linewidths = 2, alpha = 1. - (0.05 * isig))
+                if args.autoscale:
+                    allsegs = np.concatenate([arr for l in tric.allsegs for arr in l])
+                    xautomax = max(xautomax, np.amax(allsegs[:,0]))
+                    yautomax = max(yautomax, np.amax(allsegs[:,1]))
+                    print(xautomax, yautomax)
 
             if len(labels) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), labels[ic]))
 
+    btxt = etat_blurb(a343bkg)
+    if args.autoscale:
+        xautomax *= 1.9
+        yautomax *= (1.25 if len(btxt) == 2 else 1.1)
+        automax = max(xautomax,yautomax,1.0)
+        automax = round(automax*10)/10
+        intervals[1][1] = automax
+        intervals[0][1] = automax
+    
     plt.xlabel(axes["coupling"] % str_point(pair[0]), fontsize = 26, loc = "right")
     plt.ylabel(axes["coupling"] % str_point(pair[1]), fontsize = 26, loc = "top")
     plt.xlim(*intervals[0])
@@ -157,7 +175,8 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
         btxt = etat_blurb(a343bkg)
         bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
         # FIXME bbox for the etat flavor text
-        ax.legend(bbln, btxt, loc = 'lower left', bbox_to_anchor = (0.3, 0.825, 0.15, 0.15),
+        bbox_etat = (0.3, 0.825, 0.15, 0.15) if len(btxt) == 2 else (0.53, 0.88, 0.15, 0.15)
+        ax.legend(bbln, btxt, loc = 'lower left', bbox_to_anchor = bbox_etat,
                   fontsize = 17 if len(btxt) > 1 else 17, frameon = False,
                   handlelength = 0, handletextpad = 0, borderaxespad = 0.4)
 
@@ -232,7 +251,7 @@ if __name__ == '__main__':
                         dest = "transparent", action = "store_false", required = False)
     parser.add_argument("--plot-formats", help = "comma-separated list of formats to save the plots in", default = [".png"], dest = "fmt", required = False,
                         type = lambda s: [prepend_if_not_empty(fmt, '.') for fmt in tokenize_to_list(remove_spaces_quotes(s))])
-
+    parser.add_argument("--autoscale", action="store_true")
     args = parser.parse_args()
 
     if args.point != "":

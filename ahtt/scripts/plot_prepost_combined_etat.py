@@ -197,7 +197,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         label = "Data",
         **datastyle
     )
-    ax.set_ylabel("Events / GeV", fontsize=24)
+    ax.set_ylabel("<Events / GeV>", fontsize=24)
     if log:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width)
@@ -270,7 +270,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
         handle_signal = hep.histplot(
             (total.values() + signal.values()) / total.values(),
             bins = bins,
-            yerr = np.zeros(len(signal.axes[0])),
+            yerr = False,
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
@@ -279,7 +279,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             zorder = signal_zorder[symbol],
             edges = False
         )
-        handles_signals.append(handle_signal[0])
+        handles_signals.append(handle_signal[0][0])
         labels_signals.append(signal_label)
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
