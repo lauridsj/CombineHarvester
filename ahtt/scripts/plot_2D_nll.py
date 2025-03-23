@@ -105,6 +105,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         ])
         draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
         #draw_nll.lines = ['solid', 'dashed', (0, (3, 1, 1, 1)), 'dotted']
+        draw_nll.numbers = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Enough"]
 
     ndir = len(directories)
     if ndir > len(draw_nll.colors):
@@ -139,6 +140,8 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
             iline = isig if maxsigma <= 3 else isig // 2
 
             if ii == 0 and maxsigma > 1:
+                #sdeng = " SD" if isig == 0 else " SDs"
+                #sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), draw_nll.numbers[isig] + sdeng))
                 sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), r"$\pm" + str(isig + 1) + r"$ SD"))
 
             alpha = alphas[isig]
@@ -162,15 +165,15 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     #bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
     # for the paper etachi, ll
-    bbox_sigmas = (0.96, 0.05, 0.04, 0.25)
-    bbox_expobs = (0.85, 0.775, 0.1, 0.2)
+    bbox_sigmas = (0.96, 0.025, 0.04, 0.25)
+    bbox_expobs = (0.9, 0.775, 0.1, 0.2)
     bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
     if len(handles) > 0 and len(sigmas) > 0:
-        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
+        legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.25, frameon = False)
         ax.add_artist(legend1)
 
-        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
+        legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.25, frameon = False)
         ax.add_artist(legend2)
     elif len(handles) > 0:
         ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 23, handlelength = 2., borderaxespad = 1., frameon = False)
@@ -178,7 +181,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
-        mplhep.cms.label(ax = ax, data = True, year = "", lumi = " 138", fontsize = 27)
+        mplhep.cms.label(ax = ax, data = True, year = None, lumi = " 138", fontsize = 27)
         #ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
         #ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 
