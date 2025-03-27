@@ -17,11 +17,11 @@ axes = {
     "ttcoupling": r"$\mathrm{g}_{\mathrm{\mathsf{%s}t\bar{t}}}$",
     "dnll":       r"$-2\,\ln\,\dfrac{\mathcal{L}(g_{\mathrm{\mathsf{%s}}})}{\mathcal{L}_{\mathrm{SM}}}$",
     #"muah":       r"$\mu^{\mathrm{\mathsf{%s}}}_{\mathrm{%s}}$",
-    "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ (%s pb)",
+    "muah":       r"$\sigma\left(\mathrm{\mathsf{%s}}\right)$ [%s pb]",
     "muetat":     r"$\mu(\eta_{\mathrm{t}})$",
     "muchit":     r"$\mu(\chi_{\mathrm{t}})$",
-    "sigmaetat":  r"$\sigma\left(\eta_{\mathrm{t}}\right)$ (pb)",
-    "sigmachit":  r"$\sigma\left(\chi_{\mathrm{t}}\right)$ (pb)",
+    "sigmaetat":  r"$\sigma\left(\eta_{\mathrm{t}}\right)$ [pb]",
+    "sigmachit":  r"$\sigma\left(\chi_{\mathrm{t}}\right)$ [pb]",
     "yukawa":     r"$y_{\mathrm{t}}$",
     "ll":         r"$\ell\ell$",
     "l3j":        r"$\ell$, 3j",
@@ -76,7 +76,7 @@ binnings = {
         r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
             [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
         r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)":
-            [140, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
+            [80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
         r"$c_{\mathrm{han}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
         r"$c_{\mathrm{hel}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
     },
