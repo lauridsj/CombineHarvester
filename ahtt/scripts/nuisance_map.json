@@ -19,8 +19,8 @@
         "CMS_PDF_PCA_0": "PDF",
         "CMS_PDF_alphaS": "PDF \\alpha_{s}",
 
-        "CR_ERD_TT": "Color rec. (ERD)",
-        "CR_QCD_TT": "Color rec. (QCD-inspired)",
+        "CR_ERD_TT": "Color reconnection (ERD)",
+        "CR_QCD_TT": "Color reconnection (QCD-inspired)",
         "CR_GluonMove_TT": "Color reconnection (GluonMove)",
 
         "CMS_EWQCD_$CHAN_norm_13TeV_$YEAR": "EW + QCD rate ($CHAN, $YEAR)",
@@ -31,8 +31,8 @@
         "CMS_JEC_13TeV_FlavorQCDOnNonBottom": "Jet p_{T} scale (non-b flavor response)",
         "CMS_JEC_13TeV_Absolute": "Jet p_{T}  scale (abs. scale, corr.)",
         "CMS_JEC_13TeV_Absolute_$YEAR": "Jet p_{T} scale (abs. scale, $YEAR)",
-        "CMS_JEC_13TeV_BBEC1": "Jet p_{T} scale (BBEC1, corr.)",
-        "CMS_JEC_13TeV_BBEC1_$YEAR": "Jet p_{T} scale (BBEC1, $YEAR)",
+        "CMS_JEC_13TeV_BBEC1": "Jet p_{T} scale (PU rem. central, corr.)",
+        "CMS_JEC_13TeV_BBEC1_$YEAR": "Jet p_{T} scale (PU rem. central, $YEAR)",
         "CMS_JEC_13TeV_RelativeSample": "Jet p_{T} scale (rel. sample, corr.)",
         "CMS_JEC_13TeV_RelativeSample_$YEAR": "Jet p_{T} scale (rel. sample, $YEAR)",
         "CMS_JEC_13TeV_RelativeBal": "Jet p_{T} scale (rel. balance, corr.)",
