@@ -25,8 +25,8 @@ import matplotlib.lines as mln
 import matplotlib.colors as mcl
 import matplotlib.ticker as mtc
 
-from utilspy import pmtofloat
-from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, withinerror, get_point, stock_labels, valid_nll_fname
+from utilspy import pmtofloat, stringify
+from drawings import min_g, max_g, epsilon, axes, first, second, third, pruned, withinerror, get_point, stock_labels, stock_names, valid_nll_fname
 from drawings import default_etat_measurement, etat_blurb
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes, remove_quotes
 from hilfemir import combine_help_messages
@@ -58,7 +58,7 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
             for i in dtree:
                 valuednll = (round(getattr(dtree, parameters[0]), 5), round(getattr(dtree, parameters[1]), 5), round(2. * dtree.deltaNLL, 5))
                 if len(scales) > 0:
-                    valuednll = (valuednll[0] * scales[0], valuednll[1] * scales[1 if len(scales) > 1 else 0], valuednll[2])
+                    valuednll = (round(valuednll[0] * scales[0], 5), round(valuednll[1] * scales[1 if len(scales) > 1 else 0], 5), valuednll[2])
 
                 if dtree.quantileExpected >= 0.:
                     if drop is not None and any([window[0][0] < valuednll[0] < window[0][1] and window[1][0] < valuednll[1] < window[1][1] for window in drop]):
@@ -93,7 +93,22 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
         fits.append(interpolated if prunesmooth else originals)
     return result
 
-def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, intervals, drops, prunesmooth, maxsigma, bestfit, formal, cmsapp, luminosity, a343bkg, transparent):
+def dump_2dnll_json(oname, tag, parameters, best_fit, nlls, maxsigma = 5):
+    alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
+    oname = '.'.join(oname.split('.')[:-1]) + f"_{tag}.json"
+    result = OrderedDict()
+    result["parameters"] = parameters
+    result["2dNLLs"] = OrderedDict()
+    result["2dNLLs"][stringify(best_fit[:2])] = best_fit[2]
+    for nll in nlls:
+        if nll[2] < 2. * alphas[maxsigma -  1]:
+            result["2dNLLs"][stringify(nll[:2])] = nll[2]
+    with open(oname, "w") as jj:
+        json.dump(result, jj, indent = 1)
+
+def draw_nll(onames, points, directories, tlabel, parameters, plabels, pnames, pscales, intervals,
+             drops, prunesmooth, dumpjson, maxsigma, bestfit, onlybest,
+             formal, cmsapp, luminosity, a343bkg, transparent):
     alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
 
     if not hasattr(draw_nll, "colors"):
@@ -106,6 +121,7 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         draw_nll.lines = ['solid', 'dashed', 'dashdot', 'dotted']
         #draw_nll.lines = ['solid', 'dashed', (0, (3, 1, 1, 1)), 'dotted']
         draw_nll.numbers = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Enough"]
+        draw_nll.markers = ["X", "*", "D", "P"]
 
     ndir = len(directories)
     if ndir > len(draw_nll.colors):
@@ -115,6 +131,10 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     handles = []
     sigmas = []
     nlls = read_nll(points, directories, parameters, pscales, intervals, drops, prunesmooth, maxsigma)
+    onecontour = len(nlls[0]) - len(onlybest) == 1
+    oneidx = [ii for ii in range(len(nlls[0])) if ii not in onlybest][0] if onecontour else None
+    onelabel = tlabel[oneidx] if onecontour else "Best fit"
+    onemark, othermark = 15, 15
 
     xlength = intervals[0][1] - intervals[0][0]
     ylength = intervals[1][1] - intervals[1][0]
@@ -122,17 +142,20 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     xmin, xmax = intervals[0]
     ymin, ymax = intervals[1]
 
-    #if True:
-    #    ax.plot(np.array([xmin, xmax]), np.array([0., 0.]), color = "#3B444B", linewidth = 0.5)
-    #    ax.plot(np.array([0., 0.]), np.array([ymin, ymax]), color = "#3B444B", linewidth = 0.5)
+    if True:
+        ax.plot(np.array([xmin, xmax]), np.array([0., 0.]), color = '#848482', linewidth = 0.5, zorder = -1)
+        ax.plot(np.array([0., 0.]), np.array([ymin, ymax]), color = '#848482', linewidth = 0.5, zorder = -1)
 
     for ii, (best_fit, nll) in enumerate(zip(nlls[0], nlls[1])):
         colortouse = draw_nll.colors[len(nlls[1])][ii]
 
+        if dumpjson:
+            dump_2dnll_json(onames[0], f"{directories[ii][2]}_{directories[ii][1]}", pnames, best_fit, nll, maxsigma)
+
         if bestfit:
-            ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X', markersize = 10.0, color = colortouse)
+            ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X' if ii == oneidx else draw_nll.markers[ii], markersize = onemark if ii == oneidx else othermark, color = colortouse)
             if ii == 0:
-                sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", marker = 'X', markersize = onemark, linewidth = 0), onelabel))
 
         for isig in range(maxsigma):
             if maxsigma > 3 and (isig + 1) % 2 == 0:
@@ -145,13 +168,17 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
                 sigmas.append((mln.Line2D([0], [0], color = "0", linestyle = draw_nll.lines[iline], linewidth = 2), r"$\pm" + str(isig + 1) + r"$ SD"))
 
             alpha = alphas[isig]
-
-            ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array(third(nll)),
-                          levels = np.array([0., alpha]), colors = colortouse,
-                          linestyles = [draw_nll.lines[iline]], linewidths = 2, alpha = 1. - (0.05 * isig))
+            if ii not in onlybest:
+                ax.tricontour(np.array(first(nll)), np.array(second(nll)), np.array(third(nll)),
+                              levels = np.array([0., alpha]), colors = colortouse,
+                              linestyles = [draw_nll.lines[iline]], linewidths = 2, alpha = 1. - (0.05 * isig))
 
             if len(tlabel) > 1 and isig == 0:
-                handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))
+                if oneidx is not None:
+                    if ii != oneidx:
+                        handles.append((mln.Line2D([0], [0], color = colortouse, marker = draw_nll.markers[ii], markersize = othermark, linewidth = 0), tlabel[ii]))
+                else:
+                    handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))
 
     plt.xlabel(plabels[0], fontsize = 23, loc = "right")
     plt.ylabel(plabels[1], fontsize = 23, loc = "top")
@@ -169,6 +196,10 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
     bbox_expobs = (0.9, 0.775, 0.1, 0.2)
     bbox_noeta = (0.85, 0.75, 0.15, 0.15)
 
+    if onecontour:
+        sigmas = handles + sigmas
+        handles = []
+
     if len(handles) > 0 and len(sigmas) > 0:
         legend1 = ax.legend(first(sigmas), second(sigmas), loc = 'best', bbox_to_anchor = bbox_sigmas, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.25, frameon = False)
         ax.add_artist(legend1)
@@ -176,9 +207,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.25, frameon = False)
         ax.add_artist(legend2)
     elif len(handles) > 0:
-        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 23, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.25, frameon = False)
     elif len(sigmas) > 0:
-        ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.legend(first(sigmas), second(sigmas), loc = 'upper right', fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.75, frameon = False)
 
     if formal:
         mplhep.cms.label(ax = ax, data = True, year = None, lumi = " 138", fontsize = 27)
@@ -247,6 +278,10 @@ if __name__ == '__main__':
                         help = "smooth the data points by making splines off the pruned points, and then taking their averages.",
                         dest = "prunesmooth", action = "store_true", required = False)
 
+    parser.add_argument("--dump-json",
+                        help = "also dump the points to be plotted as a json file.",
+                        dest = "dumpjson", action = "store_true", required = False)
+
     parser.add_argument("--drops",
                         help = "syntax: int00:int01:...:int0N -- int10:int11:int1N -- intM0:intM1:intMN, where"
                         "0..M refers to the number of contours (can be less than len(--tag), in which case the last one is used),"
@@ -254,6 +289,8 @@ if __name__ == '__main__':
                         dest = "drops", type = drop_intervals, default = [], required = False)
 
     parser.add_argument("--draw-best-fit", help = "draw the best fit point.", dest = "bestfit", action = "store_true", required = False)
+    parser.add_argument("--only-best-fit", help = "only draw the best fit point for fit at indices i >= 0.", dest = "onlybest",
+                        type = lambda s: [ii for ii in tokenize_to_list(remove_spaces_quotes(s), astype = int) if ii >= 0], default = [], required = False)
     parser.add_argument("--max-sigma", help = "max number of sigmas to be drawn on the contour", dest = "maxsigma", default = "5", required = False, type = lambda s: int(remove_spaces_quotes(s)))
 
     parser.add_argument("--formal", help = "plot is for formal use - put the CMS text etc",
@@ -287,12 +324,14 @@ if __name__ == '__main__':
 
     if len(args.plabels) == 0:
         args.plabels = stock_labels(args.params, args.point, args.arbnorm, all(any([pp in param] for pp in ["EtaT", "ChiT", "PsiT"]) for param in args.params) and len(args.pscales) > 0)
+    pnames = stock_names(args.params, args.point, args.arbnorm, all(any([pp in param] for pp in ["EtaT", "ChiT", "PsiT"]) for param in args.params) and len(args.pscales) > 0)
 
     dirs = [tag.split(':') for tag in args.itag]
     dirs = [tag + tag[:1] if len(tag) == 2 else tag for tag in dirs]
     dirs = [[f"{pstr}_{tag[0]}"] + tag[1:] for tag in dirs]
 
     draw_nll([f"{args.odir}/{pstr}_nll_{'__'.join(args.params)}{args.ptag}{fmt}" for fmt in args.fmt],
-             points, dirs, args.tlabel, args.params, args.plabels, args.pscales, args.intervals, args.drops, args.prunesmooth, args.maxsigma, args.bestfit,
+             points, dirs, args.tlabel, args.params, args.plabels, pnames, args.pscales, args.intervals,
+             args.drops, args.prunesmooth, args.dumpjson, args.maxsigma, args.bestfit, args.onlybest,
              args.formal, args.cmsapp, args.luminosity, args.a343bkg, args.transparent)
     pass

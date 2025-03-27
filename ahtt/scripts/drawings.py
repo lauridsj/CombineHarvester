@@ -29,6 +29,15 @@ axes = {
     "lj":         r"$\ell$j",
     "lx":         r"$\ell\ell$, $\ell$j"
 }
+jsons = {
+    "coupling":   r"g_%s$",
+    "muah":       r"sigma_%s [%s pb]",
+    "muetat":     r"mu_EtaT",
+    "muchit":     r"mu_ChiT",
+    "sigmaetat":  r"sigma_EtaT [pb]",
+    "sigmachit":  r"sigma_ChiT [pb]",
+    "yukawa":     r"y_t"
+}
 channels = ["ee", "em", "mm", "e4pj", "m4pj", "e3j", "m3j"]
 years = ["2016pre", "2016post", "2017", "2018"]
 sm_procs = {
@@ -189,6 +198,23 @@ def stock_labels(parameters, points, resxsecpb = 5, toxsec = False):
         else:
             labels.append(pp)
     return labels
+
+def stock_names(parameters, points, resxsecpb = 5, toxsec = False):
+    names = []
+    for ii, pp in enumerate(parameters):
+        if pp in ["g1", "g2"]:
+            names.append(jsons["coupling"] % str_point(points[ii]))
+        elif pp in ["r1", "r2"]:
+            names.append(jsons["muah"] % (str_point(points[ii], spinstate = True), str(resxsecpb)))
+        elif pp == "CMS_EtaT_norm_13TeV":
+            names.append(jsons["sigmaetat"] if toxsec else jsons["muetat"])
+        elif pp == "CMS_ChiT_norm_13TeV":
+            names.append(jsons["sigmachit"] if toxsec else jsons["muchit"])
+        elif pp == "EWK_yukawa":
+            names.append(jsons["yukawa"])
+        else:
+            names.append(pp)
+    return names
 
 def valid_nll_fname(fname, tag, ninterval = 1):
     fname = fname.split('/')[-1].replace(tag, "").split('_')
