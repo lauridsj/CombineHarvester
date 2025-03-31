@@ -356,8 +356,8 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
-    runsingle = "single" in modes
-    runcross = "cross" in modes
+    runsingle = rundc or "single" in modes
+    runcross = rundc or "cross" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
@@ -443,10 +443,12 @@ if __name__ == '__main__':
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
-    if runsingle or (runcross and len(poiset) == 1):
-        args.extopt += " --algo singles --cl=0.68"
-    elif runcross:
+    if runcross and len(poiset) > 1:
         args.extopt += " --algo cross --cl=0.68"
+        runsingle = False
+    elif runsingle or (runcross and len(poiset) == 1):
+        args.extopt += " --algo singles --cl=0.68"
+        runcross = False
 
     default_workspace = dcdir + "workspace_fitdiag.root" if args.prepostws else dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(

@@ -210,8 +210,8 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
-    runsingle = "single" in modes
-    runcross = "cross" in modes
+    runsingle = rundc or "single" in modes
+    runcross = rundc or "cross" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
 
@@ -230,10 +230,12 @@ if __name__ == '__main__':
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
-    if runsingle or (runcross and len(poiset) == 1):
-        args.extopt += " --algo singles --cl=0.68"
-    elif runcross:
+    if runcross and len(poiset) > 1:
         args.extopt += " --algo cross --cl=0.68"
+        runsingle = False
+    elif runsingle or (runcross and len(poiset) == 1):
+        args.extopt += " --algo singles --cl=0.68"
+        runcross = False
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"
