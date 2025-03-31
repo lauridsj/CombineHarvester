@@ -201,7 +201,7 @@ if __name__ == '__main__':
     masks = ["mask_" + mm + "=1" for mm in args.mask]
     print "the following channel x year combinations will be masked:", args.mask
 
-    allmodes = ["datacard", "workspace", "validate", "best", "best-fit", "single", "limit", "pull", "impact"]
+    allmodes = ["datacard", "workspace", "validate", "best", "best-fit", "single", "cross", "limit", "pull", "impact"]
     if (not all([mm in allmodes for mm in modes])):
         print "supported modes:", allmodes
         raise RuntimeError("unxpected mode is given. aborting.")
@@ -211,14 +211,12 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
     runsingle = "single" in modes
+    runcross = "cross" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
 
-    runbest = runsingle or runbest or rundc
+    runbest = runsingle or runcross or runbest or rundc
     args.keepbest = False if runbest else args.keepbest
-
-    if runsingle:
-        args.extopt += " --algo singles --cl=0.68"
 
     # pois to use in the fit
     poiset = args.poiset if len(args.poiset) else ["g"] if args.onepoi else ["r", "g"]
@@ -231,6 +229,11 @@ if __name__ == '__main__':
 
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
+
+    if runsingle or (runcross and len(poiset) == 1):
+        args.extopt += " --algo singles --cl=0.68"
+    elif runcross:
+        args.extopt += " --algo cross --cl=0.68"
 
     if rundc:
         print "\nsingle_point_ahtt :: making datacard"

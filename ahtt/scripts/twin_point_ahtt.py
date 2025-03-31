@@ -343,7 +343,7 @@ if __name__ == '__main__':
     print "the following channel x year combinations will be masked:", args.mask
 
     allmodes = ["datacard", "workspace", "validate",
-                "best", "best-fit", "single",
+                "best", "best-fit", "single", "cross",
                 "generate", "gof", "fc-scan", "contour", "chancomp",
                 "hadd", "merge", "compile",
                 "prepost", "corrmat", "psfromws",
@@ -357,6 +357,7 @@ if __name__ == '__main__':
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
     runsingle = "single" in modes
+    runcross = "cross" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
@@ -371,11 +372,8 @@ if __name__ == '__main__':
         print "given expected scenarii:", args.fcexp
         raise RuntimeError("unexpected expected scenario is given. aborting.")
 
-    runbest = runsingle or runbest or rundc
+    runbest = runsingle or runcross or runbest or rundc
     args.keepbest = False if runbest else args.keepbest
-
-    if runsingle:
-        args.extopt += " --algo singles --cl=0.68"
 
     if (rungen or runfc) and any(float(gg) < 0. for gg in gvalues):
         raise RuntimeError("in toy generation or FC scans no g can be negative!!")
@@ -445,11 +443,16 @@ if __name__ == '__main__':
     if args.experimental:
         ranges += ["rgx{EWK_.*}", "rgx{QCDscale_ME.*}", "tmass"] # veeeery wide hedging for theory ME NPs
 
+    if runsingle or (runcross and len(poiset) == 1):
+        args.extopt += " --algo singles --cl=0.68"
+    elif runcross:
+        args.extopt += " --algo cross --cl=0.68"
+
     default_workspace = dcdir + "workspace_fitdiag.root" if args.prepostws else dcdir + "workspace_twin-g.root"
     workspace = get_best_fit(
         dcdir, "__".join(points), [args.otag, args.tag],
         args.defaultwsp, args.keepbest, default_workspace, args.asimov,
-        "single" if runsingle else "", '__'.join(poiset) if notah else "",
+        "single" if runsingle else "cross" if runcross else "", '__'.join(poiset) if notah else "",
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
