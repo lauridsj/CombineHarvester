@@ -210,8 +210,8 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
-    runsingle = rundc or "single" in modes
-    runcross = rundc or "cross" in modes
+    runsingle = "single" in modes
+    runcross = "cross" in modes
     runlimit = "limit" in modes
     runpull = "pull" in modes or "impact" in modes
 

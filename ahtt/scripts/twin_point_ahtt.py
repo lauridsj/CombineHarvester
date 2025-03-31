@@ -356,8 +356,8 @@ if __name__ == '__main__':
     rundc = "datacard" in modes or "workspace" in modes
     runvalid = "validate" in modes
     runbest = "best" in modes or "best-fit" in modes
-    runsingle = rundc or "single" in modes
-    runcross = rundc or "cross" in modes
+    runsingle = "single" in modes
+    runcross = "cross" in modes
     rungen = "generate" in modes
     rungof = "gof" in modes
     runfc = "fc-scan" in modes or "contour" in modes
