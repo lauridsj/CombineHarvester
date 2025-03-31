@@ -458,7 +458,8 @@ if __name__ == '__main__':
         "{gvl}{fix}".format(gvl = gstr if gstr != "" else "", fix = "_fixed" if args.fixpoi and gstr != "" else ""),
         poiset,
         set_range(ranges),
-        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, args.prepostws
+        elementwise_add([startpoi, starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, args.prepostws,
+        args.usehesse, args.fitstrat if args.fitstrat > -1 else 0
     )
 
     if (rungen or (args.savetoy and (rungof or runfc))) and args.ntoy > 0:

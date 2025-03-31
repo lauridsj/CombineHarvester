@@ -149,7 +149,7 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     return bfs if loop_all else bf
 
 def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, runmode,
-                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], snapshot = "", prepostws = False):
+                 modifier, scenario, poiset, ranges, set_freeze, extopt = "", masks = [], snapshot = "", prepostws = False, use_hesse = False, fit_strategy = 0):
     ptag = lambda pnt, tag: "{pnt}{tag}".format(pnt = point, tag = tag)
     if snapshot != "" and snapshot != "default":
         useexisting = True
@@ -190,7 +190,7 @@ def get_best_fit(dcdir, point, tags, usedefault, useexisting, default, asimov, r
         # ok there really isnt a best fit file, make them
         print ("\nxxx_point_ahtt :: making best fits")
         for asm in [not asimov, asimov]:
-            workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks, prepostws)
+            workspace = make_best_fit(dcdir, default, point, asm, poiset, ranges, set_freeze, extopt, masks, prepostws, use_hesse, fit_strategy)
             syscall("rm robustHesse_*.root", False, True)
 
             newname = "{dcd}{ptg}_{rnm}_{asm}{sce}{mod}{ppw}.root".format(
@@ -348,7 +348,7 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
     else:
         return False
 
-def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, extopt = "", masks = [], prepostws = False):
+def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, extopt = "", masks = [], prepostws = False, use_hesse = False, fit_strategy = 0):
     fname = point + "_best_fit_" + right_now()
     never_gonna_give_you_up(
         command = "combineTool.py -v 0 -M MultiDimFit -d {dcd} -n _{bff} {stg} {prg} {asm} {poi} {wsp} {prm} {ext}".format(
@@ -367,7 +367,9 @@ def make_best_fit(dcdir, workspace, point, asimov, poiset, ranges, set_freeze, e
             [syscall, "rm higgsCombine*{bff}.MultiDimFit*.root".format(bff = fname), False]
         ],
 
-        optimize = not prepostws
+        optimize = not prepostws,
+        usehesse = use_hesse,
+        first_fit_strategy = fit_strategy
     )
     syscall("mv higgsCombine*{bff}.MultiDimFit*.root {dcd}{bff}.root".format(dcd = dcdir, bff = fname), False)
     return "{dcd}{bff}.root".format(dcd = dcdir, bff = fname)

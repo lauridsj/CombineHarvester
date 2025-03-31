@@ -280,7 +280,8 @@ if __name__ == '__main__':
             ),
             ["g"] if onepoi and not onepoinotg else poiset,
             set_range(ranges),
-            elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot
+            elementwise_add([starting_poi(onepoi, args.setg, args.setr, args.fixpoi), starting_nuisance(args.frzzero, args.frznzro, set())]), args.extopt, masks, args.snapshot, False,
+            args.usehesse, args.fitstrat if args.fitstrat > -1 else 0
         )
 
     if runlimit:
