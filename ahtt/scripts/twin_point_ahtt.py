@@ -1074,7 +1074,8 @@ if __name__ == '__main__':
                 ],
 
                 usehesse = args.usehesse,
-                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0
+                first_fit_strategy = args.fitstrat if args.fitstrat > -1 else 0,
+                throw_upon_failure = False
             )
 
         if nelement > 1:
