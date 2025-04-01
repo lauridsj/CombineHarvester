@@ -1060,6 +1060,15 @@ if __name__ == '__main__':
                     ext = nonparametric_option(args.extopt),
                 ),
 
+                post_conditions = [
+                    [lambda fexp, attrs, qem1: get_fit(glob.glob(fexp)[0], attrs, qem1),
+                     "higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(
+                         snm = nllname,
+                         mmm = mstr),
+                     args.nllparam + ['deltaNLL'],
+                     ff] for ff in [True, False]
+                ],
+
                 failure_cleanups = [
                     [syscall, "rm higgsCombine_{snm}.MultiDimFit.mH{mmm}*.root".format(snm = nllname, mmm = mstr), False]
                 ],
