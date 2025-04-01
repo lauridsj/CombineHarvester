@@ -244,7 +244,7 @@ def fit_strategy(strategy, optimize = True, robust = False, use_hesse = False, t
     fstr = "--X-rtd OPTIMIZE_BOUNDS=0 --X-rtd MINIMIZER_MaxCalls=9999999"
     if optimize:
         fstr += " --X-rtd FAST_VERTICAL_MORPH --X-rtd CACHINGPDF_NOCLONE"
-    fstr += " --cminPreScan --cminPoiOnlyFit --cminDefaultMinimizerAlgo Combined --cminDefaultMinimizerStrategy {ss}".format(ss = strategy)
+    fstr += " --cminPreScan --cminDefaultMinimizerAlgo Combined --cminDefaultMinimizerStrategy {ss}".format(ss = strategy)
     fstr += " --cminDefaultMinimizerTolerance {tol}".format(tol = 2.**(tolerance - 4))
     #for algo in ["Minuit2,Migrad", "Minuit2,Simplex", "GSLMultiMin,BFGS2"]:
     for algo in ["Minuit2,Migrad"]:
