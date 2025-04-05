@@ -132,11 +132,9 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     bfs = []
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
-            bf = [getattr(dtree, attr) for attr in attributes]
-            if 'deltaNLL' in attributes:
-                idx = attributes.index('deltaNLL')
-                bf[idx] = max(bf[idx], 0.)
-            bf = tuple(bf)
+            if dtree.deltaNLL < 0:
+                continue
+            bf = tuple([getattr(dtree, attr) for attr in attributes])
 
         if bf is not None:
             if not loop_all:

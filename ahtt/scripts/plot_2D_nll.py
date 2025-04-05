@@ -63,6 +63,8 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
                 if dtree.quantileExpected >= 0.:
                     if drop is not None and any([window[0][0] < valuednll[0] < window[0][1] and window[1][0] < valuednll[1] < window[1][1] for window in drop]):
                         continue
+                    if valuednll[2] < 0:
+                        continue
                     originals.append(valuednll)
                 elif best_fit[ii] is None and dtree.quantileExpected == -1.:
                     best_fit[ii] = valuednll
