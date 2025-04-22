@@ -63,15 +63,33 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
                 if dtree.quantileExpected >= 0.:
                     if drop is not None and any([window[0][0] < valuednll[0] < window[0][1] and window[1][0] < valuednll[1] < window[1][1] for window in drop]):
                         continue
-                    if valuednll[2] < 0:
-                        continue
+                    #if valuednll[2] < 0:
+                    #    continue
                     originals.append(valuednll)
-                elif best_fit[ii] is None and dtree.quantileExpected == -1.:
-                    best_fit[ii] = valuednll
+                elif dtree.quantileExpected == -1.:
+                    if best_fit[ii] is None:
+                        best_fit[ii] = valuednll
+                        print(f"Best fit is gA = {valuednll[0]}, gH = {valuednll[1]}, 2dNLL = {valuednll[2]}")
+                    else:
+                        if not np.isclose(valuednll[0], best_fit[ii][0]):
+                            print(f"WARNING: different best fit values for A: {valuednll[0]} <> {best_fit[ii][0]}")
+                        if not np.isclose(valuednll[1], best_fit[ii][1]):
+                            print(f"WARNING: different best fit values for H: {valuednll[1]} <> {best_fit[ii][1]}")
             dfile.Close()
         originals.append(best_fit[ii])
         originals = sorted(originals, key = cmp_to_key(lambda t0, t1: t0[1] < t1[1] if t0[0] == t1[0] else t0[0] < t1[0]))
 
+        imin = np.argmin([pnt[2] for pnt in originals])
+        pntmin = originals[imin]
+
+        if not np.isclose(pntmin[2], 0.):
+            print(f"WARNING: non-zero minimum dNLL: {pntmin[2]}. Subtracting this from all points")
+            originals = [(gA,gH,nll-pntmin[2]) for gA,gH,nll in originals]
+
+        if abs(best_fit[ii][0] - pntmin[0]) > 0.2 or abs(best_fit[ii][1] - pntmin[1]):
+            print(f"WARNING: nll gives different best fit at gA = {pntmin[0]}, gH = {pntmin[1]}, 2dNLL = {pntmin[2]}. Using this for best fit")
+            best_fit[ii] = pntmin
+        
         if prunesmooth:
             alphas = [2.29575, 6.18008, 11.82922, 19.33391, 28.74371]
             originals = [oo for oo in originals if oo[2] < 10 * math.ceil(alphas[maxsigma - 1 if 1 < maxsigma < 6 else -1] / 10)]
@@ -93,6 +111,7 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
                 interpolated.append((x, y, z0))
             del splines
         fits.append(interpolated if prunesmooth else originals)
+    
     return result
 
 def dump_2dnll_json(oname, tag, parameters, best_fit, nlls, maxsigma = 5):

@@ -133,7 +133,8 @@ def get_fit(dname, attributes, qexp_eq_m1 = True, loop_all = False):
     for i in dtree:
         if (dtree.quantileExpected == -1. and qexp_eq_m1) or (dtree.quantileExpected != -1. and not qexp_eq_m1):
             if dtree.deltaNLL < 0:
-                continue
+                print ("get_fit :: got negative deltaNLL " + str(dtree.deltaNLL) + " for quantile " + str(dtree.quantileExpected))
+                #continue
             bf = tuple([getattr(dtree, attr) for attr in attributes])
 
         if bf is not None:
@@ -327,7 +328,8 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
             fu[0](*fu[1:])
 
         fgood = True if fit_result_names is None or robusthesse else is_good_fit(*fit_result_names)
-        pgood = all([pc[0](*pc[1:]) for pc in post_conditions])
+        pcresults = [pc[0](*pc[1:]) for pc in post_conditions]
+        pgood = all(pcresults)
 
         if robusthesse:
             syscall("rm robustHesse_*.root", False, True)
@@ -335,6 +337,13 @@ def never_gonna_give_you_up(command, optimize = True, followups = [], fit_result
         if fgood and pgood:
             return True
         else:
+            print ("\nnever_gonna_give_you_up :: fit failed with strategy robust='{rob}', strat='{sty}', tol='{tol}'; goodfit='{gof}', postconds='{pcr}'".format(
+                rob = irobust,
+                sty = istrat,
+                tol = itol,
+                gof = fgood,
+                pcr = pcresults
+            ))
             for fc in failure_cleanups:
                 fc[0](*fc[1:])
 
