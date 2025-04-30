@@ -277,7 +277,7 @@ def hadd_files(dcdir, point_tag, fileexp, direxp):
             jj = 0
             while len(tomerge) > 0:
                 if len(tomerge) > 1:
-                    about_right = 200 # arbitrary, only to prevent commands getting too long
+                    about_right = 100 # arbitrary, only to prevent commands getting too long
                     tomerge = chunks(tomerge, len(tomerge) // about_right)
                     merged = []
 
