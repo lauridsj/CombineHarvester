@@ -288,7 +288,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             color = proc_colors[symbol],
             linewidth = 1.5,
             label = signal_label,
-            zorder = signal_zorder[symbol]
+            zorder = signal_zorder[symbol],
+            edges = (not single_slice)
         )
         handles.append(handle_signal[0][0])
         labels.append(signal_label)
@@ -608,22 +609,23 @@ def plot(channel, year, fit,
                     txt.remove()
                 bintexts = []
                 ypos = 0.08 if args.panel == "lower" else 0.9 if single_slice else 0.912
-                if args.splitbins:
-                    for j, (variable, edges) in enumerate(reversed(extra_axes.items())):
-                        edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
-                        text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-                        bintexts.append(ax1.text(1 / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
-                else:
-                    bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
+                #if args.splitbins:
+                #    for j, (variable, edges) in enumerate(reversed(extra_axes.items())):
+                #        edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
+                #        text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
+                #        bintexts.append(ax1.text(1 / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
+                #else:
+                for j, cuttext in enumerate(cuts[1:]):
+                    bintexts.append(ax1.text(1 / len(cuts[1:]) * (j + 0.5), ypos, cuttext, horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
                 if first_ax_width > 0:
                     ax2.set_xlim(first_ax_width*i+10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
                     ax2.set_xlim(-1, 1)
                 fig.align_ylabels()
-                if args.splitbins:
-                    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}_bin{i+1}{fmt}", transparent = True, bbox_inches = extent)
-                else:
-                    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}_{args.project}{cuts[0]}{fmt}", transparent = True, bbox_inches = extent)
+                #if args.splitbins:
+                #    fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}_bin{i+1}{fmt}", transparent = True, bbox_inches = extent)
+                #else:
+                fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}_{args.project if args.project != 'none' else ''}{cuts[0]}{fmt}", transparent = True, bbox_inches = extent)
         else:
             if args.panel != "lower":
                 for j, (variable, edges) in enumerate(extra_axes.items()):
@@ -758,6 +760,46 @@ def project_channel_year_unc(matrix, nbins):
             submat = matrix[i*nbins:(i+1)*nbins,j*nbins:(j+1)*nbins]
             out += np.diag(submat)
     return out
+
+def do_slicing(h, islice, nslice):
+    isarray = isinstance(h, np.ndarray)
+    arr = h if isarray else h.values()
+    lenslice = len(arr) // nslice
+    arr = arr[islice*lenslice:(islice+1)*lenslice]
+    if isarray:
+        return arr
+    else:
+        var = h.variances()
+        var = var[islice*lenslice:(islice+1)*lenslice]
+        histogram = Hist.new.Regular(lenslice, 0, lenslice, name = "").Weight()
+        histogram.view().value = arr
+        histogram.view().variance = var
+        return histogram
+
+def plot_slices(sums, nslice=9):
+    for islice in range(nslice):
+        ret = sums.copy()
+        ret["smhists"] = {k: do_slicing(ret["smhists"][k], islice, nslice) for k in ret["smhists"]}
+        ret["datavalues"] = do_slicing(ret["datavalues"],islice, nslice)
+        ret["total"] = do_slicing(ret["total"], islice, nslice)
+        ret["promotions"] = {k: do_slicing(ret["promotions"][k], islice, nslice) for k in ret["promotions"]}
+        ret["signals"] = {k: do_slicing(ret["signals"][k], islice, nslice) for k in ret["signals"]}
+        dataerr_lo = (do_slicing(ret["datahist_errors"][0]**2, islice, nslice))**.5
+        dataerr_hi = (do_slicing(ret["datahist_errors"][1]**2, islice, nslice))**.5
+        ret["datahist_errors"] = np.array([dataerr_lo, dataerr_hi])
+        ret["binning"] = {l: v for l,v in ret["binning"].items() if l in [r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]", r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ [GeV]"]}
+        ret["num_extrabins"] = 1
+        ret["extra_axes"] = {'none': list(ret["binning"].values())[0]}
+        ret["first_ax_binning"] = list(ret["binning"].values())[0]
+        ret["first_ax_width"] = ret["first_ax_binning"][-1] - ret["first_ax_binning"][0]
+        ret["bins"] = np.array(ret["first_ax_binning"]) - ret["first_ax_binning"][0]
+        ret["centers"] = (ret["bins"][1:] + ret["bins"][:-1]) / 2
+        text = []
+        for j, (variable, edges) in enumerate(reversed(sums["extra_axes"].items())):
+            edge_idx = np.unravel_index(islice, tuple(len(b) - 1 for b in sums["extra_axes"].values()))[j]
+            text.append(r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1]))
+        ret["cuts"] = [f"bin{islice+1}", *text]
+        plot(**ret)
 
 def add_covariance(histogram, matrix):
     for ibin in range(len(histogram.values())):
@@ -936,9 +978,9 @@ if args.batch is not None:
                 continue
 
             sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in cmrg))
-            #if fit != 'p':
-            if not os.path.isfile(args.batch):
-                continue
+            if fit != 'p':
+                if not os.path.isfile(args.batch):
+                    continue
 
             fitkey = "prefit" if fit == "p" else "postfit"
             if os.path.isfile(args.batch):
@@ -963,6 +1005,10 @@ if args.batch is not None:
                     raise NotImplementedError("Too stupid to project prefit covmat for subsets of channels")
                 totalunc = project_channel_year_unc(matrix, nbins)
                 sums["total"].view().variance = totalunc
+
+            if args.splitbins:
+                plot_slices(sums)
+                continue
 
             if args.project != "none":
                 binedges = [bb for vv, bb in sums["binning"].items()]
