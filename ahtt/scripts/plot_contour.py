@@ -161,7 +161,7 @@ def draw_contour(onames, pair, cfiles, labels, maxsigma, propersig, intervals, d
             ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
-        mplhep.cms.label(ax = ax, data = True, year = "", lumi = " 138", fontsize = 27)
+        mplhep.cms.label(ax = ax, data = True, year = None, lumi = " 138", fontsize = 27)
         #ctxt = "{cms}".format(cms = r"$\textbf{CMS}$")
         #ax.text((0.03 * xlength) + xmin, (0.96 * ylength) + ymin, ctxt, fontsize = 31, ha = 'left', va = 'top', usetex = True)
 

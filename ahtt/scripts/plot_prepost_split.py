@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt  # noqa:E402
 plt.rcParams['axes.xmargin'] = 0
 plt.rcParams['figure.max_open_warning'] = False
 plt.rcParams["font.size"] = 22.0
+plt.rcParams['xtick.labelsize'] = 24
+plt.rcParams['ytick.labelsize'] = 24
 from matplotlib.transforms import Bbox
 from matplotlib.patches import Rectangle
 
@@ -32,7 +34,7 @@ import numba
 from utilspy import tuplize
 from utilsmath import index_1n, index_n1
 from desalinator import prepend_if_not_empty, tokenize_to_list, remove_spaces_quotes
-from drawings import etat_blurb, channels, years, sm_procs, proc_colors, signal_zorder, binnings, ratiolabels, lumis, hatchstyle, datastyle
+from drawings import etat_blurb, channels, years, sm_procs, proc_colors, signal_zorder, binnings, ratiolabels, lumis, hatchstyle, datastyle, genlabels
 from drawings import get_poi_values
 
 parser = ArgumentParser()
@@ -67,7 +69,7 @@ parser.add_argument("--ignore", help = "comma-separated list of background proce
 parser.add_argument("--skip-ah", help = "don't draw A/H signal histograms", action = "store_false", dest = "doah", required = False)
 parser.add_argument("--panel-labels", help = "put labels on each panel", action = "store_true", dest = "panellabels", required = False)
 parser.add_argument("--no-xaxis", help = "put labels on each panel", action = "store_true", dest = "noxaxis", required = False)
-parser.add_argument("--preliminary", help="Write 'Preliminary' in caption", action="store_true")
+parser.add_argument("--cmslabel", help="CMS label", type=str, default=None)
 parser.add_argument("--only-res", dest="onlyres", help="Resonance-only mode", action="store_true")
 parser.add_argument("--split-bins", help="Split the angle/spin bins", dest="splitbins", action="store_true")
 parser.add_argument("--project-to", help = "which variables to project down to, and draw the 1D plots of. implemented only for batch plotting atm.",
@@ -77,14 +79,25 @@ parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut o
                     type = lambda s: [] if s == "" else tokenize_to_list(remove_spaces_quotes(s), astype = int))
 parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
 parser.add_argument('--no-total', help = "dont plot the total signal", action="store_false", dest="total")
+parser.add_argument("--generator-label", help="label for the generator", type=str, default=None, dest="genlabel")
 args = parser.parse_args()
 args.logy = args.log or args.logy
 args.readbatch = args.readbatch and os.path.isfile(args.batch)
 if args.readbatch:
     args.prefit = False
 
-bgstring = "FO pQCD + BG"
-#bgstring = "BG"
+if args.genlabel is not None:
+    bgstring = genlabels[args.genlabel] + " + BG"
+    if args.genlabel == "bb4l":
+        for k,v in sm_procs.items():
+            if k == "TW" or v == r"$\mathrm{t}\bar{\mathrm{t}}$":
+                sm_procs[k] = r"$\mathrm{t}\bar{\mathrm{t}} + \mathrm{tW}$"
+            if v == "tX":
+                 sm_procs[k] = "Other"
+        proc_colors[r"$\mathrm{t}\bar{\mathrm{t}} + \mathrm{tW}$"] = proc_colors[r"$\mathrm{t}\bar{\mathrm{t}}$"]
+else:
+    bgstring = "FO pQCD + BG"
+    #bgstring = "BG"
 
 fits = []
 if args.postfit:
@@ -104,7 +117,7 @@ def full_extent(ax, pad = 0.0):
     bbox = Bbox.union([item.get_window_extent() for item in items])
     return bbox.expanded(1.0 + pad, 1.0 + pad)
 
-def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel):
+def plot_eventperbin(ax, bins, centers, smhists, total, signals, data, log, fit, channel):
     single_slice = args.splitbins or args.project != "none"
     angular = args.project in ["chel", "chan"]
     #factor = 1000. if angular else 1.
@@ -118,7 +131,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
 
     width = np.ones(len(bins)-1) if angular else np.diff(bins)
     colors = [proc_colors[k] for k in smhists.keys()]
-    unclabel = "Unc." if single_slice else f"{fstage}fit{ftype}uncertainty"
+    unclabel = "Unc." if single_slice else f"{fstage}fit uncertainty"
     for ibin in range(len(bins) - 1):
         vhi = (total.values()[ibin] + total.variances()[ibin] ** .5) / width[ibin] / factor
         vlo = (total.values()[ibin] - total.variances()[ibin] ** .5) / width[ibin] / factor
@@ -134,7 +147,8 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         data[0] / width / factor,
         yerr = data[1] / width / factor,
         label = "Data",
-        **datastyle
+        **datastyle,
+        zorder=9999
     )
     hep.histplot(
         [hist.values() / width / factor for hist in smhists.values()],
@@ -146,21 +160,39 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         color = colors,
         zorder = -90
     )
-    ax.set_ylabel("Events" if angular else "<Events / GeV>", fontsize=24)
+    #if args.splitbins or args.project != "none":
+    #    for key, signal in signals.items():
+    #        symbol, mass, decaywidth = key
+    #        hep.histplot(
+    #            (total.values() + signal.values()) / width / factor,
+    #            bins = bins,
+    #            yerr = False,
+    #            ax = ax,
+    #            histtype = "step",
+    #            color = proc_colors[symbol],
+    #            linewidth = 1.5,
+    #            zorder = signal_zorder[symbol] + 100,
+    #            edges=False
+    #        )
+    ax.set_ylabel("Events  " if angular else "Events / GeV", fontsize=26, loc="top")
     if log[0]:
         ax.set_xscale("log")
     if log[1]:
         ax.set_yscale("log")
-        ymin = 0.5 * np.amin(data[0] / width / factor)
+        dperbin = np.maximum(data[0], 1.) / width / factor
+        ymin = 0.5 * np.amin(dperbin)
         if args.splitbins or single_slice:
-            ymax = 1.05
+            ymax = 1.25
         else:
-            ymax = 1.08 if "j" in channel else 1.12
-        ax.set_ylim(ymin, ax.transData.inverted().transform(ax.transAxes.transform([0, ymax]))[1])
+            ymax = 1.08 if "j" in channel else 1.3
+        ymax = np.power(10, ymax * np.log10(np.amax(dperbin) / np.amin(dperbin)) \
+                + np.log10(np.amin(dperbin)))
+        #ax.set_ylim(ymin, ax.transData.inverted().transform(ax.transAxes.transform([0, ymax]))[1])
+        ax.set_ylim(ymin, ymax)
     else:
         ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
         ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
-        ax.yaxis.get_offset_text().set_x(-0.15)
+        ax.yaxis.get_offset_text().set_x(-0.17)
 
 
 
@@ -254,7 +286,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
             ax = ax,
             histtype = "step",
             color = proc_colors[symbol],
-            linewidth = 1.75,
+            linewidth = 1.5,
             label = signal_label,
             zorder = signal_zorder[symbol]
         )
@@ -263,16 +295,16 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     #for pos in [0.8, 0.9, 1.1, 1.2]:
     #    ax.axhline(y = pos, linestyle = ":", linewidth = 0.5, color = "black")
     ax.axhline(y = 1, linestyle = "--", linewidth = 0.35, color = "black")
-    if fit == "p":
+    if single_slice:
+        ax.set_ylim(0.887, 1.113)
+        ax.set_yticks([0.9, 1.0, 1.1])
+    elif fit == "p":
         ax.set_ylim(0.79, 1.21)
         ax.set_yticks([0.8, 1.0, 1.2])
     else:
-        if single_slice:
-            ax.set_ylim(0.89, 1.11)
-        else:
-            ax.set_ylim(0.895, 1.105)
+        ax.set_ylim(0.895, 1.105)
         ax.set_yticks([0.9, 1.0, 1.1])
-    ax.set_ylabel(ratiolabels[fit], fontsize=24)
+    ax.set_ylabel(ratiolabels[fit], fontsize=26)
     if fit == "p":
         fittype = "Prefit"
         fittypelen = len(fittype)
@@ -304,8 +336,16 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     if log[0]:
         ax.set_xscale("log")
     if not (single_slice and args.panel == "both" and len(signals) == 0):
-        legend_ncol = 1 if single_slice else 5
-        ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
+        if single_slice and args.panel == "both":
+            legend_ncol = 2 if len(signals) > 2 else 1
+            if len(signals) == 3:
+                # reshuffle total
+                handles = [*handles[1:], Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.), handles[0]]
+                labels = [*labels[1:], "${ }^{ }_{ }$", labels[0]]
+            ax.legend(handles=handles, labels=labels, loc = "lower left",  bbox_to_anchor = (0, 0.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", frameon = False, handlelength=1.5, handletextpad=0.6, labelspacing=0.3)
+        else:
+            legend_ncol = 1 if single_slice else 5
+            ax.legend(handles=handles, labels=labels, loc = "lower left", bbox_to_anchor = (0, 1.0, 1, 0.2), borderaxespad = 0, ncol = legend_ncol, mode = "expand", fancybox = False).get_frame().set_edgecolor("black")
 
 
 
@@ -400,7 +440,7 @@ def plot(channel, year, fit,
         ax2 = ax1
     ax0.set_axis_off()   
     if args.panel != "lower":
-        plot_eventperbin(ax1, bins, centers, smhists, total, (datavalues, datahist_errors), log, fit, channel)
+        plot_eventperbin(ax1, bins, centers, smhists, total, allsigs, (datavalues, datahist_errors), log, fit, channel)
     if args.panel != "upper":
         if args.lower == "ratio":
             plot_ratio(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit, log)
@@ -408,6 +448,9 @@ def plot(channel, year, fit,
             plot_diff(ax2, bins, centers, (datavalues, datahist_errors), total, allsigs, gvalues, sigscale, fit)
         else:
             raise ValueError(f"Invalid lower type: {args.lower}")
+    if ismbbll or year != "Run 2":
+        ax2.set_ylim(0.79, 1.21)
+        ax2.set_yticks([0.8, 1.0, 1.2])
     if not single_slice:
         for pos in bins[::len(first_ax_binning) - 1][1:-1]:
             if args.panel != "lower":
@@ -430,8 +473,10 @@ def plot(channel, year, fit,
         ticklocs_minor = np.linspace(400, 1600, 13)
     elif ismbbll:
         if single_slice:
-            ticklocs = np.array([150, 200, 400, 800]) if log[0] else np.linspace(200, 800, 4)
-            ticklocs_minor = np.array([140, 200, 300, 400, 500, 600, 700, 800, 900]) if log[0] else np.arange(150, 900, 50)
+            #ticklocs = np.array([150, 200, 400, 800]) if log[0] else np.linspace(200, 800, 4)
+            #ticklocs_minor = np.array([140, 200, 300, 400, 500, 600, 700, 800, 900]) if log[0] else np.arange(150, 900, 50)
+            ticklocs = np.array([100, 200, 400, 800]) if log[0] else np.linspace(200, 800, 4)
+            ticklocs_minor = np.array([100, 200, 300, 400, 500, 600, 700, 800, 900]) if log[0] else np.arange(100, 910, 50)
         else:
             ticklocs = np.linspace(300, 700, 2)
             ticklocs_minor = np.arange(200, 900, 100)
@@ -457,7 +502,7 @@ def plot(channel, year, fit,
     else:       
         tickloc_labels = [f"{t:.0f}" for i in range(num_extrabins) for t in ticklocs] if first_ax_width > 0 else ["-1", "0", "1"]
         ax2.set_xticks(ticks if first_ax_width > 0 else [-1, 0, 1], tickloc_labels, minor=False)
-        ax2.set_xlabel(list(binning.keys())[0], fontsize=24)
+        ax2.set_xlabel(list(binning.keys())[0], fontsize=26, loc="right")
 
     title = channel.replace('m', '$\\mu$').replace('4p', '4+')
     if fit == "p":
@@ -506,31 +551,32 @@ def plot(channel, year, fit,
         xpos = 0.04 if single_slice else 0.01
         ypos = 0.86 if args.panellabels else 0.96
         ax2.annotate(btxt, (xpos, ypos), xycoords="axes fraction", va="top", ha="left", fontsize=20, zorder=7777)
+    
 
-    cmslabel = "Private work" if args.preliminary else None
+    cmslabel = args.cmslabel
     if args.panel == "both":
-        if not single_slice:
+        if not single_slice and r'\ell' not in title:
             ax0.set_title(title)
-        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 19 if args.preliminary else 24)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 22 if single_slice and cmslabel is not None else 26)
         fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
     else:
-        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 19 if args.preliminary else 24)
+        hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 22 if single_slice and cmslabel is not None else 26)
         if len(allsigs) == 3:
             hspace = 1.5
         else:
             hspace = 0.3 * (len(allsigs) + 1) - 0.06 if args.panel == "lower" else 0.50
         fig.subplots_adjust(hspace = hspace, left = 0.075, right = 1 - 0.025, top = 1 - 0.075)
-
     bbox = ax2.get_position()
     offset = -0.01
     if single_slice:
         if args.panel == "both":
-            if len(allsigs) == 0:
-                offset = 0.05
-            elif len(allsigs) == 1:
-                offset = -0.012
-            elif len(allsigs) == 3:
-                offset = -0.11
+            #if len(allsigs) == 0:
+            #    offset = 0.05
+            #elif len(allsigs) == 1:
+            #    offset = -0.012
+            #elif len(allsigs) == 3:
+            #    offset = -0.11
+            offset = 0.043
         else:
             offset = -0.025 if args.panel == "lower" else -0.02
     ax2.set_position([bbox.x0, bbox.y0 + offset, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0])
@@ -566,9 +612,9 @@ def plot(channel, year, fit,
                     for j, (variable, edges) in enumerate(reversed(extra_axes.items())):
                         edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
                         text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
-                        bintexts.append(ax1.text(1 / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
+                        bintexts.append(ax1.text(1 / len(extra_axes) * (j + 0.5), ypos, text, horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
                 else:
-                    bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes))
+                    bintexts.append(ax1.text(1 / len(extra_axes) * 0.5, ypos, cuts[1], horizontalalignment = "center", fontsize = 22, transform = ax1.transAxes))
                 if first_ax_width > 0:
                     ax2.set_xlim(first_ax_width*i+10 if ismbbll and log[0] else first_ax_width*i, first_ax_width*(i+1))
                 else:
@@ -585,7 +631,7 @@ def plot(channel, year, fit,
                         edge_idx = np.unravel_index(i, tuple(len(b) - 1 for b in extra_axes.values()))[j]
                         text = r"{} < {} < {}".format(edges[edge_idx], variable, edges[edge_idx + 1])
                         if not single_slice:
-                            ax1.text(1 / num_extrabins * (i + 0.5), 0.912 - j * 0.11, text, horizontalalignment = "center", fontsize = 19, transform = ax1.transAxes)
+                            ax1.text(1 / num_extrabins * (i + 0.5), 0.912 - j * 0.11, text, horizontalalignment = "center", fontsize = 18, transform = ax1.transAxes)
             fig.align_ylabels()
             fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}_{args.panel}{fmt}", transparent = True, bbox_inches = extent)
     fig.clf()
@@ -688,10 +734,10 @@ def project(planes, nbins, target, cut, icut, matrix):
     ret["bins"] = np.array(ret["first_ax_binning"]) - ret["first_ax_binning"][0] if target == 0 else ret["first_ax_binning"]
     ret["centers"] = (ret["bins"][1:] + ret["bins"][:-1]) / 2
     ret["cuts"] = cut_string(
-        list(planes["binning"].keys())[0].replace(" (GeV)", ""),
+        list(planes["binning"].keys())[0].replace(" [GeV]", ""),
         list(planes["binning"].values())[0],
         cut,
-        masses[ list(planes["binning"].keys())[0].replace(" (GeV)", "") ]
+        masses[ list(planes["binning"].keys())[0].replace(" [GeV]", "") ]
     )
     print("projection done.")
     return ret
@@ -703,6 +749,15 @@ def plot_projection(sums, binedges, cut, matrix):
     plot(**sums)
 
 
+def project_channel_year_unc(matrix, nbins):
+    assert matrix.shape[0] % nbins == 0
+    nchy = matrix.shape[0] // nbins
+    out = np.zeros(nbins)
+    for i in range(nchy):
+        for j in range(nchy):
+            submat = matrix[i*nbins:(i+1)*nbins,j*nbins:(j+1)*nbins]
+            out += np.diag(submat)
+    return out
 
 def add_covariance(histogram, matrix):
     for ibin in range(len(histogram.values())):
@@ -739,10 +794,10 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
         if channel in ("ee", "em", "mm"):
             nbins = len(directory["TT"].to_hist().values()) / (len(binning[r"$c_{\mathrm{hel}}$"]) - 1)
             nbins /= len(binning[r"$c_{\mathrm{han}}$"]) - 1
-            if nbins == len(binning[r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"]) - 1:
-                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)"}
+            if nbins == len(binning[r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]"]) - 1:
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ [GeV]"}
             else:
-                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)"}
+                binning = {k: v for k, v in binning.items() if k != r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]"}
                 #if args.logx:
                 #    binning[list(binning.keys())[0]][0] = 0
 
@@ -881,19 +936,33 @@ if args.batch is not None:
                 continue
 
             sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in cmrg))
-            if fit != 'p':
-                if not os.path.isfile(args.batch):
-                    continue
+            #if fit != 'p':
+            if not os.path.isfile(args.batch):
+                continue
 
+            fitkey = "prefit" if fit == "p" else "postfit"
+            if os.path.isfile(args.batch):
                 with uproot.open(args.batch) as f:
-                    has_psfromws = all([f"{channel}_{year}_postfit" in f for channel in cmrg for year in years])
-                    total = f["postfit"]["TotalBkg"].to_hist()[:len(year_summed[(cmrg[0], fit)]["datavalues"])]
+                    has_psfromws = all([f"{channel}_{year}_{fitkey}" in f for channel in cmrg for year in years])
+                    total = f[fitkey]["TotalBkg"].to_hist()[:len(year_summed[(cmrg[0], fit)]["datavalues"])]
                 if not has_psfromws:
                     continue
-
-                for promotion in sums["promotions"].values():
-                    total.view().value -= promotion.values()
-                sums["total"] = total
+    
+                if fit != "p":
+                    for promotion in sums["promotions"].values():
+                        total.view().value -= promotion.values()
+                    sums["total"] = total
+                else:
+                    sums["total"].view().variance = total.view().variance
+            else:
+                print("Getting uncertainty by projecting from fitdiagnostics")
+                with uproot.open(args.ifile) as ff:
+                    matrix = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["overall_total_covar"].values()
+                nbins = len(sums["total"].values())
+                if nbins * len(cmrg) * len(years) != matrix.shape[0]:
+                    raise NotImplementedError("Too stupid to project prefit covmat for subsets of channels")
+                totalunc = project_channel_year_unc(matrix, nbins)
+                sums["total"].view().variance = totalunc
 
             if args.project != "none":
                 binedges = [bb for vv, bb in sums["binning"].items()]

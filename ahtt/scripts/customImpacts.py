@@ -129,15 +129,17 @@ for ele in data['POIs']:
         break
 POI_fit = POI_info['fit']
 
+xs_base = 6.43
+
 #json dictionary to translate parameter names
 translate = {}
 if args.translate is not None:
     with open(args.translate) as jsonfile:
         translate = json.load(jsonfile)
 if POI == "CMS_EtaT_norm_13TeV":
-    poi_translated = "\\hat{\\mu}(\\eta_{t})"
+    poi_translated = "\\hat{\\sigma}(\\eta_{#lower[-0.1dy]{t}})"
 elif POI == "CMS_ChiT_norm_13TeV":
-    poi_translated = "\\hat{\\mu}(\\chi_{t})"
+    poi_translated = "\\hat{\\sigma}(\\chi_{#lower[-0.1dy]{t}})"
 else:
     poi_translated = Translate(POI,translate) #Get translated POI name (if available)
 
@@ -297,7 +299,7 @@ for page in xrange(n):
             # s_nom, s_hi, s_lo = GetRounded(fit[1], fit[2] - fit[1], fit[1] - fit[0])
             # this part stores text/shapeU vars and sets the digits to show
             s_nom, s_hi, s_lo = "{:.3f}".format(fit[1]), "{:.3f}".format( fit[2] - fit[1]), "{:.3f}".format( fit[1] - fit[0])
-            text_entries.append((x1, y1, '%s^{#plus%s}_{#minus%s}' % (s_nom, s_hi, s_lo)))
+            text_entries.append((x1, y1, '{%s}^{#plus%s}_{#minus%s}' % (s_nom, s_hi, s_lo)))
             redo_boxes.append(i)
 
         if has_data:
@@ -365,7 +367,7 @@ for page in xrange(n):
         "impacts", "impacts", 6, -max_impact * 1.06, max_impact * 1.06, n_params, 0, n_params)
     plot.Set(h_impacts.GetXaxis(), LabelSize=0.03, TitleSize=0.04, Ndivisions=505, Title=
      # '#Delta#mu')
-     '#Delta%s' % poi_translated)
+     '#Delta%s [pb]' % poi_translated)
     plot.Set(h_impacts.GetYaxis(), LabelSize=0, TickLength=0.0)
     h_impacts.Draw()
 
@@ -482,16 +484,16 @@ for page in xrange(n):
     #-- Draw best-fit value and uncertainties
     # s_nom, s_hi, s_lo = GetRounded(POI_fit[1], POI_fit[2] - POI_fit[1], POI_fit[1] - POI_fit[0])
     # THIS PART DRAWS THE POI and sets how many digits to display
-    s_nom, s_hi, s_lo = "{:.2f}".format(POI_fit[1]), "{:.2f}".format( POI_fit[2] - POI_fit[1]), "{:.2f}".format( POI_fit[1] - POI_fit[0])
+    s_nom, s_hi, s_lo = "{:.1f}".format(POI_fit[1]*xs_base), "{:.1f}".format( (POI_fit[2] - POI_fit[1])*xs_base), "{:.1f}".format( (POI_fit[1] - POI_fit[0])*xs_base)
     if s_hi == s_lo:
         unctext = ' \\pm %s' % s_hi
     else:
-        unctext = '^{#plus%s}_{#minus%s}' % (s_hi, s_lo)
+        unctext = '^{#plus%s}_{#lower[-0.4dy]{#minus%s}}' % (s_hi, s_lo)
     if not args.blind:
         plot.DrawTitle(pad=pads[1], text='%s' % (
                 '%s' % poi_translated
                 )
-            +' = %s%s%s' % (
+            +' = %s%s%s pb' % (
                 s_nom, unctext,
                 '' if args.units is None else ' '+args.units
             ), align=3, textOffset=0.14, textSize=0.25)

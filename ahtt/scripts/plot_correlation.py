@@ -15,7 +15,7 @@ parser.add_argument("--only", type=int, help="Plot only the N highest NPs", defa
 parser.add_argument("--include_mcstats", action="store_true")
 parser.add_argument("--nuisance_map", type=str, default=None, help="NP label translation map")
 parser.add_argument("--impacts", type=str, default=None, help="Impact json for sorting")
-parser.add_argument("--preliminary", action="store_true")
+parser.add_argument("--cmslabel", type=str, default=None)
 parser.add_argument("--skip_poi", action="store_true")
 parser.add_argument("--add_poi", action="store_true")
 args = parser.parse_args()
@@ -29,7 +29,7 @@ poi_names = {
 poi_labels = {
     "A":"$\\mathrm{g_{A t \\bar{t}}}$",
     "H":"$\\mathrm{g_{H t \\bar{t}}}$",
-    "EtaT": "$\\mathrm{\\mu(\\eta_t)}$"
+    "EtaT": "$\\mathrm{\\sigma(\\eta_t)}$"
 }
 
 poi = poi_names[args.signal]
@@ -79,7 +79,8 @@ def translate_name(name, ndict):
     label = label.replace("$\\mathrm{\\mu}$_{R}", "$\\mathrm{\\mu_R}$")
     label = label.replace("$\\mathrm{\\mu}$_{F}", "$\\mathrm{\\mu_F}$")
     label = label.replace("\\gamma", "$\\mathrm{\\gamma}$")
-    label = label.replace("\\eta", "$\\mathrm{\\eta_t}$")
+    label = label.replace("\\eta_{#lower[-0.1dy]{t}}", "$\\mathrm{\\eta_t}$")
+    #label = label.replace("\\eta", "$\\mathrm{\\eta_t}$")
     label = label.replace("\\geq", "$\\geq$")
     label = label.replace("p_{T}", "$p_{\\mathrm{T}}$")
     return label
@@ -118,10 +119,14 @@ with uproot.open(args.infile) as f:
         with open(args.impacts) as jsonfile:
             impact_data = json.load(jsonfile)
         impact_data = {p['name']: p for p in impact_data['params']}
-        impacts = [abs(impact_data[param]['impact_' + poi])
-                    if param != poi
-                    else np.inf
-                    for param in labels]
+        impacts = []
+        for param in labels:
+            if param == poi:
+                impacts.append(np.inf)
+            elif param in impact_data:
+                impacts.append(abs(impact_data[param]['impact_' + poi]))
+            else:
+                impacts.append(0)
         sorting = np.argsort(impacts)[::-1]
     else: 
         if not poi in labels:
@@ -155,10 +160,10 @@ with uproot.open(args.infile) as f:
     cax = fig.add_axes([ax.get_position().x1+0.01,ax.get_position().y0,0.05,ax.get_position().height])
     plt.colorbar(im, label="Correlation coefficient", ticks=[-1.0, -0.5, 0.0, 0.5, 1.0], cax=cax)
 
-    ax.annotate("$\\textbf{CMS}$", (-0.3, 1.1), fontsize = 20, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
+    ax.annotate("$\\textbf{CMS}$", (-0.45, 1.1), fontsize = 20, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
 
-    if args.preliminary:
-        ax.annotate("$\\textit{Preliminary}$", (-0.3, 1.04), fontsize = 14, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
+    if args.cmslabel:
+        ax.annotate("$\\textit{" + args.cmslabel + "}$", (-0.45, 1.04), fontsize = 14, ha = 'left', va = 'bottom', usetex = True, xycoords="axes fraction")
 
     plt.savefig(args.outfile, bbox_inches="tight")
     plt.close()

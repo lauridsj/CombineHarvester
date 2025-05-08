@@ -109,21 +109,22 @@ signal_zorder = {
 }
 binnings = {
     ("ee", "em", "mm"): {
-        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
+        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]":
             [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
         r"$c_{\mathrm{hel}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
         r"$c_{\mathrm{han}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
     },
     ("e4pj", "m4pj", "e3j", "m3j"): {
-        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
+        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]":
             [320, 360, 400, 440, 480, 520, 560, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100,  1150, 1200, 1300, 1500, 1700],
         r"$\left|\cos(\theta_{\mathrm{t}_{\ell}}^{*})\right|$": [0.0, 0.4, 0.6, 0.75, 0.9, 1.0],
     }
 }
 ratiolabels = {
-    "b": "Ratio to background",
-    "s": "Ratio to background",
-    "p": "Ratio to background",
+    "b": "Ratio to BG",
+    "s": "Ratio to BG + $\\mathrm{\\eta_{t}}$",
+    "sah": "Ratio to  BG",
+    "p": "Ratio to BG",
 }
 lumis = {
     "2016pre": "19.5",
@@ -139,7 +140,7 @@ hatchstyle = dict(
 )
 datastyle = dict(
     marker = "o",
-    markersize = 3,
+    markersize = 4,
     elinewidth = 0.75,
     linestyle = "none",
     color = "black"
@@ -197,7 +198,7 @@ def plot_eventperbin(ax, bins, centers, smhists, total, data, log, fit, channel)
         label = "Data",
         **datastyle
     )
-    ax.set_ylabel("<Events / GeV>", fontsize=24)
+    ax.set_ylabel("Events / GeV", fontsize=24)
     if log:
         ax.set_yscale("log")
         ymin = 0.5 * np.amin(data[0] / width)
@@ -300,7 +301,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     else:
         ax.set_ylim(0.895, 1.105)
         ax.set_yticks([0.9, 1.0, 1.1])
-    ax.set_ylabel(ratiolabels[fit], fontsize=24)
+    ax.set_ylabel(ratiolabels[fitstep], fontsize=24)
     #handles = [Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.), *handles_signals, handle_unc]
     #labels = [" "*len(fittype), *labels_signals, "Uncertainty"]
     handles = [Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.), *handles_signals]

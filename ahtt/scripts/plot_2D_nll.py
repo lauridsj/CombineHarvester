@@ -40,11 +40,11 @@ def read_nll(points, directories, parameters, scales, intervals, drops, prunesmo
         drop = None
         if len(drops) > 0:
             drop = drops[ii if ii < len(drops) else -1]
-            if len(scales) > 0:
-                drop = [[
-                    [drp[0][0] * scales[0], drp[0][1] * scales[0]],
-                    [drp[1][0] * scales[1 if len(scales) > 1 else 0], drp[1][1] * scales[1 if len(scales) > 1 else 0]]
-                ] for drp in drop]
+            #if len(scales) > 0:
+            #    drop = [[
+            #        [drp[0][0] / scales[0], drp[0][1] / scales[0]],
+            #        [drp[1][0] / scales[1 if len(scales) > 1 else 0], drp[1][1] / scales[1 if len(scales) > 1 else 0]]
+            #    ] for drp in drop]
 
         fexp = f"{directory}/{pstr}_{tag}_nll_{scenario}_{parameters[0]}_*_{parameters[1]}_*.root"
         files = [ifile for ifile in glob.glob(fexp) if valid_nll_fname(ifile, tag = tag, ninterval = 2)]
@@ -129,9 +129,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         colortouse = draw_nll.colors[len(nlls[1])][ii]
 
         if bestfit and directories[ii][1] == "obs":
-            ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X', markersize = 10.0, color = colortouse)
+            ax.plot(np.array([best_fit[0]]), np.array([best_fit[1]]), marker = 'X', markersize = 15.0, color = colortouse)
             if ii == 0:
-                sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 10., linewidth = 0), "Best fit"))
+                sigmas.append((mln.Line2D([0], [0], color = "0", marker='X', markersize = 15., linewidth = 0), "Observed"))
 
         for isig in range(maxsigma):
             if maxsigma > 3 and (isig + 1) % 2 == 0:
@@ -149,6 +149,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
 
             if len(tlabel) > 1 and isig == 0:
                 handles.append((mln.Line2D([0], [0], color = colortouse, linestyle = 'solid', linewidth = 2), tlabel[ii]))
+
+    ax.plot([0], [0], marker = 'X', markersize = 15.0, color = '#E4717A')
+    sigmas.insert(0, (mln.Line2D([0], [0], color = '#E4717A', marker='X', markersize = 15., linewidth = 0), "Exp. (BG)"))
 
     plt.xlabel(plabels[0], fontsize = 23, loc = "right")
     plt.ylabel(plabels[1], fontsize = 23, loc = "top")
@@ -173,9 +176,9 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         legend2 = ax.legend(first(handles), second(handles), loc = 'best', bbox_to_anchor = bbox_expobs, fontsize = 19, handlelength = 2.08, handletextpad = 0.4, borderaxespad = 0.5, frameon = False)
         ax.add_artist(legend2)
     elif len(handles) > 0:
-        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 23, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.legend(first(handles), second(handles), loc = 'lower right', fontsize = 20, handlelength = 2., borderaxespad = 1., frameon = False)
     elif len(sigmas) > 0:
-        ax.legend(first(sigmas), second(sigmas), loc = 'lower right', fontsize = 21, handlelength = 2., borderaxespad = 1., frameon = False)
+        ax.legend(first(sigmas), second(sigmas), loc = 'upper right', fontsize = 20, handlelength = 2., borderaxespad = 1., frameon = False)
 
     if formal:
         mplhep.cms.label(ax = ax, label="Private work", data = True, year = None, lumi = " 138", fontsize = 27)
@@ -189,11 +192,11 @@ def draw_nll(onames, points, directories, tlabel, parameters, plabels, pscales, 
         #ltxt = "{lum}{ifb}".format(lum = luminosity, ifb = r" fb$^{\mathrm{\mathsf{-1}}}$ (13 TeV)")
         #ax.text((0.985 * xlength) + xmin, (0.97 * ylength) + ymin, ltxt, fontsize = 26, ha = 'right', va = 'top', usetex = True)
 
-        btxt = etat_blurb(a343bkg)
-        bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
-        ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = bbox_noeta,
-                  fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
-                  handlelength = 0, handletextpad = 0, borderaxespad = 1.)
+        #btxt = etat_blurb(a343bkg)
+        #bbln = [matplotlib.patches.Rectangle((0, 0), 1, 1, fc = "white", ec = "white", lw = 0, alpha = 0)] * len(btxt)
+        #ax.legend(bbln, btxt, loc = 'lower right', bbox_to_anchor = bbox_noeta,
+        #          fontsize = 14 if len(btxt) > 1 else 16, frameon = False,
+        #          handlelength = 0, handletextpad = 0, borderaxespad = 1.)
 
     ax.minorticks_on()
     ax.tick_params(axis = "both", which = "both", direction = "in", bottom = True, top = True, left = True, right = True)

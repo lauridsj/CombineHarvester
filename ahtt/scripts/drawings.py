@@ -66,24 +66,25 @@ proc_colors = {
     "Total": "#3B444B"
 }
 signal_zorder = {
-    r"$\eta_{\mathrm{t}}$": 1,
-    r"$\chi_{\mathrm{t}}$": 2,
-    r"$\psi_{\mathrm{t}}$": 3,
+    r"$\eta_{\mathrm{t}}$": -1,
+    r"$\chi_{\mathrm{t}}$": -2,
+    r"$\psi_{\mathrm{t}}$": -3,
     "Total": 0,
     "A": 1,
     "H": 2
 }
 binnings = {
     ("ee", "em", "mm"): {
-        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
+        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]":
             [320, 360, 400, 440, 480, 520, 560, 600, 640, 680, 720, 760, 800, 845, 890, 935, 985, 1050, 1140, 1300, 1460],
-        r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ (GeV)":
-            [140, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
-        r"$c_{\mathrm{han}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
-        r"$c_{\mathrm{hel}}$": ["-1", r"-$\frac{1}{3}$", r"$\frac{1}{3}$", "1"],
+        r"$m_{\mathrm{b}\mathrm{b}\ell\ell}$ [GeV]":
+            [80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
+            #[140, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 530, 560, 600, 660, 750, 900],
+        r"$c_{\mathrm{han}}$": ["$-1$", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "$1$"],
+        r"$c_{\mathrm{hel}}$": ["$-1$", r"$-\frac{1}{3}$", r"$\frac{1}{3}$", "$1$"],
     },
     ("e4pj", "m4pj", "e3j", "m3j"): {
-        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ (GeV)":
+        r"$m_{\mathrm{t}\bar{\mathrm{t}}}$ [GeV]":
             [320, 360, 400, 440, 480, 520, 560, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 1100,  1150, 1200, 1300, 1500, 1700],
         r"$\left|\cos(\theta_{\mathrm{t}_{\ell}}^{*})\right|$": [0.0, 0.4, 0.6, 0.75, 0.9, 1.0],
     }
@@ -110,11 +111,17 @@ hatchstyle = dict(
 )
 datastyle = dict(
     marker = "o",
-    markersize = 3,
+    markersize = 5,
     elinewidth = 0.75,
     linestyle = "none",
     color = "black"
 )
+genlabels = {
+    "hvq": "Powheg v2 hvq + Pythia",
+    "bb4l": "Powheg vRES bb4l + Pythia",
+    "herwig": "Powheg v2 hvq + Herwig",
+    "amcatnlo": "MG5_aMC@NLO FxFx + Pythia"
+}
 
 def ith(iterable, idx):
     return [item[idx] for item in iterable]
