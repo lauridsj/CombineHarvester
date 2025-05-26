@@ -5,7 +5,7 @@ outdir=.
 
 outdir=`realpath ${outdir}`
 
-scriptdir=${BASH_SOURCE[0]}
+scriptdir=`dirname ${BASH_SOURCE[0]}`
 
 #PRE/POST
 

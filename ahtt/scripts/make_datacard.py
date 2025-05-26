@@ -918,7 +918,7 @@ def write_datacard(oname, cpn, years, sigpnt, injsig, assig, drops, keeps, mcsta
 
 
     ewkttbkg = set([pp for pp in cpn[cc] for cc in cpn.keys() if "EWK_TT" in pp and (assig is None or not pp in assig)])
-    if len(ewkttbkg) == 6 and not "EWK_yukawa" in drops:
+    if len(ewkttbkg) == 6:# and not "EWK_yukawa" in drops:
         for tt in txts:
             cc = os.path.basename(tt).replace("ahtt_", "").replace(".txt", "")
             groups[cc]["theory"].append("EWK_yukawa")

@@ -299,7 +299,7 @@ for page in xrange(n):
             # s_nom, s_hi, s_lo = GetRounded(fit[1], fit[2] - fit[1], fit[1] - fit[0])
             # this part stores text/shapeU vars and sets the digits to show
             s_nom, s_hi, s_lo = "{:.3f}".format(fit[1]), "{:.3f}".format( fit[2] - fit[1]), "{:.3f}".format( fit[1] - fit[0])
-            text_entries.append((x1, y1, '{%s}^{#plus%s}_{#minus%s}' % (s_nom, s_hi, s_lo)))
+            text_entries.append((x1, y1, '%s^{#plus%s}_{#minus%s}' % (s_nom, s_hi, s_lo)))
             redo_boxes.append(i)
 
         if has_data:
@@ -313,9 +313,11 @@ for page in xrange(n):
         if has_data:
             if imp[2]-imp[1]>0:
                 g_impacts_hi.SetPointError(i, 0, imp[2] - imp[1], 0.0, 0.0)
-                g_impacts_lo.SetPointError(i, imp[1] - imp[0], 0, 0.0, 0.0)
             else:
                 g_impacts_hi.SetPointError(i,  imp[1] - imp[2],0, 0.0, 0.0)
+            if imp[1]-imp[0]>0:
+                g_impacts_lo.SetPointError(i, imp[1] - imp[0], 0, 0.0, 0.0)
+            else:
                 g_impacts_lo.SetPointError(i, 0, imp[0] - imp[1],  0.0, 0.0)
         max_impact = max(max_impact, abs(imp[1] - imp[0]), abs(imp[2] - imp[1]))
         max_impact = max(max_impact, abs(impA[1] - impA[0]), abs(impA[2] - impA[1]))
@@ -323,9 +325,11 @@ for page in xrange(n):
         if has_asimov:
             if impA[2]-impA[1]>0:
                 g_impactsA_hi.SetPointError(i, 0, impA[2] - impA[1], 0.49, 0.49)
-                g_impactsA_lo.SetPointError(i, impA[1] - impA[0], 0, 0.49, 0.49)
             else:
                 g_impactsA_hi.SetPointError(i,  impA[1] - impA[2],0, 0.49, 0.49)
+            if impA[1]-impA[0]>0:
+                g_impactsA_lo.SetPointError(i, impA[1] - impA[0], 0, 0.49, 0.49)
+            else:
                 g_impactsA_lo.SetPointError(i, 0, impA[0] - impA[1],  0.49, 0.49)
 
         thisname = Translate(thisname,translate)

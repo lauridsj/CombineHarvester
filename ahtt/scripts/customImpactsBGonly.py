@@ -433,22 +433,22 @@ for page in xrange(n):
 
     #-- Legend, CMS logo, best-fit value
     # legendbox = [0.001, 0.995, 0.77, 0.915] #x1, y1, x2, y2
-    legendbox = [0.23, 0.995, 0.995, 0.915] #x1, y1, x2, y2
+    legendbox = [0.12, 0.995, 0.995, 0.915] #x1, y1, x2, y2
     legendtextsize = 0.03
     legend = ROOT.TLegend(legendbox[0], legendbox[1], legendbox[2], legendbox[3], '', 'NBNDC')
     legend.SetFillStyle(0)
     legend.SetTextSize(legendtextsize)
     legend.SetNColumns(2)
     if has_data:
-        legend.AddEntry(g_pulls, 'Fit constraint (obs., BG + #eta_{t})', 'LP')
+        legend.AddEntry(g_pulls, 'Fit constraint (FO pQCD + BG + #eta_{t})', 'LP')
         
     if has_asimov:
-        legend.AddEntry(g_pullsA, 'Fit constraint (obs., BG only)', 'LP')
+        legend.AddEntry(g_pullsA, 'Fit constraint (FO pQCD + BG only)', 'LP')
     #    legend.AddEntry(g_impactsA_hi, '+1#sigma impact (exp.)', 'F')
     #    legend.AddEntry(g_impactsA_lo, '-1#sigma impact (exp.)', 'F')
     if has_data:
-        legend.AddEntry(g_impacts_hi, '+1#sigma impact (obs., BG + #eta_{t})', 'l')
-        legend.AddEntry(g_impacts_lo, '-1#sigma impact (obs., BG + #eta_{t})', 'l')
+        legend.AddEntry(g_impacts_hi, '+1#sigma impact (FO pQCD + BG + #eta_{t})', 'l')
+        legend.AddEntry(g_impacts_lo, '-1#sigma impact (FO pQCD + BG + #eta_{t})', 'l')
     legend.Draw()
 
     #-- Draw CMS logo

@@ -80,6 +80,7 @@ parser.add_argument("--mass-cut", help = "comma-separated minmax value, to cut o
 parser.add_argument("--xsec", help = "report toponia as xsec", action = "store_true", dest = "xsec", required = False)
 parser.add_argument('--no-total', help = "dont plot the total signal", action="store_false", dest="total")
 parser.add_argument("--generator-label", help="label for the generator", type=str, default=None, dest="genlabel")
+parser.add_argument("--normalize", help="Normalize yields", action="store_true")
 args = parser.parse_args()
 args.logy = args.log or args.logy
 args.readbatch = args.readbatch and os.path.isfile(args.batch)
@@ -174,12 +175,16 @@ def plot_eventperbin(ax, bins, centers, smhists, total, signals, data, log, fit,
     #            zorder = signal_zorder[symbol] + 100,
     #            edges=False
     #        )
-    ax.set_ylabel("Events  " if angular else "Events / GeV", fontsize=26, loc="top")
+    axl = "Events  " if angular else "Events / GeV"
+    #if args.normalize:
+    #    axl += " (norm.)"
+    ax.set_ylabel(axl, fontsize=26, loc="top")
     if log[0]:
         ax.set_xscale("log")
     if log[1]:
         ax.set_yscale("log")
-        dperbin = np.maximum(data[0], 1.) / width / factor
+        mperbin = 1e-7 if args.normalize else 1.
+        dperbin = np.maximum(data[0], mperbin) / width / factor
         ymin = 0.5 * np.amin(dperbin)
         if args.splitbins or single_slice:
             ymax = 1.25
@@ -192,7 +197,10 @@ def plot_eventperbin(ax, bins, centers, smhists, total, signals, data, log, fit,
     else:
         ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0), useMathText=True)
         ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
-        ax.yaxis.get_offset_text().set_x(-0.17)
+        if ax.get_ylim()[1] > 1:
+            ax.yaxis.get_offset_text().set_x(-0.17)
+        else:
+            ax.yaxis.get_offset_text().set_x(-0.20)
 
 
 
@@ -299,9 +307,9 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     if single_slice:
         ax.set_ylim(0.887, 1.113)
         ax.set_yticks([0.9, 1.0, 1.1])
-    elif fit == "p":
-        ax.set_ylim(0.79, 1.21)
-        ax.set_yticks([0.8, 1.0, 1.2])
+    #elif fit == "p" and not args.normalize:
+    #    ax.set_ylim(0.79, 1.21)
+    #    ax.set_yticks([0.8, 1.0, 1.2])
     else:
         ax.set_ylim(0.895, 1.105)
         ax.set_yticks([0.9, 1.0, 1.1])
@@ -328,6 +336,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     else:
         fittype = f"Postfit ({bgstring} + A/H)"
         fittypelen = len(fittype)
+    if args.normalize:
+        fittype += ", normalized"
     if not single_slice:
         handles.insert(0, Rectangle((0,0), 0, 0, facecolor="white", edgecolor="white", alpha=0.))
         labels.insert(0, " "*(fittypelen+10))
@@ -540,11 +550,16 @@ def plot(channel, year, fit,
             annstr = fittype# + ", " + title
         else:
             annstr = fittype
+        if args.normalize:
+            annstr += ", normalized"
         ax2.annotate(annstr, (xpos, ypos), xycoords="axes fraction", va=va, ha=ha, fontsize=20, fontweight="normal" if (single_slice and args.panel == "upper") else "bold", zorder=7777)
         #if args.panel == "both":
         #    ax1.annotate(title, (0.97, 1.028), xycoords="axes fraction", va="bottom", ha="right", fontsize=20, fontweight="normal", zorder=7777) # xxx
     elif args.panel != "upper":
-        ax2.annotate(fittype, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
+        annstr = fittype
+        if args.normalize:
+            annstr += ", normalized"
+        ax2.annotate(annstr, (0.007, 1.038), xycoords="axes fraction", va="bottom", ha="left", fontsize=20, fontweight="bold", zorder=7777)
 
     if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]) and fit != "b":
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
@@ -754,11 +769,11 @@ def plot_projection(sums, binedges, cut, matrix):
 def project_channel_year_unc(matrix, nbins):
     assert matrix.shape[0] % nbins == 0
     nchy = matrix.shape[0] // nbins
-    out = np.zeros(nbins)
+    out = np.zeros((nbins,nbins))
     for i in range(nchy):
         for j in range(nchy):
             submat = matrix[i*nbins:(i+1)*nbins,j*nbins:(j+1)*nbins]
-            out += np.diag(submat)
+            out += submat
     return out
 
 def do_slicing(h, islice, nslice):
@@ -809,11 +824,73 @@ def add_covariance(histogram, matrix):
         )
     return histogram
 
-
-
 def zero_variance(histogram):
     histogram.view().variance = 0
     return histogram
+
+def normalize_yields(h, normto=None):
+    isarray = isinstance(h, np.ndarray)
+    if isarray:
+        values = h
+        variances = np.zeros_like(h)
+    else:
+        values = h.values()
+        variances = h.variances()
+    if normto is None:
+        total_yield = np.sum(values)
+    else:
+        total_yield = np.sum(normto)
+    values_norm = values / total_yield
+    variances_norm = variances / total_yield**2
+    if isarray:
+        return values_norm
+    else:
+        histogram = Hist(*[copy.deepcopy(ax) for ax in h.axes], storage="Weight")
+        histogram.view().value = values_norm
+        histogram.view().variance = variances_norm
+        return histogram
+
+#def normalize_variance(yields, covmat):
+#    total_yield = np.sum(yields)
+#    yields_normed = yields / total_yield
+#    variance_norm = np.zeros_like(yields)
+#    for i in range(len(yields)):
+#        variance_norm[i] = (
+#            covmat[i,i] - 2 * yields_normed[i] * np.sum(covmat[i]) \
+#                + yields_normed[i]**2 * np.sum(covmat) 
+#        ) / total_yield**2
+#
+#    test = normalize_covariance(yields, covmat)
+#    assert np.all(np.isclose(np.diag(test), variance_norm))
+#    return variance_norm
+
+def normalize_covariance(yields, covmat):
+    total_yield = np.sum(yields)
+    yields_normed = yields / total_yield
+    return 1/total_yield**2 * (
+        covmat
+        - np.outer(yields_normed, np.sum(covmat, axis=0))
+        - np.outer(np.sum(covmat, axis=1), yields_normed)
+        + np.outer(yields_normed, yields_normed) * np.sum(covmat)
+    )
+
+def normalize(sums, matrix):
+    ret = sums.copy()
+    ret["smhists"] = {k: normalize_yields(sums["smhists"][k], normto=sums["total"].values()) for k in sums["smhists"]}
+    ret["datavalues"] = normalize_yields(sums["datavalues"])
+    ret["total"] = normalize_yields(sums["total"])
+    ret["promotions"] = {k: normalize_yields(sums["promotions"][k], normto=sums["total"].values()) for k in sums["promotions"]}
+    ret["signals"] = {k: normalize_yields(sums["signals"][k], normto=sums["total"].values()) for k in sums["signals"]}
+
+    total_var = np.diag(normalize_covariance(sums["total"].values(), matrix))
+    ret["total"].view().variance = total_var
+
+    dataerr_lo = np.sqrt(np.diag(normalize_covariance(sums["datavalues"], np.diag(sums["datahist_errors"][0]**2))))
+    dataerr_hi = np.sqrt(np.diag(normalize_covariance(sums["datavalues"], np.diag(sums["datahist_errors"][1]**2))))
+    ret["datahist_errors"] = np.array([dataerr_lo, dataerr_hi])
+
+    return ret
+
 
 gvalues_p = None
 
@@ -1003,8 +1080,16 @@ if args.batch is not None:
                 nbins = len(sums["total"].values())
                 if nbins * len(cmrg) * len(years) != matrix.shape[0]:
                     raise NotImplementedError("Too stupid to project prefit covmat for subsets of channels")
-                totalunc = project_channel_year_unc(matrix, nbins)
+                totalunc = np.diag(project_channel_year_unc(matrix, nbins))
                 sums["total"].view().variance = totalunc
+
+            if args.normalize:
+                with uproot.open(args.ifile) as ff:
+                    matrix = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["overall_total_covar"].values()
+                    nbins = len(sums["total"].values())
+                    matrix = project_channel_year_unc(matrix, nbins)
+                sums = normalize(sums, matrix)
+                args.ptag = "_norm" + args.ptag 
 
             if args.splitbins:
                 plot_slices(sums)
@@ -1022,6 +1107,10 @@ if args.batch is not None:
                 matrix = None
                 with uproot.open(args.ifile) as ff:
                     matrix = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["overall_total_covar"].values()
+                    if args.normalize:
+                        overall_total = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["total_overall"].values()
+                        matrix = normalize_covariance(overall_total, matrix)
+                        
                 if cut is not None and all([binedges[0][0] <= cc <= binedges[0][-1] for cc in cut]):
                     plot_projection(sums, binedges, cut, matrix)
                 else:
