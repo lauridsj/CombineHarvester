@@ -174,7 +174,7 @@ def read_category_process_nuisance(ofile, inames, channel, year, cpn, pseudodata
             ("tmass_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)), # gaussian prior
             #("tmass_TT",                          (("2016pre", "2016post", "2017", "2018"), ("shapeU", 1.))), # flat prior
 
-            ("EWK_yukawa",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
+            #("EWK_yukawa",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
             ("EWK_scheme",                         (("2016pre", "2016post", "2017", "2018"), 1.)),
 
             ("hdamp_TT",                           (("2016pre", "2016post", "2017", "2018"), 1.)),

@@ -1,0 +1,5 @@
+channels_ll='ee,em,mm'
+channels_lx='ee,em,mm,e3j,m3j,e4pj,m4pj'
+years_run2='2016pre,2016post,2017,2018'
+keeps='eff_b,eff_e,eff_m_id,eff_m_iso,eff_trigger,fake,JEC,JER,MET,QCDscale,hdamp,tmass,EWK_scheme,alphaS,PDF_PCA_0,L1,EWQCD,pileup,lumi,norm,UEtune,CR_ERD,CR_QCD'
+drops='Type3,FlavorQCD_201,eff_b_13TeV_201,TT_norm,bindingEnergy'
