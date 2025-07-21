@@ -1,0 +1,116 @@
+# Plot commands for all plots in the PAS/Paper
+# All to be executed in a python 3 environment, ideally with reasonably new matplotlib & mplhep versions
+# (for me its LCG104 + a virtual env with mplhep and matplotlib updated)
+# for lcg: source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_104 x86_64-el9-gcc11-opt
+# EXCEPTION: impact plot, that needs EL7 container + CMSSW
+
+# PRE/POST
+
+etatdir='/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_thrcompat_240530/A_m365_w2p0__H_m365_w2p0_mitetat'
+ahdir='/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_thrcompat_240530/A_m365_w2p0__H_m365_w2p0_lx'
+
+outdir="." # change if needed
+fmt="pdf,png,svg"
+mkdir -p $outdir
+
+# combined plots
+for channel in ll l4pj l3j; do
+    python3 ../scripts/plot_prepost_combined.py --odir $outdir --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --ifileah ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --batchah ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --prefit-signal-from default --preliminary
+done
+
+# prefit only
+
+python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__H_*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch yes --skip-postfit --prefit-signal-from default --as-signal 'A,H,EtaT' --preliminary
+
+
+# separate postfits
+
+for channel in ll l4pj l3j; do
+    # A/H postfit
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --skip-prefit --preliminary
+
+    # BG only postfit
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_b.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_b.root --skip-prefit --preliminary
+
+    # EtaT postfit
+    python3 ../scripts/plot_prepost.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --skip-ah --preliminary
+done
+
+# separate, split postfits
+for channel in ll l4pj l3j; do
+    for panel in upper lower both; do
+        # A/H postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_s.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_s.root --preliminary --panel-labels --split-bins --panel ${panel}
+
+        # BG only postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${ahdir}/A_*__H_*_fitdiagnostics_result_b.root --plot-formats "${fmt}" --log --skip-each --batch ${ahdir}/A_*__H_*_psfromws_${channel}_all_b.root --skip-prefit --preliminary --panel-labels --split-bins --panel ${panel}
+
+        # EtaT postfit
+        python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${etatdir}/A_*__*_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --plot-formats "${fmt}" --log --skip-each --batch ${etatdir}/A_*__H_*_psfromws_${channel}_all_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root --skip-prefit --as-signal 'EtaT' --panel-labels --skip-ah --preliminary --split-bins --panel ${panel}
+    done
+done
+
+# 1D LIMITS
+# updated to the ones going into paper
+
+mkdir lim1D && cd lim1D
+for idir in smtt etat; do for ichan in lx ll lj; do mkdir -p ${idir}/${ichan}; done; done
+fmt="pdf,png,svg"
+
+# limits w/o etat
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
+python3 ../../scripts/plot_limit.py --tag "lx_smtt" --odir smtt/lx --read-from "${basedir}" --observed --formal --A343-background 0 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll_smtt" --odir smtt/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/unblind_stage3_1D_231205"
+python3 ../../scripts/plot_limit.py --tag "lj_smtt" --odir smtt/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
+
+# limits with etat
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318"
+python3 ../../scripts/plot_limit.py --tag "lx" --odir etat/lx --read-from "${basedir}" --observed --formal --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll" --odir etat/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "lj" --odir etat/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"
+
+# CONTOURS
+# same story re: absolute path, this time its Laurids' dirs
+basedir="/data/dust/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt"
+
+outdir="${basedir}/contours" # change if needed
+fmt="pdf,png,svg"
+mkdir -p outdir
+
+cd "/data/dust/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_fc"
+# I think there is a syntax so you dont have to give all contours by hand, Afiq probably knows (nope, the syntax relies on regular grids)
+pairs='A_m1000_w5p0,H_m365_w2p0;A_m365_w2p0,H_m1000_w5p0;A_m365_w2p0,H_m365_w2p0;A_m1000_w5p0,H_m1000_w5p0' 
+python3 ${basedir}/scripts/plot_contour.py --point "$pairs" --contour 'lx_etat/exp-b,obs' --odir ${outdir} --label 'Expected (b);Observed' --formal --A343-background 1 --draw-best-fit --cms-append Preliminary --plot-formats "${fmt}"
+
+# CORRELATION
+# this needs both a fitdiagnostics output, and impacts for the sorting
+
+infile="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_thrcompat_240530/A_m365_w2p0__H_m365_w2p0_mitetat/A_m365_w2p0__H_m365_w2p0_mitetat_fitdiagnostics_result_CMS_EtaT_norm_13TeV_g1_0p0_g2_0p0_fixed_s.root"
+impacts="/data/dust/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_arc/A_m400_w5p0_lx_etatfit/A_m400_w5p0_lx_etatfit_impacts_CMS_EtaT_norm_13TeV_g_0p0_fixed_all.json"
+
+python3 ../scripts/plot_correlation.py --infile ${infile} --outfile correlation_etat.pdf --signal EtaT --only 21 --nuisance_map ../scripts/nuisance_map.json --impacts ${impacts} --preliminary
+
+# IMPACTS
+# these need a different environment than the rest, namely an EL7 container
+# fresh shell required
+
+cmssw-el7 --interactive --contain --bind /afs:/afs --bind /cvmfs:/cvmfs --bind /pnfs:/pnfs --bind /data:/data --bind /tmp:/host/tmp --home $HOME --pwd `pwd -P`
+cd /wherever/your/workdir/is/CMSSW_10_2_13/src
+cmsenv
+cd CombineHarvester/ahtt
+
+infile_data="/data/dust/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_arc/A_m400_w5p0_lx_etatfit/A_m400_w5p0_lx_etatfit_impacts_CMS_EtaT_norm_13TeV_g_0p0_fixed_all.json"
+infile_asimov="/data/dust/user/lauridsj/ah/CMSSW_10_2_13/src/CombineHarvester/ahtt/workdir_arc/A_m400_w5p0_lx_etatfit_asimov/A_m400_w5p0_lx_etatfit_asimov_impacts_CMS_EtaT_norm_13TeV_g_0p0_fixed_all.json"
+
+python scripts/customImpacts.py -i ${infile_data} -ia ${infile_asimov} -o impacts_etat_lx -t scripts/nuisance_map.json --per-page 20 --cms-label 'Preliminary'
+
+# PARITY TEST
+# no --read-from yet, it still needs to be propagated to other scripts contour etc
+# --drops is used to remove numerically naughty points
+
+mkdir forpaper
+odir="$(readlink -f forpaper)"
+fmt="pdf,png,svg"
+cd /data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah365_res_240411
+./../scripts/plot_2D_nll.py --point 'A_m365_w2p0,H_m365_w2p0' --tag 'lx_10pb:exp-b;lx_10pb:obs' --tag-label 'Expected (b);Observed' --parameters 'r1,r2' --draw-best-fit --arbitrary-resonance-normalization 10 --plot-format pdf --odir "${odir}" --intervals='-1,5;-2,2' --drops='-0.145,-0.135;0.195,0.205 : 0.155,0.165;-0.085,-0.075 -- 0.495,0.505;-0.145,-0.135 : 0.515,0.525;-0.165,-0.155 : 0.535,0.545;-0.185,-0.175 : 0.555,0.565;-0.205,-0.195' --formal --A343-background 0 --cms-append Preliminary --plot-tag lx_pas --plot-formats "${fmt}"
