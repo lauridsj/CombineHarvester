@@ -60,10 +60,10 @@ if args.batch is not None:
         batches = {r"$\ell\ell$": channels}
     elif "_l4pj_" in args.batch:
         channels = ["e4pj", "m4pj"]
-        batches = {r"$\ell$, $\geq$ 4j": channels}
+        batches = {r"$\ell$+$\geq$4j": channels}
     elif "_l3j_" in args.batch:
         channels = ["e3j", "m3j"]
-        batches = {r"$\ell$, 3j": channels}
+        batches = {r"$\ell$+3j": channels}
     else:
         raise ValueError(f"Unknown batch: {args.batch}")
 else:
@@ -470,7 +470,7 @@ def plot(channel, year, fit,
         #extent = 'tight'
 
         sstr = "Combined"
-        cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$, 3j', 'l3j').replace(r'$\ell$, $\geq$ 4j', 'l4pj')
+        cstr = channel.replace(r'$\ell\ell$', 'll').replace(r'$\ell$j', 'lj').replace(r'$\ell$+3j', 'l3j').replace(r'$\ell$+$\geq$4j', 'l4pj')
         ystr = year.replace(" ", "").lower()
         for fmt in args.fmt:
             fig.savefig(f"{args.odir}/{sstr}{args.ptag}_fit_{fit}_{cstr}_{ystr}{fmt}", transparent = True)#, bbox_inches = extent)

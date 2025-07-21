@@ -209,7 +209,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     ax.errorbar(
         centers,
         data[0] / total.values(),
-        data[1] / total.values(),
+        abs(data[1] / total.values()),
         **datastyle
     )
     if fit == "p":
@@ -258,6 +258,8 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
                 if fit == "s":
                     if len(gvalues[key]) == 2:
                         signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f} \\pm {gvalues[key][1]:.2f}$"
+                    elif len(gvalues[key]) == 1:
+                        signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]:.2f}$ (fix.)"
                     else:
                         signal_label += f", $\\mathrm{{g}}_{{\\mathrm{{{symbol}}}}} = {gvalues[key][0]}_{{-{gvalues[key][2]}}}^{{+{gvalues[key][1]}}}$"
                 elif fit == "b":
@@ -313,7 +315,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
     else:
         ax.set_ylim(0.895, 1.105)
         ax.set_yticks([0.9, 1.0, 1.1])
-    ax.set_ylabel(ratiolabels[fit], fontsize=26)
+    ax.set_ylabel("Ratio to " + bgstring, fontsize=26)
     if fit == "p":
         fittype = "Prefit"
         fittypelen = len(fittype)
@@ -563,7 +565,10 @@ def plot(channel, year, fit,
 
     if args.panel != "upper" and not any([ss in ["EtaT", "ChiT", "PsiT"] for ss in args.assignal]) and fit != "b":
         #btxt = etat_blurb([sm_procs["EtaT"] in smhists])
-        btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
+        if sm_procs["EtaT"] in smhists:
+            btxt = "Including $t \\bar{t}$ bound state $\\eta_t$"
+        else:
+            btxt = "No $\\mathrm{t \\bar{t}}$ bound states"
         xpos = 0.04 if single_slice else 0.01
         ypos = 0.86 if args.panellabels else 0.96
         ax2.annotate(btxt, (xpos, ypos), xycoords="axes fraction", va="top", ha="left", fontsize=20, zorder=7777)
@@ -571,7 +576,7 @@ def plot(channel, year, fit,
 
     cmslabel = args.cmslabel
     if args.panel == "both":
-        if not single_slice and r'\ell' not in title:
+        if not single_slice:# and r'\ell' not in title:
             ax0.set_title(title)
         hep.cms.label(ax = ax0, data=True, label=cmslabel, lumi = lumis[year], loc = 0, year = None if year == "Run 2" else year, fontsize = 22 if single_slice and cmslabel is not None else 26)
         fig.subplots_adjust(hspace = 0.24, left = 0.055, right = 1 - 0.003, top = 1 - 0.05)
@@ -906,7 +911,8 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
                 continue
             dname = f"{channel}_{year}_postfit"
         else:
-            dname = f"shapes_fit_{fit}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
+            fitkey = "b" if fit == "s" and args.poi == "fixed" else fit
+            dname = f"shapes_fit_{fitkey}/{channel}_{year}" if fit != "p" else f"shapes_prefit/{channel}_{year}"
         if dname not in f:
             continue
         directory = f[dname]
@@ -960,10 +966,14 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
         if args.doah:
             for key in directory.keys():
                 if (match := signal_name_pat.match(key)) is not None:
+                    parity = match.group(1)
                     mass = int(match.group(2))
                     width = float(match.group(3).replace("p", "."))
                     if width % 1 == 0:
                         width = int(width)
+
+                    if len(args.assignal) > 0 and not parity in args.assignal:
+                        continue
 
                     # hack to get around combine's behavior of signal POIs
                     if fit == "p" and args.ipf != "":
@@ -975,11 +985,11 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
                     else:
                         hist = directory[key].to_hist()[:len(centers)]
 
-                    isig = 0 if match.group(1) == 'A' else 1
-                    if (match.group(1), mass, width) in signals:
-                        signals[(match.group(1), mass, width)] += args.sigscale[isig] * hist
+                    isig = 0 if parity == 'A' else 1
+                    if (parity, mass, width) in signals:
+                        signals[(parity, mass, width)] += args.sigscale[isig] * hist
                     else:
-                        signals[(match.group(1), mass, width)] = args.sigscale[isig] * hist
+                        signals[(parity, mass, width)] = args.sigscale[isig] * hist
 
             if args.total and len(signals) > 1 and len(promotions) == 0:
                 signals[("Total", None, None)] = sum(signals.values()) if fit == "p" and args.ipf != "" else directory["total_signal"].to_hist()[:len(centers)]
@@ -989,8 +999,23 @@ with uproot.open(args.batch if args.readbatch else args.ifile) as f:
 
         if fit != "p":
             if gvalues_p is None:
-                gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi,
-                                          6.43 if args.xsec else 1, use_cross="cross" in args.poi)
+                if args.poi == "fixed":
+                    pstr = args.ifile.split("_fixed")[0].split("result_")[-1]
+                    pstr = pstr.split("_")
+                    gvalues_p = {}
+                    for i in range(0, len(pstr), 2):
+                        poiname = pstr[i]
+                        print(poiname)
+                        if poiname == "g1":
+                            sigkey = [s for s in signals.keys() if s[0] == "A"][0]
+                        elif poiname == "g2":
+                            sigkey = [s for s in signals.keys() if s[0] == "H"][0]
+                        else:
+                            raise NotImplementedError()
+                        gvalues_p[sigkey] = (float(pstr[i+1].replace("p", ".")),)
+                else:
+                    gvalues_p = get_poi_values(args.ifile, signals | promotions, args.poi,
+                                            6.43 if args.xsec else 1, use_cross="cross" in args.poi)
             gvalues = gvalues_p
         else:
             gvalues = {}
@@ -1055,9 +1080,9 @@ if args.batch is not None:
                 continue
 
             sums = sum_kwargs(cltx, "Run 2", *(year_summed[(channel, fit)] for channel in cmrg))
-            if fit != 'p':
-                if not os.path.isfile(args.batch):
-                    continue
+            #if fit != 'p':
+            #    if not os.path.isfile(args.batch):
+            #        continue
 
             fitkey = "prefit" if fit == "p" else "postfit"
             if os.path.isfile(args.batch):
@@ -1073,7 +1098,7 @@ if args.batch is not None:
                     sums["total"] = total
                 else:
                     sums["total"].view().variance = total.view().variance
-            else:
+            elif args.batch == "project":
                 print("Getting uncertainty by projecting from fitdiagnostics")
                 with uproot.open(args.ifile) as ff:
                     matrix = ff["shapes_prefit" if fit == "p" else f"shapes_fit_{fit}"]["overall_total_covar"].values()
@@ -1082,6 +1107,8 @@ if args.batch is not None:
                     raise NotImplementedError("Too stupid to project prefit covmat for subsets of channels")
                 totalunc = np.diag(project_channel_year_unc(matrix, nbins))
                 sums["total"].view().variance = totalunc
+            else:
+                raise ValueError("Unknown argument for --batch: " + args.batch)
 
             if args.normalize:
                 with uproot.open(args.ifile) as ff:
