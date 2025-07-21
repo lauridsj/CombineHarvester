@@ -928,7 +928,11 @@ if __name__ == '__main__':
         stp = startpoi if args.prepostfit == 's' else starting_poi(gvalues if notah else ["0.", "0."], args.fixpoi if notah else True)
         set_freeze = elementwise_add([stp, starting_nuisance(args.frzzero, args.frznzro, args.frzpost)])
         del stp
-        fitopt = "--skipBOnlyFit" if args.prepostfit == 's' else '--customStartingPoint --skipSBFit'
+        haspois = args.prepostfit == 's'
+        if not notah and len(startpoi[1]) == 2:
+            # all POIs frozen. actually run in bg fit mode to not confuse combine
+            haspois = False
+        fitopt = "--skipBOnlyFit" if haspois else '--customStartingPoint --skipSBFit'
 
         never_gonna_give_you_up(
             command = "combine -v 0 -M FitDiagnostics {dcd} --saveWithUncertainties --saveNormalizations --saveShapes "
@@ -1007,7 +1011,7 @@ if __name__ == '__main__':
             ),
             frz = "--freeze '{frz}'".format(frz = ','.join(tofreeze)) if len(tofreeze) > 0 else "",
             fdr = fitdiag_result,
-            ftp = args.prepostfit,
+            ftp = 'b' if not notah and len(startpoi[1]) == 2 else args.prepostfit,
         ))
         syscall("rm {inf}".format(inf = " ".join(inputfiles)), False, True)
 

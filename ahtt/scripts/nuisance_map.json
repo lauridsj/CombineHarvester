@@ -73,7 +73,23 @@
         "lumi_13TeV_17": "Luminosity (2017, uncorr.)",
         "lumi_13TeV_16": "Luminosity (2016, uncorr.)",
         "lumi_13TeV_1718": "Luminosity (2017/2018, corr.)",
-        "lumi_13TeV_correlated": "Luminosity (all years, corr.)"
+        "lumi_13TeV_correlated": "Luminosity (all years, corr.)",
+
+        "hvq_TT": "hvq vs. bb4l",
+
+        "bb4l_TT_mtt1": "bb4l (t\\bar{t} + tW, m_{tt} < 400 GeV)",
+        "bb4l_TT_mtt2": "bb4l (t\\bar{t} + tW, 400 < m_{tt} < 600 GeV)",
+        "bb4l_TT_mtt3": "bb4l (t\\bar{t} + tW, m_{tt} > 600 GeV)",
+
+        "bb4l_TT_ll1": "bb4l (t\\bar{t} + tW, low c_{hel} / low c_{han})",
+        "bb4l_TT_ll2": "bb4l (t\\bar{t} + tW, mid c_{hel} / low c_{han})",
+        "bb4l_TT_ll3": "bb4l (t\\bar{t} + tW, high c_{hel} / low c_{han})",
+        "bb4l_TT_ll4": "bb4l (t\\bar{t} + tW, low c_{hel} / mid c_{han})",
+        "bb4l_TT_ll5": "bb4l (t\\bar{t} + tW, mid c_{hel} / mid c_{han})",
+        "bb4l_TT_ll6": "bb4l (t\\bar{t} + tW, high c_{hel} / mid c_{han})",
+        "bb4l_TT_ll7": "bb4l (t\\bar{t} + tW, low c_{hel} / high c_{han})",
+        "bb4l_TT_ll8": "bb4l (t\\bar{t} + tW, mid c_{hel} / high c_{han})",
+        "bb4l_TT_ll9": "bb4l (t\\bar{t} + tW, high c_{hel} / high c_{han})"
 
     },
     "processes": {
