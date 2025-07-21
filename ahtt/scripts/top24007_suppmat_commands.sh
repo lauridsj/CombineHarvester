@@ -51,8 +51,6 @@ scenarios=("--ifile ${etatfile} --batch ${etatbatch} --as-signal EtaT --ignore C
 
 scenarios_altbgs=("--ifile ${hvqfile} --batch ${bb4lbatch} --as-signal EtaT --ignore ChiT --best-fit-from default --plot-tag hvq --generator-label hvq --cmslabel Supplementary" "--ifile ${bb4lfile} --batch ${bb4lbatch} --as-signal EtaT --ignore ChiT --best-fit-from default --plot-tag bb4l --generator-label bb4l --cmslabel Supplementary" "--ifile ${herwigfile} --batch ${herwigbatch} --as-signal EtaT --ignore ChiT --best-fit-from default --plot-tag herwig --generator-label herwig --cmslabel Supplementary" "--ifile ${amcatnlofile} --batch ${amcatnlobatch} --as-signal EtaT --ignore ChiT --best-fit-from default --plot-tag amcatnlo --generator-label amcatnlo --cmslabel Supplementary")
 
-scenarios=("--ifile ${etatfile} --batch ${etatprefitbatch} --as-signal EtaT --ignore ChiT --skip-postfit --prefit-signal-from default --cmslabel Supplementary --normalize")
-
 for ((i = 0; i < ${#scenarios[@]}; i++)); do
 
     echo ${scenarios[$i]}
@@ -71,8 +69,6 @@ for ((i = 0; i < ${#scenarios[@]}; i++)); do
         python3 ../scripts/plot_prepost_split.py --odir ${outdir} ${scenarios[$i]} --plot-formats "${fmt}" --skip-each --skip-ah --panel ${panel} --xsec --panel-labels --project-to ${angle} --mass-cut='800,1050'
     done
 done
-
-exit 0
 
 python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${mbbllfile} --batch ${mbbllbatch} --as-signal EtaT --ignore ChiT --best-fit-from ${mbbllbestfit} --skip-prefit --plot-formats "${fmt}" --log --skip-each --skip-ah --panel ${panel} --xsec --panel-labels --split-bins --plot-tag mbbllspin
 

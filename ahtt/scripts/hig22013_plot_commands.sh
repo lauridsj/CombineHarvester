@@ -42,9 +42,28 @@ done
 pair='A_m365_w2p0,H_m425_w3p0'
 
 tag='lx_no_etat'
-python3 ${scriptdir}/plot_contour.py --point "${pair}" --contour "${tag}/exp-b,obs" --odir ${outdir} --label 'Expected;Observed' --formal --A343-background 0 --draw-best-fit --plot-formats "${fmt}" --intervals '0,1.7;0,1.7' --proper-sigma --max-sigma 3 --plot-tag 'lx_smtt'
+python3 ${scriptdir}/plot_contour.py --point "${pair}" --contour "${tag}/exp-b,obs" --odir ${outdir} --label 'Expected;Observed' --formal --A343-background 0 --draw-best-fit --plot-formats "${fmt}" --intervals '0,1.6;0,1.6' --proper-sigma --max-sigma 3 --plot-tag 'lx_smtt'
 
 tag='lx_eww_etat'
-python3 ${scriptdir}/plot_contour.py --point "${pair}" --contour "${tag}/exp-b,obs" --odir ${outdir} --label 'Expected;Observed' --formal --A343-background 1 --draw-best-fit --plot-formats "${fmt}" --intervals '0,1.7;0,1.7' --proper-sigma --max-sigma 3 --plot-tag 'lx_etat'
+python3 ${scriptdir}/plot_contour.py --point "${pair}" --contour "${tag}/exp-b,obs" --odir ${outdir} --label 'Expected;Observed' --formal --A343-background 1 --draw-best-fit --plot-formats "${fmt}" --intervals '0,1.6;0,1.6' --proper-sigma --max-sigma 3 --plot-tag 'lx_etat'
 
 cd -
+
+# 1D LIMITS
+
+mkdir lim1D && cd lim1D
+for idir in smtt etat; do for ichan in lx ll lj; do mkdir -p ${idir}/${ichan}; done; done
+fmt="pdf,png,svg"
+
+# limits w/o etat
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/cleanup_1D_240205"
+python3 ../../scripts/plot_limit.py --tag "lx_smtt" --odir smtt/lx --read-from "${basedir}" --observed --formal --A343-background 0 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll_smtt" --odir smtt/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/unblind_stage3_1D_231205"
+python3 ../../scripts/plot_limit.py --tag "lj_smtt" --odir smtt/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 0 --plot-formats "${fmt}"
+
+# limits with etat
+basedir="/data/dust/user/afiqaize/cms/ahtt_run2ul_stat_200803/combine/CMSSW_10_2_13/src/CombineHarvester/ahtt/ah_etatfloat_240318"
+python3 ../../scripts/plot_limit.py --tag "lx" --odir etat/lx --read-from "${basedir}" --observed --formal --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "ll" --odir etat/ll --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"
+python3 ../../scripts/plot_limit.py --tag "lj" --odir etat/lj --read-from "${basedir}" --observed --formal --cms-append "Supplementary" --A343-background 1 --plot-formats "${fmt}"

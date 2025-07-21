@@ -72,6 +72,7 @@ Further important arguments for all commands (datacards and fitting) are:
 - `--local`: Run locally without submitting to condor.
 - `--runtime`: Runtime in seconds for the condor submission. Default is 10800 (3h).
 - `--memory`: Memory requirement in MB for the condor submission. Default is 2048. Sometimes very large combination fits exceed this and crash, in this case increase to 4096.
+- `--output-tag`: Use this if you want to run the same mode multiple times with different settings within the same workspace (i.e. you set `--tag` to the original tag of the workspace, and `--output-tag` to something else).
 
 ## Best fits + uncertainties
 
@@ -147,6 +148,18 @@ And if you want to have background-only pulls, you have to cheat even more (and 
 ./../scripts/submit_point.py --point 'A_m400_w5p0' --mode impact --tag ll --poi-set EWK_const --g-value 0 --one-poi --fix-poi --freeze-zero CMS_EtaT_norm_13TeV
 ```
 
+After the impacts have run through, you need to combine the files from the different jobs into one:
+
+For A/H:
+```bash
+./../scripts/merge_pull.py --point "${point}" --tag ll
+```
+
+For EtaT:
+```bash
+./../scripts/merge_pull.py --point 'A_m400_w5p0' --tag ll --g-value 0 --fix-poi --poi-name CMS_EtaT_norm_13TeV
+```
+
 ## Pre/postfit plots
 
 Only implemented for twin workspaces. Also, extremely slow, always submit with ~24h runtime. Also also, can be unstable, so `--fit-strategy 2 --use-hesse` is recommended. If fits still fail or one wants to speed up things, one can also add `--freeze-post mcstat` to ignore MC statistical uncertainties for the error bands.
@@ -215,3 +228,56 @@ This means: a grid of 10x10 jobs (i.e. 100 jobs total) which each scan a grid of
 ## Feldman-Cousins scans
 
 Described by Afiq in [`run_fc`](./run_fc). Only barely understood by myself. If you need this, I pray for your soul. 
+
+# Plotting
+
+The hopefully full commands for all plots in both papers are collected in [`top24007_plot_commands.sh`](./top24007_plot_commands.sh), [`hig22013_plot_commands.sh`](./hig22013_plot_commands.sh), and [`top24007_suppmat_commands.sh`](./top24007_suppmat_commands.sh), including links to all input files needed. Just hope that the files dont get deleted because the accounts run out lol. The last one contains lots of plots.
+
+Almost all plots require a python3 environment with a reasonably up-to-date matplotlib and mplhep. The environment used for pepper usually works.
+The exception is the impact plot, which sadly is in pyRoot and needs an EL7 container with CMSSW sourced. 
+
+The script `plot_prepost_split.py` is a monster that can do almost everything regarding making pre/postfit plots including projections, normalization, unrolling etc. As a result, it is basically incomprehensible and unmaintainable. I am truly sorry.
+
+Below I just collect some of the most important use cases:
+
+### Pre/postfit plots:
+
+The script is `plot_prepost_split.py`. Requires `mode prepost` to have been run, and `mode psfromws` as well for postfit plots.
+
+Important options are:
+- `--ifile`: The file produced by `mode prepost`, called something like `A_xxx__H_xxxxxx_fitdiagnostics_fit_s.root`.
+- `--odir`: Output directory.
+- `--plot-tag`: Tag to append to the file name.
+- `--log`: Use log scale.
+- `--cmslabel`: String to write next to the CMS logo.
+- `--plot-formats`: Image output format. Can do e.g. `pdf,png,svg` to plot multiple formats at once.
+- `--as-signal`: Add an additional signal, for example EtaT.
+- `--skip-ah`: Do not plot A/H signals (e.g. when fitting only EtaT).
+- `--no-total`: When plotting 2 or more signals, do not show their sum as well.
+- `--ignore`: Ignore a given background process.
+- `--xsec`: Use cross sections instead of signal strengths for the POI.
+- `--best-fit-from`: Read the best fit POI and its uncertainties from a given file as made with `mode single` (1D) or `mode cross` (2D) instead of from FitDiagnostics (`mode prepost`). This is useful because these modes can give asymmetric uncertainties, while FitDiagnostics always symmetrizes.
+- `--prefit-signal-from`: Needed for prefit plots because of combine stupidity; the path to the `ahtt_input.root` file in the workspace used to produce the fit. 
+- `--batch`: Sum over years and channels instead of making one plot for each year and channel. This requires correctly projecting the covariance matrix for the error band, for which there are two options. Giving the path to the output file of `mode psfromws` reads it from there, which is recommended for postfit. Alternatively, giving `--batch project` projects directly from the covariance matrix as read in from the FitDiagnostics output. The latter is only tested for prefit.
+- `--skip-each`: When using `--batch`, make only the year/channel summed plots and skip the others.
+- `--normalize`: Plot normalized distributions, with correct propagation of the uncertainty. Only tested for prefit, might also work for postfit IDK.
+- `--split-bins`: Split the 3D plot (e.g. $m_{t\bar t} \times c_{hel} \times c_{han}$) into 1D slices (for each chel/chan bin). Needs `--panel-labels` in addition to work properly.
+- `--project-to`: Plot an 1D projection of the 3D plot (i.e. summing over other dimensions). Valid arguments are `mtt`, `mbbll`, `chel`, and `chan` as appropriate. Needs `--panel-labels` in addition to work properly.
+- `--mass-cut`: When projecting with the above option, select only some bins in the mass variable (mtt or mbbll). Comma-seperated interval in GeV, with -1 standing in for infinity. E.g. use `--project-to chel --mass-cut='-1,360'` to plot $c_{hel}$ for $m_{t\bar t} < 360$ GeV.
+
+See [`top24007_plot_commands.sh`](./top24007_plot_commands.sh) for concrete examples.
+
+
+### Impact plots:
+
+Get an EL7 container, source the CMSSW used for this repo (`cd XXX/CMSSW_10_2_13/src; cmsenv`), then run:
+
+```bash
+python2 ../scripts/customImpacts.py -i <path/to/data/impacts.json> -ia <path/to/asimov/impacts.json> -o <outfile_name> -t ../scripts/nuisance_map.json --per-page 20 --cms-label Supplementary
+```
+
+Both json files need to be merged using `merge_pull.py` before, as written above. You can give only one of `-i` or `-ia` to plot only data or only Asimov impacts.
+
+### 1D / 2D limit plots:
+
+See the examples in [`hig22013_plot_commands.sh`](./hig22013_plot_commands.sh).

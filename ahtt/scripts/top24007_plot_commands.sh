@@ -36,3 +36,4 @@ python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${bgonlyfile} 
 
 python3 ../scripts/plot_prepost_split.py --odir ${outdir} --ifile ${bgonlyfile} --batch ${bgonlybatch} --as-signal '' --ignore EtaT,ChiT --skip-prefit --plot-formats "${fmt}" --skip-each --skip-ah --panel ${panel} --xsec --panel-labels --project-to chel --mass-cut='-1,360'
 
+# the EtaT vs ChiT scan is missing, Afiq made that one, forgot where the input files are aa
