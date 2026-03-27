@@ -309,7 +309,9 @@ for page in xrange(n):
             g_impactsA_hi.SetPoint(i, 0, float(i) + 0.5)
             g_impactsA_lo.SetPoint(i, 0, float(i) + 0.5)
         imp = pdata[p][POI]
+        imp = [ii*xs_base for ii in imp]
         impA = asipdata[asipnum][POI]
+        impA = [ii*xs_base for ii in imp]
         if has_data:
             if imp[2]-imp[1]>0:
                 g_impacts_hi.SetPointError(i, 0, imp[2] - imp[1], 0.0, 0.0)
