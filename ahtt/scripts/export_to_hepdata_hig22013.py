@@ -65,7 +65,7 @@ for files, tag in [(files_noetat, "noetat"), (files_withetat, "withetat")]:
             with open(file) as jf:
                 j = json.load(jf)
             
-            table = hepd.Table(f"limit_{parity}_w{wstr}_{tag}")
+            table = hepd.Table(f"limit_{parity}_{wstr}_{tag}")
             coupling = f"g_{{{parity} t \\bar t}}"
             desc = f"Exclusion limits on the coupling modifier ${coupling}$ at 95% CL for the {parity} boson with {width:.1f}% width, as a function of the {parity} boson mass."
             if tag == "noetat":
