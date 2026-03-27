@@ -249,7 +249,7 @@ def plot_ratio(ax, bins, centers, data, total, signals, gvalues, sigscale, fit, 
                 signal_label += f", $\\mathrm{{{poiname}}}_{{\\mathrm{{{symbol}}}}} = 1$"
             elif symbol in [r"$\eta_{\mathrm{t}}$", r"$\chi_{\mathrm{t}}$", r"$\psi_{\mathrm{t}}$"]:
                 if args.xsec:
-                    signal_label = f"{symbol}, $\\sigma({symbol[1:-1]}) = 6.43$ pb"
+                    signal_label = f"{symbol}, $\\sigma({symbol[1:-1]}) = 6.4$ pb"
                 else:
                     signal_label = f"{symbol}, $\\mu({symbol[1:-1]}) = 1$"
         elif key in gvalues and gvalues[key] is not None:
